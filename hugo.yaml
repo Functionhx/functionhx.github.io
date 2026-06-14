@@ -1,0 +1,48 @@
+baseURL: https://blog.example.com/
+languageCode: zh-cn
+title: fanyuchen 的博客
+theme: PaperMod
+defaultContentLanguage: zh-cn
+paginate: 10
+
+author:
+  name: fanyuchen
+  email: 2994114386@qq.com
+
+outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON
+
+params:
+  homeInfoParams:
+    Title: "你好 👋"
+    Content: "欢迎来到我的博客 —— 记录技术、生活与思考"
+  socialIcons:
+    - name: github
+      url: https://github.com/Functionhx
+  ShowReadingTime: true
+  ShowPostNavLinks: true
+  ShowBreadCrumbs: true
+  ShowCodeCopyButtons: true
+  ShowShareButtons: false
+
+menu:
+  main:
+    - identifier: posts
+      name: 📝 文章
+      url: /posts/
+      weight: 10
+    - identifier: archives
+      name: 📂 归档
+      url: /archives/
+      weight: 20
+    - identifier: tags
+      name: 🏷 标签
+      url: /tags/
+      weight: 30
+    - identifier: search
+      name: 🔍 搜索
+      url: /search/
+      weight: 40
