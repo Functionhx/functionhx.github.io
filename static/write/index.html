@@ -31,8 +31,8 @@
   <!--
     编辑后台（Sveltia CMS）密码门。
     注意：这是前端软门（看源码可绕），真正的写权限靠 Sveltia 登录时的 GitHub 令牌。
-    换密码：本地执行  printf '%s' "你的密码" | shasum -a 256
-    把输出第一段填进下面的 PASSWORD_HASH。
+    换密码：本地执行  printf '%s' "你的密码" | shasum -a 256 ，把输出第一段填进下面的 PASSWORD_HASH。
+    解锁状态用 localStorage 永久记住（为了「设好一次、以后零输入」）；想在某设备上重新要求输密码，清掉该站点的 localStorage 即可。
   -->
   <div id="gate">
     <form id="pw-form" autocomplete="off">
@@ -67,7 +67,7 @@
     function boot() {
       if (booted) return;
       booted = true;
-      sessionStorage.setItem('edit-unlocked', '1');
+      localStorage.setItem('edit-unlocked', '1'); // 永久记住，下次不再问密码
       gate.style.display = 'none';
       loading.style.display = 'block';
       var s = document.createElement('script');
@@ -88,8 +88,8 @@
       }
     });
 
-    // 同一标签页会话内已解锁过则直接进（关掉标签页后需重新输密码）
-    if (sessionStorage.getItem('edit-unlocked') === '1') {
+    // 该设备已解锁过则直接进（永久记住，除非手动清 localStorage）
+    if (localStorage.getItem('edit-unlocked') === '1') {
       boot();
     }
   })();
