@@ -1,25 +1,79 @@
 {{- /*
-  暗门入口：在页脚非链接区域 3 秒内连点 5 次，跳转到隐藏的编辑后台 /write/。
-  这是可见性层（非真安全），真写权限靠编辑后台里的 GitHub 令牌。
-  覆盖主题自带的空 extend_footer.html 钩子（Hugo 0.146+ 项目 _partials 优先于主题）。
+  隐藏入口与彩蛋（覆盖主题自带的空 extend_footer.html 钩子；Hugo 0.146+ 项目 _partials 优先于主题）：
+  1) 页脚非链接区域 3 秒内连点 5 次 → 跳编辑后台 /write/（可见性层，真写权限靠令牌）。
+  2) 菜单注入 ❤️：单击心跳一下（像装饰）；连点 3 次 → 弹出只给她的悄悄话（overlay）。
 */ -}}
+<style>
+  @keyframes ln-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
+  .ln-pulse { animation: ln-pulse .35s ease; }
+  #love-note-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    display: none; align-items: center; justify-content: center;
+    text-align: center; padding: 24px; cursor: pointer;
+    background: radial-gradient(circle at 50% 38%, #3a2342, #0c0c10);
+    color: #f6eaee;
+  }
+  #love-note-overlay.show { display: flex; animation: ln-fade .6s ease; }
+  #love-note-overlay .ln-inner { max-width: 620px; }
+  #love-note-overlay .ln-heart { font-size: 36px; margin-bottom: 20px; }
+  #love-note-overlay .ln-text {
+    font-size: clamp(20px, 4.2vw, 30px); line-height: 1.9;
+    font-weight: 300; letter-spacing: .02em;
+  }
+  #love-note-overlay .ln-hint { margin-top: 30px; font-size: 12px; opacity: .4; }
+  @keyframes ln-fade { from { opacity: 0 } to { opacity: 1 } }
+</style>
+<div id="love-note-overlay" aria-hidden="true">
+  <div class="ln-inner">
+    <div class="ln-heart">❤️</div>
+    <div class="ln-text">这世界那么大，我最庆幸的，是兜兜转转遇见了你</div>
+    <div class="ln-hint">点任意处关闭</div>
+  </div>
+</div>
 <script>
 (function () {
-  var TARGET = 5;          // 连点次数
-  var WINDOW_MS = 3000;    // 计时窗口
-  var ADMIN_URL = '/write/';
+  // 1) 编辑后台暗门：页脚连点 5 次（非链接区域）
+  var TARGET = 5, WINDOW_MS = 3000, ADMIN_URL = '/write/';
   var count = 0, timer = null;
   var footer = document.querySelector('.footer');
-  if (!footer) return;
-  footer.addEventListener('click', function (e) {
-    if (e.target.closest('a')) return; // 不影响页脚里的正常链接
-    count++;
-    clearTimeout(timer);
-    timer = setTimeout(function () { count = 0; }, WINDOW_MS);
-    if (count >= TARGET) {
-      count = 0;
-      window.location.href = ADMIN_URL;
-    }
-  });
+  if (footer) {
+    footer.addEventListener('click', function (e) {
+      if (e.target.closest('a')) return; // 不影响页脚里的正常链接
+      count++;
+      clearTimeout(timer);
+      timer = setTimeout(function () { count = 0; }, WINDOW_MS);
+      if (count >= TARGET) { count = 0; window.location.href = ADMIN_URL; }
+    });
+  }
+
+  // 2) 菜单爱心：单击心跳，连点 3 次弹悄悄话
+  var menu = document.getElementById('menu');
+  var overlay = document.getElementById('love-note-overlay');
+  if (menu) {
+    var li = document.createElement('li');
+    var a = document.createElement('a');
+    a.href = '#';
+    var span = document.createElement('span');
+    span.textContent = '❤️';
+    a.appendChild(span);
+    li.appendChild(a);
+    menu.appendChild(li);
+
+    var n = 0, t = null;
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      a.classList.remove('ln-pulse'); void a.offsetWidth; a.classList.add('ln-pulse'); // 心跳
+      n++;
+      clearTimeout(t);
+      t = setTimeout(function () { n = 0; }, 1500);
+      if (n >= 3) { n = 0; if (overlay) overlay.classList.add('show'); }
+    });
+  }
+  if (overlay) {
+    overlay.addEventListener('click', function () { overlay.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') overlay.classList.remove('show');
+    });
+  }
 })();
 </script>
