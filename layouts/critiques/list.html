@@ -1,0 +1,27 @@
+{{- define "main" }}
+
+<header class="page-header crit-page-header">
+  {{ partial "breadcrumbs.html" . }}
+  <h1>{{ .Title }}</h1>
+  {{- with .Description }}<div class="post-description">{{ . }}</div>{{ end }}
+</header>
+
+<div class="crit-list">
+  {{- range .Pages.ByDate.Reverse }}
+  {{- $e := . }}
+  <a class="crit-card" href="{{ $e.Permalink }}">
+    <div class="crit-card-verdict">{{ partial "critique_verdict.html" $e }}</div>
+    <h2 class="crit-card-title">{{ $e.Title }}</h2>
+    {{- with $e.Params.paper.venue }}<div class="crit-card-paper">{{ . }}{{ with $e.Params.paper.year }} · {{ . }}{{ end }}</div>{{ end -}}
+    {{- with $e.Params.tldr }}<div class="crit-card-tldr">{{ . }}</div>{{ end -}}
+    <div class="crit-card-foot">
+      {{- with $e.Date }}<span class="crit-card-date">{{ . | time.Format "2006-01-02" }}</span>{{ end -}}
+      {{- range $e.Params.tags }}<span class="crit-card-tag">{{ . }}</span>{{ end -}}
+    </div>
+  </a>
+  {{- else }}
+  <p class="crit-empty">// 还没有拆解。第一篇由你来写。</p>
+  {{- end }}
+</div>
+
+{{- end }}{{/* end main */}}

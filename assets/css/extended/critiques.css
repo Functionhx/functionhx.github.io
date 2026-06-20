@@ -1,0 +1,89 @@
+/* ===== 拆解 · 实验室笔记风格（等宽框架 + 去装饰 + 档案感） ===== */
+/* 仅作用于 .crit-* / .verdict，不影响文章等其他板块；用 PaperMod 主题变量适配明暗。 */
+
+.crit-page-header,
+.crit-header,
+.crit-meta,
+.crit-list,
+.crit-card,
+.crit-empty,
+.verdict {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+}
+
+/* ---- 裁决章 ---- */
+.verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: .15rem;
+  font-size: .78rem;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+.verdict .vb { color: var(--secondary); }
+.verdict .vc { color: var(--vc, var(--primary)); font-weight: 600; }
+.verdict .ve { margin-left: .3rem; }
+
+/* ---- 单篇：元信息头 ---- */
+.crit-verdict-line { margin-bottom: .6rem; }
+.crit-title { margin-top: 0; }
+
+.crit-meta {
+  margin: .9rem 0 0;
+  display: grid;
+  gap: .2rem;
+}
+.crit-meta div {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  align-items: baseline;
+}
+.crit-meta dt { color: var(--secondary); }
+.crit-meta dd { margin: 0; color: var(--primary); word-break: break-word; }
+.crit-ext { text-decoration: none; }
+.crit-rule { border: 0; border-top: 1px dashed var(--border); margin: 1.3rem 0; }
+
+/* 正文章节标题走等宽 + // 前缀 */
+.crit-body h2 {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1rem;
+  color: var(--secondary);
+}
+.crit-body h2::before { content: "// "; color: var(--tertiary); }
+
+/* ---- 列表：卡片 ---- */
+.crit-list { display: grid; gap: .8rem; }
+.crit-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid var(--border);
+  background: var(--entry);
+  padding: 1rem 1.1rem;
+  transition: border-color .15s ease, transform .15s ease;
+}
+.crit-card:hover { border-color: var(--primary); transform: translateY(-1px); }
+.crit-card-verdict { margin-bottom: .5rem; }
+.crit-card-title {
+  font-size: 1.12rem;
+  line-height: 1.4;
+  margin: 0 0 .35rem;
+  color: var(--primary);
+}
+.crit-card-paper { color: var(--secondary); font-size: .78rem; margin-bottom: .45rem; }
+.crit-card-tldr { color: var(--content); margin-bottom: .6rem; }
+.crit-card-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+  font-size: .72rem;
+  color: var(--secondary);
+}
+.crit-card-tag {
+  border: 1px solid var(--border);
+  padding: 0 .35rem;
+  border-radius: 3px;
+}
+.crit-empty { color: var(--secondary); }

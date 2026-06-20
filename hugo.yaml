@@ -34,6 +34,10 @@ menu:
       name: 📝 文章
       url: /posts/
       weight: 10
+    - identifier: critiques
+      name: ⚔️ 拆解
+      url: /critiques/
+      weight: 15
     - identifier: archives
       name: 📂 归档
       url: /archives/

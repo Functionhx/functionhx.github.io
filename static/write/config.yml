@@ -5,7 +5,7 @@ backend:
   repo: Functionhx/functionhx.github.io
   branch: main
 
-# 期刊图：CMS 上传的图片落到 static/images/，部署后在 /images/ 引用
+# 图片：CMS 上传的图片落到 static/images/，部署后在 /images/ 引用
 media_folder: "static/images"
 public_folder: "/images"
 
@@ -29,4 +29,34 @@ collections:
       - { label: "摘要描述", name: "description", widget: "string", required: false }
       - { label: "标签", name: "tags", widget: "list", required: false }
       - { label: "分类", name: "categories", widget: "list", required: false }
+      - { label: "正文", name: "body", widget: "markdown" }
+
+  - name: "critiques"
+    label: "拆解"
+    label_singular: "拆解"
+    folder: "content/critiques"
+    create: true
+    delete: true
+    format: "md"
+    extension: "md"
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    summary: "{{verdict}} · {{title}}"
+    fields:
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "裁决", name: "verdict", widget: "select", options: ["站不住", "被高估", "存疑", "有可取"], default: "存疑" }
+      - { label: "一句话结论", name: "tldr", widget: "string", required: false }
+      - label: "论文 / 范式"
+        name: "paper"
+        widget: "object"
+        required: false
+        collapsed: true
+        fields:
+          - { label: "标题", name: "title", widget: "string" }
+          - { label: "作者", name: "authors", widget: "string" }
+          - { label: "venue / 会议", name: "venue", widget: "string" }
+          - { label: "年份", name: "year", widget: "string" }
+          - { label: "链接", name: "url", widget: "string" }
+      - { label: "标签", name: "tags", widget: "list", required: false }
+      - { label: "发布日期", name: "date", widget: "datetime" }
+      - { label: "草稿", name: "draft", widget: "boolean", default: true }
       - { label: "正文", name: "body", widget: "markdown" }
