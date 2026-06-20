@@ -29,6 +29,10 @@
       {{- range ($.GetTerms $tags) }}<li><a href="{{ .Permalink }}">{{ .LinkTitle }}</a></li>{{ end -}}
     </ul>
   </footer>
+
+  {{- if (.Param "comments") }}
+  {{- partial "comments.html" . }}
+  {{- end }}
 </article>
 
 {{- end }}{{/* end main */}}

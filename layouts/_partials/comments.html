@@ -1,0 +1,47 @@
+{{- /* Giscus 评论：GitHub Discussions 后端，零服务器，支持楼中楼回复。覆盖 PaperMod 空 comments.html 钩子。
+       评论数据由 GitHub 存储；访客用 GitHub 登录评论。 */ -}}
+<style>
+  .post-comments { margin-top: 3rem; }
+  .post-comments .comments-title {
+    font-size: 1.2rem; margin: 0 0 1rem; color: var(--primary);
+  }
+</style>
+<section class="post-comments">
+  <h2 class="comments-title">评论</h2>
+  <script src="https://giscus.app/client.js"
+    data-repo="Functionhx/functionhx.github.io"
+    data-repo-id="R_kgDOS6Qg6A"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOS6Qg6M4C_jMy"
+    data-mapping="pathname"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="preferred_color_scheme"
+    data-lang="zh-CN"
+    data-loading="lazy"
+    crossorigin="anonymous"
+    async>
+  </script>
+  <script>
+    // 让 Giscus 主题跟随站点的明暗切换（PaperMod 改的是 html[data-theme]）
+    (function () {
+      function cur() {
+        var t = document.documentElement.dataset.theme;
+        if (t === 'auto') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        return t === 'dark' ? 'dark' : 'light';
+      }
+      function send() {
+        var iframe = document.querySelector('iframe.giscus-frame');
+        if (!iframe) return;
+        iframe.contentWindow.postMessage({ giscus: { setConfig: { theme: cur() } } }, 'https://giscus.app');
+      }
+      window.addEventListener('message', function (e) {
+        if (e.origin === 'https://giscus.app') send();
+      });
+      new MutationObserver(send).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', send);
+    })();
+  </script>
+</section>

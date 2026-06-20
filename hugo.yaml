@@ -27,6 +27,7 @@ params:
   ShowBreadCrumbs: true
   ShowCodeCopyButtons: true
   ShowShareButtons: false
+  comments: true
 
 menu:
   main:
