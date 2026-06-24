@@ -1,20 +1,21 @@
-/* ===== 鼠标动效样式（克制档） ===== */
-/* 配合 static/js/mouse-effects.js；JS 已在触屏/减少动效时整体不启用。 */
+/* ===== 鼠标/视觉动效样式（克制档） ===== */
+/* 配合 static/js/mouse-effects.js；JS 已在触屏/减少动效时整体不启用。开关见 /fx/。 */
 
-/* 1) 磁吸：让位移平滑；链接悬停轻微变色 */
+/* 1) 磁吸 */
 .menu a,
 .header-actions button {
   transition: transform 0.18s ease, color 0.18s ease;
 }
 .menu a:hover { color: var(--primary); }
 
-/* 2) 卡片 3D 倾斜：进入/离开平滑（.crit-card 已在 critiques.css 有 transform 过渡） */
+/* 2) 卡片 3D 倾斜过渡 */
 .post-entry,
-.first-entry {
+.first-entry,
+.fx-demo-card {
   transition: transform 0.15s ease;
 }
 
-/* 3) 光标聚光灯：跟随 --mx/--my；plus-lighter 只增亮不遮挡文字，暗色下更明显 */
+/* 3) 光标聚光灯 */
 .cursor-spotlight {
   position: fixed;
   inset: 0;
@@ -24,4 +25,131 @@
   opacity: 0.45;
   background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 50%),
               color-mix(in srgb, var(--primary) 15%, transparent), transparent 65%);
+}
+
+/* 4) 点击涟漪 */
+.fx-ripple {
+  position: fixed;
+  z-index: 9996;
+  pointer-events: none;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  transform: scale(0);
+  opacity: 0.5;
+  animation: fx-ripple 0.6s ease-out forwards;
+}
+@keyframes fx-ripple {
+  to { transform: scale(6); opacity: 0; }
+}
+
+/* 5) 悬停扫光（body.fx-shimmer-on 时，卡片/按钮 hover 一道渐变扫过） */
+.fx-shimmer-on .crit-card,
+.fx-shimmer-on .post-entry,
+.fx-shimmer-on .first-entry,
+.fx-shimmer-on .fx-demo-card,
+.fx-shimmer-on .header-actions button {
+  position: relative;
+  background-size: 200% 100%;
+  background-position: -100% 0;
+}
+.fx-shimmer-on .crit-card:hover,
+.fx-shimmer-on .post-entry:hover,
+.fx-shimmer-on .first-entry:hover,
+.fx-shimmer-on .fx-demo-card:hover,
+.fx-shimmer-on .header-actions button:hover {
+  background-image: linear-gradient(110deg,
+      transparent 25%,
+      color-mix(in srgb, var(--primary) 14%, transparent) 50%,
+      transparent 75%);
+  animation: fx-shimmer 0.8s ease;
+}
+@keyframes fx-shimmer {
+  to { background-position: 200% 0; }
+}
+
+/* 6) 自定义光标 */
+body.fx-cursor-on,
+body.fx-cursor-on a,
+body.fx-cursor-on button,
+body.fx-cursor-on input {
+  cursor: none;
+}
+.fx-cursor-dot,
+.fx-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 50%;
+}
+.fx-cursor-dot {
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  background: var(--primary);
+}
+.fx-cursor-ring {
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 1.5px solid color-mix(in srgb, var(--primary) 55%, transparent);
+}
+
+/* 7) 滚动入场 */
+.fx-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.fx-reveal.fx-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* ===== 特效实验室 /fx/ ===== */
+.fx-panel {
+  border: 1px dashed var(--border);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.5rem;
+}
+.fx-note {
+  margin: 0 0 0.8rem;
+  color: var(--secondary);
+  font-size: 0.9rem;
+}
+.fx-toggles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.5rem 1rem;
+}
+.fx-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  user-select: none;
+}
+.fx-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.fx-demo-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 2rem;
+}
+.fx-demo-card {
+  border: 1px solid var(--border);
+  background: var(--entry);
+  padding: 2rem 1rem;
+  text-align: center;
+  border-radius: 8px;
+  color: var(--primary);
 }
