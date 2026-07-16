@@ -35,24 +35,37 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Verify translation secret
+      - name: Check translation availability
+        id: translation_secret
         shell: bash
         run: |
           if [[ -z "$DEEPSEEK_API_KEY" ]]; then
-            echo "::error::DEEPSEEK_API_KEY is not configured for this repository."
-            exit 1
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::DEEPSEEK_API_KEY is not configured; translation was skipped."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Summarize skipped translation
+        if: steps.translation_secret.outputs.enabled != 'true'
+        shell: bash
+        run: |
+          echo "### Translation skipped" >> "$GITHUB_STEP_SUMMARY"
+          echo "Configure the repository secret \`DEEPSEEK_API_KEY\` to generate a draft translation pull request." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Set up Python
+        if: steps.translation_secret.outputs.enabled == 'true'
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
 
       - name: Install content tooling
+        if: steps.translation_secret.outputs.enabled == 'true'
         run: python -m pip install --requirement requirements.txt
 
       - name: Install Hugo Extended
+        if: steps.translation_secret.outputs.enabled == 'true'
         shell: bash
         run: |
           curl -L --retry 6 --retry-delay 3 --retry-all-errors \
@@ -61,6 +74,7 @@ jobs:
           sudo dpkg -i "${{ runner.temp }}/hugo.deb"
 
       - name: Translate selected Chinese content
+        if: steps.translation_secret.outputs.enabled == 'true'
         shell: bash
         env:
           INPUT_FILE: ${{ inputs.file }}
@@ -77,6 +91,7 @@ jobs:
           fi
 
       - name: Validate translated content
+        if: steps.translation_secret.outputs.enabled == 'true'
         run: |
           python scripts/validate_content.py
           python scripts/showcase/validate.py
@@ -84,6 +99,7 @@ jobs:
           python scripts/check_built_site.py public
 
       - name: Create or update translation pull request
+        if: steps.translation_secret.outputs.enabled == 'true'
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ github.token }}
