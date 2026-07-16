@@ -62,7 +62,6 @@ languages:
     params:
       description: 樊宇琛的机器人、具身智能与三维场景智能研究主页和工程作品集。
       author: Yuchen Fan
-      email: functionhx@gmail.com
       label:
         text: Yuchen Fan
       ui:
@@ -107,7 +106,6 @@ languages:
     params:
       description: Research portfolio and engineering notes by Yuchen Fan, focused on robotics, embodied AI, and 3D scene intelligence.
       author: Yuchen Fan
-      email: functionhx@gmail.com
       label:
         text: Yuchen Fan
       ui:

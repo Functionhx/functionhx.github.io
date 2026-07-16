@@ -38,6 +38,7 @@ python scripts/validate_content.py
 python scripts/showcase/validate.py
 python -m unittest discover -s tests -v
 hugo --minify
+python scripts/check_built_site.py public
 ```
 
 Preview both languages, light/dark themes, mobile widths, focus states, and reduced motion. When a URL changes, add `aliases` and update `MIGRATION.md`.

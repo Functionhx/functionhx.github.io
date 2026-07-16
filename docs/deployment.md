@@ -21,7 +21,7 @@ The repository contains no Cloudflare account or project configuration. Configur
 Recommended build command:
 
 ```bash
-git submodule update --init --recursive && python -m pip install -r requirements.txt && python scripts/validate_content.py && python scripts/showcase/validate.py && python -m unittest discover -s tests -v && hugo --gc --minify
+git submodule update --init --recursive && python -m pip install -r requirements.txt && python scripts/validate_content.py && python scripts/showcase/validate.py && python -m unittest discover -s tests -v && hugo --gc --minify && python scripts/check_built_site.py public
 ```
 
 Cloudflare's [Hugo guide](https://developers.cloudflare.com/pages/framework-guides/deploy-a-hugo-site/) documents `public` as the output directory, `HUGO_VERSION` for pinning, and `CF_PAGES_URL` for preview canonicals. If Cloudflare preview URLs must be canonical inside previews, append `--baseURL "$CF_PAGES_URL"` there. Keep the configured `baseURL` for production while `functionhx.github.io` remains the canonical public host.

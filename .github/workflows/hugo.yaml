@@ -51,6 +51,8 @@ jobs:
           HUGO_ENVIRONMENT: production
           TZ: Asia/Shanghai
         run: hugo --gc --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
+      - name: Check built links and multilingual metadata
+        run: python scripts/check_built_site.py public
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:

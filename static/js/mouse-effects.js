@@ -11,7 +11,7 @@
     cursor: false,
     reveal: false
   };
-  var isEnglish = document.documentElement.lang === 'en';
+  var isEnglish = document.documentElement.lang.toLowerCase().indexOf('en') === 0;
   var effects = [
     ['magnetic', isEnglish ? 'Magnetic links' : '链接磁吸'],
     ['tilt', isEnglish ? 'Card tilt' : '卡片倾斜'],

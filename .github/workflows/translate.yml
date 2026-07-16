@@ -81,6 +81,7 @@ jobs:
           python scripts/validate_content.py
           python scripts/showcase/validate.py
           hugo --minify
+          python scripts/check_built_site.py public
 
       - name: Create or update translation pull request
         uses: peter-evans/create-pull-request@v8

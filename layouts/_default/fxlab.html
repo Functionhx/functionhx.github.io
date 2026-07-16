@@ -30,7 +30,7 @@
 
 <script>
 (function () {
-  var isEnglish = document.documentElement.lang === 'en';
+  var isEnglish = document.documentElement.lang.toLowerCase().indexOf('en') === 0;
   var effects = [
     ['magnetic', isEnglish ? 'Magnetic links' : '链接磁吸'],
     ['tilt', isEnglish ? 'Card tilt' : '卡片倾斜'],
@@ -41,7 +41,11 @@
     ['reveal', isEnglish ? 'Scroll reveal' : '滚动入场']
   ];
   function state(name) {
-    return localStorage.getItem('fx:' + name) === 'on';
+    try {
+      return localStorage.getItem('fx:' + name) === 'on';
+    } catch (error) {
+      return false;
+    }
   }
   var box = document.getElementById('fx-toggles');
   effects.forEach(function (effect) {
@@ -51,7 +55,11 @@
     checkbox.type = 'checkbox';
     checkbox.checked = state(effect[0]);
     checkbox.addEventListener('change', function () {
-      localStorage.setItem('fx:' + effect[0], checkbox.checked ? 'on' : 'off');
+      try {
+        localStorage.setItem('fx:' + effect[0], checkbox.checked ? 'on' : 'off');
+      } catch (error) {
+        // The page remains usable if storage is unavailable.
+      }
       window.location.reload();
     });
     row.appendChild(checkbox);

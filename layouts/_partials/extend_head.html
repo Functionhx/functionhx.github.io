@@ -8,6 +8,31 @@
 <link rel="alternate" hreflang="x-default" href="{{ $xDefault }}">
 <meta property="og:image:alt" content="Yuchen Fan — Robotics, Embodied AI, and 3D Scene Intelligence">
 
+<noscript>
+  <style>
+    @media (prefers-color-scheme: dark) {
+      :root[data-theme="auto"] {
+        --theme: #171a1f;
+        --entry: #20242b;
+        --primary: #d7dce3;
+        --secondary: #9ba5b4;
+        --tertiary: #3b424d;
+        --content: #c4cad3;
+        --code-block-bg: #111419;
+        --code-bg: #272c34;
+        --border: #303640;
+        --accent: #60a5fa;
+        --accent-strong: #93c5fd;
+        --accent-soft: rgba(96, 165, 250, 0.12);
+        --accent-secondary: #a78bfa;
+        --surface-raised: #20242b;
+        --surface-muted: #272c34;
+        color-scheme: dark;
+      }
+    }
+  </style>
+</noscript>
+
 {{- if and hugo.IsProduction (or (eq .Section "projects") (eq .Section "research")) -}}
 {{- $schemaType := .Params.schema_type | default "CreativeWork" -}}
 <script type="application/ld+json">

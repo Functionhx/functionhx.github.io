@@ -19,6 +19,7 @@ Existing custom features—including the two-row header, search, Giscus, critiqu
 - `python scripts/validate_content.py` validates front matter, translations, and internal links.
 - `python scripts/showcase/validate.py` validates the shared fact source.
 - `hugo --minify` performs the production build.
+- `python scripts/check_built_site.py public` checks built links and multilingual SEO metadata.
 
 Run a Hugo build after every functional change. After JavaScript edits, load the affected pages and check the browser console. New pages must work in light and dark themes, on mobile and desktop, with keyboard navigation, and with `prefers-reduced-motion`. Keep pages readable without JavaScript.
 

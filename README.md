@@ -21,7 +21,10 @@ python scripts/validate_content.py
 python scripts/showcase/validate.py
 python -m unittest discover -s tests -v
 hugo --minify
+python scripts/check_built_site.py public
 ```
+
+真实浏览器中的主题、响应式、键盘、Giscus 与控制台检查见 [Manual Browser QA](docs/manual-qa.md)。
 
 ## Add Chinese content
 
