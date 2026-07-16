@@ -1,160 +1,272 @@
-// 鼠标/视觉动效（7 个）。每个效果可由 localStorage 的 fx:<name> 覆盖（'on'/'off'），默认值见 DEFAULTS。
-// 仅在 (hover:hover) 且 prefers-reduced-motion:no-preference 时启用；触屏/减少动效全关。
-// 特效开关：右下角常驻齿轮 ⚙️，点开弹面板（/fx/ 是带 demo 的实验室页）。
+// Optional visual effects. All effects default to off and respect reduced motion.
 (function () {
+  'use strict';
+
   var DEFAULTS = {
-    magnetic: true, tilt: true, spotlight: true,   // 原有：默认开
-    ripple: false, shimmer: false, cursor: false, reveal: false // 新增：默认关
+    magnetic: false,
+    tilt: false,
+    spotlight: false,
+    ripple: false,
+    shimmer: false,
+    cursor: false,
+    reveal: false
   };
+  var isEnglish = document.documentElement.lang === 'en';
+  var effects = [
+    ['magnetic', isEnglish ? 'Magnetic links' : '链接磁吸'],
+    ['tilt', isEnglish ? 'Card tilt' : '卡片倾斜'],
+    ['spotlight', isEnglish ? 'Pointer spotlight' : '光标聚光灯'],
+    ['ripple', isEnglish ? 'Click ripple' : '点击涟漪'],
+    ['shimmer', isEnglish ? 'Hover shimmer' : '悬停扫光'],
+    ['cursor', isEnglish ? 'Custom pointer' : '自定义光标'],
+    ['reveal', isEnglish ? 'Scroll reveal' : '滚动入场']
+  ];
+
+  function readSetting(name) {
+    try {
+      return window.localStorage.getItem('fx:' + name);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeSetting(name, value) {
+    try {
+      window.localStorage.setItem('fx:' + name, value);
+    } catch (error) {
+      // Storage can be unavailable in hardened browsing modes.
+    }
+  }
+
   function fxOn(name) {
-    var v = localStorage.getItem('fx:' + name);
-    if (v === 'on') return true;
-    if (v === 'off') return false;
-    return !!DEFAULTS[name];
+    var value = readSetting(name);
+    if (value === 'on') return true;
+    if (value === 'off') return false;
+    return DEFAULTS[name] === true;
   }
 
-  var ok = window.matchMedia('(hover: hover)').matches &&
-           window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
-  if (!ok) return;
-
-  function ready(fn) {
-    if (document.readyState !== 'loading') fn();
-    else document.addEventListener('DOMContentLoaded', fn);
+  function ready(callback) {
+    if (document.readyState !== 'loading') callback();
+    else document.addEventListener('DOMContentLoaded', callback, { once: true });
   }
 
-  // 1) 磁吸
   function magnetic() {
-    var K = 0.3;
-    document.querySelectorAll('.menu a, .header-actions button').forEach(function (el) {
-      el.addEventListener('mousemove', function (e) {
-        var r = el.getBoundingClientRect();
-        var x = e.clientX - (r.left + r.width / 2);
-        var y = e.clientY - (r.top + r.height / 2);
-        el.style.transform = 'translate(' + (x * K).toFixed(1) + 'px,' + (y * K).toFixed(1) + 'px)';
+    var strength = 0.22;
+    document.querySelectorAll('.menu a, .header-actions a, .header-actions button').forEach(function (element) {
+      element.addEventListener('mousemove', function (event) {
+        var rect = element.getBoundingClientRect();
+        var x = event.clientX - (rect.left + rect.width / 2);
+        var y = event.clientY - (rect.top + rect.height / 2);
+        element.style.transform = 'translate(' + (x * strength).toFixed(1) + 'px,' + (y * strength).toFixed(1) + 'px)';
       });
-      el.addEventListener('mouseleave', function () { el.style.transform = ''; });
+      element.addEventListener('mouseleave', function () {
+        element.style.transform = '';
+      });
     });
   }
 
-  // 2) 卡片 3D 倾斜
   function tilt() {
-    var MAX = 6;
-    document.querySelectorAll('.crit-card, .post-entry, .first-entry, .fx-demo-card').forEach(function (card) {
-      card.addEventListener('mousemove', function (e) {
-        var r = card.getBoundingClientRect();
-        var px = (e.clientX - r.left) / r.width;
-        var py = (e.clientY - r.top) / r.height;
-        var ry = (px - 0.5) * MAX * 2;
-        var rx = -(py - 0.5) * MAX * 2;
-        card.style.transform = 'perspective(800px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg)';
+    var maxAngle = 4;
+    var selector = '.crit-card, .post-entry, .first-entry, .project-card, .focus-card, .fx-demo-card';
+    document.querySelectorAll(selector).forEach(function (card) {
+      card.addEventListener('mousemove', function (event) {
+        var rect = card.getBoundingClientRect();
+        var x = (event.clientX - rect.left) / rect.width;
+        var y = (event.clientY - rect.top) / rect.height;
+        var rotateY = (x - 0.5) * maxAngle * 2;
+        var rotateX = -(y - 0.5) * maxAngle * 2;
+        card.style.transform = 'perspective(900px) rotateX(' + rotateX.toFixed(2) + 'deg) rotateY(' + rotateY.toFixed(2) + 'deg)';
       });
-      card.addEventListener('mouseleave', function () { card.style.transform = ''; });
+      card.addEventListener('mouseleave', function () {
+        card.style.transform = '';
+      });
     });
   }
 
-  // 3) 光标聚光灯
   function spotlight() {
-    var o = document.createElement('div');
-    o.className = 'cursor-spotlight';
-    document.body.appendChild(o);
-    var raf = null, mx = 0, my = 0;
-    window.addEventListener('pointermove', function (e) {
-      mx = e.clientX; my = e.clientY;
-      if (raf) return;
-      raf = requestAnimationFrame(function () {
-        o.style.setProperty('--mx', mx + 'px');
-        o.style.setProperty('--my', my + 'px');
-        raf = null;
+    var overlay = document.createElement('div');
+    var frame = null;
+    var x = 0;
+    var y = 0;
+    overlay.className = 'cursor-spotlight';
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(overlay);
+    window.addEventListener('pointermove', function (event) {
+      x = event.clientX;
+      y = event.clientY;
+      if (frame) return;
+      frame = window.requestAnimationFrame(function () {
+        overlay.style.setProperty('--mx', x + 'px');
+        overlay.style.setProperty('--my', y + 'px');
+        frame = null;
       });
     }, { passive: true });
   }
 
-  // 4) 点击涟漪
   function ripple() {
-    document.addEventListener('click', function (e) {
-      var r = document.createElement('span');
-      r.className = 'fx-ripple';
-      r.style.left = e.clientX + 'px';
-      r.style.top = e.clientY + 'px';
-      document.body.appendChild(r);
-      r.addEventListener('animationend', function () { r.remove(); });
+    document.addEventListener('click', function (event) {
+      var ring = document.createElement('span');
+      ring.className = 'fx-ripple';
+      ring.setAttribute('aria-hidden', 'true');
+      ring.style.left = event.clientX + 'px';
+      ring.style.top = event.clientY + 'px';
+      document.body.appendChild(ring);
+      ring.addEventListener('animationend', function () {
+        ring.remove();
+      }, { once: true });
     });
   }
 
-  // 5) 悬停扫光（加 body 类，CSS 在 :hover 时扫光）
-  function shimmer() { document.body.classList.add('fx-shimmer-on'); }
+  function shimmer() {
+    document.body.classList.add('fx-shimmer-on');
+  }
 
-  // 6) 自定义光标（圆点 + 慢半拍圆环）
   function cursor() {
+    var dot = document.createElement('div');
+    var ring = document.createElement('div');
+    var ringX = 0;
+    var ringY = 0;
+    var mouseX = 0;
+    var mouseY = 0;
+    var frame = null;
+    dot.className = 'fx-cursor-dot';
+    ring.className = 'fx-cursor-ring';
+    dot.setAttribute('aria-hidden', 'true');
+    ring.setAttribute('aria-hidden', 'true');
     document.body.classList.add('fx-cursor-on');
-    var dot = document.createElement('div'); dot.className = 'fx-cursor-dot';
-    var ring = document.createElement('div'); ring.className = 'fx-cursor-ring';
-    document.body.appendChild(dot); document.body.appendChild(ring);
-    var rx = 0, ry = 0, mx = 0, my = 0, raf = null;
-    window.addEventListener('pointermove', function (e) {
-      mx = e.clientX; my = e.clientY;
-      dot.style.transform = 'translate(' + mx + 'px,' + my + 'px)';
-      if (!raf) raf = requestAnimationFrame(function () {
-        rx += (mx - rx) * 0.18; ry += (my - ry) * 0.18;
-        ring.style.transform = 'translate(' + rx.toFixed(1) + 'px,' + ry.toFixed(1) + 'px)';
-        raf = null;
-      });
+    document.body.appendChild(dot);
+    document.body.appendChild(ring);
+
+    function drawRing() {
+      ringX += (mouseX - ringX) * 0.18;
+      ringY += (mouseY - ringY) * 0.18;
+      ring.style.transform = 'translate(' + ringX.toFixed(1) + 'px,' + ringY.toFixed(1) + 'px)';
+      if (Math.abs(mouseX - ringX) > 0.2 || Math.abs(mouseY - ringY) > 0.2) {
+        frame = window.requestAnimationFrame(drawRing);
+      } else {
+        frame = null;
+      }
+    }
+
+    window.addEventListener('pointermove', function (event) {
+      mouseX = event.clientX;
+      mouseY = event.clientY;
+      dot.style.transform = 'translate(' + mouseX + 'px,' + mouseY + 'px)';
+      if (!frame) frame = window.requestAnimationFrame(drawRing);
     }, { passive: true });
   }
 
-  // 7) 滚动入场
   function reveal() {
-    var targets = document.querySelectorAll('.post-entry, .first-entry, .crit-card, .fx-demo-card');
-    targets.forEach(function (el) { el.classList.add('fx-reveal'); });
-    if (!('IntersectionObserver' in window)) return;
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (en.isIntersecting) { en.target.classList.add('fx-revealed'); io.unobserve(en.target); }
+    var targets = document.querySelectorAll('.post-entry, .first-entry, .crit-card, .project-card, .focus-card, .fx-demo-card');
+    targets.forEach(function (element) {
+      element.classList.add('fx-reveal');
+    });
+    if (!('IntersectionObserver' in window)) {
+      targets.forEach(function (element) {
+        element.classList.add('fx-revealed');
+      });
+      return;
+    }
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('fx-revealed');
+        observer.unobserve(entry.target);
       });
     }, { threshold: 0.12 });
-    targets.forEach(function (el) { io.observe(el); });
+    targets.forEach(function (element) {
+      observer.observe(element);
+    });
   }
 
-  // === 特效开关面板（齿轮弹窗 + /fx/ 共用渲染） ===
-  var FX_EFFECTS = [
-    ['magnetic', '磁吸'], ['tilt', '卡片 3D 倾斜'], ['spotlight', '光标聚光灯'],
-    ['ripple', '点击涟漪'], ['shimmer', '悬停扫光'], ['cursor', '自定义光标'], ['reveal', '滚动入场']
-  ];
   function renderFxToggles(container) {
+    if (!container) return;
     container.innerHTML = '';
-    FX_EFFECTS.forEach(function (e) {
-      var name = e[0], label = e[1];
-      var row = document.createElement('label'); row.className = 'fx-row';
-      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = fxOn(name);
-      cb.addEventListener('change', function () {
-        localStorage.setItem('fx:' + name, cb.checked ? 'on' : 'off');
-        location.reload();
+    effects.forEach(function (effect) {
+      var row = document.createElement('label');
+      var checkbox = document.createElement('input');
+      row.className = 'fx-row';
+      checkbox.type = 'checkbox';
+      checkbox.checked = fxOn(effect[0]);
+      checkbox.addEventListener('change', function () {
+        writeSetting(effect[0], checkbox.checked ? 'on' : 'off');
+        window.location.reload();
       });
-      row.appendChild(cb); row.appendChild(document.createTextNode(' ' + label));
+      row.appendChild(checkbox);
+      row.appendChild(document.createTextNode(effect[1]));
       container.appendChild(row);
     });
   }
-  window.FX_RENDER_TOGGLES = renderFxToggles; // 给 /fx/ 页用
 
-  // 齿轮按钮：右下角常驻，点开弹特效开关面板（全站桌面端都有）
   function initGear() {
-    var btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'fx-gear'; btn.title = '特效开关'; btn.textContent = '⚙️';
-    var pop = document.createElement('div'); pop.className = 'fx-pop';
-    pop.innerHTML = '<div class="fx-pop-inner"><p class="fx-note">勾选 = 开，改完自动刷新；全站生效。</p><div class="fx-toggles"></div></div>';
-    document.body.appendChild(btn); document.body.appendChild(pop);
-    renderFxToggles(pop.querySelector('.fx-toggles'));
-    btn.addEventListener('click', function (e) { e.stopPropagation(); pop.classList.toggle('open'); });
-    document.addEventListener('click', function (e) {
-      if (pop.classList.contains('open') && !pop.contains(e.target) && e.target !== btn) pop.classList.remove('open');
+    var button = document.createElement('button');
+    var panel = document.createElement('div');
+    var labPath = isEnglish ? '/en/fx/' : '/fx/';
+    button.type = 'button';
+    button.className = 'fx-gear';
+    button.textContent = '⚙';
+    button.title = isEnglish ? 'Optional visual effects' : '可选视觉特效';
+    button.setAttribute('aria-label', button.title);
+    button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-controls', 'fx-popover');
+    panel.id = 'fx-popover';
+    panel.className = 'fx-pop';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-label', button.title);
+    panel.innerHTML = '<div class="fx-pop-inner"><p class="fx-note">' +
+      (isEnglish ? 'Effects are local to this browser and default to off.' : '特效仅保存在当前浏览器，默认全部关闭。') +
+      '</p><div class="fx-toggles"></div><a class="fx-lab-link" href="' + labPath + '">' +
+      (isEnglish ? 'Open effects lab' : '打开特效实验室') + '</a></div>';
+    document.body.appendChild(button);
+    document.body.appendChild(panel);
+    renderFxToggles(panel.querySelector('.fx-toggles'));
+
+    function closePanel() {
+      panel.classList.remove('open');
+      button.setAttribute('aria-expanded', 'false');
+    }
+
+    button.addEventListener('click', function (event) {
+      event.stopPropagation();
+      var willOpen = !panel.classList.contains('open');
+      panel.classList.toggle('open', willOpen);
+      button.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+    document.addEventListener('click', function (event) {
+      if (panel.classList.contains('open') && !panel.contains(event.target) && event.target !== button) closePanel();
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && panel.classList.contains('open')) {
+        closePanel();
+        button.focus();
+      }
     });
   }
 
+  window.FX_RENDER_TOGGLES = renderFxToggles;
+
   ready(function () {
-    var fns = { magnetic: magnetic, tilt: tilt, spotlight: spotlight, ripple: ripple, shimmer: shimmer, cursor: cursor, reveal: reveal };
-    Object.keys(fns).forEach(function (name) {
-      if (fxOn(name)) { try { fns[name](); } catch (e) { /* 单个失败不影响其他 */ } }
-    });
-    try { initGear(); } catch (e) {}
+    var motionAllowed = window.matchMedia('(hover: hover)').matches &&
+      window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
+    var handlers = {
+      magnetic: magnetic,
+      tilt: tilt,
+      spotlight: spotlight,
+      ripple: ripple,
+      shimmer: shimmer,
+      cursor: cursor,
+      reveal: reveal
+    };
+    if (motionAllowed) {
+      Object.keys(handlers).forEach(function (name) {
+        if (!fxOn(name)) return;
+        try {
+          handlers[name]();
+        } catch (error) {
+          window.console.warn('Optional effect failed:', name, error);
+        }
+      });
+    }
+    initGear();
   });
 })();

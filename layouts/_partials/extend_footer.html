@@ -3,6 +3,7 @@
   1) 页脚非链接区域 3 秒内连点 5 次 → 跳编辑后台 /write/（可见性层，真写权限靠令牌）。
   2) 顶部 ❤️（在 header 里）：单击心跳一下；连点 3 次 → 弹出只给她的悄悄话（overlay）。
 */ -}}
+{{- if site.Params.legacyInteractions -}}
 <style>
   @keyframes ln-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
   .ln-pulse { animation: ln-pulse .35s ease; }
@@ -67,3 +68,4 @@
   }
 })();
 </script>
+{{- end -}}

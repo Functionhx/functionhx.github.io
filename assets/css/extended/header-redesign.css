@@ -1,90 +1,182 @@
-/* ===== 顶部重构：两行（搜索框置顶 + 导航居中） ===== */
-/* 覆盖 PaperMod header.css；extended CSS 在 core 之后加载，同特异性下胜出。 */
+/* Two-row, language-aware portfolio header. */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: color-mix(in srgb, var(--theme) 88%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+}
 
 .header-nav {
   flex-direction: column;
   flex-wrap: nowrap;
-  justify-content: flex-start;
   align-items: stretch;
-  row-gap: 0.4rem;
+  row-gap: 0.35rem;
+  padding-top: 0.55rem;
+  padding-bottom: 0.45rem;
   line-height: 1.4;
-  padding-top: 0.35rem;
-  padding-bottom: 0.35rem;
 }
 
-/* 第 1 行 */
 .header-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--gap);
+  gap: 1rem;
   width: 100%;
 }
+
 .header-top .logo {
   flex: 0 0 auto;
-  flex-wrap: nowrap;
-}
-.header-top .logo a {
-  font-size: 1.2rem;
-  font-weight: 700;
 }
 
-/* 显眼搜索框 */
+.header-top .logo a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 1rem;
+  font-weight: 720;
+  letter-spacing: -0.02em;
+}
+
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  border-radius: 9px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+}
+
 .header-search {
   flex: 1 1 auto;
-  max-width: 440px;
-  margin: 0;
+  max-width: 420px;
+  margin: 0 auto;
 }
+
 .header-search input {
   width: 100%;
   box-sizing: border-box;
-  padding: 0.5rem 0.95rem;
-  font-size: 0.95rem;
-  line-height: 1.4;
+  padding: 0.56rem 1rem;
   color: var(--primary);
-  background: var(--code-bg);
+  background: var(--surface-muted);
   border: 1px solid var(--border);
   border-radius: 999px;
+  font: inherit;
+  font-size: 0.9rem;
   outline: none;
-  transition: border-color .15s ease, box-shadow .15s ease;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease,
+    background 0.18s ease;
 }
-.header-search input::placeholder { color: var(--secondary); }
+
+.header-search input::placeholder {
+  color: var(--secondary);
+}
+
 .header-search input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent);
+  background: var(--entry);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
-/* 右侧动作 */
 .header-actions {
-  flex: 0 0 auto;
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 0.15rem;
-}
-.love-trigger {
-  font-size: 1.15rem;
-  line-height: 1;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  padding: 0 0.35rem;
-  color: inherit;
-  transition: transform .15s ease;
-}
-.love-trigger:focus-visible {
-  outline: 2px solid var(--primary);
-  border-radius: 6px;
+  gap: 0.35rem;
 }
 
-/* 第 2 行：居中导航 */
+.language-switch,
+.theme-toggle,
+.love-trigger {
+  display: inline-flex;
+  min-width: 2.2rem;
+  min-height: 2.2rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.55rem;
+  color: var(--secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.language-switch:hover,
+.theme-toggle:hover,
+.love-trigger:hover {
+  color: var(--primary);
+  background: var(--surface-muted);
+  border-color: var(--border);
+}
+
 .menu {
   justify-content: center;
-  column-gap: var(--gap);
-  padding: 0 0 0.15rem;
+  gap: clamp(1rem, 3vw, 2.2rem);
+  padding: 0.1rem 0 0.15rem;
 }
 
-/* 响应式：窄屏搜索框换到下一行，导航保持居中 */
-@media (max-width: 640px) {
-  .header-top { flex-wrap: wrap; }
-  .header-search { order: 3; flex: 1 1 100%; max-width: none; }
+.menu a {
+  position: relative;
+  padding: 0.35rem 0;
+  color: var(--secondary);
+  font-size: 0.9rem;
+  font-weight: 560;
+}
+
+.menu a:hover,
+.menu .active {
+  color: var(--primary);
+}
+
+.menu .active {
+  text-decoration: none;
+}
+
+.menu .active::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+  border-radius: 2px;
+  content: "";
+}
+
+@media (max-width: 760px) {
+  .header {
+    position: relative;
+    backdrop-filter: none;
+  }
+
+  .header-top {
+    flex-wrap: wrap;
+  }
+
+  .header-search {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .menu {
+    justify-content: flex-start;
+    gap: 1.15rem;
+    padding-top: 0.25rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .brand-text {
+    display: none;
+  }
 }
