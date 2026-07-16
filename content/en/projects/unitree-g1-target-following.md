@@ -1,19 +1,25 @@
 ---
-title: "Unitree G1 Target Following"
+title: Unitree G1 Target Following
 slug: unitree-g1-target-following
 date: 2026-07-16T00:00:00+08:00
 lastmod: 2026-07-16T00:00:00+08:00
-description: "A high-level project record for designated-target following on Unitree G1."
-summary: "A real-robot system record organized around target selection, persistent tracking, motion interfaces, and safety boundaries."
+description: A high-level project record for designated-target following on Unitree G1.
+summary: A real-robot system record organized around target selection, persistent tracking, motion interfaces, and safety boundaries.
 translationKey: project-unitree-g1-target-following
 status: research
-role: ""
-organization: ""
-period: ""
+role: ''
+organization: ''
+period: ''
 featured: true
 weight: 20
-tags: ["Embodied AI", "Target Following", "Robot Deployment"]
-technologies: ["Unitree G1", "Target Tracking", "Robot Deployment"]
+tags:
+  - Embodied AI
+  - Target Following
+  - Robot Deployment
+technologies:
+  - Unitree G1
+  - Target Tracking
+  - Robot Deployment
 links: {}
 metrics: []
 confidential: false
@@ -23,12 +29,11 @@ source:
   last_verified: 2026-07-16
 translation:
   source: content/zh/projects/unitree-g1-target-following.md
-  status: review-required
+  source_hash: ef88fb975c4911c13ceb0c9e3fd0a2633785acebbfd8f1bd1791afb66ff223e4
   model: codex-initial-draft
-  translated_at: 2026-07-16T00:00:00+08:00
+  translated_at: '2026-07-16T00:00:00+08:00'
   reviewed: false
 ---
-
 ## Overview
 
 This page records designated-target following work on Unitree G1. Its public scope focuses on the system problem and interface boundaries without inferring an undisclosed model, sensor configuration, or role.

@@ -1,19 +1,26 @@
 ---
-title: "Batch-LIO"
+title: Batch-LIO
 slug: batch-lio
 date: 2026-07-16T00:00:00+08:00
 lastmod: 2026-07-16T00:00:00+08:00
-description: "A research and engineering record for Batch-LIO-related LiDAR–inertial odometry work."
-summary: "A project page structured around LiDAR–IMU data, state estimation, compute boundaries, and reproducible evidence."
+description: A research and engineering record for Batch-LIO-related LiDAR–inertial odometry work.
+summary: A project page structured around LiDAR–IMU data, state estimation, compute boundaries, and reproducible evidence.
 translationKey: project-batch-lio
 status: research
-role: ""
-organization: ""
-period: ""
+role: ''
+organization: ''
+period: ''
 featured: true
 weight: 50
-tags: ["LiDAR", "Inertial Navigation", "Localization"]
-technologies: ["LiDAR", "IMU", "State Estimation", "Localization"]
+tags:
+  - LiDAR
+  - Inertial Navigation
+  - Localization
+technologies:
+  - LiDAR
+  - IMU
+  - State Estimation
+  - Localization
 links: {}
 metrics: []
 confidential: false
@@ -23,12 +30,11 @@ source:
   last_verified: 2026-07-16
 translation:
   source: content/zh/projects/batch-lio.md
-  status: review-required
+  source_hash: 6e4b9403d5a49302685dc62439bc9e396a9a7655acdbe92d15b6bd5ba6501978
   model: codex-initial-draft
-  translated_at: 2026-07-16T00:00:00+08:00
+  translated_at: '2026-07-16T00:00:00+08:00'
   reviewed: false
 ---
-
 ## Overview
 
 This page records Batch-LIO-related experience. Because a paper, repository, version, and personal contribution statement have not yet been supplied, it makes no additional claim about algorithm ownership or upstream results.

@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "files": {
+    "content/zh/_index.md": {
+      "target": "content/en/_index.md",
+      "source_hash": "435af8fa6537590f70d027f0f316841ac8cf37623ca10ee9d1e1d6d939a56f83",
+      "model": "existing-content-bootstrap",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/about/_index.md": {
+      "target": "content/en/about/_index.md",
+      "source_hash": "cc4d5101e3d3484d2416a32280a8a973100146ff2d0f388444d1b35aae27e338",
+      "model": "existing-content-bootstrap",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/about/biography.md": {
+      "target": "content/en/about/biography.md",
+      "source_hash": "8be4fa067df10c9398dfaa6f8b8bc62e04111c28ec1dfe3a0cba26f89dc2bf0c",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/about/contact.md": {
+      "target": "content/en/about/contact.md",
+      "source_hash": "fbfd62425828be775316e77778bf63a369355bb2c4be4faa7e8b21e0439463db",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/about/experience-timeline.md": {
+      "target": "content/en/about/experience-timeline.md",
+      "source_hash": "842f8d014743b94d5e2f8448f102903a33233e10eac67564fcdf5f19204cee63",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/about/resume.md": {
+      "target": "content/en/about/resume.md",
+      "source_hash": "0d5271f3448ba131366a70489c5ba459cc4d1e42b370417c620440cdd227700c",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T00:00:00+08:00",
+      "reviewed": false
+    },
+    "content/zh/archives.md": {
+      "target": "content/en/archives.md",
+      "source_hash": "58ae9469dd932ea2c2b00c4e87256044789db677341b31e254338b39c0cbe479",
+      "model": "existing-content-bootstrap",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/fx.md": {
+      "target": "content/en/fx.md",
+      "source_hash": "dd4175f2dc439f00983d365724435f0d32091a34fd2059c71de2935ac1441133",
+      "model": "existing-content-bootstrap",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/notes/_index.md": {
+      "target": "content/en/notes/_index.md",
+      "source_hash": "85e06565239967c747233195d8032a51368fccdb4ab8529ecea9c60093895ba4",
+      "model": "existing-content-bootstrap",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/notes/critiques/_index.md": {
+      "target": "content/en/notes/critiques/_index.md",
+      "source_hash": "d675cd32993076f5c9a20165550ea5863995dd36507c1fbab0af264c234f4916",
+      "model": "existing-content-bootstrap",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/notes/critiques/example.md": {
+      "target": "content/en/notes/critiques/example.md",
+      "source_hash": "f210cd9c630652ac328027c92ba096c16b008cf45685e339ea3b7e6117c0f4e3",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/notes/debugging/_index.md": {
+      "target": "content/en/notes/debugging/_index.md",
+      "source_hash": "ad492ca96653ad1b8ed1c8005b9032bc03d022928be3e23079abb755c5ce1529",
+      "model": "existing-content-bootstrap",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/notes/engineering-postmortems/_index.md": {
+      "target": "content/en/notes/engineering-postmortems/_index.md",
+      "source_hash": "2ea87909ac33f3b3aa4121895db49ee12ee8c18f0e37726d25ada6ecec967d0d",
+      "model": "existing-content-bootstrap",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/notes/hello-world.md": {
+      "target": "content/en/notes/hello-world.md",
+      "source_hash": "5beeaa2e57f212a7180ece7ca27014d4173fefe158ecee984d4c71e0b9e11b35",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/notes/paper-reading/_index.md": {
+      "target": "content/en/notes/paper-reading/_index.md",
+      "source_hash": "3424a40754ae9df4c483ef0136dfb0a725acc0d3ae036532688b0286b4da481e",
+      "model": "existing-content-bootstrap",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/notes/thoughts/_index.md": {
+      "target": "content/en/notes/thoughts/_index.md",
+      "source_hash": "efb876f84ac8fe61300c260fbeac10b8abf03746a379badad46def4eac2a5676",
+      "model": "existing-content-bootstrap",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/open-source/_index.md": {
+      "target": "content/en/open-source/_index.md",
+      "source_hash": "c78c168de4dd5f2bca2ac3526a1c3d25e57801da9e0c5f603e82007de46401d7",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/open-source/merged-pull-requests.md": {
+      "target": "content/en/open-source/merged-pull-requests.md",
+      "source_hash": "59edbcbfa8a28a2460070c90c0cb577d3a51bec26b32cdebaa91d80328218d71",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T00:00:00+08:00",
+      "reviewed": false
+    },
+    "content/zh/projects/_index.md": {
+      "target": "content/en/projects/_index.md",
+      "source_hash": "ac9391085e766a503a4767864ea73fcf7fd218cdc67421160f3365df92ec3678",
+      "model": "existing-content-bootstrap",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/projects/batch-lio.md": {
+      "target": "content/en/projects/batch-lio.md",
+      "source_hash": "6e4b9403d5a49302685dc62439bc9e396a9a7655acdbe92d15b6bd5ba6501978",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T00:00:00+08:00",
+      "reviewed": false
+    },
+    "content/zh/projects/formula-student-driverless.md": {
+      "target": "content/en/projects/formula-student-driverless.md",
+      "source_hash": "940208c3c553b51ba80c6c5656adc0fb2ff3a95681118fca5c754a23bc5857ab",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T00:00:00+08:00",
+      "reviewed": false
+    },
+    "content/zh/projects/robomaster-sentinel-navigation.md": {
+      "target": "content/en/projects/robomaster-sentinel-navigation.md",
+      "source_hash": "8f45086ec3da0b1e88acf403cd297560d4504aa989765f806d34184ad78c7aa4",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T00:00:00+08:00",
+      "reviewed": false
+    },
+    "content/zh/projects/unitree-g1-target-following.md": {
+      "target": "content/en/projects/unitree-g1-target-following.md",
+      "source_hash": "ef88fb975c4911c13ceb0c9e3fd0a2633785acebbfd8f1bd1791afb66ff223e4",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T00:00:00+08:00",
+      "reviewed": false
+    },
+    "content/zh/projects/unitree-go2-vln-deployment.md": {
+      "target": "content/en/projects/unitree-go2-vln-deployment.md",
+      "source_hash": "1b0f221cd2426d1ef60edd326c68cfe88829a2096393cf8a6ba7d4e7cce50824",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T00:00:00+08:00",
+      "reviewed": false
+    },
+    "content/zh/research/3dgs-navigation-localization.md": {
+      "target": "content/en/research/3dgs-navigation-localization.md",
+      "source_hash": "b00f10c0dec3b7dd463938eced15eb893dbdd6f272d9239c33cc932f30df5d56",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T00:00:00+08:00",
+      "reviewed": false
+    },
+    "content/zh/research/_index.md": {
+      "target": "content/en/research/_index.md",
+      "source_hash": "199045669fcd3497af6145189690ecd42811ba41fb754c43617d5542ee6cad9f",
+      "model": "existing-content-bootstrap",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    },
+    "content/zh/research/editable-road-scene-generation.md": {
+      "target": "content/en/research/editable-road-scene-generation.md",
+      "source_hash": "8aff403038b235638354b06ac72addc9a7af17e7ef1e77b49b2259dde7a08bb8",
+      "model": "codex-initial-draft",
+      "translated_at": "2026-07-16T00:00:00+08:00",
+      "reviewed": false
+    },
+    "content/zh/search.md": {
+      "target": "content/en/search.md",
+      "source_hash": "bb1f8c25d908e6d2559a7670ea58c2f9b392b2189333cbe95a4c0cd965d719b0",
+      "model": "existing-content-bootstrap",
+      "translated_at": "2026-07-16T12:37:14+00:00",
+      "reviewed": false
+    }
+  }
+}

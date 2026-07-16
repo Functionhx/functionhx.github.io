@@ -1,19 +1,27 @@
 ---
-title: "Unitree Go2 VLA / VLN Deployment"
+title: Unitree Go2 VLA / VLN Deployment
 slug: unitree-go2-vln-deployment
 date: 2026-07-16T00:00:00+08:00
 lastmod: 2026-07-16T00:00:00+08:00
-description: "A high-level record of deploying VLA / VLN capabilities on Unitree Go2."
-summary: "Model I/O, robot interfaces, the inference path, and safe operating boundaries."
+description: A high-level record of deploying VLA / VLN capabilities on Unitree Go2.
+summary: Model I/O, robot interfaces, the inference path, and safe operating boundaries.
 translationKey: project-unitree-go2-vln-deployment
 status: research
-role: ""
-organization: ""
-period: ""
+role: ''
+organization: ''
+period: ''
 featured: false
 weight: 40
-tags: ["Embodied Navigation", "VLA", "VLN", "Robot Deployment"]
-technologies: ["Unitree Go2", "VLA", "VLN", "Inference Deployment"]
+tags:
+  - Embodied Navigation
+  - VLA
+  - VLN
+  - Robot Deployment
+technologies:
+  - Unitree Go2
+  - VLA
+  - VLN
+  - Inference Deployment
 links: {}
 metrics: []
 confidential: false
@@ -23,12 +31,11 @@ source:
   last_verified: 2026-07-16
 translation:
   source: content/zh/projects/unitree-go2-vln-deployment.md
-  status: review-required
+  source_hash: 1b0f221cd2426d1ef60edd326c68cfe88829a2096393cf8a6ba7d4e7cce50824
   model: codex-initial-draft
-  translated_at: 2026-07-16T00:00:00+08:00
+  translated_at: '2026-07-16T00:00:00+08:00'
   reviewed: false
 ---
-
 ## Overview
 
 This page records deployment work for VLA / VLN capabilities on Unitree Go2. It does not equate a research model's general capability with a robot system that is ready to operate.

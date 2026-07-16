@@ -1,26 +1,26 @@
 ---
-title: "Merged Upstream Pull Requests"
+title: Merged Upstream Pull Requests
 slug: merged-pull-requests
 date: 2026-07-16T00:00:00+08:00
 lastmod: 2026-07-16T00:00:00+08:00
-description: "An evidence-oriented index for 20 merged upstream pull requests."
-summary: "Across AI infrastructure, robotics middleware, and developer tools; individual links await verification."
+description: An evidence-oriented index for 20 merged upstream pull requests.
+summary: Across AI infrastructure, robotics middleware, and developer tools; individual links await verification.
 translationKey: open-source-merged-pull-requests
 status: active
 weight: 10
-tags: ["Open Source"]
+tags:
+  - Open Source
 comments: false
 source:
   status: user-provided
   last_verified: 2026-07-16
 translation:
   source: content/zh/open-source/merged-pull-requests.md
-  status: review-required
+  source_hash: 59edbcbfa8a28a2460070c90c0cb577d3a51bec26b32cdebaa91d80328218d71
   model: codex-initial-draft
-  translated_at: 2026-07-16T00:00:00+08:00
+  translated_at: '2026-07-16T00:00:00+08:00'
   reviewed: false
 ---
-
 ## Overview
 
 The currently public fact is: **20 upstream pull requests have been merged**. Representative ecosystems include vLLM, OpenRLHF, NVIDIA CCCL, CycloneDDS, ROS 2, and OpenCV.

@@ -1,19 +1,25 @@
 ---
-title: "World-Model-Assisted Editable Road-Scene Generation"
+title: World-Model-Assisted Editable Road-Scene Generation
 slug: editable-road-scene-generation
 date: 2026-07-16T00:00:00+08:00
 lastmod: 2026-07-16T00:00:00+08:00
-description: "A high-level research overview of world-model-assisted editable road-scene generation."
-summary: "While the manuscript is in preparation, only the problem, evaluation boundary, and limitations are public."
+description: A high-level research overview of world-model-assisted editable road-scene generation.
+summary: While the manuscript is in preparation, only the problem, evaluation boundary, and limitations are public.
 translationKey: research-editable-road-scene-generation
 status: manuscript-in-preparation
-role: ""
-organization: ""
-period: ""
+role: ''
+organization: ''
+period: ''
 featured: true
 weight: 20
-tags: ["World Models", "Scene Generation", "Autonomous Driving"]
-technologies: ["World Models", "Road Scenes", "Controllable Generation"]
+tags:
+  - World Models
+  - Scene Generation
+  - Autonomous Driving
+technologies:
+  - World Models
+  - Road Scenes
+  - Controllable Generation
 links: {}
 metrics: []
 confidential: true
@@ -23,12 +29,11 @@ source:
   last_verified: 2026-07-16
 translation:
   source: content/zh/research/editable-road-scene-generation.md
-  status: review-required
+  source_hash: 8aff403038b235638354b06ac72addc9a7af17e7ef1e77b49b2259dde7a08bb8
   model: codex-initial-draft
-  translated_at: 2026-07-16T00:00:00+08:00
+  translated_at: '2026-07-16T00:00:00+08:00'
   reviewed: false
 ---
-
 ## Overview
 
 This direction studies how world models can assist editable road-scene generation so that scene changes follow explicit conditions and can support later analysis or system validation.

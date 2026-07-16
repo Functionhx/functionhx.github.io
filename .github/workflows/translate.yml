@@ -1,0 +1,105 @@
+name: Draft English Translations
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "content/zh/**"
+  workflow_dispatch:
+    inputs:
+      file:
+        description: "Optional Chinese source path, for example content/zh/projects/batch-lio.md"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: deepseek-translation-pr
+  cancel-in-progress: false
+
+jobs:
+  translate:
+    if: github.repository == 'Functionhx/functionhx.github.io'
+    runs-on: ubuntu-latest
+    env:
+      HUGO_VERSION: 0.163.1
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      DEEPSEEK_MODEL: deepseek-v4-pro
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Verify translation secret
+        shell: bash
+        run: |
+          if [[ -z "$DEEPSEEK_API_KEY" ]]; then
+            echo "::error::DEEPSEEK_API_KEY is not configured for this repository."
+            exit 1
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install content tooling
+        run: python -m pip install --requirement requirements.txt
+
+      - name: Install Hugo Extended
+        shell: bash
+        run: |
+          curl -L --retry 6 --retry-delay 3 --retry-all-errors \
+            -o "${{ runner.temp }}/hugo.deb" \
+            "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb"
+          sudo dpkg -i "${{ runner.temp }}/hugo.deb"
+
+      - name: Translate selected Chinese content
+        shell: bash
+        env:
+          INPUT_FILE: ${{ inputs.file }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ -n "$INPUT_FILE" ]]; then
+              python scripts/translate.py --file "$INPUT_FILE"
+            else
+              python scripts/translate.py --all-stale
+            fi
+          else
+            python scripts/translate.py --changed --base "$BEFORE_SHA"
+          fi
+
+      - name: Validate translated content
+        run: |
+          python scripts/validate_content.py
+          python scripts/showcase/validate.py
+          hugo --minify
+
+      - name: Create or update translation pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ github.token }}
+          branch: automation/deepseek-translations
+          base: main
+          delete-branch: true
+          draft: true
+          add-paths: |
+            content/en/**
+            scripts/translation_memory.json
+          commit-message: "content(i18n): update machine translation drafts"
+          title: "content(i18n): review DeepSeek translation drafts"
+          body: |
+            This pull request contains machine-assisted English drafts generated from canonical Chinese content.
+
+            Review requirements:
+            - confirm technical meaning and contribution boundaries;
+            - resolve any `<!-- REVIEW: ... -->` comments;
+            - set `translation.reviewed: true` only after human review;
+            - do not merge if content validation or the Hugo build fails.

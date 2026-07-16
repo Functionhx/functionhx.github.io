@@ -1,19 +1,24 @@
 ---
-title: "Formula Student Driverless"
+title: Formula Student Driverless
 slug: formula-student-driverless
 date: 2026-07-16T00:00:00+08:00
 lastmod: 2026-07-16T00:00:00+08:00
-description: "A high-level engineering record of Formula Student Driverless experience."
-summary: "A project record in autonomous-system integration and track engineering."
+description: A high-level engineering record of Formula Student Driverless experience.
+summary: A project record in autonomous-system integration and track engineering.
 translationKey: project-formula-student-driverless
 status: completed
-role: ""
-organization: ""
-period: ""
+role: ''
+organization: ''
+period: ''
 featured: true
 weight: 10
-tags: ["Autonomous Driving", "Robotics Systems"]
-technologies: ["Autonomous Driving", "Robotics", "Systems Integration"]
+tags:
+  - Autonomous Driving
+  - Robotics Systems
+technologies:
+  - Autonomous Driving
+  - Robotics
+  - Systems Integration
 links: {}
 metrics: []
 confidential: false
@@ -23,12 +28,11 @@ source:
   last_verified: 2026-07-16
 translation:
   source: content/zh/projects/formula-student-driverless.md
-  status: review-required
+  source_hash: 940208c3c553b51ba80c6c5656adc0fb2ff3a95681118fca5c754a23bc5857ab
   model: codex-initial-draft
-  translated_at: 2026-07-16T00:00:00+08:00
+  translated_at: '2026-07-16T00:00:00+08:00'
   reviewed: false
 ---
-
 ## Overview
 
 This page records Formula Student Driverless experience at a public, high level. It does not attribute a team's results to one person or publish unverified competition rankings or performance metrics.
