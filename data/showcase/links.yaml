@@ -1,0 +1,43 @@
+meta:
+  schema_version: 1
+  status: partially-verified
+  source: User-provided profile brief
+  last_verified: 2026-07-16
+
+items:
+  - id: github
+    label: GitHub
+    url: https://github.com/Functionhx
+    enabled: true
+    order: 10
+    source: user-provided
+  - id: email
+    label: Email
+    url: mailto:functionhx@gmail.com
+    enabled: true
+    order: 20
+    source: user-provided
+  - id: website
+    label: Website
+    url: https://functionhx.github.io/
+    enabled: true
+    order: 30
+    source: user-provided
+  - id: kaggle
+    label: Kaggle
+    url: ""
+    enabled: false
+    order: 40
+    source: not-provided
+  - id: linkedin
+    label: LinkedIn
+    url: ""
+    enabled: false
+    order: 50
+    source: not-provided
+  - id: hugging-face
+    label: Hugging Face
+    url: ""
+    enabled: false
+    order: 60
+    source: not-provided

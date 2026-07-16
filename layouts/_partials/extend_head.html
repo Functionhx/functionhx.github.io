@@ -1,2 +1,28 @@
-{{- /* 引入鼠标动效脚本（4 效果，内部已做 hover/reduced-motion 门禁与 rAF 节流） */ -}}
-<script defer src="/js/mouse-effects.js"></script>
+{{- /* Project-owned additions to PaperMod's head hook. */ -}}
+<script defer src="{{ "js/mouse-effects.js" | relURL }}"></script>
+
+{{- $xDefault := site.Home.Permalink -}}
+{{- range .AllTranslations -}}
+  {{- if eq .Lang "zh-cn" -}}{{- $xDefault = .Permalink -}}{{- end -}}
+{{- end -}}
+<link rel="alternate" hreflang="x-default" href="{{ $xDefault }}">
+<meta property="og:image:alt" content="Yuchen Fan — Robotics, Embodied AI, and 3D Scene Intelligence">
+
+{{- if and hugo.IsProduction (or (eq .Section "projects") (eq .Section "research")) -}}
+{{- $schemaType := .Params.schema_type | default "CreativeWork" -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": {{ $schemaType | jsonify | safeJS }},
+  "name": {{ .Title | plainify | jsonify | safeJS }},
+  "description": {{ (.Description | default .Summary) | plainify | jsonify | safeJS }},
+  "url": {{ .Permalink | jsonify | safeJS }},
+  "inLanguage": {{ .Language.Locale | jsonify | safeJS }},
+  "author": {
+    "@type": "Person",
+    "name": "Yuchen Fan",
+    "url": {{ site.Home.Permalink | jsonify | safeJS }}
+  }
+}
+</script>
+{{- end -}}

@@ -42,8 +42,15 @@ params:
     sameAs:
       - https://github.com/Functionhx
   assets:
+    favicon: favicon.ico
+    favicon16x16: favicon-16x16.png
+    favicon32x32: favicon-32x32.png
+    apple_touch_icon: apple-touch-icon.png
+    safari_pinned_tab: images/brand-mark.png
     theme_color: "#171a1f"
     msapplication_TileColor: "#171a1f"
+  images:
+    - /images/social-card.png
 
 languages:
   zh-cn:

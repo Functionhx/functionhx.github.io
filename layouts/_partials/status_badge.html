@@ -1,0 +1,14 @@
+{{- $status := .status | default "research" -}}
+{{- $lang := .lang | default "en" -}}
+{{- $labels := dict
+  "completed" (dict "zh-cn" "已完成" "en" "Completed")
+  "active" (dict "zh-cn" "进行中" "en" "Active")
+  "research" (dict "zh-cn" "研究中" "en" "Research")
+  "manuscript-in-preparation" (dict "zh-cn" "论文准备中" "en" "Manuscript in preparation")
+  "patent-disclosure-in-preparation" (dict "zh-cn" "专利披露准备中" "en" "Patent disclosure in preparation")
+  "archived" (dict "zh-cn" "已归档" "en" "Archived")
+-}}
+{{- $translations := index $labels $status -}}
+{{- $label := $status -}}
+{{- with $translations -}}{{- $label = index . $lang | default $status -}}{{- end -}}
+<span class="status-badge status-badge--{{ $status }}" data-status="{{ $status }}">{{ $label }}</span>

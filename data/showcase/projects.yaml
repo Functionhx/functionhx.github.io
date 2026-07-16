@@ -1,0 +1,73 @@
+meta:
+  schema_version: 1
+  status: review-required
+  source: User-provided experience list; descriptions intentionally remain high-level
+  last_verified: 2026-07-16
+
+featured:
+  - id: batch-lio
+    title:
+      zh-cn: Batch-LIO
+      en: Batch-LIO
+    summary:
+      zh-cn: 面向激光雷达—惯性里程计的工程与研究记录，重点保留系统边界和可核验材料。
+      en: An engineering and research record for LiDAR–inertial odometry, with explicit system boundaries and evidence.
+    page: /projects/batch-lio/
+    status: research
+    visual: odometry
+    technologies: [LiDAR, IMU, Localization]
+  - id: formula-student-driverless
+    title:
+      zh-cn: Formula Student Driverless
+      en: Formula Student Driverless
+    summary:
+      zh-cn: 学生方程式无人驾驶系统经历，覆盖自动驾驶系统的集成与赛场工程语境。
+      en: Formula Student Driverless experience in the context of autonomous-system integration and track engineering.
+    page: /projects/formula-student-driverless/
+    status: completed
+    visual: autonomy
+    technologies: [Autonomous Driving, Robotics, Systems]
+  - id: unitree-robotics-systems
+    title:
+      zh-cn: Unitree Robotics Systems
+      en: Unitree Robotics Systems
+    summary:
+      zh-cn: 围绕 G1 指定目标跟随与 Go2 VLA/VLN 实机部署形成的机器人系统记录。
+      en: Robotics systems records spanning G1 target following and Go2 VLA/VLN deployment.
+    page: /projects/unitree-g1-target-following/
+    status: research
+    visual: embodied
+    technologies: [Unitree, Embodied AI, Deployment]
+  - id: scene-intelligence
+    title:
+      zh-cn: 3D Scene Intelligence
+      en: 3D Scene Intelligence
+    summary:
+      zh-cn: 面向实例导航、视觉定位与可编辑道路场景的三维表示研究概览。
+      en: A high-level view of 3D representations for instance navigation, visual localization, and editable road scenes.
+    page: /research/3dgs-navigation-localization/
+    status: patent-disclosure-in-preparation
+    visual: gaussian
+    technologies: [3DGS, Navigation, Localization]
+
+records:
+  - id: formula-student-driverless
+    page: /projects/formula-student-driverless/
+    status: completed
+    featured: true
+  - id: unitree-g1-target-following
+    page: /projects/unitree-g1-target-following/
+    status: research
+    featured: true
+  - id: robomaster-sentinel-navigation
+    page: /projects/robomaster-sentinel-navigation/
+    status: completed
+    featured: false
+  - id: unitree-go2-vln-deployment
+    page: /projects/unitree-go2-vln-deployment/
+    status: research
+    featured: false
+  - id: batch-lio
+    page: /projects/batch-lio/
+    status: research
+    featured: true

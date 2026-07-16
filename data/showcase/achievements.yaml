@@ -1,0 +1,16 @@
+meta:
+  schema_version: 1
+  status: user-verified
+  source: User-provided achievement summary
+  last_verified: 2026-07-16
+
+items:
+  - id: kaggle-bronze
+    title:
+      zh-cn: Kaggle 铜牌
+      en: Kaggle Bronze Medal
+    detail:
+      zh-cn: Solo · Top 9.9%
+      en: Solo · Top 9.9%
+    status: completed
+    source: user-provided

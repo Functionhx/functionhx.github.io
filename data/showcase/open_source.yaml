@@ -1,0 +1,35 @@
+meta:
+  schema_version: 1
+  status: user-verified-summary
+  source: User-provided open-source summary; individual PR links not yet supplied
+  last_verified: 2026-07-16
+
+metrics:
+  merged_pull_requests:
+    value: 20
+    label:
+      zh-cn: 已合并上游 Pull Requests
+      en: Merged Upstream Pull Requests
+    source: user-provided
+
+categories:
+  - id: ai-infrastructure
+    label:
+      zh-cn: AI 基础设施
+      en: AI Infrastructure
+  - id: robotics-middleware
+    label:
+      zh-cn: 机器人中间件
+      en: Robotics Middleware
+  - id: developer-tools
+    label:
+      zh-cn: 开发者工具
+      en: Developer Tools
+
+ecosystems:
+  - name: vLLM
+  - name: OpenRLHF
+  - name: NVIDIA CCCL
+  - name: CycloneDDS
+  - name: ROS 2
+  - name: OpenCV

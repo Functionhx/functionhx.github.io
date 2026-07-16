@@ -1,0 +1,23 @@
+meta:
+  schema_version: 1
+  status: confidential-boundary-reviewed
+  source: User-provided research directions
+  last_verified: 2026-07-16
+
+records:
+  - id: 3dgs-navigation-localization
+    title:
+      zh-cn: 面向导航与视觉定位的 3DGS
+      en: 3DGS for Navigation and Visual Localization
+    page: /research/3dgs-navigation-localization/
+    status: patent-disclosure-in-preparation
+    confidential: true
+    source: user-provided
+  - id: editable-road-scene-generation
+    title:
+      zh-cn: 世界模型辅助的可编辑道路场景生成
+      en: World-Model-Assisted Editable Road-Scene Generation
+    page: /research/editable-road-scene-generation/
+    status: manuscript-in-preparation
+    confidential: true
+    source: user-provided

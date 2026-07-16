@@ -1,0 +1,65 @@
+meta:
+  schema_version: 1
+  status: verified
+  source: User-provided profile brief
+  last_verified: 2026-07-16
+
+name:
+  zh-cn: 樊宇琛
+  en: Yuchen Fan
+
+display_name: Yuchen Fan
+
+headline:
+  zh-cn: 机器人 · 具身智能 · 三维场景智能
+  en: Robotics · Embodied AI · 3D Scene Intelligence
+
+tagline:
+  zh-cn: 从感知到行动，构建可靠的机器人与 AI 系统。
+  en: Building reliable systems from perception to action.
+
+bio:
+  zh-cn: 北京理工大学自动化学院机器人工程本科生，关注自动驾驶、机器人导航、三维场景表示、AI 推理部署与可靠工程系统。
+  en: An undergraduate in Robotics Engineering at Beijing Institute of Technology, focused on autonomous driving, robot navigation, 3D scene representations, AI inference deployment, and reliable engineering systems.
+
+education:
+  institution:
+    zh-cn: 北京理工大学
+    en: Beijing Institute of Technology
+  school:
+    zh-cn: 自动化学院
+    en: School of Automation
+  program:
+    zh-cn: 机器人工程本科
+    en: B.Eng. candidate in Robotics Engineering
+  status: active
+
+focus:
+  - id: embodied-navigation
+    title:
+      zh-cn: 具身导航
+      en: Embodied Navigation
+    summary:
+      zh-cn: 面向真实机器人的感知、定位、决策与行动闭环。
+      en: Closing the loop from perception and localization to decisions and action on real robots.
+  - id: autonomous-systems
+    title:
+      zh-cn: 自主系统
+      en: Autonomous Systems
+    summary:
+      zh-cn: 关注复杂环境中的可靠定位、规划与系统集成。
+      en: Reliable localization, planning, and systems integration in complex environments.
+  - id: scene-intelligence
+    title:
+      zh-cn: 三维场景智能
+      en: 3D Scene Intelligence
+    summary:
+      zh-cn: 探索三维表示如何服务导航、定位与可编辑场景生成。
+      en: Using 3D representations for navigation, localization, and editable scene generation.
+  - id: ai-systems
+    title:
+      zh-cn: AI 系统工程
+      en: AI Systems Engineering
+    summary:
+      zh-cn: 将模型能力落实为可部署、可调试、可维护的系统。
+      en: Turning model capability into deployable, debuggable, and maintainable systems.

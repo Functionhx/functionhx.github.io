@@ -1,0 +1,22 @@
+meta:
+  schema_version: 1
+  status: user-directed-overview
+  source: Timeline supplied in redesign brief; detailed dates require later evidence review
+  last_verified: 2026-07-16
+
+items:
+  - year: 2024
+    status: completed
+    text:
+      zh-cn: 机器人基础、感知与控制
+      en: Robotics foundations, perception, and control
+  - year: 2025
+    status: completed
+    text:
+      zh-cn: RoboMaster 导航与 Formula Student Driverless
+      en: RoboMaster navigation and Formula Student Driverless
+  - year: 2026
+    status: active
+    text:
+      zh-cn: 具身导航、3DGS、世界模型与 AI 系统
+      en: Embodied navigation, 3DGS, world models, and AI systems
