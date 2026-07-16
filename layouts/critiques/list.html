@@ -20,7 +20,7 @@
     </div>
   </a>
   {{- else }}
-  <p class="crit-empty">// 还没有拆解。第一篇由你来写。</p>
+  <p class="crit-empty">{{ if eq .Lang "en" }}// No published critiques yet.{{ else }}// 暂无已发布的拆解。{{ end }}</p>
   {{- end }}
 </div>
 

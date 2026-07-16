@@ -5,6 +5,10 @@
   "被高估" (dict "code" "OVERHYPED" "emoji" "🟠" "color" "#f59e0b")
   "存疑"   (dict "code" "UNPROVEN"  "emoji" "🟡" "color" "#c9a227")
   "有可取" (dict "code" "PARTIAL"   "emoji" "🟢" "color" "#3dd68c")
+  "Rejected" (dict "code" "REJECTED"  "emoji" "🔴" "color" "#e5484d")
+  "Overhyped" (dict "code" "OVERHYPED" "emoji" "🟠" "color" "#f59e0b")
+  "Unproven" (dict "code" "UNPROVEN"  "emoji" "🟡" "color" "#c9a227")
+  "Partial" (dict "code" "PARTIAL"   "emoji" "🟢" "color" "#3dd68c")
 -}}
 {{- $info := index $map $v -}}
 {{- if not $info }}{{ $info = index $map "存疑" }}{{ end -}}

@@ -6,8 +6,9 @@
     font-size: 1.2rem; margin: 0 0 1rem; color: var(--primary);
   }
 </style>
+{{- $isEnglish := eq .Lang "en" -}}
 <section class="post-comments">
-  <h2 class="comments-title">评论</h2>
+  <h2 class="comments-title">{{ if $isEnglish }}Discussion{{ else }}评论{{ end }}</h2>
   <script src="https://giscus.app/client.js"
     data-repo="Functionhx/functionhx.github.io"
     data-repo-id="R_kgDOS6Qg6A"
@@ -19,7 +20,7 @@
     data-emit-metadata="0"
     data-input-position="top"
     data-theme="preferred_color_scheme"
-    data-lang="zh-CN"
+    data-lang="{{ if $isEnglish }}en{{ else }}zh-CN{{ end }}"
     data-loading="lazy"
     crossorigin="anonymous"
     async>

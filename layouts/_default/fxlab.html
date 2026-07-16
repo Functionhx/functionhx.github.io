@@ -1,59 +1,61 @@
 {{- define "main" }}
+{{- $isEnglish := eq .Lang "en" -}}
 <header class="page-header">
   {{ partial "breadcrumbs.html" . }}
   <h1>{{ .Title }}</h1>
   {{- with .Description }}<div class="post-description">{{ . }}</div>{{ end }}
 </header>
 
-<section class="fx-panel">
-  <p class="fx-note">勾选 = 开。改动后页面自动刷新生效；设置存在浏览器（localStorage），<b>全站生效</b>。默认：磁吸 / 倾斜 / 聚光灯 开，其余关。</p>
+<section class="fx-panel" aria-labelledby="fx-settings-title">
+  <h2 id="fx-settings-title" class="fx-panel-title">{{ if $isEnglish }}Optional effects{{ else }}可选特效{{ end }}</h2>
+  <p class="fx-note">
+    {{- if $isEnglish -}}
+    Changes are saved in this browser and applied across the site. Every effect defaults to off.
+    {{- else -}}
+    设置保存在当前浏览器并作用于全站；所有效果默认关闭。
+    {{- end -}}
+  </p>
   <div class="fx-toggles" id="fx-toggles"></div>
 </section>
 
 <section class="post-content md-content">
-  <h2>试试效果</h2>
-  <p>移动鼠标、悬停卡片、点击空白、往下滚动，逐个对比。</p>
+  <h2>{{ if $isEnglish }}Preview area{{ else }}预览区域{{ end }}</h2>
+  <p>{{ if $isEnglish }}Move the pointer, hover, click, and scroll to inspect enabled effects.{{ else }}移动鼠标、悬停、点击和滚动，检查已启用的效果。{{ end }}</p>
   <div class="fx-demo-cards">
-    <div class="fx-demo-card">卡片 A</div>
-    <div class="fx-demo-card">卡片 B</div>
-    <div class="fx-demo-card">卡片 C</div>
+    <div class="fx-demo-card">01 · Perception</div>
+    <div class="fx-demo-card">02 · Planning</div>
+    <div class="fx-demo-card">03 · Action</div>
   </div>
-  <h2>再往下拉（测滚动入场）</h2>
-  <div class="fx-demo-cards">
-    <div class="fx-demo-card">卡片 D</div>
-    <div class="fx-demo-card">卡片 E</div>
-    <div class="fx-demo-card">卡片 F</div>
-  </div>
-  <p>调好后去 <a href="/">首页</a>、<a href="/posts/">文章</a>、<a href="/critiques/">点评</a> 看全站效果。</p>
 </section>
 
 <script>
 (function () {
-  var EFFECTS = [
-    ['magnetic', '磁吸'], ['tilt', '卡片 3D 倾斜'], ['spotlight', '光标聚光灯'],
-    ['ripple', '点击涟漪'], ['shimmer', '悬停扫光'], ['cursor', '自定义光标'], ['reveal', '滚动入场']
+  var isEnglish = document.documentElement.lang === 'en';
+  var effects = [
+    ['magnetic', isEnglish ? 'Magnetic links' : '链接磁吸'],
+    ['tilt', isEnglish ? 'Card tilt' : '卡片倾斜'],
+    ['spotlight', isEnglish ? 'Pointer spotlight' : '光标聚光灯'],
+    ['ripple', isEnglish ? 'Click ripple' : '点击涟漪'],
+    ['shimmer', isEnglish ? 'Hover shimmer' : '悬停扫光'],
+    ['cursor', isEnglish ? 'Custom pointer' : '自定义光标'],
+    ['reveal', isEnglish ? 'Scroll reveal' : '滚动入场']
   ];
-  var DEFAULTS = { magnetic: 1, tilt: 1, spotlight: 1 };
   function state(name) {
-    var v = localStorage.getItem('fx:' + name);
-    if (v === 'on') return true;
-    if (v === 'off') return false;
-    return DEFAULTS[name] === 1;
+    return localStorage.getItem('fx:' + name) === 'on';
   }
   var box = document.getElementById('fx-toggles');
-  EFFECTS.forEach(function (e) {
-    var name = e[0], label = e[1];
+  effects.forEach(function (effect) {
     var row = document.createElement('label');
+    var checkbox = document.createElement('input');
     row.className = 'fx-row';
-    var cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = state(name);
-    cb.addEventListener('change', function () {
-      localStorage.setItem('fx:' + name, cb.checked ? 'on' : 'off');
-      location.reload();
+    checkbox.type = 'checkbox';
+    checkbox.checked = state(effect[0]);
+    checkbox.addEventListener('change', function () {
+      localStorage.setItem('fx:' + effect[0], checkbox.checked ? 'on' : 'off');
+      window.location.reload();
     });
-    row.appendChild(cb);
-    row.appendChild(document.createTextNode(' ' + label));
+    row.appendChild(checkbox);
+    row.appendChild(document.createTextNode(effect[1]));
     box.appendChild(row);
   });
 })();

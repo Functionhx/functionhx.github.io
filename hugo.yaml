@@ -1,13 +1,13 @@
 baseURL: https://functionhx.github.io/
-languageCode: zh-cn
-title: fanyuchen 的博客
+title: Yuchen Fan
 theme: PaperMod
 defaultContentLanguage: zh-cn
-paginate: 10
+defaultContentLanguageInSubdir: false
+enableRobotsTXT: true
+timeZone: Asia/Shanghai
 
-author:
-  name: fanyuchen
-  email: 2994114386@qq.com
+pagination:
+  pagerSize: 10
 
 outputs:
   home:
@@ -15,43 +15,124 @@ outputs:
     - RSS
     - JSON
 
+taxonomies:
+  tag: tags
+  category: categories
+
+markup:
+  highlight:
+    noClasses: false
+
 params:
-  homeInfoParams:
-    Title: "你好 👋"
-    Content: "欢迎来到我的博客 —— 记录技术、生活与思考"
-  socialIcons:
-    - name: github
-      url: https://github.com/Functionhx
+  defaultTheme: auto
+  disableThemeToggle: false
+  disableLangToggle: false
+  displayFullLangName: false
+  mainSections:
+    - notes
   ShowReadingTime: true
   ShowPostNavLinks: true
   ShowBreadCrumbs: true
   ShowCodeCopyButtons: true
   ShowShareButtons: false
   comments: true
+  legacyInteractions: false
+  schema:
+    publisherType: Person
+    sameAs:
+      - https://github.com/Functionhx
+  assets:
+    theme_color: "#171a1f"
+    msapplication_TileColor: "#171a1f"
 
-menu:
-  main:
-    - identifier: posts
-      name: 📝 文章
-      url: /posts/
-      weight: 10
-    - identifier: critiques
-      name: 💬 点评
-      url: /critiques/
-      weight: 15
-    - identifier: bugs
-      name: 🐛 BUG 日志
-      url: /bugs/
-      weight: 20
-    - identifier: thoughts
-      name: 💡 思考
-      url: /thoughts/
-      weight: 25
-    - identifier: works
-      name: 🛠️ 作品
-      url: /works/
-      weight: 30
-    - identifier: resume
-      name: 📄 个人简历
-      url: /resume/
-      weight: 35
+languages:
+  zh-cn:
+    locale: zh-CN
+    label: 中文
+    weight: 1
+    contentDir: content/zh
+    title: Yuchen Fan
+    params:
+      description: 樊宇琛的机器人、具身智能与三维场景智能研究主页和工程作品集。
+      author: Yuchen Fan
+      email: functionhx@gmail.com
+      label:
+        text: Yuchen Fan
+      ui:
+        navLabel: 主导航
+        searchPlaceholder: 搜索笔记…
+        searchLabel: 搜索本站
+        switchLanguage: Switch to English
+        switchFallback: 当前页面暂无英文翻译，将打开英文首页
+        themeLabel: 切换日间或夜间模式
+    menus:
+      main:
+        - identifier: home
+          name: 首页
+          pageRef: /
+          weight: 10
+        - identifier: projects
+          name: 项目
+          pageRef: /projects
+          weight: 20
+        - identifier: research
+          name: 研究
+          pageRef: /research
+          weight: 30
+        - identifier: open-source
+          name: 开源
+          pageRef: /open-source
+          weight: 40
+        - identifier: notes
+          name: 笔记
+          pageRef: /notes
+          weight: 50
+        - identifier: about
+          name: 关于
+          pageRef: /about
+          weight: 60
+  en:
+    locale: en-US
+    label: English
+    weight: 2
+    contentDir: content/en
+    title: Yuchen Fan
+    params:
+      description: Research portfolio and engineering notes by Yuchen Fan, focused on robotics, embodied AI, and 3D scene intelligence.
+      author: Yuchen Fan
+      email: functionhx@gmail.com
+      label:
+        text: Yuchen Fan
+      ui:
+        navLabel: Primary navigation
+        searchPlaceholder: Search notes…
+        searchLabel: Search this site
+        switchLanguage: 切换到中文
+        switchFallback: No Chinese translation is available; opening the Chinese home page
+        themeLabel: Toggle light or dark theme
+    menus:
+      main:
+        - identifier: home
+          name: Home
+          pageRef: /
+          weight: 10
+        - identifier: projects
+          name: Projects
+          pageRef: /projects
+          weight: 20
+        - identifier: research
+          name: Research
+          pageRef: /research
+          weight: 30
+        - identifier: open-source
+          name: Open Source
+          pageRef: /open-source
+          weight: 40
+        - identifier: notes
+          name: Notes
+          pageRef: /notes
+          weight: 50
+        - identifier: about
+          name: About
+          pageRef: /about
+          weight: 60
