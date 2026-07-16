@@ -1,111 +1,179 @@
-# Sveltia CMS 配置
-# 认证：不设 base_url → 登录页出现「Sign In with Token」按钮，粘贴 GitHub 访问令牌即可（令牌存浏览器，零服务器）。
+# Sveltia CMS authors canonical Chinese content only. English is produced as a reviewable translation draft.
 backend:
   name: github
   repo: Functionhx/functionhx.github.io
   branch: main
 
-# 图片：CMS 上传的图片落到 static/images/，部署后在 /images/ 引用
-media_folder: "static/images"
-public_folder: "/images"
-
+media_folder: "static/images/uploads"
+public_folder: "/images/uploads"
 site_url: https://functionhx.github.io/
 
 collections:
-  - name: "posts"
-    label: "文章"
-    label_singular: "文章"
-    folder: "content/posts"
+  - name: "notes"
+    label: "笔记"
+    label_singular: "笔记"
+    folder: "content/zh/notes"
     create: true
-    delete: true
+    delete: false
     format: "md"
     extension: "md"
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:
       - { label: "标题", name: "title", widget: "string" }
+      - { label: "翻译键", name: "translationKey", widget: "string", hint: "中英文必须一致，建议使用小写 kebab-case" }
       - { label: "发布日期", name: "date", widget: "datetime" }
-      - { label: "草稿", name: "draft", widget: "boolean", default: false }
-      - { label: "摘要描述", name: "description", widget: "string", required: false }
+      - { label: "最后修改", name: "lastmod", widget: "datetime", required: false }
+      - { label: "草稿", name: "draft", widget: "boolean", default: true }
+      - { label: "摘要", name: "description", widget: "string", required: false }
+      - { label: "状态", name: "status", widget: "select", options: ["active", "completed", "archived"], default: "active" }
       - { label: "标签", name: "tags", widget: "list", required: false }
       - { label: "分类", name: "categories", widget: "list", required: false }
+      - { label: "允许翻译", name: "translate", widget: "boolean", default: true }
+      - label: "来源核验"
+        name: "source"
+        widget: "object"
+        fields:
+          - { label: "来源状态", name: "status", widget: "select", options: ["author-verified", "user-provided", "public-evidence"], default: "author-verified" }
+          - { label: "核验日期", name: "last_verified", widget: "date" }
+      - { label: "正文", name: "body", widget: "markdown" }
+
+  - name: "projects"
+    label: "项目"
+    label_singular: "项目"
+    folder: "content/zh/projects"
+    create: true
+    delete: false
+    format: "md"
+    extension: "md"
+    slug: "{{slug}}"
+    fields:
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string" }
+      - { label: "翻译键", name: "translationKey", widget: "string" }
+      - { label: "发布日期", name: "date", widget: "datetime" }
+      - { label: "最后修改", name: "lastmod", widget: "datetime" }
+      - { label: "草稿", name: "draft", widget: "boolean", default: true }
+      - { label: "描述", name: "description", widget: "string" }
+      - { label: "卡片摘要", name: "summary", widget: "string" }
+      - label: "状态"
+        name: "status"
+        widget: "select"
+        options: ["completed", "active", "research", "manuscript-in-preparation", "patent-disclosure-in-preparation", "archived"]
+        default: "active"
+      - { label: "个人角色", name: "role", widget: "string", required: false }
+      - { label: "组织", name: "organization", widget: "string", required: false }
+      - { label: "时间段", name: "period", widget: "string", required: false }
+      - { label: "首页精选", name: "featured", widget: "boolean", default: false }
+      - { label: "排序权重", name: "weight", widget: "number", default: 50, value_type: "int" }
+      - { label: "标签", name: "tags", widget: "list", required: false }
+      - { label: "技术", name: "technologies", widget: "list", required: false }
+      - label: "链接"
+        name: "links"
+        widget: "object"
+        required: false
+        collapsed: true
+        fields:
+          - { label: "Code", name: "code", widget: "string", required: false }
+          - { label: "Demo", name: "demo", widget: "string", required: false }
+          - { label: "Report", name: "report", widget: "string", required: false }
+          - { label: "Paper", name: "paper", widget: "string", required: false }
+          - { label: "Website", name: "website", widget: "string", required: false }
+      - { label: "保密边界", name: "confidential", widget: "boolean", default: false }
+      - { label: "允许翻译", name: "translate", widget: "boolean", default: true }
+      - label: "来源核验"
+        name: "source"
+        widget: "object"
+        fields:
+          - { label: "来源状态", name: "status", widget: "select", options: ["author-verified", "user-provided", "public-evidence"], default: "author-verified" }
+          - { label: "核验日期", name: "last_verified", widget: "date" }
+      - { label: "正文", name: "body", widget: "markdown" }
+
+  - name: "research"
+    label: "研究"
+    label_singular: "研究记录"
+    folder: "content/zh/research"
+    create: true
+    delete: false
+    format: "md"
+    extension: "md"
+    slug: "{{slug}}"
+    fields:
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string" }
+      - { label: "翻译键", name: "translationKey", widget: "string" }
+      - { label: "发布日期", name: "date", widget: "datetime" }
+      - { label: "最后修改", name: "lastmod", widget: "datetime" }
+      - { label: "草稿", name: "draft", widget: "boolean", default: true }
+      - { label: "描述", name: "description", widget: "string" }
+      - { label: "卡片摘要", name: "summary", widget: "string" }
+      - label: "状态"
+        name: "status"
+        widget: "select"
+        options: ["research", "manuscript-in-preparation", "patent-disclosure-in-preparation", "completed", "archived"]
+        default: "research"
+      - { label: "个人角色", name: "role", widget: "string", required: false }
+      - { label: "组织", name: "organization", widget: "string", required: false }
+      - { label: "时间段", name: "period", widget: "string", required: false }
+      - { label: "首页精选", name: "featured", widget: "boolean", default: false }
+      - { label: "排序权重", name: "weight", widget: "number", default: 50, value_type: "int" }
+      - { label: "标签", name: "tags", widget: "list", required: false }
+      - { label: "技术", name: "technologies", widget: "list", required: false }
+      - label: "链接"
+        name: "links"
+        widget: "object"
+        required: false
+        collapsed: true
+        fields:
+          - { label: "Code", name: "code", widget: "string", required: false }
+          - { label: "Demo", name: "demo", widget: "string", required: false }
+          - { label: "Report", name: "report", widget: "string", required: false }
+          - { label: "Paper", name: "paper", widget: "string", required: false }
+          - { label: "Website", name: "website", widget: "string", required: false }
+      - { label: "保密边界", name: "confidential", widget: "boolean", default: false }
+      - { label: "允许翻译", name: "translate", widget: "boolean", default: true }
+      - label: "来源核验"
+        name: "source"
+        widget: "object"
+        fields:
+          - { label: "来源状态", name: "status", widget: "select", options: ["author-verified", "user-provided", "public-evidence"], default: "author-verified" }
+          - { label: "核验日期", name: "last_verified", widget: "date" }
       - { label: "正文", name: "body", widget: "markdown" }
 
   - name: "critiques"
-    label: "点评"
-    label_singular: "点评"
-    folder: "content/critiques"
+    label: "点评与拆解"
+    label_singular: "拆解"
+    folder: "content/zh/notes/critiques"
     create: true
-    delete: true
+    delete: false
     format: "md"
     extension: "md"
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     summary: "{{verdict}} · {{title}}"
     fields:
       - { label: "标题", name: "title", widget: "string" }
+      - { label: "翻译键", name: "translationKey", widget: "string" }
       - { label: "裁决", name: "verdict", widget: "select", options: ["站不住", "被高估", "存疑", "有可取"], default: "存疑" }
       - { label: "一句话结论", name: "tldr", widget: "string", required: false }
+      - { label: "状态", name: "status", widget: "select", options: ["active", "completed", "archived"], default: "active" }
       - label: "论文 / 范式"
         name: "paper"
         widget: "object"
         required: false
         collapsed: true
         fields:
-          - { label: "标题", name: "title", widget: "string" }
-          - { label: "作者", name: "authors", widget: "string" }
-          - { label: "venue / 会议", name: "venue", widget: "string" }
-          - { label: "年份", name: "year", widget: "string" }
-          - { label: "链接", name: "url", widget: "string" }
+          - { label: "标题", name: "title", widget: "string", required: false }
+          - { label: "作者", name: "authors", widget: "string", required: false }
+          - { label: "Venue", name: "venue", widget: "string", required: false }
+          - { label: "年份", name: "year", widget: "number", required: false, value_type: "int" }
+          - { label: "链接", name: "url", widget: "string", required: false }
       - { label: "标签", name: "tags", widget: "list", required: false }
       - { label: "发布日期", name: "date", widget: "datetime" }
       - { label: "草稿", name: "draft", widget: "boolean", default: true }
-      - { label: "正文", name: "body", widget: "markdown" }
-
-  - name: "bugs"
-    label: "BUG 日志"
-    label_singular: "BUG"
-    folder: "content/bugs"
-    create: true
-    delete: true
-    format: "md"
-    extension: "md"
-    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
-    fields:
-      - { label: "标题", name: "title", widget: "string" }
-      - { label: "发布日期", name: "date", widget: "datetime" }
-      - { label: "草稿", name: "draft", widget: "boolean", default: true }
-      - { label: "标签", name: "tags", widget: "list", required: false }
-      - { label: "正文", name: "body", widget: "markdown" }
-
-  - name: "thoughts"
-    label: "思考"
-    label_singular: "思考"
-    folder: "content/thoughts"
-    create: true
-    delete: true
-    format: "md"
-    extension: "md"
-    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
-    fields:
-      - { label: "标题", name: "title", widget: "string" }
-      - { label: "发布日期", name: "date", widget: "datetime" }
-      - { label: "草稿", name: "draft", widget: "boolean", default: true }
-      - { label: "标签", name: "tags", widget: "list", required: false }
-      - { label: "正文", name: "body", widget: "markdown" }
-
-  - name: "works"
-    label: "作品"
-    label_singular: "作品"
-    folder: "content/works"
-    create: true
-    delete: true
-    format: "md"
-    extension: "md"
-    slug: "{{slug}}"
-    fields:
-      - { label: "标题", name: "title", widget: "string" }
-      - { label: "一句话简介", name: "description", widget: "string", required: false }
-      - { label: "链接", name: "link", widget: "string", required: false }
-      - { label: "发布日期", name: "date", widget: "datetime" }
-      - { label: "草稿", name: "draft", widget: "boolean", default: false }
-      - { label: "标签", name: "tags", widget: "list", required: false }
+      - { label: "允许翻译", name: "translate", widget: "boolean", default: true }
+      - label: "来源核验"
+        name: "source"
+        widget: "object"
+        fields:
+          - { label: "来源状态", name: "status", widget: "select", options: ["author-verified", "user-provided", "public-evidence"], default: "author-verified" }
+          - { label: "核验日期", name: "last_verified", widget: "date" }
       - { label: "正文", name: "body", widget: "markdown" }
