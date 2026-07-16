@@ -1,0 +1,410 @@
+{
+  "profile": {
+    "meta": {
+      "schema_version": 1,
+      "status": "verified",
+      "source": "User-provided profile brief",
+      "last_verified": "2026-07-16"
+    },
+    "name": {
+      "zh-cn": "樊宇琛",
+      "en": "Yuchen Fan"
+    },
+    "display_name": "Yuchen Fan",
+    "headline": {
+      "zh-cn": "机器人 · 具身智能 · 三维场景智能",
+      "en": "Robotics · Embodied AI · 3D Scene Intelligence"
+    },
+    "tagline": {
+      "zh-cn": "从感知到行动，构建可靠的机器人与 AI 系统。",
+      "en": "Building reliable systems from perception to action."
+    },
+    "bio": {
+      "zh-cn": "北京理工大学自动化学院机器人工程本科生，关注自动驾驶、机器人导航、三维场景表示、AI 推理部署与可靠工程系统。",
+      "en": "An undergraduate in Robotics Engineering at Beijing Institute of Technology, focused on autonomous driving, robot navigation, 3D scene representations, AI inference deployment, and reliable engineering systems."
+    },
+    "education": {
+      "institution": {
+        "zh-cn": "北京理工大学",
+        "en": "Beijing Institute of Technology"
+      },
+      "school": {
+        "zh-cn": "自动化学院",
+        "en": "School of Automation"
+      },
+      "program": {
+        "zh-cn": "机器人工程本科",
+        "en": "B.Eng. candidate in Robotics Engineering"
+      },
+      "status": "active"
+    },
+    "focus": [
+      {
+        "id": "embodied-navigation",
+        "title": {
+          "zh-cn": "具身导航",
+          "en": "Embodied Navigation"
+        },
+        "summary": {
+          "zh-cn": "面向真实机器人的感知、定位、决策与行动闭环。",
+          "en": "Closing the loop from perception and localization to decisions and action on real robots."
+        }
+      },
+      {
+        "id": "autonomous-systems",
+        "title": {
+          "zh-cn": "自主系统",
+          "en": "Autonomous Systems"
+        },
+        "summary": {
+          "zh-cn": "关注复杂环境中的可靠定位、规划与系统集成。",
+          "en": "Reliable localization, planning, and systems integration in complex environments."
+        }
+      },
+      {
+        "id": "scene-intelligence",
+        "title": {
+          "zh-cn": "三维场景智能",
+          "en": "3D Scene Intelligence"
+        },
+        "summary": {
+          "zh-cn": "探索三维表示如何服务导航、定位与可编辑场景生成。",
+          "en": "Using 3D representations for navigation, localization, and editable scene generation."
+        }
+      },
+      {
+        "id": "ai-systems",
+        "title": {
+          "zh-cn": "AI 系统工程",
+          "en": "AI Systems Engineering"
+        },
+        "summary": {
+          "zh-cn": "将模型能力落实为可部署、可调试、可维护的系统。",
+          "en": "Turning model capability into deployable, debuggable, and maintainable systems."
+        }
+      }
+    ]
+  },
+  "projects": {
+    "meta": {
+      "schema_version": 1,
+      "status": "review-required",
+      "source": "User-provided experience list; descriptions intentionally remain high-level",
+      "last_verified": "2026-07-16"
+    },
+    "featured": [
+      {
+        "id": "batch-lio",
+        "title": {
+          "zh-cn": "Batch-LIO",
+          "en": "Batch-LIO"
+        },
+        "summary": {
+          "zh-cn": "面向激光雷达—惯性里程计的工程与研究记录，重点保留系统边界和可核验材料。",
+          "en": "An engineering and research record for LiDAR–inertial odometry, with explicit system boundaries and evidence."
+        },
+        "page": "/projects/batch-lio/",
+        "status": "research",
+        "visual": "odometry",
+        "technologies": [
+          "LiDAR",
+          "IMU",
+          "Localization"
+        ]
+      },
+      {
+        "id": "formula-student-driverless",
+        "title": {
+          "zh-cn": "Formula Student Driverless",
+          "en": "Formula Student Driverless"
+        },
+        "summary": {
+          "zh-cn": "学生方程式无人驾驶系统经历，覆盖自动驾驶系统的集成与赛场工程语境。",
+          "en": "Formula Student Driverless experience in the context of autonomous-system integration and track engineering."
+        },
+        "page": "/projects/formula-student-driverless/",
+        "status": "completed",
+        "visual": "autonomy",
+        "technologies": [
+          "Autonomous Driving",
+          "Robotics",
+          "Systems"
+        ]
+      },
+      {
+        "id": "unitree-robotics-systems",
+        "title": {
+          "zh-cn": "Unitree Robotics Systems",
+          "en": "Unitree Robotics Systems"
+        },
+        "summary": {
+          "zh-cn": "围绕 G1 指定目标跟随与 Go2 VLA/VLN 实机部署形成的机器人系统记录。",
+          "en": "Robotics systems records spanning G1 target following and Go2 VLA/VLN deployment."
+        },
+        "page": "/projects/unitree-g1-target-following/",
+        "status": "research",
+        "visual": "embodied",
+        "technologies": [
+          "Unitree",
+          "Embodied AI",
+          "Deployment"
+        ]
+      },
+      {
+        "id": "scene-intelligence",
+        "title": {
+          "zh-cn": "3D Scene Intelligence",
+          "en": "3D Scene Intelligence"
+        },
+        "summary": {
+          "zh-cn": "面向实例导航、视觉定位与可编辑道路场景的三维表示研究概览。",
+          "en": "A high-level view of 3D representations for instance navigation, visual localization, and editable road scenes."
+        },
+        "page": "/research/3dgs-navigation-localization/",
+        "status": "patent-disclosure-in-preparation",
+        "visual": "gaussian",
+        "technologies": [
+          "3DGS",
+          "Navigation",
+          "Localization"
+        ]
+      }
+    ],
+    "records": [
+      {
+        "id": "formula-student-driverless",
+        "title": {
+          "zh-cn": "Formula Student Driverless",
+          "en": "Formula Student Driverless"
+        },
+        "page": "/projects/formula-student-driverless/",
+        "status": "completed",
+        "featured": true
+      },
+      {
+        "id": "unitree-g1-target-following",
+        "title": {
+          "zh-cn": "Unitree G1 指定目标跟随",
+          "en": "Unitree G1 Target Following"
+        },
+        "page": "/projects/unitree-g1-target-following/",
+        "status": "research",
+        "featured": true
+      },
+      {
+        "id": "robomaster-sentinel-navigation",
+        "title": {
+          "zh-cn": "RoboMaster 哨兵导航与定位",
+          "en": "RoboMaster Sentinel Navigation"
+        },
+        "page": "/projects/robomaster-sentinel-navigation/",
+        "status": "completed",
+        "featured": false
+      },
+      {
+        "id": "unitree-go2-vln-deployment",
+        "title": {
+          "zh-cn": "Unitree Go2 VLA / VLN 实机部署",
+          "en": "Unitree Go2 VLA / VLN Deployment"
+        },
+        "page": "/projects/unitree-go2-vln-deployment/",
+        "status": "research",
+        "featured": false
+      },
+      {
+        "id": "batch-lio",
+        "title": {
+          "zh-cn": "Batch-LIO",
+          "en": "Batch-LIO"
+        },
+        "page": "/projects/batch-lio/",
+        "status": "research",
+        "featured": true
+      }
+    ]
+  },
+  "research": {
+    "meta": {
+      "schema_version": 1,
+      "status": "confidential-boundary-reviewed",
+      "source": "User-provided research directions",
+      "last_verified": "2026-07-16"
+    },
+    "records": [
+      {
+        "id": "3dgs-navigation-localization",
+        "title": {
+          "zh-cn": "面向导航与视觉定位的 3DGS",
+          "en": "3DGS for Navigation and Visual Localization"
+        },
+        "page": "/research/3dgs-navigation-localization/",
+        "status": "patent-disclosure-in-preparation",
+        "confidential": true,
+        "source": "user-provided"
+      },
+      {
+        "id": "editable-road-scene-generation",
+        "title": {
+          "zh-cn": "世界模型辅助的可编辑道路场景生成",
+          "en": "World-Model-Assisted Editable Road-Scene Generation"
+        },
+        "page": "/research/editable-road-scene-generation/",
+        "status": "manuscript-in-preparation",
+        "confidential": true,
+        "source": "user-provided"
+      }
+    ]
+  },
+  "achievements": {
+    "meta": {
+      "schema_version": 1,
+      "status": "user-verified",
+      "source": "User-provided achievement summary",
+      "last_verified": "2026-07-16"
+    },
+    "items": [
+      {
+        "id": "kaggle-bronze",
+        "title": {
+          "zh-cn": "Kaggle 铜牌",
+          "en": "Kaggle Bronze Medal"
+        },
+        "detail": {
+          "zh-cn": "Solo · Top 9.9%",
+          "en": "Solo · Top 9.9%"
+        },
+        "status": "completed",
+        "source": "user-provided"
+      }
+    ]
+  },
+  "open_source": {
+    "meta": {
+      "schema_version": 1,
+      "status": "user-verified-summary",
+      "source": "User-provided open-source summary; individual PR links not yet supplied",
+      "last_verified": "2026-07-16"
+    },
+    "metrics": {
+      "merged_pull_requests": {
+        "value": 20,
+        "label": {
+          "zh-cn": "已合并上游 Pull Requests",
+          "en": "Merged Upstream Pull Requests"
+        },
+        "source": "user-provided"
+      }
+    },
+    "categories": [
+      {
+        "id": "ai-infrastructure",
+        "label": {
+          "zh-cn": "AI 基础设施",
+          "en": "AI Infrastructure"
+        }
+      },
+      {
+        "id": "robotics-middleware",
+        "label": {
+          "zh-cn": "机器人中间件",
+          "en": "Robotics Middleware"
+        }
+      },
+      {
+        "id": "developer-tools",
+        "label": {
+          "zh-cn": "开发者工具",
+          "en": "Developer Tools"
+        }
+      }
+    ],
+    "ecosystems": [
+      {
+        "name": "vLLM"
+      },
+      {
+        "name": "OpenRLHF"
+      },
+      {
+        "name": "NVIDIA CCCL"
+      },
+      {
+        "name": "CycloneDDS"
+      },
+      {
+        "name": "ROS 2"
+      },
+      {
+        "name": "OpenCV"
+      }
+    ]
+  },
+  "links": {
+    "meta": {
+      "schema_version": 1,
+      "status": "partially-verified",
+      "source": "User-provided profile brief",
+      "last_verified": "2026-07-16"
+    },
+    "items": [
+      {
+        "id": "github",
+        "label": "GitHub",
+        "url": "https://github.com/Functionhx",
+        "enabled": true,
+        "order": 10,
+        "source": "user-provided"
+      },
+      {
+        "id": "email",
+        "label": "Email",
+        "url": "mailto:functionhx@gmail.com",
+        "enabled": true,
+        "order": 20,
+        "source": "user-provided"
+      },
+      {
+        "id": "website",
+        "label": "Website",
+        "url": "https://functionhx.github.io/",
+        "enabled": true,
+        "order": 30,
+        "source": "user-provided"
+      }
+    ]
+  },
+  "timeline": {
+    "meta": {
+      "schema_version": 1,
+      "status": "user-directed-overview",
+      "source": "Timeline supplied in redesign brief; detailed dates require later evidence review",
+      "last_verified": "2026-07-16"
+    },
+    "items": [
+      {
+        "year": 2024,
+        "status": "completed",
+        "text": {
+          "zh-cn": "机器人基础、感知与控制",
+          "en": "Robotics foundations, perception, and control"
+        }
+      },
+      {
+        "year": 2025,
+        "status": "completed",
+        "text": {
+          "zh-cn": "RoboMaster 导航与 Formula Student Driverless",
+          "en": "RoboMaster navigation and Formula Student Driverless"
+        }
+      },
+      {
+        "year": 2026,
+        "status": "active",
+        "text": {
+          "zh-cn": "具身导航、3DGS、世界模型与 AI 系统",
+          "en": "Embodied navigation, 3DGS, world models, and AI systems"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://functionhx.github.io/schemas/showcase.schema.json",
+  "title": "Yuchen Fan Public Showcase Dataset",
+  "description": "Aggregate schema for the YAML files under data/showcase.",
+  "type": "object",
+  "required": [
+    "profile",
+    "projects",
+    "research",
+    "achievements",
+    "open_source",
+    "links",
+    "timeline"
+  ],
+  "properties": {
+    "profile": {
+      "type": "object",
+      "required": ["meta", "name", "display_name", "headline", "tagline", "bio", "education", "focus"]
+    },
+    "projects": {
+      "type": "object",
+      "required": ["meta", "featured", "records"]
+    },
+    "research": {
+      "type": "object",
+      "required": ["meta", "records"]
+    },
+    "achievements": {
+      "type": "object",
+      "required": ["meta", "items"]
+    },
+    "open_source": {
+      "type": "object",
+      "required": ["meta", "metrics", "categories", "ecosystems"]
+    },
+    "links": {
+      "type": "object",
+      "required": ["meta", "items"]
+    },
+    "timeline": {
+      "type": "object",
+      "required": ["meta", "items"]
+    }
+  },
+  "$defs": {
+    "localizedText": {
+      "type": "object",
+      "required": ["zh-cn", "en"],
+      "properties": {
+        "zh-cn": {"type": "string", "minLength": 1},
+        "en": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "recordStatus": {
+      "enum": [
+        "completed",
+        "active",
+        "research",
+        "manuscript-in-preparation",
+        "patent-disclosure-in-preparation",
+        "archived"
+      ]
+    }
+  }
+}

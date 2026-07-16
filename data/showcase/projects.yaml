@@ -52,22 +52,37 @@ featured:
 
 records:
   - id: formula-student-driverless
+    title:
+      zh-cn: Formula Student Driverless
+      en: Formula Student Driverless
     page: /projects/formula-student-driverless/
     status: completed
     featured: true
   - id: unitree-g1-target-following
+    title:
+      zh-cn: Unitree G1 指定目标跟随
+      en: Unitree G1 Target Following
     page: /projects/unitree-g1-target-following/
     status: research
     featured: true
   - id: robomaster-sentinel-navigation
+    title:
+      zh-cn: RoboMaster 哨兵导航与定位
+      en: RoboMaster Sentinel Navigation
     page: /projects/robomaster-sentinel-navigation/
     status: completed
     featured: false
   - id: unitree-go2-vln-deployment
+    title:
+      zh-cn: Unitree Go2 VLA / VLN 实机部署
+      en: Unitree Go2 VLA / VLN Deployment
     page: /projects/unitree-go2-vln-deployment/
     status: research
     featured: false
   - id: batch-lio
+    title:
+      zh-cn: Batch-LIO
+      en: Batch-LIO
     page: /projects/batch-lio/
     status: research
     featured: true
