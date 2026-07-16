@@ -1,0 +1,6 @@
+{{- with .Params.status -}}
+<div class="content-status">
+  {{ partial "status_badge.html" (dict "status" . "lang" $.Lang) }}
+</div>
+{{- end -}}
+{{- partial "translation_notice.html" . -}}

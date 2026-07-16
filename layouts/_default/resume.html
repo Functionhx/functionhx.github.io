@@ -1,0 +1,39 @@
+{{- define "main" }}
+{{- $lang := .Lang -}}
+{{- $isEnglish := eq $lang "en" -}}
+{{- $profile := hugo.Data.showcase.profile -}}
+{{- $projects := hugo.Data.showcase.projects -}}
+{{- $openSource := hugo.Data.showcase.open_source -}}
+{{- $achievements := hugo.Data.showcase.achievements -}}
+<article class="post-single about-data-page resume-page">
+  <header class="post-header">
+    {{ partial "breadcrumbs.html" . }}
+    <p class="section-kicker">Résumé</p>
+    <h1 class="post-title">{{ index $profile.name $lang }}</h1>
+    <div class="post-description">{{ index $profile.headline $lang }}<br>{{ index $profile.tagline $lang }}</div>
+  </header>
+  <section class="data-section">
+    <h2>{{ if $isEnglish }}Profile{{ else }}简介{{ end }}</h2>
+    <p>{{ index $profile.bio $lang }}</p>
+  </section>
+  <section class="data-section resume-row">
+    <h2>{{ if $isEnglish }}Education{{ else }}教育{{ end }}</h2>
+    <p><strong>{{ index $profile.education.institution $lang }}</strong><br>{{ index $profile.education.school $lang }} · {{ index $profile.education.program $lang }}</p>
+  </section>
+  <section class="data-section">
+    <h2>{{ if $isEnglish }}Selected systems{{ else }}代表项目{{ end }}</h2>
+    <ul class="resume-projects">
+      {{- range first 5 $projects.records }}
+      {{- $record := . -}}
+      {{- with site.GetPage $record.page }}<li><a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ partial "status_badge.html" (dict "status" $record.status "lang" $lang) }}</li>{{- end }}
+      {{- end }}
+    </ul>
+  </section>
+  <section class="data-section resume-facts">
+    <div><strong>{{ $openSource.metrics.merged_pull_requests.value }}</strong><span>{{ index $openSource.metrics.merged_pull_requests.label $lang }}</span></div>
+    {{- range $achievements.items }}<div><strong>{{ index .title $lang }}</strong><span>{{ index .detail $lang }}</span></div>{{- end }}
+  </section>
+  <p class="source-note">{{ if $isEnglish }}Only verified public facts are included; dates and a downloadable PDF will be added after review.{{ else }}这里只展示已核验的公开事实；具体日期与可下载 PDF 将在复核后补充。{{ end }}</p>
+  {{ partial "translation_notice.html" . }}
+</article>
+{{- end }}

@@ -1,0 +1,23 @@
+{{- define "main" }}
+{{- $lang := .Lang -}}
+{{- $isEnglish := eq $lang "en" -}}
+{{- $links := hugo.Data.showcase.links -}}
+<article class="post-single about-data-page">
+  <header class="post-header">
+    {{ partial "breadcrumbs.html" . }}
+    <p class="section-kicker">Contact</p>
+    <h1 class="post-title">{{ .Title }}</h1>
+    <div class="post-description">{{ .Description }}</div>
+  </header>
+  <div class="contact-directory">
+    {{- $enabled := where $links.items "enabled" true -}}
+    {{- range sort $enabled "order" }}
+    <a href="{{ .url }}"{{ if hasPrefix .url "http" }} target="_blank" rel="noopener noreferrer"{{ end }}>
+      <span>{{ .label }}</span><strong>{{ strings.TrimPrefix "mailto:" .url }}</strong><span aria-hidden="true">↗</span>
+    </a>
+    {{- end }}
+  </div>
+  <p class="source-note">{{ if $isEnglish }}Kaggle, LinkedIn, and Hugging Face will appear only after their profile URLs are verified.{{ else }}Kaggle、LinkedIn 与 Hugging Face 将在个人主页 URL 核验后显示。{{ end }}</p>
+  {{ partial "translation_notice.html" . }}
+</article>
+{{- end }}

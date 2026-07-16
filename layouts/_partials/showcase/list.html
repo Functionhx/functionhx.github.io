@@ -1,0 +1,33 @@
+<header class="page-header showcase-page-header">
+  {{ partial "breadcrumbs.html" . }}
+  <p class="section-kicker">{{ if eq .Lang "en" }}Engineering record{{ else }}工程档案{{ end }}</p>
+  <h1>{{ .Title }}</h1>
+  {{- with .Description }}<div class="post-description">{{ . }}</div>{{ end }}
+</header>
+
+{{- with .Content }}
+<div class="post-content showcase-intro">{{ . }}</div>
+{{- end }}
+
+<div class="showcase-list">
+  {{- range .RegularPages.ByWeight }}
+  <article class="showcase-card">
+    <div class="showcase-card-visual" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="showcase-card-body">
+      <div class="showcase-card-status">
+        {{ partial "status_badge.html" (dict "status" .Params.status "lang" .Lang) }}
+      </div>
+      <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+      {{- with .Description }}<p>{{ . }}</p>{{ end }}
+      {{- with .Params.technologies }}
+      <ul class="tag-list" aria-label="{{ if eq $.Lang "en" }}Technologies{{ else }}技术标签{{ end }}">
+        {{- range first 4 . }}<li>{{ . }}</li>{{- end }}
+      </ul>
+      {{- end }}
+      <a class="card-link" href="{{ .RelPermalink }}">{{ if eq .Lang "en" }}View record{{ else }}查看档案{{ end }} <span aria-hidden="true">→</span></a>
+    </div>
+  </article>
+  {{- end }}
+</div>

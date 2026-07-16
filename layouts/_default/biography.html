@@ -1,0 +1,34 @@
+{{- define "main" }}
+{{- $lang := .Lang -}}
+{{- $isEnglish := eq $lang "en" -}}
+{{- $profile := hugo.Data.showcase.profile -}}
+{{- $achievements := hugo.Data.showcase.achievements -}}
+<article class="post-single about-data-page">
+  <header class="post-header">
+    {{ partial "breadcrumbs.html" . }}
+    <p class="section-kicker">Profile</p>
+    <h1 class="post-title">{{ .Title }}</h1>
+    <div class="post-description">{{ .Description }}</div>
+  </header>
+  <div class="profile-statement">
+    <h2>{{ index $profile.name $lang }}</h2>
+    <p class="profile-headline">{{ index $profile.headline $lang }}</p>
+    <p>{{ index $profile.bio $lang }}</p>
+  </div>
+  <section class="data-section" aria-labelledby="education-title">
+    <h2 id="education-title">{{ if $isEnglish }}Education{{ else }}教育{{ end }}</h2>
+    <p><strong>{{ index $profile.education.institution $lang }}</strong><br>{{ index $profile.education.school $lang }} · {{ index $profile.education.program $lang }}</p>
+  </section>
+  <section class="data-section" aria-labelledby="interests-title">
+    <h2 id="interests-title">{{ if $isEnglish }}Research and engineering interests{{ else }}研究与工程方向{{ end }}</h2>
+    <div class="about-focus-grid">
+      {{- range $profile.focus }}<div><h3>{{ index .title $lang }}</h3><p>{{ index .summary $lang }}</p></div>{{- end }}
+    </div>
+  </section>
+  <section class="data-section" aria-labelledby="achievement-title">
+    <h2 id="achievement-title">{{ if $isEnglish }}Selected achievement{{ else }}代表性成绩{{ end }}</h2>
+    {{- range $achievements.items }}<p><strong>{{ index .title $lang }}</strong> · {{ index .detail $lang }}</p>{{- end }}
+  </section>
+  {{ partial "translation_notice.html" . }}
+</article>
+{{- end }}

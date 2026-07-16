@@ -1,0 +1,54 @@
+{{- $isEnglish := eq .Lang "en" -}}
+<article class="post-single showcase-single">
+  <header class="post-header showcase-single-header">
+    {{ partial "breadcrumbs.html" . }}
+    <div class="showcase-status-line">
+      {{ partial "status_badge.html" (dict "status" .Params.status "lang" .Lang) }}
+      {{- if .Params.confidential }}
+      <span class="confidential-badge">{{ if $isEnglish }}Public summary only{{ else }}仅公开摘要{{ end }}</span>
+      {{- end }}
+    </div>
+    <h1 class="post-title">{{ .Title }}</h1>
+    {{- with .Description }}<div class="post-description">{{ . }}</div>{{ end }}
+
+    {{- if or .Params.role .Params.organization .Params.period }}
+    <dl class="showcase-meta">
+      {{- with .Params.role }}<div><dt>{{ if $isEnglish }}Role{{ else }}角色{{ end }}</dt><dd>{{ . }}</dd></div>{{ end }}
+      {{- with .Params.organization }}<div><dt>{{ if $isEnglish }}Organization{{ else }}组织{{ end }}</dt><dd>{{ . }}</dd></div>{{ end }}
+      {{- with .Params.period }}<div><dt>{{ if $isEnglish }}Period{{ else }}时间{{ end }}</dt><dd>{{ . }}</dd></div>{{ end }}
+    </dl>
+    {{- end }}
+
+    {{- with .Params.technologies }}
+    <ul class="tag-list showcase-tech" aria-label="{{ if $isEnglish }}Technologies{{ else }}技术标签{{ end }}">
+      {{- range . }}<li>{{ . }}</li>{{- end }}
+    </ul>
+    {{- end }}
+
+    {{- with .Params.links }}
+    <div class="showcase-links">
+      {{- range $kind, $url := . }}
+        {{- if $url }}<a class="button button--secondary" href="{{ $url }}" target="_blank" rel="noopener noreferrer">{{ $kind | title }} <span aria-hidden="true">↗</span></a>{{ end -}}
+      {{- end }}
+    </div>
+    {{- end }}
+  </header>
+
+  {{- if .Params.confidential }}
+  <aside class="confidential-note" role="note">
+    {{- if $isEnglish -}}
+    This page intentionally omits confidential, pre-filing, or unpublished technical details.
+    {{- else -}}
+    本页主动省略保密、申请前或尚未公开的技术细节。
+    {{- end -}}
+  </aside>
+  {{- end }}
+
+  {{- if .Content }}
+  <div class="post-content md-content">
+    {{- partial "anchored_headings.html" .Content -}}
+  </div>
+  {{- end }}
+
+  {{ partial "translation_notice.html" . }}
+</article>

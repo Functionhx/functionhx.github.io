@@ -1,0 +1,23 @@
+{{- define "main" }}
+{{- $lang := .Lang -}}
+{{- $timeline := hugo.Data.showcase.timeline -}}
+<article class="post-single about-data-page">
+  <header class="post-header">
+    {{ partial "breadcrumbs.html" . }}
+    <p class="section-kicker">Timeline</p>
+    <h1 class="post-title">{{ .Title }}</h1>
+    <div class="post-description">{{ .Description }}</div>
+  </header>
+  <ol class="timeline-list about-timeline">
+    {{- range $timeline.items }}
+    <li>
+      <div class="timeline-year">{{ .year }}</div>
+      <div class="timeline-marker" aria-hidden="true"></div>
+      <div class="timeline-copy"><p>{{ index .text $lang }}</p>{{ partial "status_badge.html" (dict "status" .status "lang" $lang) }}</div>
+    </li>
+    {{- end }}
+  </ol>
+  <p class="source-note">{{ if eq $lang "en" }}This is a direction-level overview; detailed dates remain subject to evidence review.{{ else }}这是方向级概览；具体时间仍以证据核验后的记录为准。{{ end }}</p>
+  {{ partial "translation_notice.html" . }}
+</article>
+{{- end }}

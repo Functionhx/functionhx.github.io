@@ -3,7 +3,10 @@
 <article class="post-single critique">
   <header class="post-header crit-header">
     {{ partial "breadcrumbs.html" . }}
-    <div class="crit-verdict-line">{{ partial "critique_verdict.html" . }}</div>
+    <div class="crit-verdict-line">
+      {{ partial "critique_verdict.html" . }}
+      {{- with .Params.status }}{{ partial "status_badge.html" (dict "status" . "lang" $.Lang) }}{{ end }}
+    </div>
     <h1 class="post-title crit-title">{{ .Title }}</h1>
     <dl class="crit-meta">
       {{- with .Params.paper.title }}<div><dt>paper</dt><dd>{{ . }}{{ with $.Params.paper.url }}{{ if ne $.Params.paper.url "" }} <a class="crit-ext" href="{{ $.Params.paper.url }}" target="_blank" rel="noopener noreferrer" title="原文">↗</a>{{ end }}{{ end }}</dd></div>{{ end -}}
@@ -22,6 +25,8 @@
     {{- else }}{{ .Content }}{{ end }}
   </div>
   {{- end }}
+
+  {{ partial "translation_notice.html" . }}
 
   <footer class="post-footer">
     {{- $tags := .Language.Params.Taxonomies.tag | default "tags" }}

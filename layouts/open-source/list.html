@@ -1,0 +1,43 @@
+{{- define "main" }}
+{{- $lang := .Lang -}}
+{{- $isEnglish := eq $lang "en" -}}
+{{- $data := hugo.Data.showcase.open_source -}}
+<header class="page-header showcase-page-header">
+  {{ partial "breadcrumbs.html" . }}
+  <p class="section-kicker">Open Source</p>
+  <h1>{{ .Title }}</h1>
+  {{- with .Description }}<div class="post-description">{{ . }}</div>{{ end }}
+</header>
+
+<div class="open-source-hero">
+  <div>
+    <strong>{{ $data.metrics.merged_pull_requests.value }}</strong>
+    <span>{{ index $data.metrics.merged_pull_requests.label $lang }}</span>
+  </div>
+  <div class="open-source-page-categories">
+    {{- range $data.categories }}<span>{{ index .label $lang }}</span>{{- end }}
+  </div>
+</div>
+
+{{- with .Content }}<div class="post-content showcase-intro">{{ . }}</div>{{ end }}
+
+<section class="ecosystem-panel" aria-labelledby="ecosystems-title">
+  <h2 id="ecosystems-title">{{ if $isEnglish }}Representative ecosystems{{ else }}代表性生态{{ end }}</h2>
+  <ul class="ecosystem-list">
+    {{- range $data.ecosystems }}<li>{{ .name }}</li>{{- end }}
+  </ul>
+</section>
+
+<div class="showcase-list showcase-list--compact">
+  {{- range .RegularPages.ByWeight }}
+  <article class="showcase-card">
+    <div class="showcase-card-body">
+      {{ partial "status_badge.html" (dict "status" .Params.status "lang" .Lang) }}
+      <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+      {{- with .Description }}<p>{{ . }}</p>{{ end }}
+      <a class="card-link" href="{{ .RelPermalink }}">{{ if $isEnglish }}View evidence policy{{ else }}查看证据策略{{ end }} <span aria-hidden="true">→</span></a>
+    </div>
+  </article>
+  {{- end }}
+</div>
+{{- end }}

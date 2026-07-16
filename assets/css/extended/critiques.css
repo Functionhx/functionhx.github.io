@@ -26,7 +26,13 @@
 .verdict .ve { margin-left: .3rem; }
 
 /* ---- 单篇：元信息头 ---- */
-.crit-verdict-line { margin-bottom: .6rem; }
+.crit-verdict-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: .6rem;
+}
 .crit-title { margin-top: 0; }
 
 .crit-meta {
