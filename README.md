@@ -2,6 +2,8 @@
 
 樊宇琛的中英双语研究主页、机器人工程作品集、技术笔记与开源贡献档案。网站使用 Hugo Extended + PaperMod，中文是内容源，英文位于 `/en/`。
 
+视觉采用克制的 Apple-inspired 编辑与产品叙事语言；修改首页、Header 或共享样式前请阅读 [Visual Design Guide](docs/design.md)。
+
 ## Local setup
 
 依赖：Git、Python 3.11+、Hugo Extended 0.163.1。

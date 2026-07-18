@@ -47,8 +47,8 @@ params:
     favicon32x32: favicon-32x32.png
     apple_touch_icon: apple-touch-icon.png
     safari_pinned_tab: images/brand-mark.png
-    theme_color: "#171a1f"
-    msapplication_TileColor: "#171a1f"
+    theme_color: "#101114"
+    msapplication_TileColor: "#101114"
   images:
     - /images/social-card.png
 

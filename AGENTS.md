@@ -12,6 +12,12 @@ The stack is Hugo Extended 0.163.1 with the PaperMod Git submodule. Use `hugo.ya
 
 Existing custom features—including the two-row header, search, Giscus, critiques, Sveltia CMS, `/fx/`, motion controls, and hidden interactions—must not be removed casually. Preserve, compatibility-refactor, or explicitly disable them in configuration with a migration note.
 
+## Visual Direction
+
+Use an Apple-inspired editorial product language without copying Apple trademarks or assets. Prefer system typography, neutral white/soft-gray surfaces, one blue accent, generous whitespace, strong type hierarchy, and a small number of large narrative sections. Avoid blue-purple gradients, bento-card dashboards, pill-heavy metadata, particle fields, fake device UI, decorative grids, and other generic AI-generated design signals.
+
+Motion must provide immediate feedback and remain restrained: pressed controls respond on pointer-down, reversible transitions follow consistent paths, and reduced-motion users receive static or cross-fade alternatives. Keep optional legacy effects in `/fx/` and disabled by default. See `docs/design.md` before changing the homepage, header, shared tokens, or project presentation.
+
 ## Development & Validation
 
 - `git submodule update --init --recursive` fetches PaperMod.

@@ -6,10 +6,11 @@ Use this checklist after deployment or whenever Header, CSS, JavaScript, Giscus,
 
 Test `/` and `/en/` at approximately 1440×900, 768×1024, and 390×844.
 
-- Confirm the Hero, focus cards, project grid, timeline, Open Source panel, and Contact CTA do not overflow.
+- Confirm the Hero system stage, focus list, project stories, timeline, Open Source section, and Contact CTA do not overflow.
 - Check light, dark, and system-auto modes; reload after each manual choice.
 - Verify body text, code, tables, cards, badges, buttons, Header, Footer, search, FX panel, and focus rings in both themes.
-- Confirm the mobile Header search wraps cleanly and horizontal navigation remains usable.
+- Confirm the compact mobile Header search remains usable and horizontal navigation scrolls without clipping labels.
+- Check that the design stays neutral and editorial: no residual blue-purple gradients, dense card grids, pill soup, or fake experimental imagery.
 
 ## Navigation and language
 
@@ -21,10 +22,10 @@ Test `/` and `/en/` at approximately 1440×900, 768×1024, and 390×844.
 
 ## Interaction and accessibility
 
-- Navigate the full Header, cards, links, theme control, FX gear, and form controls with the keyboard.
+- Navigate the full Header, project stories, links, theme control, FX gear, and form controls with the keyboard.
 - Confirm visible focus states, correct reading order, and Escape-to-close on the FX popover.
 - Enable one FX option, reload, then disable it. Verify all options default off in a fresh browser profile.
-- Emulate `prefers-reduced-motion: reduce`; Hero motion and optional effects must stop.
+- Emulate `prefers-reduced-motion: reduce`, `prefers-reduced-transparency: reduce`, and `prefers-contrast: more`; feedback must remain legible without blur or large motion.
 - Check images for meaningful alt text and ensure content remains readable with JavaScript disabled.
 
 ## Console and integrations

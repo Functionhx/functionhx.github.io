@@ -67,7 +67,7 @@
 
   function tilt() {
     var maxAngle = 4;
-    var selector = '.crit-card, .post-entry, .first-entry, .project-card, .focus-card, .fx-demo-card';
+    var selector = '.crit-card, .post-entry, .first-entry, .project-card, .focus-card, .project-story, .focus-item, .fx-demo-card';
     document.querySelectorAll(selector).forEach(function (card) {
       card.addEventListener('mousemove', function (event) {
         var rect = card.getBoundingClientRect();
@@ -157,7 +157,7 @@
   }
 
   function reveal() {
-    var targets = document.querySelectorAll('.post-entry, .first-entry, .crit-card, .project-card, .focus-card, .fx-demo-card');
+    var targets = document.querySelectorAll('.post-entry, .first-entry, .crit-card, .project-card, .focus-card, .project-story, .focus-item, .fx-demo-card');
     targets.forEach(function (element) {
       element.classList.add('fx-reveal');
     });
