@@ -14,7 +14,7 @@ Existing custom features—including the two-row header, search, Giscus, critiqu
 
 ## Visual Direction
 
-Use an Apple-inspired editorial product language without copying Apple trademarks or assets. Prefer system typography, neutral white/soft-gray surfaces, one blue accent, generous whitespace, strong type hierarchy, and a small number of large narrative sections. Avoid blue-purple gradients, bento-card dashboards, pill-heavy metadata, particle fields, fake device UI, decorative grids, and other generic AI-generated design signals.
+Use an Apple-inspired editorial product language without copying Apple trademarks or assets. The homepage combines large narrative sections with a restrained macOS-style spatial metaphor: one functional glass workspace and project dock, followed by conventional web content. Use Liquid Glass for navigation, controls, and information layers—not every card. Prefer system typography, neutral surfaces, purposeful wallpaper gradients, generous whitespace, and strong hierarchy. Avoid bento dashboards, pill-heavy metadata, particle fields, neon, copied operating-system screens, decorative tech grids, and other generic AI-generated design signals.
 
 Motion must provide immediate feedback and remain restrained: pressed controls respond on pointer-down, reversible transitions follow consistent paths, and reduced-motion users receive static or cross-fade alternatives. Keep optional legacy effects in `/fx/` and disabled by default. See `docs/design.md` before changing the homepage, header, shared tokens, or project presentation.
 

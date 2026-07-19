@@ -22,6 +22,12 @@ class ShowcaseValidationTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             validate_showcase(data)
 
+    def test_invalid_featured_mark_is_rejected(self) -> None:
+        data = copy.deepcopy(load_showcase(ROOT))
+        data["projects"]["featured"][0]["mark"] = "too-long"
+        with self.assertRaises(ValidationError):
+            validate_showcase(data)
+
     def test_enabled_link_requires_absolute_url(self) -> None:
         data = copy.deepcopy(load_showcase(ROOT))
         data["links"]["items"][0]["url"] = "/relative"

@@ -6,6 +6,7 @@ meta:
 
 featured:
   - id: batch-lio
+    mark: LIO
     title:
       zh-cn: Batch-LIO
       en: Batch-LIO
@@ -17,6 +18,7 @@ featured:
     visual: odometry
     technologies: [LiDAR, IMU, Localization]
   - id: formula-student-driverless
+    mark: FSD
     title:
       zh-cn: Formula Student Driverless
       en: Formula Student Driverless
@@ -28,6 +30,7 @@ featured:
     visual: autonomy
     technologies: [Autonomous Driving, Robotics, Systems]
   - id: unitree-robotics-systems
+    mark: G1
     title:
       zh-cn: Unitree Robotics Systems
       en: Unitree Robotics Systems
@@ -39,6 +42,7 @@ featured:
     visual: embodied
     technologies: [Unitree, Embodied AI, Deployment]
   - id: scene-intelligence
+    mark: 3D
     title:
       zh-cn: 3D Scene Intelligence
       en: 3D Scene Intelligence

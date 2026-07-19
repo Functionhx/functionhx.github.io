@@ -20,7 +20,19 @@
     },
     "projects": {
       "type": "object",
-      "required": ["meta", "featured", "records"]
+      "required": ["meta", "featured", "records"],
+      "properties": {
+        "featured": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "mark", "title", "summary", "page", "status", "visual", "technologies"],
+            "properties": {
+              "mark": {"type": "string", "pattern": "^[A-Z0-9]{1,4}$"}
+            }
+          }
+        }
+      }
     },
     "research": {
       "type": "object",

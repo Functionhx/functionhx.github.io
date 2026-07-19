@@ -95,6 +95,7 @@
     "featured": [
       {
         "id": "batch-lio",
+        "mark": "LIO",
         "title": {
           "zh-cn": "Batch-LIO",
           "en": "Batch-LIO"
@@ -114,6 +115,7 @@
       },
       {
         "id": "formula-student-driverless",
+        "mark": "FSD",
         "title": {
           "zh-cn": "Formula Student Driverless",
           "en": "Formula Student Driverless"
@@ -133,6 +135,7 @@
       },
       {
         "id": "unitree-robotics-systems",
+        "mark": "G1",
         "title": {
           "zh-cn": "Unitree Robotics Systems",
           "en": "Unitree Robotics Systems"
@@ -152,6 +155,7 @@
       },
       {
         "id": "scene-intelligence",
+        "mark": "3D",
         "title": {
           "zh-cn": "3D Scene Intelligence",
           "en": "3D Scene Intelligence"

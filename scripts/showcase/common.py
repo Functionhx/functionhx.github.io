@@ -32,6 +32,7 @@ STATUSES = {
     "archived",
 }
 ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+MARK_PATTERN = re.compile(r"^[A-Z0-9]{1,4}$")
 
 
 class ValidationError(ValueError):
@@ -176,6 +177,9 @@ def validate_showcase(data: dict[str, Any]) -> None:
     unique_ids(records, "projects.records")
     for index, item in enumerate(featured):
         item = require_mapping(item, f"projects.featured[{index}]")
+        mark = require_text(item.get("mark"), f"projects.featured[{index}].mark")
+        if not MARK_PATTERN.fullmatch(mark):
+            raise ValidationError(f"projects.featured[{index}].mark must use 1-4 uppercase letters or digits")
         require_localized(item.get("title"), f"projects.featured[{index}].title")
         require_localized(item.get("summary"), f"projects.featured[{index}].summary")
         require_page_path(item.get("page"), f"projects.featured[{index}].page")
