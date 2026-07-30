@@ -1,6 +1,12 @@
 {% assign current_lang = page.lang | default: 'zh' %}
 {% assign home_page = site.pages | where: 'home', true | where: 'lang', current_lang | first %}
-{% assign translation_pool = site.pages | concat: site.projects | concat: site.posts %}
+{% assign translation_pool = site.pages
+  | concat: site.projects
+  | concat: site.posts
+  | concat: site.news
+  | concat: site.teachings
+  | concat: site.books
+%}
 {% assign translated_pages = translation_pool | where: 'translation_key', page.translation_key %}
 {% if current_lang == 'en' %}
   {% assign target_lang = 'zh' %}

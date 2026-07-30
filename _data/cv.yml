@@ -1,0 +1,170 @@
+cv:
+  name: Yuchen Fan
+  label: Robotics Engineering undergraduate
+  email: you@example.com (original demo placeholder)
+  location: Beijing Institute of Technology
+  image: ""
+  summary: Robotics Engineering undergraduate working across robotics, autonomous systems, embodied AI, 3D scene intelligence, and AI systems engineering.
+
+  social_networks:
+    - network: GitHub
+      username: Functionhx
+
+  address:
+    street: Original demo placeholder — 123 your address street
+    city: Your City
+    region: State
+    postalCode: "12345"
+
+  sections:
+    Education:
+      - institution: Beijing Institute of Technology
+        location: Beijing, China
+        area: Robotics Engineering
+        studyType: Undergraduate
+        summary: Dates and further details have not yet been supplied.
+
+    Experience:
+      - company: Institute for Advanced Study, Princeton University
+        position: "[Original al-folio demo placeholder] Professor of Theoretical Physics"
+        location: Princeton University, NJ
+        start_date: 1933
+        end_date: 1955
+        summary: This entire entry is retained from the original al-folio demo and is not Yuchen Fan's experience.
+        highlights:
+          - Original example content
+          - Replace when verified owner information is available
+
+      - company: California Institute of Technology
+        position: "[Original al-folio demo placeholder] Visiting Professor"
+        location: Pasadena, California, US
+        start_date: 1933
+        end_date: 1933
+        highlights:
+          - Original example content
+          - Not an owner claim
+
+      - company: Kaiser Wilhelm Institute for Physics
+        position: "[Original al-folio demo placeholder] Director"
+        location: Berlin, Germany
+        start_date: 1917
+        end_date: 1933
+
+      - company: Karl-Ferdinand University
+        position: "[Original al-folio demo placeholder] Professor of Theoretical Physics"
+        location: Prague, Czechoslovakia
+        start_date: 1911
+        end_date: 1917
+
+      - company: University of Zurich
+        position: "[Original al-folio demo placeholder] Associate Professor of Theoretical Physics"
+        location: Zurich, Switzerland
+        start_date: 1909
+        end_date: 1911
+
+    Volunteer:
+      - company: People's Climate March
+        position: "[Original al-folio demo placeholder] Lead Organizer"
+        location: Zurich, Switzerland
+        start_date: 2014-04-01
+        end_date: 2015-07-01
+        summary: Original al-folio example content; not an owner claim.
+        highlights:
+          - Replace with verified information when available
+          - Retained only to reproduce the full CV layout
+
+    Awards:
+      - title: "[Original al-folio demo placeholder] Nobel Prize in Physics"
+        date: 1921-11-01
+        awarder: Royal Swedish Academy of Sciences
+        url: https://www.nobelprize.org/prizes/physics/1921/einstein/biographical/
+        summary: Original al-folio example content; not an award claimed by Yuchen Fan.
+
+      - title: "[Original al-folio demo placeholder] Max Planck Medal"
+        date: 1929
+        awarder: German Physical Society
+        summary: Original al-folio example content; not an owner claim.
+
+    Publications:
+      - title: "[Original al-folio demo placeholder] Zur Elektrodynamik bewegter Körper"
+        publisher: Annalen der Physik
+        releaseDate: 1905-06-30
+        url: https://en.wikisource.org/wiki/Translation:On_the_Electrodynamics_of_Moving_Bodies
+        summary: Original al-folio example content; not Yuchen Fan's publication.
+
+      - title: "[Original al-folio demo placeholder] Über einen die Erzeugung und Verwandlung des Lichtes betreffenden heuristischen Gesichtspunkt"
+        publisher: Annalen der Physik
+        releaseDate: 1905-03-18
+        summary: Original al-folio example content; not Yuchen Fan's publication.
+
+      - title: "[Original al-folio demo placeholder] Die Grundlage der allgemeinen Relativitätstheorie"
+        publisher: Annalen der Physik
+        releaseDate: 1916-03-20
+        summary: Original al-folio example content; not Yuchen Fan's publication.
+
+    Skills:
+      - name: Research and engineering interests
+        level: Ongoing
+        icon: fa-solid fa-hashtag
+        keywords:
+          - Robotics
+          - Autonomous systems
+          - Embodied AI
+          - 3D scene intelligence
+          - AI systems engineering
+
+    Languages:
+      - name: Chinese
+        summary: Source-of-truth language for this site; proficiency not stated
+      - name: English
+        summary: English counterpart maintained; proficiency not stated
+
+    Interests:
+      - name: Robotics and intelligent systems
+        icon: fa-solid fa-tag
+        keywords:
+          - Navigation
+          - Visual localization
+          - Robot learning
+          - Research tooling
+
+    Certificates:
+      - name: "[Original al-folio demo placeholder] Machine Learning"
+        date: 2018-01-01
+        issuer: Stanford University
+        icon: fa-solid fa-location-dot
+      - name: "[Original al-folio demo placeholder] Quantum Computing"
+        date: 2018-01-01
+        issuer: Stanford University
+        icon: fa-solid fa-tag
+      - name: "[Original al-folio demo placeholder] Quantum Information"
+        date: 2018-01-01
+        issuer: Stanford University
+        icon: fa-solid fa-envelope
+
+    Projects:
+      - name: Batch-LIO
+        summary: High-level engineering and research record for LiDAR–inertial odometry; technical details remain pending review.
+        highlights:
+          - Research status
+          - No unpublished metrics inferred
+      - name: Rebuttal Reader
+        url: https://rebuttal-reader.tart-morel-3407.chatgpt.site/
+        summary: Trace reviewer conversations from initial reviews through author responses and final decisions.
+        highlights:
+          - Public tool
+          - Live product page
+      - name: Kaggle Agent
+        url: https://functionhx.github.io/kaggle-agent/
+        summary: Monitor competition experiments, scores, quota, and decisions.
+        highlights:
+          - Integration in progress
+          - Five-minute homepage refresh
+
+    References:
+      - name: "[Original al-folio demo placeholder] Professor John Doe"
+        icon: fa-solid fa-laptop
+        reference: Original example text retained only to reproduce the complete CV section. This is not a real reference for Yuchen Fan.
+      - name: "[Original al-folio demo placeholder] Professor Jane Smith"
+        icon: fa-solid fa-thumbtack
+        reference: Original example text retained only to reproduce the complete CV section. This is not a real reference for Yuchen Fan.

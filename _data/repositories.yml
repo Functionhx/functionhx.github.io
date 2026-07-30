@@ -1,0 +1,15 @@
+github_users:
+  - Functionhx
+  - torvalds
+  - alshedivat
+
+repo_description_lines_max: 2
+
+github_repos:
+  - Functionhx/functionhx.github.io
+  - Functionhx/kaggle-agent
+  - alshedivat/al-folio
+  - jekyll/jekyll
+  - twbs/bootstrap
+  - FortAwesome/Font-Awesome
+  - mathjax/MathJax

@@ -12,17 +12,31 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTENT_DIRECTORIES = ("_pages", "_projects", "_news", "_posts")
+CONTENT_DIRECTORIES = (
+    "_pages",
+    "_projects",
+    "_news",
+    "_posts",
+    "_teachings",
+    "_books",
+)
 LANGUAGES = {"zh", "en"}
 REQUIRED_ROUTES = {
     "home": {"/", "/en/"},
+    "blog": {"/blog/", "/en/blog/"},
+    "publications": {"/publications/", "/en/publications/"},
     "projects": {"/projects/", "/en/projects/"},
-    "research": {"/research/", "/en/research/"},
+    "repositories": {"/repositories/", "/en/repositories/"},
+    "cv": {"/cv/", "/en/cv/"},
+    "teaching": {"/teaching/", "/en/teaching/"},
+    "people": {"/people/", "/en/people/"},
+    "more": {"/more/", "/en/more/"},
+    "books": {"/books/", "/en/books/"},
     "tools": {"/tools/", "/en/tools/"},
-    "writing": {"/writing/", "/en/writing/"},
     "notes": {"/notes/", "/en/notes/"},
     "logs": {"/logs/", "/en/logs/"},
     "news": {"/news/", "/en/news/"},
+    "not-found": {"/404.html", "/en/404/"},
 }
 
 
@@ -72,6 +86,13 @@ def main() -> int:
                 if not data.get(field):
                     errors.append(f"{relative}: project field {field!r} is required")
 
+        if data.get("placeholder"):
+            source = str(data.get("source", "")).lower()
+            if "al-folio" not in source:
+                errors.append(
+                    f"{relative}: placeholder records must identify al-folio as their source"
+                )
+
     for (collection, key), items in sorted(groups.items()):
         languages = [data.get("lang") for _, data in items]
         if set(languages) != LANGUAGES or len(languages) != len(LANGUAGES):
@@ -119,14 +140,21 @@ def main() -> int:
     if "MIT License" not in license_text or "Maruan Al-Shedivat" not in license_text:
         errors.append("LICENSE: upstream al-folio MIT attribution must be retained")
 
-    forbidden = ("Albert Einstein", "John Doe", "project 1", "your biography here")
-    public_text = "\n".join(
-        path.read_text(encoding="utf-8")
-        for _, path, _ in records
-    )
-    for sample in forbidden:
-        if sample.lower() in public_text.lower():
-            errors.append(f"sample content leaked into public sources: {sample!r}")
+    bibliography = (ROOT / "_bibliography" / "papers.bib").read_text(encoding="utf-8")
+    if "PhysRev.47.777" not in bibliography:
+        errors.append("_bibliography/papers.bib: original demo bibliography is missing")
+    publication_pages = [
+        data
+        for collection, _, data in records
+        if collection == "_pages" and data.get("translation_key") == "publications"
+    ]
+    if len(publication_pages) != 2 or not all(
+        page.get("placeholder") and "al-folio" in str(page.get("source", "")).lower()
+        for page in publication_pages
+    ):
+        errors.append(
+            "_pages/publications: demo bibliography must be visibly governed by placeholder metadata"
+        )
 
     if errors:
         print("Source validation failed:", file=sys.stderr)

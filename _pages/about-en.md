@@ -5,31 +5,40 @@ permalink: /en/
 lang: en
 home: true
 translation_key: home
-subtitle: Robotics Engineering undergraduate at Beijing Institute of Technology · robotics, autonomous systems, embodied AI, 3D scene intelligence, and AI systems engineering
-profile: false
-selected_papers: false
+subtitle: <a href='https://english.bit.edu.cn/'>Beijing Institute of Technology</a> · Robotics Engineering undergraduate · robotics, autonomous systems, embodied AI, and 3D scene intelligence
+profile:
+  align: right
+  image: prof_pic.jpg
+  image_circular: false
+  more_info: >
+    <p><strong>original demo placeholder</strong></p>
+    <p>555 your office number</p>
+    <p>123 your address street</p>
+    <p>Your City, State 12345</p>
+selected_papers: true
 social: true
 announcements:
   enabled: true
   scrollable: true
-  limit: 4
+  limit: 5
 latest_posts:
   enabled: true
   scrollable: true
   limit: 3
 labels:
   news: news
-  latest_posts: latest writing
-  selected_publications: research
+  latest_posts: latest posts
+  selected_publications: selected publications · original demo
 news_path: /en/news/
-writing_path: /en/writing/
-research_path: /en/research/
+writing_path: /en/blog/
+research_path: /en/publications/
+contact_note: GitHub is mine. CV, email, Scholar, InspireHEP, and the final custom icon are original al-folio demo placeholders.
 ---
 
-I am Yuchen Fan, a Robotics Engineering undergraduate. This is not a one-off résumé page, but a living home for my [research](/en/research/), [engineering projects](/en/projects/), [small tools](/en/tools/), [writing](/en/writing/), [notes](/en/notes/), and [work logs](/en/logs/).
+I am Yuchen Fan, a Robotics Engineering undergraduate. This is a living home for my [projects](/en/projects/), [tools](/en/tools/), [writing](/en/blog/), [thoughts](/en/notes/), and [work logs](/en/logs/).
 
-My current interests span robotics, autonomous systems, embodied AI, 3D scene intelligence, and AI systems engineering. Public records identify their status and source; unverified, ongoing, or pre-disclosure work stays within appropriate boundaries.
+My current interests span robotics, autonomous systems, embodied AI, 3D scene intelligence, and AI systems engineering. Public records identify their status and source; ongoing and pre-disclosure work remains appropriately high-level.
 
-<small>Status: currently studying · Source: owner-provided profile brief</small>
+The portrait, address, selected bibliography, and any item explicitly marked **original demo placeholder** come from al-folio v1.1 and are not my personal information or achievements. They remain only until verified replacements are available.
 
 {% include kaggle-monitor.liquid %}

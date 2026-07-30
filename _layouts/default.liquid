@@ -15,7 +15,13 @@
     {% endif %}
     {% include head.liquid %}
 
-    {% assign translation_pool = site.pages | concat: site.projects | concat: site.posts %}
+    {% assign translation_pool = site.pages
+      | concat: site.projects
+      | concat: site.posts
+      | concat: site.news
+      | concat: site.teachings
+      | concat: site.books
+    %}
     {% assign translated_pages = translation_pool | where: 'translation_key', page.translation_key %}
     {% for translated_page in translated_pages %}
       <link

@@ -8,6 +8,9 @@ lang: en
 translation_key: rebuttal-reader
 kind: tool
 importance: 1
+category: fun
+img: assets/img/7.jpg
+placeholder_image: true
 status: Live
 source: Public product page
 ---
@@ -16,3 +19,5 @@ source: Public product page
 - **Source:** [Public product page](https://rebuttal-reader.tart-morel-3407.chatgpt.site/)
 
 Trace rebuttal conversations and score changes by reviewer, from initial reviews through author responses and final decisions.
+
+<small>Cover image: original al-folio demo placeholder; it does not depict this product.</small>

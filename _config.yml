@@ -7,11 +7,14 @@ first_name: Yuchen
 middle_name:
 last_name: Fan
 contact_note: >
-  Research exchange, engineering collaboration, and open-source work.
+  GitHub is mine. CV, email, Scholar, InspireHEP, and the final custom icon are clearly retained al-folio demo placeholders.
 description: > # the ">" symbol means to ignore newlines until "footer_text:"
-  Yuchen Fan's bilingual home for robotics research, engineering projects, useful tools, writing, and work logs.
+  Yuchen Fan's bilingual al-folio for robotics research, engineering projects, useful tools, writing, notes, and work logs.
 footer_text: >
-  Built with <a href="https://github.com/alshedivat/al-folio">al-folio</a>.
+  Powered by <a href="https://jekyllrb.com/" target="_blank">Jekyll</a> with
+  <a href="https://github.com/alshedivat/al-folio">al-folio</a> theme.
+  Hosted by <a href="https://pages.github.com/" target="_blank">GitHub Pages</a>.
+  Demo photos from <a href="https://unsplash.com" target="_blank">Unsplash</a>.
 keywords: robotics, embodied-ai, autonomous-systems, 3d-scene-intelligence, ai-systems
 lang: zh-CN
 icon: 🤖
@@ -39,7 +42,7 @@ repo_trophies:
 # update these URLs. These are used in the repository templates.
 external_services:
   github_readme_stats_url: https://github-stats-extended.vercel.app
-  github_profile_trophy_url: https://github-profile-trophy.vercel.app
+  github_profile_trophy_url: https://trophy.ryglcloud.net
 
 # -----------------------------------------------------------------------------
 # al-folio API (v1.x)
@@ -122,14 +125,14 @@ bing_site_verification: # out your bing-site-verification ID (Bing Webmaster)
 # Blog
 # -----------------------------------------------------------------------------
 
-blog_name: writing
-blog_description: Essays, notes, and logs from research and engineering.
-permalink: /writing/:year/:title/
+blog_name: al-folio
+blog_description: a simple whitespace theme for academics
+permalink: /blog/:year/:title/
 lsi: false # produce an index for related posts
 
 # Pagination
 pagination:
-  enabled: false
+  enabled: true
 
 related_blog_posts:
   enabled: true
@@ -316,22 +319,24 @@ jekyll-archives:
   posts:
     enabled: [year, tags, categories] # enables year, tag and category archives (remove if you need to disable one of them).
     permalinks:
-      year: "/writing/:year/"
-      tags: "/writing/:type/:name/"
-      categories: "/writing/:type/:name/"
+      year: "/blog/:year/"
+      tags: "/blog/:type/:name/"
+      categories: "/blog/:type/:name/"
   books:
     enabled: [year, tags, categories] # enables year, tag and category archives (remove if you need to disable one of them).
 
-display_tags: []
-display_categories: []
+display_tags: ["formatting", "images", "links", "math", "code", "blockquotes"]
+display_categories: ["external-services"]
 
 # -----------------------------------------------------------------------------
 # Jekyll Scholar
 # -----------------------------------------------------------------------------
 
 scholar:
-  last_name: [Fan]
-  first_name: [Yuchen]
+  # The bibliography is the clearly labelled upstream demo placeholder until
+  # verified publications are supplied.
+  last_name: [Einstein]
+  first_name: [Albert, A.]
 
   style: apa
   locale: en
@@ -357,10 +362,10 @@ scholar:
 # Display different badges withs stats for your publications
 # Customize badge behavior in _layouts/bib.liquid
 enable_publication_badges:
-  altmetric: false
-  dimensions: false
-  google_scholar: false
-  inspirehep: false
+  altmetric: true
+  dimensions: true
+  google_scholar: true
+  inspirehep: true
 
 # Filter out certain bibtex entry keywords used internally from the bib output
 filtered_bibtex_keywords:

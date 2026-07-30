@@ -12,14 +12,26 @@ from urllib.parse import unquote, urlsplit
 EXPECTED_ROUTES = (
     "/",
     "/en/",
+    "/blog/",
+    "/en/blog/",
+    "/publications/",
+    "/en/publications/",
     "/projects/",
     "/en/projects/",
-    "/research/",
-    "/en/research/",
+    "/repositories/",
+    "/en/repositories/",
+    "/cv/",
+    "/en/cv/",
+    "/teaching/",
+    "/en/teaching/",
+    "/people/",
+    "/en/people/",
+    "/more/",
+    "/en/more/",
+    "/books/",
+    "/en/books/",
     "/tools/",
     "/en/tools/",
-    "/writing/",
-    "/en/writing/",
     "/notes/",
     "/en/notes/",
     "/logs/",
@@ -146,12 +158,35 @@ def main() -> int:
 
     chinese_nav = " ".join(parsed_pages.get("/", PageParser()).nav_text)
     english_nav = " ".join(parsed_pages.get("/en/", PageParser()).nav_text)
-    for label in ("关于", "项目", "研究", "工具", "写作", "思考", "日志", "EN"):
+    for label in ("关于", "博客", "论文", "项目", "仓库", "简历", "教学", "人物", "更多", "EN"):
         if label not in chinese_nav:
             errors.append(f"/: navigation label {label!r} missing")
-    for label in ("about", "projects", "research", "tools", "writing", "notes", "logs", "中"):
+    for label in ("about", "blog", "publications", "projects", "repositories", "CV", "teaching", "people", "more", "中"):
         if label not in english_nav:
             errors.append(f"/en/: navigation label {label!r} missing")
+
+    for route in ("/projects/", "/en/projects/"):
+        path = route_file(site, route)
+        if path.is_file():
+            html = path.read_text(encoding="utf-8")
+            if html.count("card h-100 hoverable") != 9:
+                errors.append(f"{route}: expected exactly nine original-style project cards")
+
+    for route in ("/publications/", "/en/publications/"):
+        path = route_file(site, route)
+        if path.is_file():
+            html = path.read_text(encoding="utf-8")
+            if "PhysRev.47.777" not in html and "Can Quantum-Mechanical Description" not in html:
+                errors.append(f"{route}: original demo bibliography did not render")
+
+    for route, locale in (("/repositories/", "cn"), ("/en/repositories/", "en")):
+        path = route_file(site, route)
+        if path.is_file():
+            html = path.read_text(encoding="utf-8")
+            if "## GitHub" in html or 'class="language-plaintext highlighter-rouge"' in html:
+                errors.append(f"{route}: repository template rendered as source code")
+            if f"locale={locale}" not in html:
+                errors.append(f"{route}: expected repository-card locale {locale!r}")
 
     for html_path in sorted(site.rglob("*.html")):
         parser = PageParser()

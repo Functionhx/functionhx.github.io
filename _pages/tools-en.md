@@ -2,11 +2,10 @@
 layout: page
 title: tools
 permalink: /en/tools/
-description: Small things I build, public products, and experimental tools.
+description: Small things I build, public products, and experimental tools. Generic photographs are original demo placeholders.
 lang: en
 translation_key: tools
-nav: true
-nav_order: 3
+nav: false
 ---
 
 <div class="projects">
