@@ -39,6 +39,18 @@ Legacy files under the original `content/` subdirectories remain in Git for hist
 - Hello World: retained as an archive and hidden from Latest Notes.
 - Résumé placeholder: replaced by a data-driven overview; verified dates and a PDF remain an owner task.
 
+## July 2026 visual reset
+
+The default site moved from an Apple-inspired spatial presentation to a Swiss-editorial research-periodical system.
+
+- The homepage window, traffic-light controls, wallpaper gradient, profile sidebar, and project Dock were removed from the default experience.
+- Featured-project shortcuts remain available as direct links in the selected-work ledger and primary navigation.
+- The two-row header, search, language switching, theme switching, Giscus, Sveltia CMS, `/fx/`, and legacy route compatibility remain intact.
+- Shared surfaces now use opaque warm-paper or near-black backgrounds, square geometry, strict rules, large sans-serif display type, and monospace metadata.
+- The former spatial presentation is preserved in Git history rather than maintained as a second homepage mode. Optional visual experiments remain isolated under `/fx/` and disabled by default.
+
+This is an intentional breaking visual change, not a compatibility refactor. When adding new homepage sections, follow `docs/design.md` and extend the editorial ledger system instead of reintroducing cards, glass, or operating-system metaphors.
+
 ## Deployment caution
 
 The repository contains an active GitHub Pages deployment workflow, while the project brief states Cloudflare Pages. No Cloudflare account setting is stored here, and the public `functionhx.github.io` hostname is consistent with GitHub Pages. The GitHub workflow remains enabled until the canonical host and deployment owner are confirmed. See `docs/deployment.md` before changing either pipeline.

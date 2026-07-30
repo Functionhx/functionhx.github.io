@@ -12,9 +12,6 @@
 <div class="showcase-list">
   {{- range .RegularPages.ByWeight }}
   <article class="showcase-card">
-    <div class="showcase-card-visual" aria-hidden="true">
-      <span></span><span></span><span></span>
-    </div>
     <div class="showcase-card-body">
       <div class="showcase-card-status">
         {{ partial "status_badge.html" (dict "status" .Params.status "lang" .Lang) }}

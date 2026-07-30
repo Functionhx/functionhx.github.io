@@ -1,59 +1,63 @@
 /* Portfolio design tokens. PaperMod remains responsible for theme persistence. */
 :root {
-  --gap: 24px;
-  --content-gap: 24px;
-  --nav-width: 1180px;
+  --gap: 28px;
+  --content-gap: 28px;
+  --nav-width: 1280px;
   --main-width: 900px;
-  --header-height: 82px;
-  --radius: 24px;
-  --theme: #f7f8fa;
-  --entry: #ffffff;
-  --primary: #16181d;
-  --secondary: #62666e;
-  --tertiary: #c9cdd4;
-  --content: #3f434b;
-  --code-block-bg: #151820;
-  --code-bg: #edf0f4;
-  --border: rgba(20, 24, 32, 0.12);
-  --accent: #0674df;
-  --accent-strong: #0059b1;
-  --accent-soft: rgba(6, 116, 223, 0.1);
-  --accent-secondary: #36a4ff;
-  --status-warm: #a04400;
-  --surface-raised: #ffffff;
-  --surface-muted: #eef1f5;
-  --glass-bg: rgba(255, 255, 255, 0.58);
-  --glass-bg-strong: rgba(255, 255, 255, 0.78);
-  --glass-border: rgba(255, 255, 255, 0.62);
-  --glass-shadow-window: 0 28px 80px rgba(23, 39, 65, 0.13), 0 2px 8px rgba(23, 39, 65, 0.06);
-  --shadow-sm: 0 2px 8px rgba(23, 39, 65, 0.06);
-  --shadow-md: 0 24px 64px rgba(23, 39, 65, 0.14);
+  --header-height: 88px;
+  --radius: 0;
+  --theme: #f2f0e9;
+  --entry: #f8f7f2;
+  --primary: #11110f;
+  --secondary: #5c5b55;
+  --tertiary: #c9c6bb;
+  --content: #31312d;
+  --code-block-bg: #11110f;
+  --code-bg: #e6e3da;
+  --border: rgba(17, 17, 15, 0.2);
+  --accent: #2445ff;
+  --accent-strong: #1029d4;
+  --accent-soft: rgba(36, 69, 255, 0.12);
+  --accent-secondary: #2445ff;
+  --status-warm: #a83b00;
+  --surface-raised: #faf9f4;
+  --surface-muted: #e6e3da;
+  --glass-bg: #f8f7f2;
+  --glass-bg-strong: #f8f7f2;
+  --glass-border: rgba(17, 17, 15, 0.2);
+  --glass-shadow-window: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI",
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "SFMono-Regular", "SF Mono", "Cascadia Mono", "Roboto Mono",
+    ui-monospace, monospace;
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
-  --theme: #0d1016;
-  --entry: #191d25;
-  --primary: #f2f4f8;
-  --secondary: #9ca4b0;
-  --tertiary: #343a45;
-  --content: #d2d7df;
-  --code-block-bg: #07090d;
-  --code-bg: #20252e;
-  --border: rgba(255, 255, 255, 0.13);
-  --accent: #3da2ff;
-  --accent-strong: #78beff;
-  --accent-soft: rgba(61, 162, 255, 0.14);
-  --accent-secondary: #72d4ff;
+  --theme: #11110f;
+  --entry: #181815;
+  --primary: #f4f1e8;
+  --secondary: #aaa79d;
+  --tertiary: #3b3a34;
+  --content: #d4d1c8;
+  --code-block-bg: #090908;
+  --code-bg: #25241f;
+  --border: rgba(244, 241, 232, 0.21);
+  --accent: #8091ff;
+  --accent-strong: #aeb8ff;
+  --accent-soft: rgba(128, 145, 255, 0.16);
+  --accent-secondary: #8091ff;
   --status-warm: #ff9f0a;
-  --surface-raised: #191d25;
-  --surface-muted: #151922;
-  --glass-bg: rgba(25, 29, 37, 0.58);
-  --glass-bg-strong: rgba(25, 29, 37, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.17);
-  --glass-shadow-window: 0 30px 90px rgba(0, 0, 0, 0.38), 0 2px 10px rgba(0, 0, 0, 0.22);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 22px 60px rgba(0, 0, 0, 0.28);
+  --surface-raised: #181815;
+  --surface-muted: #1d1d19;
+  --glass-bg: #181815;
+  --glass-bg-strong: #181815;
+  --glass-border: rgba(244, 241, 232, 0.21);
+  --glass-shadow-window: none;
+  --shadow-sm: none;
+  --shadow-md: none;
   color-scheme: dark;
 }
 
@@ -65,8 +69,7 @@ body,
 .list {
   background: var(--theme);
   color: var(--content);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
-    "Helvetica Neue", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-sans);
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -119,9 +122,9 @@ a {
 .page-header h1,
 .post-title {
   color: var(--primary);
-  font-weight: 700;
-  letter-spacing: -0.055em;
-  line-height: 1.02;
+  font-weight: 760;
+  letter-spacing: -0.065em;
+  line-height: 0.96;
 }
 
 .post-description {
@@ -139,15 +142,15 @@ a {
 
 .first-entry {
   background: var(--surface-muted);
-  border: 0;
-  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  border-radius: 0;
   box-shadow: none;
 }
 
 .toc {
   background: var(--surface-muted);
-  border: 0;
-  border-radius: 18px;
+  border: 1px solid var(--border);
+  border-radius: 0;
   box-shadow: none;
 }
 
@@ -168,7 +171,7 @@ a {
   width: 100%;
   overflow-x: auto;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 0;
 }
 
 .post-content table:not(.highlighttable) th {
@@ -184,7 +187,7 @@ a {
 .highlight,
 pre,
 code {
-  border-radius: 9px;
+  border-radius: 0;
 }
 
 .footer {
@@ -198,8 +201,8 @@ code {
 @media (max-width: 760px) {
   :root {
     --gap: 18px;
-    --content-gap: 20px;
-    --radius: 20px;
+    --content-gap: 22px;
+    --radius: 0;
   }
 
   .main {

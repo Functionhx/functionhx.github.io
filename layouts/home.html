@@ -9,189 +9,151 @@
 {{- $github := index (where $links.items "id" "github") 0 -}}
 
 <div class="portfolio-home">
-  <section class="portfolio-hero" aria-labelledby="hero-title">
-    <div class="desktop-wallpaper" aria-hidden="true">
-      <span class="wallpaper-orb wallpaper-orb--one"></span>
-      <span class="wallpaper-orb wallpaper-orb--two"></span>
-      <span class="wallpaper-orb wallpaper-orb--three"></span>
-      <span class="wallpaper-fold wallpaper-fold--one"></span>
-      <span class="wallpaper-fold wallpaper-fold--two"></span>
-      <span class="wallpaper-grain"></span>
-    </div>
-
-    <div class="home-shell hero-workspace">
-      <div class="workspace-window">
-        <div class="window-toolbar">
-          <div class="traffic-lights" aria-hidden="true">
-            <span class="traffic-light traffic-light--close"></span>
-            <span class="traffic-light traffic-light--minimize"></span>
-            <span class="traffic-light traffic-light--zoom"></span>
-          </div>
-          <p>{{ if $isEnglish }}Yuchen Fan — Research Portfolio{{ else }}樊宇琛 — 研究与工程作品集{{ end }}</p>
-          <span class="window-status">2026</span>
-        </div>
-
-        <div class="workspace-body">
-          <aside class="workspace-sidebar" aria-label="{{ if $isEnglish }}Portfolio overview{{ else }}作品集概览{{ end }}">
-            <div class="workspace-avatar" aria-hidden="true">YF</div>
-            <div>
-              <span>{{ if $isEnglish }}Education{{ else }}学校{{ end }}</span>
-              <strong>{{ index $profile.education.institution $lang }}</strong>
-            </div>
-            <div>
-              <span>{{ if $isEnglish }}Building for{{ else }}面向{{ end }}</span>
-              <strong>{{ if $isEnglish }}The physical world{{ else }}真实世界{{ end }}</strong>
-            </div>
-            <div class="workspace-signal">
-              <i aria-hidden="true"></i>
-              <span>{{ if $isEnglish }}Open to research exchange{{ else }}欢迎研究交流{{ end }}</span>
-            </div>
-          </aside>
-
-          <div class="hero-copy">
-            <p class="hero-name">{{ index $profile.name $lang }}</p>
-            <p class="hero-eyebrow">{{ index $profile.headline $lang }}</p>
-            <h1 id="hero-title">{{ index $profile.tagline $lang }}</h1>
-            <p class="hero-bio">{{ index $profile.bio $lang }}</p>
-            <nav class="hero-actions" aria-label="{{ if $isEnglish }}Primary actions{{ else }}主要操作{{ end }}">
-              <a class="hero-action hero-action--primary" href="{{ "projects/" | relLangURL }}">{{ if $isEnglish }}Explore projects{{ else }}浏览项目{{ end }}</a>
-              <a class="hero-action" href="{{ "research/" | relLangURL }}">{{ if $isEnglish }}View research{{ else }}查看研究{{ end }}</a>
-              <a class="hero-action" href="{{ "about/resume/" | relLangURL }}">{{ if $isEnglish }}Résumé{{ else }}简历{{ end }}</a>
-              <a class="hero-action hero-action--icon" href="{{ $github.url }}" target="_blank" rel="noopener noreferrer" aria-label="GitHub ({{ if $isEnglish }}opens in a new tab{{ else }}在新标签页打开{{ end }})">↗</a>
-            </nav>
-          </div>
-        </div>
-      </div>
-
-      <nav class="hero-dock" aria-label="{{ if $isEnglish }}Featured projects{{ else }}精选项目{{ end }}">
-        {{- range $index, $project := $projects.featured }}
-        <a class="dock-item dock-item--{{ $project.visual }}" href="{{ strings.TrimPrefix "/" $project.page | relLangURL }}">
-          <span class="dock-icon" aria-hidden="true"><b>{{ $project.mark }}</b></span>
-          <span class="dock-label">{{ index $project.title $lang }}</span>
-        </a>
-        {{- end }}
-      </nav>
-    </div>
-  </section>
-
-  <section class="home-section focus-section" aria-labelledby="focus-title">
+  <section class="editorial-hero" aria-labelledby="hero-title">
     <div class="home-shell">
-      <div class="section-heading section-heading--centered">
-        <p class="section-kicker">{{ if $isEnglish }}Current focus{{ else }}当前方向{{ end }}</p>
-        <h2 id="focus-title">{{ if $isEnglish }}One system. Four layers.{{ else }}一个系统，四个层次。{{ end }}</h2>
-        <p>{{ if $isEnglish }}From sensing the world to shipping a system that keeps working in it.{{ else }}从理解真实世界，到让系统持续可靠地运行其中。{{ end }}</p>
+      <div class="hero-register" aria-label="{{ if $isEnglish }}Portfolio identification{{ else }}作品集标识{{ end }}">
+        <span>YF—01</span>
+        <span>{{ if $isEnglish }}Research & Engineering Portfolio{{ else }}研究与工程作品集{{ end }}</span>
+        <span>{{ index $profile.education.institution $lang }}</span>
       </div>
 
-      <div class="focus-window">
-        <div class="focus-window-titlebar" aria-hidden="true">
-          <span>System Focus</span>
-          <span>04 layers</span>
+      <div class="hero-display">
+        <div class="hero-identity">
+          <p>{{ if $isEnglish }}Robotics Engineering / Research{{ else }}机器人工程 / 研究{{ end }}</p>
+          <h1 id="hero-title">{{ index $profile.name $lang }}</h1>
         </div>
-        <div class="focus-list">
-          {{- range $index, $focus := $profile.focus }}
-          <article class="focus-item">
-            <div class="focus-symbol focus-symbol--{{ add $index 1 }}" aria-hidden="true"><span></span></div>
-            <div class="focus-item-copy">
-              <span class="focus-index">{{ printf "%02d" (add $index 1) }}</span>
-              <h3>{{ index $focus.title $lang }}</h3>
-              <p>{{ index $focus.summary $lang }}</p>
-            </div>
-          </article>
-          {{- end }}
+
+        <div class="hero-statement">
+          <p class="hero-headline">{{ index $profile.headline $lang }}</p>
+          <p class="hero-tagline">{{ index $profile.tagline $lang }}</p>
+          <p class="hero-bio">{{ index $profile.bio $lang }}</p>
         </div>
+      </div>
+
+      <div class="hero-lower">
+        <dl class="hero-facts">
+          <div>
+            <dt>{{ if $isEnglish }}Institution{{ else }}学校{{ end }}</dt>
+            <dd>{{ index $profile.education.institution $lang }}</dd>
+          </div>
+          <div>
+            <dt>{{ if $isEnglish }}Program{{ else }}专业{{ end }}</dt>
+            <dd>{{ index $profile.education.program $lang }}</dd>
+          </div>
+        </dl>
+
+        <nav class="hero-links" aria-label="{{ if $isEnglish }}Primary actions{{ else }}主要操作{{ end }}">
+          <a href="{{ "projects/" | relLangURL }}">{{ if $isEnglish }}Selected work{{ else }}代表工作{{ end }} <span aria-hidden="true">↗</span></a>
+          <a href="{{ "research/" | relLangURL }}">{{ if $isEnglish }}Research{{ else }}研究{{ end }} <span aria-hidden="true">↗</span></a>
+          <a href="{{ "about/" | relLangURL }}">{{ if $isEnglish }}About{{ else }}关于{{ end }} <span aria-hidden="true">↗</span></a>
+          <a href="{{ $github.url }}" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+        </nav>
       </div>
     </div>
   </section>
 
-  <section class="home-section projects-section" aria-labelledby="projects-title">
+  <section class="focus-band" aria-labelledby="focus-title">
     <div class="home-shell">
-      <div class="section-heading section-heading--centered section-heading--light">
-        <p class="section-kicker">{{ if $isEnglish }}Selected work{{ else }}代表工作{{ end }}</p>
-        <h2 id="projects-title">{{ if $isEnglish }}Built beyond the screen.{{ else }}走出屏幕，进入真实世界。{{ end }}</h2>
-        <p>{{ if $isEnglish }}Robotics and scene-intelligence work, with status and contribution boundaries kept explicit.{{ else }}机器人与场景智能实践，并明确标注状态与个人贡献边界。{{ end }}</p>
+      <div class="focus-band-heading">
+        <p class="section-code">00 / {{ if $isEnglish }}Focus{{ else }}方向{{ end }}</p>
+        <h2 id="focus-title">{{ if $isEnglish }}One system, four connected questions.{{ else }}一个系统，四个相互连接的问题。{{ end }}</h2>
       </div>
-
-      <div class="project-stories">
-        {{- range $index, $project := $projects.featured }}
-        <article class="project-story project-story--{{ $project.visual }}">
-          <div class="project-scene" aria-hidden="true">
-            <span class="project-monogram">{{ $project.mark }}</span>
-            <span class="project-scene-glow"></span>
-            <div class="project-preview-window">
-              <div class="project-preview-bar">
-                <span></span><span></span><span></span>
-                <small>{{ if $isEnglish }}System overview{{ else }}系统概览{{ end }}</small>
-              </div>
-              <div class="project-preview-body">
-                <span class="preview-line preview-line--wide"></span>
-                <span class="preview-line"></span>
-                <span class="preview-line preview-line--short"></span>
-                <div class="preview-module-grid">
-                  {{- range first 3 $project.technologies }}<span>{{ . }}</span>{{- end }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="project-story-copy">
-            <div class="project-story-overline">
-              <span>{{ printf "%02d" (add $index 1) }}</span>
-              {{ partial "status_badge.html" (dict "status" $project.status "lang" $lang) }}
-            </div>
-            <h3><a href="{{ strings.TrimPrefix "/" $project.page | relLangURL }}">{{ index $project.title $lang }}</a></h3>
-            <p>{{ index $project.summary $lang }}</p>
-            <ul class="project-technologies" aria-label="{{ if $isEnglish }}Technologies{{ else }}技术标签{{ end }}">
-              {{- range $project.technologies }}<li>{{ . }}</li>{{- end }}
-            </ul>
-            <a class="section-link" href="{{ strings.TrimPrefix "/" $project.page | relLangURL }}">{{ if $isEnglish }}View project{{ else }}查看项目{{ end }} <span aria-hidden="true">›</span></a>
-          </div>
-        </article>
-        {{- end }}
-      </div>
-
-      <div class="section-end-link">
-        <a class="section-link section-link--light" href="{{ "projects/" | relLangURL }}">{{ if $isEnglish }}See all projects{{ else }}查看全部项目{{ end }} <span aria-hidden="true">›</span></a>
-      </div>
-    </div>
-  </section>
-
-  <section class="home-section journey-section" aria-labelledby="journey-title">
-    <div class="journey-wallpaper" aria-hidden="true"><span></span><span></span></div>
-    <div class="home-shell journey-layout">
-      <div class="section-heading">
-        <p class="section-kicker">{{ if $isEnglish }}Research journey{{ else }}研究轨迹{{ end }}</p>
-        <h2 id="journey-title">{{ if $isEnglish }}Built one layer at a time.{{ else }}一层一层，走向完整系统。{{ end }}</h2>
-      </div>
-      <ol class="timeline-list">
-        {{- range $timeline.items }}
+      <ol class="focus-track">
+        {{- range $index, $focus := $profile.focus }}
         <li>
-          <div class="timeline-year">{{ .year }}</div>
-          <div class="timeline-copy">
-            <p>{{ index .text $lang }}</p>
-            {{ partial "status_badge.html" (dict "status" .status "lang" $lang) }}
-          </div>
+          <span>{{ printf "%02d" (add $index 1) }}</span>
+          <strong>{{ index $focus.title $lang }}</strong>
+          <p>{{ index $focus.summary $lang }}</p>
         </li>
         {{- end }}
       </ol>
     </div>
   </section>
 
-  <section class="home-section open-source-section-wrap" aria-labelledby="opensource-title">
-    <div class="home-shell open-source-section">
-      <div class="open-source-summary">
-        <p class="section-kicker">Open Source</p>
-        <div class="metric-orb"><h2 id="opensource-title">{{ $openSource.metrics.merged_pull_requests.value }}</h2></div>
-        <p class="metric-label">{{ index $openSource.metrics.merged_pull_requests.label $lang }}</p>
-        <a class="section-link" href="{{ "open-source/" | relLangURL }}">{{ if $isEnglish }}View contribution record{{ else }}查看贡献档案{{ end }} <span aria-hidden="true">›</span></a>
-      </div>
-      <div class="open-source-details">
-        <p class="open-source-lead">{{ if $isEnglish }}Contributing where infrastructure meets real systems.{{ else }}在基础设施与真实系统交汇处参与开源。{{ end }}</p>
-        <div class="category-list">
-          {{- range $openSource.categories }}<span>{{ index .label $lang }}</span>{{- end }}
+  <section class="home-section projects-section" aria-labelledby="projects-title">
+    <div class="home-shell">
+      <header class="editorial-section-header">
+        <p class="section-code">01 / {{ if $isEnglish }}Selected work{{ else }}代表工作{{ end }}</p>
+        <div>
+          <h2 id="projects-title">{{ if $isEnglish }}Work that leaves the screen.{{ else }}走出屏幕的工程工作。{{ end }}</h2>
+          <p>{{ if $isEnglish }}Robotics and scene-intelligence records with explicit status, evidence, and contribution boundaries.{{ else }}机器人与场景智能记录，明确标注状态、证据与个人贡献边界。{{ end }}</p>
         </div>
-        <ul class="ecosystem-list" aria-label="{{ if $isEnglish }}Representative ecosystems{{ else }}代表性生态{{ end }}">
-          {{- range $openSource.ecosystems }}<li>{{ .name }}</li>{{- end }}
-        </ul>
+      </header>
+
+      <div class="project-ledger">
+        {{- range $index, $project := $projects.featured }}
+        <article class="project-entry">
+          <div class="project-entry-index">{{ printf "%02d" (add $index 1) }}</div>
+          <div class="project-entry-status">
+            {{ partial "status_badge.html" (dict "status" $project.status "lang" $lang) }}
+          </div>
+          <div class="project-entry-main">
+            <h3><a href="{{ strings.TrimPrefix "/" $project.page | relLangURL }}">{{ index $project.title $lang }}</a></h3>
+            <p>{{ index $project.summary $lang }}</p>
+          </div>
+          <ul class="project-technologies" aria-label="{{ if $isEnglish }}Technologies{{ else }}技术标签{{ end }}">
+            {{- range $project.technologies }}<li>{{ . }}</li>{{- end }}
+          </ul>
+          <a class="project-entry-link" href="{{ strings.TrimPrefix "/" $project.page | relLangURL }}" aria-label="{{ if $isEnglish }}View {{ index $project.title $lang }}{{ else }}查看{{ index $project.title $lang }}{{ end }}">
+            <span aria-hidden="true">↗</span>
+          </a>
+        </article>
+        {{- end }}
+      </div>
+
+      <div class="section-end-link">
+        <a class="section-link" href="{{ "projects/" | relLangURL }}">{{ if $isEnglish }}All projects{{ else }}全部项目{{ end }} <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section journey-section" aria-labelledby="journey-title">
+    <div class="home-shell">
+      <header class="editorial-section-header editorial-section-header--dark">
+        <p class="section-code">02 / {{ if $isEnglish }}Research journey{{ else }}研究轨迹{{ end }}</p>
+        <div>
+          <h2 id="journey-title">{{ if $isEnglish }}The record so far.{{ else }}到目前为止的研究记录。{{ end }}</h2>
+          <p>{{ if $isEnglish }}A timeline of completed work and ongoing directions.{{ else }}已完成工作与正在推进方向的时间线。{{ end }}</p>
+        </div>
+      </header>
+
+      <ol class="timeline-ledger">
+        {{- range $index, $item := $timeline.items }}
+        <li>
+          <span class="timeline-index">{{ printf "%02d" (add $index 1) }}</span>
+          <strong class="timeline-year">{{ $item.year }}</strong>
+          <p>{{ index $item.text $lang }}</p>
+          {{ partial "status_badge.html" (dict "status" $item.status "lang" $lang) }}
+        </li>
+        {{- end }}
+      </ol>
+    </div>
+  </section>
+
+  <section class="home-section open-source-section" aria-labelledby="opensource-title">
+    <div class="home-shell">
+      <header class="editorial-section-header">
+        <p class="section-code">03 / Open Source</p>
+        <div>
+          <h2 id="opensource-title">{{ if $isEnglish }}Engineering, in public.{{ else }}在开放环境中做工程。{{ end }}</h2>
+          <p>{{ if $isEnglish }}A public contribution record across developer infrastructure and real systems.{{ else }}覆盖开发者基础设施与真实系统的公开贡献记录。{{ end }}</p>
+        </div>
+      </header>
+
+      <div class="open-source-ledger">
+        <div class="open-source-metric">
+          <strong>{{ $openSource.metrics.merged_pull_requests.value }}</strong>
+          <span>{{ index $openSource.metrics.merged_pull_requests.label $lang }}</span>
+        </div>
+        <div class="open-source-details">
+          <div class="category-list">
+            {{- range $openSource.categories }}<span>{{ index .label $lang }}</span>{{- end }}
+          </div>
+          <ul class="ecosystem-list" aria-label="{{ if $isEnglish }}Representative ecosystems{{ else }}代表性生态{{ end }}">
+            {{- range $openSource.ecosystems }}<li>{{ .name }}</li>{{- end }}
+          </ul>
+          <a class="section-link" href="{{ "open-source/" | relLangURL }}">{{ if $isEnglish }}Contribution record{{ else }}贡献档案{{ end }} <span aria-hidden="true">↗</span></a>
+        </div>
       </div>
     </div>
   </section>
@@ -202,25 +164,21 @@
   {{- $notes = first 3 $notes.ByDate.Reverse -}}
   {{- if gt (len $notes) 0 }}
   <section class="home-section notes-section" aria-labelledby="notes-title">
-    <div class="home-shell notes-window">
-      <div class="notes-window-bar">
-        <div><span></span><span></span><span></span></div>
-        <p>{{ if $isEnglish }}Latest Notes{{ else }}最新笔记{{ end }}</p>
-        <a href="{{ "notes/" | relLangURL }}">{{ if $isEnglish }}View all{{ else }}查看全部{{ end }}</a>
-      </div>
-      <div class="section-heading section-heading--split">
+    <div class="home-shell">
+      <header class="editorial-section-header">
+        <p class="section-code">04 / {{ if $isEnglish }}Notes{{ else }}笔记{{ end }}</p>
         <div>
-          <p class="section-kicker">{{ if $isEnglish }}Writing{{ else }}持续记录{{ end }}</p>
-          <h2 id="notes-title">{{ if $isEnglish }}Notes from the workbench.{{ else }}来自工程现场的笔记。{{ end }}</h2>
+          <h2 id="notes-title">{{ if $isEnglish }}From the workbench.{{ else }}来自工程现场。{{ end }}</h2>
+          <a class="section-link" href="{{ "notes/" | relLangURL }}">{{ if $isEnglish }}All notes{{ else }}全部笔记{{ end }} <span aria-hidden="true">↗</span></a>
         </div>
-      </div>
-      <div class="latest-notes">
+      </header>
+      <div class="notes-ledger">
         {{- range $notes }}
         <article>
           <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006-01-02" }}</time>
           <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
           {{- with .Description }}<p>{{ . }}</p>{{ end }}
-          <span aria-hidden="true">›</span>
+          <span aria-hidden="true">↗</span>
         </article>
         {{- end }}
       </div>
@@ -228,21 +186,22 @@
   </section>
   {{- end }}
 
-  <section class="home-section home-contact" aria-labelledby="contact-title">
-    <div class="contact-wallpaper" aria-hidden="true"><span></span><span></span></div>
-    <div class="home-shell contact-glass">
+  <section class="contact-section" aria-labelledby="contact-title">
+    <div class="home-shell contact-layout">
       <div>
-        <p class="section-kicker">{{ if $isEnglish }}Contact{{ else }}联系{{ end }}</p>
-        <h2 id="contact-title">{{ if $isEnglish }}Let’s make it work in the real world.{{ else }}一起让想法在真实世界运行。{{ end }}</h2>
-        <p>{{ if $isEnglish }}For research exchange, engineering collaboration, or open-source work.{{ else }}欢迎就研究交流、工程协作与开源贡献联系。{{ end }}</p>
+        <p class="section-code">05 / {{ if $isEnglish }}Contact{{ else }}联系{{ end }}</p>
+        <h2 id="contact-title">{{ if $isEnglish }}Let’s make it work.{{ else }}一起把它做成。{{ end }}</h2>
       </div>
-      <div class="contact-links">
-        {{- $contactLinks := where $links.items "enabled" true -}}
-        {{- range sort $contactLinks "order" }}
-        {{- if ne .id "website" }}
-        <a href="{{ .url }}"{{ if hasPrefix .url "http" }} target="_blank" rel="noopener noreferrer"{{ end }}>{{ .label }} <span aria-hidden="true">↗</span></a>
-        {{- end }}
-        {{- end }}
+      <div>
+        <p>{{ if $isEnglish }}For research exchange, engineering collaboration, or open-source work.{{ else }}欢迎就研究交流、工程协作与开源贡献联系。{{ end }}</p>
+        <nav class="contact-links" aria-label="{{ if $isEnglish }}Contact links{{ else }}联系方式{{ end }}">
+          {{- $contactLinks := where $links.items "enabled" true -}}
+          {{- range sort $contactLinks "order" }}
+          {{- if ne .id "website" }}
+          <a href="{{ .url }}"{{ if hasPrefix .url "http" }} target="_blank" rel="noopener noreferrer"{{ end }}>{{ .label }} <span aria-hidden="true">↗</span></a>
+          {{- end }}
+          {{- end }}
+        </nav>
       </div>
     </div>
   </section>
