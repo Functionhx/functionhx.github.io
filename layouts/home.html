@@ -1,22 +1,191 @@
 {{- define "main" }}
-<section class="directory" aria-labelledby="page-title">
-    <div class="directory__heading">
-        <span aria-hidden="true">01—06</span>
-        <h1 id="page-title">{{ .Title }}</h1>
-    </div>
+{{- $lang := .Lang -}}
+{{- $isEnglish := eq $lang "en" -}}
+{{- $hub := hugo.Data.showcase.hub -}}
+{{- $profile := $hub.profile -}}
+{{- $featuredTool := index $hub.tools 0 -}}
 
-    <ol class="directory__list">
-        {{- range $index, $item := site.Menus.main }}
-        <li>
-            <a href="{{ $item.URL | relLangURL }}"{{ if $.IsMenuCurrent "main" $item }} aria-current="page"{{ end }}>
-                <span class="directory__number">{{ printf "%02d" (add $index 1) }}</span>
-                <span class="directory__name">{{ $item.Name }}</span>
-                <span class="directory__mark" aria-hidden="true">↗</span>
-            </a>
-        </li>
-        {{- end }}
-    </ol>
+<div class="hub-home">
+    <section class="hub-intro" aria-labelledby="home-title">
+        <div class="page-shell hub-intro__grid">
+            <div class="hub-intro__main">
+                <p class="eyebrow">YUCHEN FAN / {{ if $isEnglish }}PERSONAL HUB{{ else }}个人数字中枢{{ end }}</p>
+                <h1 id="home-title">{{ index $profile.headline $lang }}</h1>
+                <p class="hub-intro__summary">{{ index $profile.summary $lang }}</p>
+                <div class="hub-intro__actions">
+                    <a class="primary-link" href="#workspace">{{ if $isEnglish }}Enter the workspace{{ else }}进入工作台{{ end }} <span aria-hidden="true">↓</span></a>
+                    <a class="text-link" href="{{ "about/" | relLangURL }}">{{ if $isEnglish }}About me{{ else }}关于我{{ end }} <span aria-hidden="true">↗</span></a>
+                </div>
+            </div>
 
-    {{- partial "kaggle-mini-card.html" . }}
-</section>
+            <aside class="now-note" aria-label="{{ if $isEnglish }}Current focus{{ else }}当前关注{{ end }}">
+                <div class="now-note__label">
+                    <span class="live-dot" aria-hidden="true"></span>
+                    NOW
+                </div>
+                <p>{{ index $profile.current_focus $lang }}</p>
+                <div class="now-note__proof">
+                    <span>{{ index $profile.status $lang }}</span>
+                    <span>{{ index $profile.source $lang }}</span>
+                </div>
+            </aside>
+        </div>
+    </section>
+
+    <section class="workspace-section" id="workspace" aria-labelledby="workspace-title">
+        <div class="page-shell">
+            <header class="section-heading section-heading--workspace">
+                <p class="section-index">01 / LIVE WORKSPACE</p>
+                <div>
+                    <h2 id="workspace-title">{{ if $isEnglish }}What is happening now.{{ else }}正在发生的事。{{ end }}</h2>
+                    <p>{{ if $isEnglish }}One useful product, one live system, and direct routes into the archive.{{ else }}一个可直接使用的产品、一套实时系统，以及通往内容档案的入口。{{ end }}</p>
+                </div>
+            </header>
+
+            <div class="workspace">
+                <div class="workspace__bar" aria-hidden="true">
+                    <span></span><span></span><span></span>
+                    <b>functionhx / workspace</b>
+                    <time datetime="2026-07-30">2026.07</time>
+                </div>
+
+                <div class="workspace__body">
+                    <article class="tool-feature">
+                        <div class="tool-feature__copy">
+                            <div class="record-meta">
+                                <span>{{ index $featuredTool.kicker $lang }}</span>
+                                <span class="record-status"><i aria-hidden="true"></i>{{ index $featuredTool.status $lang }}</span>
+                            </div>
+                            <h3>{{ index $featuredTool.title $lang }}</h3>
+                            <p>{{ index $featuredTool.description $lang }}</p>
+                            <a class="launch-link" href="{{ $featuredTool.url }}" target="_blank" rel="noopener noreferrer">
+                                {{ if $isEnglish }}Launch product{{ else }}打开产品{{ end }} <span aria-hidden="true">↗</span>
+                            </a>
+                            <small>{{ if $isEnglish }}Source: {{ else }}来源：{{ end }}{{ index $featuredTool.source $lang }}</small>
+                        </div>
+
+                        <a class="reader-preview" href="{{ $featuredTool.url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ if $isEnglish }}Open Rebuttal Reader{{ else }}打开答辩录{{ end }}">
+                            <div class="reader-preview__sidebar">
+                                <div class="reader-preview__brand">R/</div>
+                                <span></span>
+                                <span></span>
+                                <span class="is-active"></span>
+                                <span></span>
+                            </div>
+                            <div class="reader-preview__document">
+                                <p>CONFERENCE REBUTTAL</p>
+                                <strong>{{ if $isEnglish }}From questions to decisions{{ else }}从质疑到决定{{ end }}</strong>
+                                <div class="reader-preview__score">
+                                    <span>REVIEW</span><b>3 → 5</b><span>DECISION</span>
+                                </div>
+                                <i></i><i></i><i></i><i></i>
+                            </div>
+                        </a>
+                    </article>
+
+                    <aside class="workspace__rail">
+                        {{- partial "kaggle-mini-card.html" . }}
+                        <div class="workspace-note">
+                            <span>{{ if $isEnglish }}WORKSPACE PRINCIPLE{{ else }}工作台原则{{ end }}</span>
+                            <p>{{ if $isEnglish }}The homepage shows live state. The archives preserve durable knowledge.{{ else }}主页展示实时状态，档案页保存长期知识。{{ end }}</p>
+                        </div>
+                    </aside>
+                </div>
+
+                <nav class="project-dock" aria-label="{{ if $isEnglish }}Workspace shortcuts{{ else }}工作台快捷入口{{ end }}">
+                    <a href="{{ $featuredTool.url }}" target="_blank" rel="noopener noreferrer">
+                        <span>R/</span>
+                        <small>{{ if $isEnglish }}Reader{{ else }}答辩录{{ end }}</small>
+                    </a>
+                    <a href="https://functionhx.github.io/kaggle-agent/">
+                        <span>KG</span>
+                        <small>Kaggle</small>
+                    </a>
+                    <a href="{{ "projects/" | relLangURL }}">
+                        <span>PJ</span>
+                        <small>{{ if $isEnglish }}Projects{{ else }}项目{{ end }}</small>
+                    </a>
+                    <a href="{{ "notes/" | relLangURL }}">
+                        <span>NT</span>
+                        <small>{{ if $isEnglish }}Notes{{ else }}思考{{ end }}</small>
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </section>
+
+    <section class="editorial-section work-section" aria-labelledby="work-title">
+        <div class="page-shell">
+            <header class="section-heading">
+                <p class="section-index">02 / {{ if $isEnglish }}WORK{{ else }}工作档案{{ end }}</p>
+                <div>
+                    <h2 id="work-title">{{ if $isEnglish }}Built, tested, and still evolving.{{ else }}做过、验证过，也仍在演进。{{ end }}</h2>
+                    <p>{{ if $isEnglish }}Project records stay explicit about status, source, and disclosure boundaries.{{ else }}项目记录明确标注状态、来源与披露边界。{{ end }}</p>
+                </div>
+            </header>
+
+            <div class="work-register">
+                {{- range $hub.projects }}
+                <article class="work-row">
+                    <span class="work-row__index">{{ .index }}</span>
+                    <div class="work-row__title">
+                        <span>{{ index .status $lang }}</span>
+                        <h3>{{ index .title $lang }}</h3>
+                    </div>
+                    <div class="work-row__summary">
+                        <p>{{ index .summary $lang }}</p>
+                        <small>{{ if $isEnglish }}Source: {{ else }}来源：{{ end }}{{ index .source $lang }}</small>
+                    </div>
+                </article>
+                {{- end }}
+            </div>
+
+            <div class="section-links">
+                <a class="text-link" href="{{ "projects/" | relLangURL }}">{{ if $isEnglish }}Project archive{{ else }}项目档案{{ end }} <span aria-hidden="true">↗</span></a>
+                <a class="text-link" href="{{ "research/" | relLangURL }}">{{ if $isEnglish }}Research record{{ else }}研究记录{{ end }} <span aria-hidden="true">↗</span></a>
+                <a class="text-link" href="{{ "open-source/" | relLangURL }}">{{ if $isEnglish }}Open source{{ else }}开源记录{{ end }} <span aria-hidden="true">↗</span></a>
+            </div>
+        </div>
+    </section>
+
+    <section class="editorial-section knowledge-section" aria-labelledby="knowledge-title">
+        <div class="page-shell">
+            <header class="section-heading">
+                <p class="section-index">03 / {{ if $isEnglish }}KNOWLEDGE{{ else }}知识现场{{ end }}</p>
+                <div>
+                    <h2 id="knowledge-title">{{ if $isEnglish }}Different ideas need different tempos.{{ else }}不同的想法，需要不同的时间尺度。{{ end }}</h2>
+                    <p>{{ if $isEnglish }}Finished essays, evolving notes, and chronological logs stay separate but searchable as one body of work.{{ else }}完整文章、持续修订的思考与按时间发生的日志彼此分开，又共同构成一份长期记录。{{ end }}</p>
+                </div>
+            </header>
+
+            <div class="knowledge-lanes">
+                {{- range $index, $lane := $hub.knowledge_lanes }}
+                <a href="{{ $lane.path | relLangURL }}">
+                    <span>{{ printf "%02d" (add $index 1) }}</span>
+                    <h3>{{ index $lane.title $lang }}</h3>
+                    <p>{{ index $lane.summary $lang }}</p>
+                    <b aria-hidden="true">↗</b>
+                </a>
+                {{- end }}
+            </div>
+        </div>
+    </section>
+
+    <section class="hub-close" aria-labelledby="close-title">
+        <div class="page-shell hub-close__grid">
+            <div>
+                <p class="section-index">04 / {{ if $isEnglish }}ABOUT{{ else }}关于{{ end }}</p>
+                <h2 id="close-title">{{ index $profile.name $lang }}</h2>
+            </div>
+            <div>
+                <p>{{ index $profile.role $lang }}</p>
+                <p>{{ index $profile.current_focus $lang }}</p>
+                <div class="hub-close__links">
+                    <a href="{{ "about/" | relLangURL }}">{{ if $isEnglish }}More context{{ else }}更多信息{{ end }} <span aria-hidden="true">↗</span></a>
+                    <a href="https://github.com/Functionhx" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
 {{- end }}

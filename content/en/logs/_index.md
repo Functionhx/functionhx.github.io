@@ -1,0 +1,4 @@
+---
+title: Logs
+translationKey: logs
+---

@@ -1,8 +1,32 @@
+{{- $isEnglish := eq .Lang "en" -}}
 <header class="site-header">
     <div class="site-header__inner">
-        <a class="site-title" href="{{ "" | relLangURL }}">{{ site.Title }}</a>
+        <div class="site-header__identity">
+            <a class="site-title" href="{{ "" | relLangURL }}">
+                <span class="site-title__mark" aria-hidden="true">YF</span>
+                <span>
+                    <strong>Yuchen Fan</strong>
+                    <small>{{ if $isEnglish }}Research · Tools · Writing{{ else }}研究 · 工具 · 写作{{ end }}</small>
+                </span>
+            </a>
+
+            <div class="site-controls">
+                {{- range .Translations }}
+                <a class="language-switch" href="{{ .RelPermalink }}" hreflang="{{ .Language.Locale }}" aria-label="{{ site.Params.ui.switchLanguage }}">
+                    {{- if eq .Lang "en" }}EN{{ else }}中{{ end -}}
+                </a>
+                {{- end }}
+                <button id="theme-toggle" type="button" aria-label="{{ site.Params.ui.themeLabel }}" title="{{ site.Params.ui.themeLabel }}">
+                    <span class="theme-toggle__light" aria-hidden="true">☀</span>
+                    <span class="theme-toggle__dark" aria-hidden="true">◐</span>
+                </button>
+            </div>
+        </div>
 
         <nav class="site-nav" id="menu" aria-label="{{ site.Params.ui.navLabel }}">
+            <a href="{{ "" | relLangURL }}"{{ if .IsHome }} aria-current="page"{{ end }}>
+                {{- if $isEnglish }}Home{{ else }}首页{{ end -}}
+            </a>
             {{- $current := . }}
             {{- range site.Menus.main }}
             <a href="{{ .URL | relLangURL }}"{{ if or ($current.IsMenuCurrent "main" .) ($current.HasMenuCurrent "main" .) }} aria-current="page"{{ end }}>
@@ -10,16 +34,5 @@
             </a>
             {{- end }}
         </nav>
-
-        <div class="site-controls">
-            {{- range .Translations }}
-            <a class="language-switch" href="{{ .RelPermalink }}" hreflang="{{ .Language.Locale }}" aria-label="{{ site.Params.ui.switchLanguage }}">
-                {{- if eq .Lang "en" }}EN{{ else }}中{{ end -}}
-            </a>
-            {{- end }}
-            <button id="theme-toggle" type="button" aria-label="{{ site.Params.ui.themeLabel }}" title="{{ site.Params.ui.themeLabel }}">
-                <span aria-hidden="true">◐</span>
-            </button>
-        </div>
     </div>
 </header>

@@ -1,40 +1,48 @@
 baseURL: https://functionhx.github.io/
-title: Sections
+title: Yuchen Fan
 theme: PaperMod
 defaultContentLanguage: zh-cn
 defaultContentLanguageInSubdir: false
-disableAliases: true
-disableKinds:
-  - taxonomy
-  - term
-  - RSS
-  - sitemap
-  - robotsTXT
-  - "404"
+enableRobotsTXT: true
+timeZone: Asia/Shanghai
+
+pagination:
+  pagerSize: 12
 
 outputs:
   home:
     - HTML
+    - RSS
+    - JSON
+
+taxonomies:
+  tag: tags
+  category: categories
 
 params:
   defaultTheme: auto
   disableThemeToggle: false
   disableScrollToTop: true
   hideFooter: true
-  ShowBreadCrumbs: false
-  ShowCodeCopyButtons: false
-  ShowPostNavLinks: false
-  ShowReadingTime: false
+  ShowBreadCrumbs: true
+  ShowCodeCopyButtons: true
+  ShowPostNavLinks: true
+  ShowReadingTime: true
   ShowShareButtons: false
   comments: false
+  searchEnabled: false
+  cmsEnabled: false
+  legacyInteractions: false
+  critiquesEnabled: false
+  fxEnabled: false
   assets:
     favicon: /favicon.svg
     favicon16x16: /favicon.svg
     favicon32x32: /favicon.svg
     apple_touch_icon: /favicon.svg
     safari_pinned_tab: /favicon.svg
-    theme_color: "#f1f0eb"
-    msapplication_TileColor: "#f1f0eb"
+    theme_color: "#f3f1eb"
+    msapplication_TileColor: "#f3f1eb"
 
 languages:
   zh-cn:
@@ -42,18 +50,15 @@ languages:
     label: 中文
     weight: 1
     contentDir: content/zh
-    title: 栏目
+    title: Yuchen Fan
     params:
+      description: 樊宇琛的研究、项目、工具、写作与工作日志。
       ui:
-        navLabel: 栏目
+        navLabel: 主导航
         switchLanguage: Switch to English
         themeLabel: 切换白天或黑夜模式
     menus:
       main:
-        - identifier: home
-          name: 首页
-          pageRef: /
-          weight: 10
         - identifier: projects
           name: 项目
           pageRef: /projects
@@ -62,35 +67,40 @@ languages:
           name: 研究
           pageRef: /research
           weight: 30
-        - identifier: open-source
-          name: 开源
-          pageRef: /open-source
+        - identifier: tools
+          name: 工具
+          pageRef: /tools
           weight: 40
-        - identifier: notes
-          name: 笔记
-          pageRef: /notes
+        - identifier: writing
+          name: 写作
+          pageRef: /writing
           weight: 50
+        - identifier: notes
+          name: 思考
+          pageRef: /notes
+          weight: 60
+        - identifier: logs
+          name: 日志
+          pageRef: /logs
+          weight: 70
         - identifier: about
           name: 关于
           pageRef: /about
-          weight: 60
+          weight: 80
   en:
     locale: en-US
     label: English
     weight: 2
     contentDir: content/en
-    title: Sections
+    title: Yuchen Fan
     params:
+      description: Research, projects, tools, writing, and work logs by Yuchen Fan.
       ui:
-        navLabel: Sections
+        navLabel: Primary navigation
         switchLanguage: 切换到中文
         themeLabel: Toggle light or dark mode
     menus:
       main:
-        - identifier: home
-          name: Home
-          pageRef: /
-          weight: 10
         - identifier: projects
           name: Projects
           pageRef: /projects
@@ -99,15 +109,23 @@ languages:
           name: Research
           pageRef: /research
           weight: 30
-        - identifier: open-source
-          name: Open Source
-          pageRef: /open-source
+        - identifier: tools
+          name: Tools
+          pageRef: /tools
           weight: 40
+        - identifier: writing
+          name: Writing
+          pageRef: /writing
+          weight: 50
         - identifier: notes
           name: Notes
           pageRef: /notes
-          weight: 50
+          weight: 60
+        - identifier: logs
+          name: Logs
+          pageRef: /logs
+          weight: 70
         - identifier: about
           name: About
           pageRef: /about
-          weight: 60
+          weight: 80

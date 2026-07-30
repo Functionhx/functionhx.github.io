@@ -1,13 +1,177 @@
 {{- define "main" }}
-{{- $sectionNumber := 1 }}
-{{- $current := . }}
-{{- range $index, $item := site.Menus.main }}
-    {{- if $current.IsMenuCurrent "main" $item }}
-        {{- $sectionNumber = add $index 1 }}
-    {{- end }}
-{{- end }}
-<section class="empty-section" aria-labelledby="page-title">
-    <span class="empty-section__number" aria-hidden="true">{{ printf "%02d—06" $sectionNumber }}</span>
-    <h1 id="page-title">{{ .Title }}</h1>
+{{- $lang := .Lang -}}
+{{- $isEnglish := eq $lang "en" -}}
+{{- $hub := hugo.Data.showcase.hub -}}
+{{- $section := .Section -}}
+{{- $descriptions := dict
+    "projects" (cond $isEnglish "Engineering work with explicit status and evidence boundaries." "按状态、来源与披露边界整理的工程工作。")
+    "research" (cond $isEnglish "Research directions described only to the level that can be responsibly disclosed." "研究方向仅公开到可以负责披露的层级。")
+    "open-source" (cond $isEnglish "A verifiable record of work contributed in public." "一份可核验的公开协作记录。")
+    "tools" (cond $isEnglish "Small products designed to be used, not merely displayed." "能直接使用的小产品，而不是只供展示的项目卡片。")
+    "writing" (cond $isEnglish "Original essays and an index of work published across platforms." "本站原创文章与跨平台作品索引。")
+    "notes" (cond $isEnglish "Ideas that remain open to revision." "仍然允许自己修订的想法。")
+    "logs" (cond $isEnglish "A chronological trace of experiments, development, and learning." "按时间留下实验、开发与学习现场。")
+    "about" (cond $isEnglish "The person and scope behind this site." "关于这个站点背后的人与工作范围。")
+-}}
+
+<section class="portal-page" aria-labelledby="page-title">
+    <header class="portal-hero">
+        <div class="page-shell portal-hero__grid">
+            <p class="section-index">{{ upper $section }}</p>
+            <div>
+                <h1 id="page-title">{{ .Title }}</h1>
+                <p>{{ index $descriptions $section }}</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="page-shell portal-content">
+        {{- if eq $section "projects" }}
+        <div class="work-register work-register--page">
+            {{- range $hub.projects }}
+            <article class="work-row">
+                <span class="work-row__index">{{ .index }}</span>
+                <div class="work-row__title">
+                    <span>{{ index .status $lang }}</span>
+                    <h2>{{ index .title $lang }}</h2>
+                </div>
+                <div class="work-row__summary">
+                    <p>{{ index .summary $lang }}</p>
+                    <small>{{ if $isEnglish }}Source: {{ else }}来源：{{ end }}{{ index .source $lang }}</small>
+                </div>
+            </article>
+            {{- end }}
+        </div>
+        <nav class="portal-related" aria-label="{{ if $isEnglish }}Related records{{ else }}相关记录{{ end }}">
+            <a href="{{ "research/" | relLangURL }}">{{ if $isEnglish }}Research record{{ else }}研究记录{{ end }} <span aria-hidden="true">↗</span></a>
+            <a href="{{ "open-source/" | relLangURL }}">{{ if $isEnglish }}Open-source record{{ else }}开源记录{{ end }} <span aria-hidden="true">↗</span></a>
+        </nav>
+
+        {{- else if eq $section "research" }}
+        <div class="work-register work-register--page">
+            {{- range $hub.research }}
+            <article class="work-row">
+                <span class="work-row__index">{{ .index }}</span>
+                <div class="work-row__title">
+                    <span>{{ index .status $lang }}</span>
+                    <h2>{{ index .title $lang }}</h2>
+                </div>
+                <div class="work-row__summary">
+                    <p>{{ index .summary $lang }}</p>
+                    <small>{{ if $isEnglish }}Source: {{ else }}来源：{{ end }}{{ index .source $lang }}</small>
+                </div>
+            </article>
+            {{- end }}
+        </div>
+
+        {{- else if eq $section "open-source" }}
+        <article class="single-record">
+            <div>
+                <span>OPEN SOURCE / 01</span>
+                <h2>{{ index $hub.open_source.status $lang }}</h2>
+            </div>
+            <div>
+                <p>{{ index $hub.open_source.summary $lang }}</p>
+                <small>{{ if $isEnglish }}Source: {{ else }}来源：{{ end }}{{ index $hub.open_source.source $lang }}</small>
+                <a class="text-link" href="https://github.com/Functionhx" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+            </div>
+        </article>
+
+        {{- else if eq $section "tools" }}
+        <div class="tool-archive">
+            {{- range $hub.tools }}
+            <article>
+                <div class="record-meta">
+                    <span>{{ index .kicker $lang }}</span>
+                    <span class="record-status"><i aria-hidden="true"></i>{{ index .status $lang }}</span>
+                </div>
+                <h2>{{ index .title $lang }}</h2>
+                <p>{{ index .description $lang }}</p>
+                <div class="tool-archive__footer">
+                    <small>{{ if $isEnglish }}Source: {{ else }}来源：{{ end }}{{ index .source $lang }}</small>
+                    <a class="launch-link" href="{{ .url }}" target="_blank" rel="noopener noreferrer">{{ if $isEnglish }}Launch{{ else }}打开{{ end }} <span aria-hidden="true">↗</span></a>
+                </div>
+            </article>
+            {{- end }}
+        </div>
+
+        {{- else if eq $section "writing" }}
+        {{- if gt (len $hub.external_articles) 0 }}
+        <div class="article-register">
+            {{- range $hub.external_articles }}
+            <article>
+                <time datetime="{{ .date }}">{{ .date }}</time>
+                <div><span>{{ .source }}</span><h2><a href="{{ .url }}">{{ index .title $lang }}</a></h2></div>
+                <p>{{ index .summary $lang }}</p>
+            </article>
+            {{- end }}
+        </div>
+        {{- else }}
+        <div class="connection-panel">
+            <div>
+                <p class="section-index">{{ if $isEnglish }}PUBLICATION PIPELINE{{ else }}内容接入{{ end }}</p>
+                <h2>{{ if $isEnglish }}The archive is ready; source profiles are not connected yet.{{ else }}文章档案已经就位，平台主页还没有接入。{{ end }}</h2>
+            </div>
+            <div class="source-register">
+                {{- range $hub.publication_sources }}
+                <div>
+                    <strong>{{ index .label $lang }}</strong>
+                    <span>{{ index .status $lang }}</span>
+                </div>
+                {{- end }}
+            </div>
+        </div>
+        {{- end }}
+
+        {{- else if or (eq $section "notes") (eq $section "logs") }}
+        {{- $pages := .RegularPages.ByDate.Reverse -}}
+        {{- if gt (len $pages) 0 }}
+        <div class="article-register">
+            {{- range $pages }}
+            <article>
+                <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006-01-02" }}</time>
+                <div>
+                    <span>{{ upper $section }}</span>
+                    <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+                </div>
+                <p>{{ .Description }}</p>
+            </article>
+            {{- end }}
+        </div>
+        {{- else }}
+        <div class="empty-record">
+            <span>{{ if $isEnglish }}NO PUBLIC ENTRIES YET{{ else }}暂无公开条目{{ end }}</span>
+            <p>{{ if eq $section "logs" }}{{ if $isEnglish }}Future work logs will appear here in chronological order.{{ else }}后续工作日志会按时间顺序出现在这里。{{ end }}{{ else }}{{ if $isEnglish }}Future notes will appear here when they are ready to be useful.{{ else }}想法整理到足够有用时，会出现在这里。{{ end }}{{ end }}</p>
+        </div>
+        {{- end }}
+
+        {{- else if eq $section "about" }}
+        <div class="about-layout">
+            <div class="about-identity">
+                <span>YF / 2026</span>
+                <h2>{{ index $hub.profile.name $lang }}</h2>
+                <p>{{ index $hub.profile.role $lang }}</p>
+            </div>
+            <div class="about-statement">
+                <p>{{ index $hub.profile.summary $lang }}</p>
+                <dl>
+                    <div>
+                        <dt>{{ if $isEnglish }}Current focus{{ else }}当前关注{{ end }}</dt>
+                        <dd>{{ index $hub.profile.current_focus $lang }}</dd>
+                    </div>
+                    <div>
+                        <dt>{{ if $isEnglish }}Status{{ else }}状态{{ end }}</dt>
+                        <dd>{{ index $hub.profile.status $lang }}</dd>
+                    </div>
+                    <div>
+                        <dt>{{ if $isEnglish }}Source{{ else }}资料来源{{ end }}</dt>
+                        <dd>{{ index $hub.profile.source $lang }}</dd>
+                    </div>
+                </dl>
+                <a class="text-link" href="https://github.com/Functionhx" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+            </div>
+        </div>
+        {{- end }}
+    </div>
 </section>
 {{- end }}

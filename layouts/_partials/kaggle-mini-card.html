@@ -1,162 +1,44 @@
 {{- $isEnglish := eq .Lang "en" -}}
-<section class="kaggle-mini-card-wrap" aria-label="{{ if $isEnglish }}Kaggle competition progress{{ else }}Kaggle 竞赛进度{{ end }}">
-    <div id="kaggle-mini-card" aria-live="polite">
-        <div class="kmc-header">
-            <span class="kmc-title" id="kmc-title">Kaggle</span>
-            <span class="kmc-time" id="kmc-time">--</span>
+<article id="kaggle-mini-card" class="kaggle-panel" aria-live="polite" data-state="loading">
+    <header class="kaggle-panel__header">
+        <div>
+            <span class="live-dot" aria-hidden="true"></span>
+            <span>KAGGLE / LIVE</span>
         </div>
+        <span id="kmc-time">{{ if $isEnglish }}Waiting for data{{ else }}等待数据{{ end }}</span>
+    </header>
 
-        <div class="kmc-grid">
-            <div class="kmc-metric">
-                <div class="kmc-label">CV Score</div>
-                <div class="kmc-score" id="kmc-cv">--</div>
-            </div>
-            <div class="kmc-metric">
-                <div class="kmc-label">LB Score</div>
-                <div class="kmc-score" id="kmc-lb">--</div>
-            </div>
-            <div class="kmc-metric">
-                <div class="kmc-label">{{ if $isEnglish }}Gap to target{{ else }}距目标{{ end }}</div>
-                <div class="kmc-value" id="kmc-gap">--</div>
-            </div>
-            <div class="kmc-metric">
-                <div class="kmc-label">{{ if $isEnglish }}Today{{ else }}今日{{ end }}</div>
-                <div class="kmc-value" id="kmc-quota">--</div>
-            </div>
+    <div class="kaggle-panel__title">
+        <span>{{ if $isEnglish }}Competition monitor{{ else }}竞赛监控{{ end }}</span>
+        <h3 id="kmc-title">Kaggle</h3>
+    </div>
+
+    <div class="kaggle-panel__metrics">
+        <div>
+            <span>CV</span>
+            <strong id="kmc-cv">--</strong>
         </div>
-
-        <a class="kmc-link" href="https://functionhx.github.io/kaggle-agent/">
-            {{- if $isEnglish }}Open full dashboard{{ else }}查看完整 dashboard{{ end }} →
-        </a>
-
-        <div id="kmc-alert" role="status">
-            {{- if $isEnglish }}⏸ Experiments need your decision{{ else }}⏸ 有实验需要你的决策{{ end }}
+        <div>
+            <span>LB</span>
+            <strong id="kmc-lb">--</strong>
+        </div>
+        <div>
+            <span>{{ if $isEnglish }}TARGET{{ else }}距目标{{ end }}</span>
+            <strong id="kmc-gap">--</strong>
+        </div>
+        <div>
+            <span>{{ if $isEnglish }}TODAY{{ else }}今日{{ end }}</span>
+            <strong id="kmc-quota">--</strong>
         </div>
     </div>
-</section>
 
-<style>
-  .kaggle-mini-card-wrap {
-    display: flex;
-    justify-content: flex-end;
-    padding: clamp(48px, 8vw, 96px) 0 0;
-  }
+    <div id="kmc-alert" class="kaggle-panel__alert" role="status"></div>
 
-  #kaggle-mini-card {
-    width: 100%;
-    max-width: 380px;
-    padding: 16px;
-    border-radius: 12px;
-    background: #16213e;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    color: #e0e0e0;
-    color-scheme: dark;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  }
-
-  .kmc-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    gap: 12px;
-  }
-
-  .kmc-title {
-    overflow: hidden;
-    font-size: 14px;
-    font-weight: 700;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .kmc-time,
-  .kmc-label,
-  .kmc-link {
-    font-size: 11px;
-  }
-
-  .kmc-time,
-  .kmc-label {
-    color: #a4a4ad;
-  }
-
-  .kmc-time {
-    flex: 0 0 auto;
-  }
-
-  .kmc-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .kmc-metric {
-    min-width: 0;
-    padding: 10px;
-    border-radius: 8px;
-    background: #1a1a2e;
-  }
-
-  .kmc-score {
-    overflow: hidden;
-    margin-top: 2px;
-    color: #4ecca3;
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.25;
-    text-overflow: ellipsis;
-  }
-
-  .kmc-value {
-    overflow: hidden;
-    margin-top: 4px;
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.3;
-    text-overflow: ellipsis;
-  }
-
-  .kmc-link {
-    display: block;
-    margin-top: 10px;
-    color: #7eb6ff;
-    text-align: right;
-    text-decoration: none;
-  }
-
-  .kmc-link:hover {
-    color: #b9d8ff;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-
-  #kmc-alert {
-    display: none;
-    margin-top: 8px;
-    padding: 8px;
-    border-radius: 6px;
-    background: #e94560;
-    color: #fff;
-    font-size: 12px;
-    text-align: center;
-  }
-
-  @media (max-width: 520px) {
-    .kaggle-mini-card-wrap {
-      padding-top: 40px;
-    }
-
-    #kaggle-mini-card {
-      max-width: none;
-      padding: 14px;
-    }
-
-    .kmc-grid {
-      gap: 8px;
-    }
-  }
-</style>
+    <footer>
+        <span id="kmc-status">{{ if $isEnglish }}Auto-refreshes every 5 min{{ else }}每 5 分钟自动刷新{{ end }}</span>
+        <a href="https://functionhx.github.io/kaggle-agent/">{{ if $isEnglish }}Dashboard{{ else }}完整面板{{ end }} <span aria-hidden="true">↗</span></a>
+    </footer>
+</article>
 
 <script>
   (() => {
@@ -164,15 +46,16 @@
     if (!card) return;
 
     const DATA_URL = "https://functionhx.github.io/kaggle-agent/data/dashboard.json";
-    const CACHE = 5 * 60 * 1000;
+    const REFRESH_INTERVAL = 5 * 60 * 1000;
     const locale = "{{ if $isEnglish }}en-US{{ else }}zh-CN{{ end }}";
     const copy = {
       updated: "{{ if $isEnglish }}Updated{{ else }}更新{{ end }}",
-      unavailable: "{{ if $isEnglish }}Waiting for data{{ else }}等待数据{{ end }}",
+      unavailable: "{{ if $isEnglish }}Data source unavailable{{ else }}数据源暂不可用{{ end }}",
+      refreshing: "{{ if $isEnglish }}Auto-refreshes every 5 min{{ else }}每 5 分钟自动刷新{{ end }}",
       gap: "{{ if $isEnglish }}Gap{{ else }}差{{ end }}",
       reached: "{{ if $isEnglish }}Reached{{ else }}已达标{{ end }}",
-      alertPrefix: "{{ if $isEnglish }}⏸ {{ else }}⏸ 有 {{ end }}",
-      alertSuffix: "{{ if $isEnglish }} experiment(s) need your decision{{ else }} 个 exp 需要你的决策{{ end }}"
+      alertPrefix: "{{ if $isEnglish }}{{ else }}有 {{ end }}",
+      alertSuffix: "{{ if $isEnglish }} experiment(s) need a decision{{ else }} 个实验需要决策{{ end }}"
     };
     const elements = {
       title: document.getElementById("kmc-title"),
@@ -181,9 +64,9 @@
       lb: document.getElementById("kmc-lb"),
       gap: document.getElementById("kmc-gap"),
       quota: document.getElementById("kmc-quota"),
-      alert: document.getElementById("kmc-alert")
+      alert: document.getElementById("kmc-alert"),
+      status: document.getElementById("kmc-status")
     };
-    let hasData = false;
     let refreshTimer;
 
     function number(value) {
@@ -192,7 +75,7 @@
       return Number.isFinite(parsed) ? parsed : null;
     }
 
-    function fmt(value) {
+    function formatScore(value) {
       const parsed = number(value);
       return parsed === null ? "--" : parsed.toFixed(5);
     }
@@ -232,9 +115,9 @@
               hour: "2-digit",
               minute: "2-digit"
             })}`
-          : "--";
-        elements.cv.textContent = fmt(cvScore);
-        elements.lb.textContent = fmt(lbScore);
+          : copy.refreshing;
+        elements.cv.textContent = formatScore(cvScore);
+        elements.lb.textContent = formatScore(lbScore);
 
         const gap = cvScore !== null && target !== null
           ? (target - cvScore) * (direction === "minimize" ? -1 : 1)
@@ -242,36 +125,34 @@
         elements.gap.textContent = gap === null
           ? "--"
           : gap > 0
-            ? `${copy.gap} ${fmt(gap)}`
+            ? `${copy.gap} ${formatScore(gap)}`
             : copy.reached;
-        elements.gap.style.color = gap === null
-          ? "#e0e0e0"
-          : gap > 0
-            ? "#ffc107"
-            : "#4ecca3";
+        elements.gap.dataset.tone = gap !== null && gap > 0 ? "warning" : "positive";
 
         elements.quota.textContent = remaining !== null && limit !== null
           ? `${remaining}/${limit}`
           : "--";
-        elements.quota.style.color = remaining !== null && remaining <= 0
-          ? "#e94560"
-          : "#e0e0e0";
+        elements.quota.dataset.tone = remaining !== null && remaining <= 0 ? "critical" : "neutral";
 
         const blocked = experiments.filter(needsDecision).length;
         if (blocked > 0) {
-          elements.alert.style.display = "block";
+          elements.alert.hidden = false;
           elements.alert.textContent = `${copy.alertPrefix}${blocked}${copy.alertSuffix}`;
         } else {
-          elements.alert.style.display = "none";
+          elements.alert.hidden = true;
+          elements.alert.textContent = "";
         }
 
-        hasData = true;
+        elements.status.textContent = copy.refreshing;
+        card.dataset.state = "ready";
       } catch (error) {
-        if (!hasData) elements.time.textContent = copy.unavailable;
+        elements.time.textContent = copy.unavailable;
+        elements.status.textContent = copy.refreshing;
+        card.dataset.state = "unavailable";
       } finally {
         card.removeAttribute("aria-busy");
         window.clearTimeout(refreshTimer);
-        refreshTimer = window.setTimeout(update, CACHE);
+        refreshTimer = window.setTimeout(update, REFRESH_INTERVAL);
       }
     }
 

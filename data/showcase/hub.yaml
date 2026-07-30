@@ -1,0 +1,179 @@
+meta:
+  schema_version: 1
+  status: mixed
+  last_verified: 2026-07-30
+  note:
+    zh-cn: 所有公开记录均标注状态；未提供来源的内容不会发布。
+    en: Every public record carries a status; unsourced content is not published.
+
+profile:
+  name:
+    zh-cn: 樊宇琛
+    en: Yuchen Fan
+  display_name: Yuchen Fan
+  role:
+    zh-cn: 北京理工大学机器人工程本科生
+    en: Robotics Engineering undergraduate at Beijing Institute of Technology
+  headline:
+    zh-cn: 研究、工具、写作，以及正在发生的事。
+    en: Research, tools, writing, and work in progress.
+  summary:
+    zh-cn: 这是一个持续生长的个人数字中枢：记录机器人与 AI 系统研究，发布工程项目和小工具，也保存长期思考与日常工作日志。
+    en: A living personal hub for robotics and AI systems research, engineering projects, small tools, long-form thinking, and day-to-day work logs.
+  current_focus:
+    zh-cn: 机器人、自主系统、具身智能、三维场景智能与 AI 系统工程
+    en: Robotics, autonomous systems, embodied AI, 3D scene intelligence, and AI systems engineering
+  status:
+    zh-cn: 当前在读
+    en: Currently studying
+  source:
+    zh-cn: 本人提供的主页资料
+    en: Owner-provided profile brief
+
+tools:
+  - id: rebuttal-reader
+    title:
+      zh-cn: 答辩录
+      en: Rebuttal Reader
+    kicker:
+      zh-cn: 会议论文 Rebuttal 案例库
+      en: Conference rebuttal case library
+    description:
+      zh-cn: 从初始评审、作者回复到最终决定，按 Reviewer 追踪 rebuttal 对话与评分变化。
+      en: Trace rebuttal conversations and score changes from initial reviews through author responses and final decisions.
+    url: https://rebuttal-reader.tart-morel-3407.chatgpt.site/
+    status:
+      zh-cn: 在线
+      en: Live
+    source:
+      zh-cn: 产品公开页面
+      en: Public product page
+
+projects:
+  - id: batch-lio
+    index: "01"
+    title:
+      zh-cn: Batch-LIO
+      en: Batch-LIO
+    summary:
+      zh-cn: 面向激光雷达—惯性里程计的工程与研究记录，公开内容保持在可核验的系统边界内。
+      en: An engineering and research record for LiDAR–inertial odometry, kept within verifiable system boundaries.
+    status:
+      zh-cn: 研究中
+      en: Research
+    source:
+      zh-cn: 本人提供的项目清单；细节待复核
+      en: Owner-provided project list; details pending review
+  - id: formula-student-driverless
+    index: "02"
+    title:
+      zh-cn: 学生方程式无人驾驶
+      en: Formula Student Driverless
+    summary:
+      zh-cn: 自动驾驶系统集成与赛场工程经历的高层记录。
+      en: A high-level record of autonomous-system integration and track engineering.
+    status:
+      zh-cn: 已完成
+      en: Completed
+    source:
+      zh-cn: 本人提供的项目清单；细节待复核
+      en: Owner-provided project list; details pending review
+  - id: unitree-robotics
+    index: "03"
+    title:
+      zh-cn: 宇树机器人系统
+      en: Unitree Robotics Systems
+    summary:
+      zh-cn: 围绕 G1 指定目标跟随与 Go2 VLA / VLN 实机部署的机器人系统记录。
+      en: Robotics systems work spanning G1 target following and Go2 VLA / VLN deployment.
+    status:
+      zh-cn: 研究中
+      en: Research
+    source:
+      zh-cn: 本人提供的项目清单；细节待复核
+      en: Owner-provided project list; details pending review
+
+research:
+  - id: 3d-scene-intelligence
+    index: "R1"
+    title:
+      zh-cn: 三维场景智能
+      en: 3D Scene Intelligence
+    summary:
+      zh-cn: 探索三维表示如何服务导航、视觉定位与可编辑场景生成；预披露细节保持高层。
+      en: Exploring 3D representations for navigation, visual localization, and editable scene generation; pre-disclosure details remain high-level.
+    status:
+      zh-cn: 进行中
+      en: Ongoing
+    source:
+      zh-cn: 本人提供的研究方向
+      en: Owner-provided research direction
+
+open_source:
+  summary:
+    zh-cn: 公开贡献覆盖 AI 基础设施、机器人中间件与开发者工具；具体记录将在证据链接齐备后发布。
+    en: Public contributions span AI infrastructure, robotics middleware, and developer tools; itemized records will be published when evidence links are complete.
+  status:
+    zh-cn: 记录整理中
+    en: Records in preparation
+  source:
+    zh-cn: 本人提供的开源摘要
+    en: Owner-provided open-source summary
+
+knowledge_lanes:
+  - id: writing
+    title:
+      zh-cn: 写作
+      en: Writing
+    summary:
+      zh-cn: 完整文章与跨平台作品索引。
+      en: Finished essays and a cross-platform publication index.
+    path: writing/
+  - id: notes
+    title:
+      zh-cn: 思考
+      en: Notes
+    summary:
+      zh-cn: 会持续修订的观点、研究札记与概念卡片。
+      en: Evolving ideas, research notes, and concept cards.
+    path: notes/
+  - id: logs
+    title:
+      zh-cn: 日志
+      en: Logs
+    summary:
+      zh-cn: 按时间记录实验、开发与学习现场。
+      en: A chronological record of experiments, development, and learning.
+    path: logs/
+
+publication_sources:
+  - id: local
+    label:
+      zh-cn: 本站
+      en: This site
+    status:
+      zh-cn: 可发布
+      en: Ready
+  - id: zhihu
+    label:
+      zh-cn: 知乎
+      en: Zhihu
+    status:
+      zh-cn: 待提供主页链接
+      en: Profile URL needed
+  - id: xiaohongshu
+    label:
+      zh-cn: 小红书
+      en: Xiaohongshu
+    status:
+      zh-cn: 待提供主页链接
+      en: Profile URL needed
+  - id: wechat
+    label:
+      zh-cn: 公众号
+      en: WeChat Official Account
+    status:
+      zh-cn: 待提供账号或导出
+      en: Account or export needed
+
+external_articles: []
