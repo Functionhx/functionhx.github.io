@@ -1,4 +1,16 @@
 {% assign current_lang = page.lang | default: 'zh' %}
+<style>
+  #kaggle-mini-card .table,
+  #kaggle-mini-card .table th,
+  #kaggle-mini-card .table td {
+    color: var(--global-text-color, currentColor);
+    background-color: transparent;
+  }
+
+  #kaggle-mini-card #kmc-time {
+    color: var(--global-text-color-light, currentColor);
+  }
+</style>
 <section id="kaggle-mini-card" aria-labelledby="kmc-heading">
   <h2 id="kmc-heading">
     {% if current_lang == 'en' %}competition monitor{% else %}竞赛监控{% endif %}
