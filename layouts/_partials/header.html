@@ -1,84 +1,25 @@
-<header class="header">
-    <nav class="header-nav" aria-label="{{ site.Params.ui.navLabel }}">
-        <div class="header-top">
-            <div class="logo">
-                <a href="{{ site.Home.RelPermalink }}" accesskey="h" title="{{ site.Title }} (Alt + H)">
-                    <span class="brand-mark" aria-hidden="true">YF</span>
-                    <span class="brand-text">{{ site.Params.label.text | default site.Title }}</span>
-                </a>
-            </div>
+<header class="site-header">
+    <div class="site-header__inner">
+        <a class="site-title" href="{{ "" | relLangURL }}">{{ site.Title }}</a>
 
-            <form class="header-search" role="search" action="{{ "search/" | relLangURL }}" method="get">
-                <label class="sr-only" for="site-search">{{ site.Params.ui.searchLabel }}</label>
-                <input id="site-search" type="search" name="q" placeholder="{{ site.Params.ui.searchPlaceholder }}"
-                    aria-label="{{ site.Params.ui.searchLabel }}" autocomplete="off">
-            </form>
-
-            <div class="header-actions">
-                {{- $current := . -}}
-                {{- $switchURL := "" -}}
-                {{- $hasTranslation := false -}}
-                {{- range .Translations -}}
-                    {{- if ne .Lang $current.Lang -}}
-                        {{- $switchURL = .RelPermalink -}}
-                        {{- $hasTranslation = true -}}
-                    {{- end -}}
-                {{- end -}}
-                {{- if not $hasTranslation -}}
-                    {{- range site.Home.Translations -}}
-                        {{- if ne .Lang $current.Lang -}}{{- $switchURL = .RelPermalink -}}{{- end -}}
-                    {{- end -}}
-                {{- end -}}
-                {{- with $switchURL }}
-                <a class="language-switch" href="{{ . }}"
-                    title="{{ if $hasTranslation }}{{ site.Params.ui.switchLanguage }}{{ else }}{{ site.Params.ui.switchFallback }}{{ end }}"
-                    hreflang="{{ if eq $current.Lang "en" }}zh-cn{{ else }}en{{ end }}"
-                    data-translation-found="{{ $hasTranslation }}">
-                    {{- if eq $current.Lang "en" }}中文{{ else }}EN{{ end -}}
-                </a>
-                {{- end }}
-
-                {{- if not site.Params.disableThemeToggle }}
-                <button id="theme-toggle" class="theme-toggle" type="button" accesskey="t"
-                    title="{{ site.Params.ui.themeLabel }} (Alt + T)" aria-label="{{ site.Params.ui.themeLabel }}">
-                    <svg class="moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" aria-hidden="true">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                    </svg>
-                    <svg class="sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="19.78" x2="19.78" y2="18.36"></line>
-                    </svg>
-                </button>
-                {{- end }}
-
-                {{- if site.Params.legacyInteractions }}
-                <button id="love-trigger" class="love-trigger" type="button" aria-label="给她的话" title="❤">❤️</button>
-                {{- end }}
-            </div>
-        </div>
-
-        {{- $currentPage := . }}
-        <ul id="menu" class="menu">
+        <nav class="site-nav" id="menu" aria-label="{{ site.Params.ui.navLabel }}">
+            {{- $current := . }}
             {{- range site.Menus.main }}
-            <li>
-                <a href="{{ .URL }}" title="{{ .Title | default .Name }}">
-                    <span{{ if or ($currentPage.IsMenuCurrent "main" .) ($currentPage.HasMenuCurrent "main" .) }} class="active"{{ end }}>
-                        {{- .Name -}}
-                    </span>
-                </a>
-            </li>
+            <a href="{{ .URL | relLangURL }}"{{ if or ($current.IsMenuCurrent "main" .) ($current.HasMenuCurrent "main" .) }} aria-current="page"{{ end }}>
+                {{- .Name -}}
+            </a>
             {{- end }}
-        </ul>
-    </nav>
+        </nav>
+
+        <div class="site-controls">
+            {{- range .Translations }}
+            <a class="language-switch" href="{{ .RelPermalink }}" hreflang="{{ .Language.Locale }}" aria-label="{{ site.Params.ui.switchLanguage }}">
+                {{- if eq .Lang "en" }}EN{{ else }}中{{ end -}}
+            </a>
+            {{- end }}
+            <button id="theme-toggle" type="button" aria-label="{{ site.Params.ui.themeLabel }}" title="{{ site.Params.ui.themeLabel }}">
+                <span aria-hidden="true">◐</span>
+            </button>
+        </div>
+    </div>
 </header>

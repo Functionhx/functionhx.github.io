@@ -1,56 +1,40 @@
 baseURL: https://functionhx.github.io/
-title: Yuchen Fan
+title: Sections
 theme: PaperMod
 defaultContentLanguage: zh-cn
 defaultContentLanguageInSubdir: false
-enableRobotsTXT: true
-timeZone: Asia/Shanghai
-
-pagination:
-  pagerSize: 10
+disableAliases: true
+disableKinds:
+  - taxonomy
+  - term
+  - RSS
+  - sitemap
+  - robotsTXT
+  - "404"
 
 outputs:
   home:
     - HTML
-    - RSS
-    - JSON
-
-taxonomies:
-  tag: tags
-  category: categories
-
-markup:
-  highlight:
-    noClasses: false
 
 params:
   defaultTheme: auto
   disableThemeToggle: false
-  disableLangToggle: false
-  displayFullLangName: false
-  mainSections:
-    - notes
-  ShowReadingTime: true
-  ShowPostNavLinks: true
-  ShowBreadCrumbs: true
-  ShowCodeCopyButtons: true
+  disableScrollToTop: true
+  hideFooter: true
+  ShowBreadCrumbs: false
+  ShowCodeCopyButtons: false
+  ShowPostNavLinks: false
+  ShowReadingTime: false
   ShowShareButtons: false
-  comments: true
-  legacyInteractions: false
-  schema:
-    publisherType: Person
-    sameAs:
-      - https://github.com/Functionhx
+  comments: false
   assets:
-    favicon: favicon.ico
-    favicon16x16: favicon-16x16.png
-    favicon32x32: favicon-32x32.png
-    apple_touch_icon: apple-touch-icon.png
-    safari_pinned_tab: images/brand-mark.png
-    theme_color: "#11110f"
-    msapplication_TileColor: "#11110f"
-  images:
-    - /images/social-card-editorial.png
+    favicon: /favicon.svg
+    favicon16x16: /favicon.svg
+    favicon32x32: /favicon.svg
+    apple_touch_icon: /favicon.svg
+    safari_pinned_tab: /favicon.svg
+    theme_color: "#f1f0eb"
+    msapplication_TileColor: "#f1f0eb"
 
 languages:
   zh-cn:
@@ -58,19 +42,12 @@ languages:
     label: 中文
     weight: 1
     contentDir: content/zh
-    title: Yuchen Fan
+    title: 栏目
     params:
-      description: 樊宇琛的机器人、具身智能与三维场景智能研究主页和工程作品集。
-      author: Yuchen Fan
-      label:
-        text: Yuchen Fan
       ui:
-        navLabel: 主导航
-        searchPlaceholder: 搜索笔记…
-        searchLabel: 搜索本站
+        navLabel: 栏目
         switchLanguage: Switch to English
-        switchFallback: 当前页面暂无英文翻译，将打开英文首页
-        themeLabel: 切换日间或夜间模式
+        themeLabel: 切换白天或黑夜模式
     menus:
       main:
         - identifier: home
@@ -102,19 +79,12 @@ languages:
     label: English
     weight: 2
     contentDir: content/en
-    title: Yuchen Fan
+    title: Sections
     params:
-      description: Research portfolio and engineering notes by Yuchen Fan, focused on robotics, embodied AI, and 3D scene intelligence.
-      author: Yuchen Fan
-      label:
-        text: Yuchen Fan
       ui:
-        navLabel: Primary navigation
-        searchPlaceholder: Search notes…
-        searchLabel: Search this site
+        navLabel: Sections
         switchLanguage: 切换到中文
-        switchFallback: No Chinese translation is available; opening the Chinese home page
-        themeLabel: Toggle light or dark theme
+        themeLabel: Toggle light or dark mode
     menus:
       main:
         - identifier: home

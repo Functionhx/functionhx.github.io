@@ -1,0 +1,13 @@
+{{- define "main" }}
+{{- $sectionNumber := 1 }}
+{{- $current := . }}
+{{- range $index, $item := site.Menus.main }}
+    {{- if $current.IsMenuCurrent "main" $item }}
+        {{- $sectionNumber = add $index 1 }}
+    {{- end }}
+{{- end }}
+<section class="empty-section" aria-labelledby="page-title">
+    <span class="empty-section__number" aria-hidden="true">{{ printf "%02d—06" $sectionNumber }}</span>
+    <h1 id="page-title">{{ .Title }}</h1>
+</section>
+{{- end }}

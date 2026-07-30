@@ -1,7 +1,4 @@
 ---
-title: "项目"
-description: "从感知、定位与规划到实机部署的机器人工程记录。"
+title: 项目
 translationKey: projects
-aliases:
-  - /works/
 ---

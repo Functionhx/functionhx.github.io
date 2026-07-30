@@ -20,28 +20,18 @@ jobs:
     env:
       HUGO_VERSION: 0.163.1
     steps:
-      - name: Install Hugo CLI
-        run: |
-          curl -L --retry 6 --retry-delay 3 --retry-all-errors -o ${{ runner.temp }}/hugo.deb \
-            https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb
-          sudo dpkg -i ${{ runner.temp }}/hugo.deb
       - name: Checkout
         uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: pip
-      - name: Install content tooling
-        run: python -m pip install --requirement requirements.txt
-      - name: Validate content and generated data
+      - name: Install Hugo CLI
         run: |
-          python scripts/validate_content.py
-          python scripts/showcase/validate.py
-          python -m unittest discover -s tests -v
+          curl -L --retry 6 --retry-delay 3 --retry-all-errors -o ${{ runner.temp }}/hugo.deb \
+            https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb
+          sudo dpkg -i ${{ runner.temp }}/hugo.deb
+      - name: Validate empty bilingual content
+        run: python3 scripts/validate_content.py
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v6
@@ -50,9 +40,9 @@ jobs:
           HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
           HUGO_ENVIRONMENT: production
           TZ: Asia/Shanghai
-        run: hugo --gc --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
-      - name: Check built links and multilingual metadata
-        run: python scripts/check_built_site.py public
+        run: hugo --cleanDestinationDir --gc --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
+      - name: Check the built shell
+        run: python3 scripts/check_built_site.py public
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
