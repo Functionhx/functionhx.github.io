@@ -1,0 +1,174 @@
+{% assign current_lang = page.lang | default: 'zh' %}
+{% assign home_page = site.pages | where: 'home', true | where: 'lang', current_lang | first %}
+{% assign translation_pool = site.pages | concat: site.projects | concat: site.posts %}
+{% assign translated_pages = translation_pool | where: 'translation_key', page.translation_key %}
+{% if current_lang == 'en' %}
+  {% assign target_lang = 'zh' %}
+  {% assign language_label = '中' %}
+  {% assign navigation_label = 'Toggle navigation' %}
+  {% assign search_title = 'Search' %}
+  {% assign search_label = 'Open search' %}
+  {% assign theme_title = 'Change theme' %}
+  {% assign theme_label = 'Change color theme' %}
+{% else %}
+  {% assign target_lang = 'en' %}
+  {% assign language_label = 'EN' %}
+  {% assign navigation_label = '展开导航' %}
+  {% assign search_title = '搜索' %}
+  {% assign search_label = '打开搜索' %}
+  {% assign theme_title = '切换主题' %}
+  {% assign theme_label = '切换日间或夜间主题' %}
+{% endif %}
+{% assign language_page = translated_pages | where: 'lang', target_lang | first %}
+{% unless language_page %}
+  {% assign language_page = site.pages | where: 'home', true | where: 'lang', target_lang | first %}
+{% endunless %}
+
+<header>
+  <!-- Nav Bar -->
+  <nav id="navbar" class="navbar navbar-light navbar-expand-sm {% if site.navbar_fixed %}fixed-top{% else %}sticky-top{% endif %}" role="navigation">
+    <div class="container">
+      {% unless page.home %}
+        <a class="navbar-brand title font-weight-lighter" href="{{ home_page.url | relative_url }}">
+          {% if site.title == 'blank' %}
+            {% if site.first_name %}
+              <span class="font-weight-bold">
+                {{- site.first_name -}}
+              </span>
+            {% endif %}
+            {% if site.middle_name %}
+              {{- site.middle_name -}}
+            {% endif %}
+            {% if site.last_name %}
+              {{- site.last_name -}}
+            {% endif %}
+          {% else %}
+            {{- site.title -}}
+          {% endif %}
+        </a>
+      {% elsif site.enable_navbar_social %}
+        <!-- Social Icons -->
+        <div class="navbar-brand social">{% social_links %}</div>
+      {% endunless %}
+      <!-- Navbar Toggle -->
+      <button
+        class="navbar-toggler collapsed navbar-toggler-main"
+        type="button"
+        data-nav-toggle="navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="{{ navigation_label }}"
+      >
+        <span class="sr-only">{{ navigation_label }}</span>
+        <span class="icon-bar top-bar"></span>
+        <span class="icon-bar middle-bar"></span>
+        <span class="icon-bar bottom-bar"></span>
+      </button>
+
+      <div class="collapse navbar-collapse navbar-collapse-main" id="navbarNav">
+        <ul class="navbar-nav navbar-menu-list flex-nowrap">
+          <!-- About -->
+          <li class="nav-item {% if page.home %}active{% endif %}">
+            <a class="nav-link" href="{{ home_page.url | relative_url }}">
+              {{- home_page.title }}
+              {% if page.home %}
+                <span class="sr-only">(current)</span>
+              {% endif %}
+            </a>
+          </li>
+
+          <!-- Other pages -->
+          {% assign sorted_pages = site.pages | sort: 'nav_order' %}
+          {% for p in sorted_pages %}
+            {% if p.nav and p.autogen == null and p.lang == current_lang %}
+              {% if p.dropdown %}
+                {% assign has_active_child = false %}
+                {% for child in p.children %}
+                  {% if page.title == child.title %}
+                    {% assign has_active_child = true %}
+                  {% endif %}
+                {% endfor %}
+                <li class="nav-item dropdown {% if page.title == p.title or has_active_child %}active{% endif %}">
+                  <a
+                    class="nav-link dropdown-toggle"
+                    href="#"
+                    id="navbarDropdown"
+                    role="button"
+                    data-nav-dropdown-toggle="true"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                  >
+                    {{- p.title }}
+                    {% if page.title == p.title or has_active_child %}
+                      <span class="sr-only">(current)</span>
+                    {% endif %}
+                  </a>
+                  <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+                    {% for child in p.children %}
+                      {% if child.title == 'divider' %}
+                        <div class="dropdown-divider"></div>
+                      {% else %}
+                        <a
+                          class="dropdown-item {% if page.title == child.title %}active{% endif %}"
+                          href="{% if child.permalink contains '://' %}{{ child.permalink }}{% else %}{{ child.permalink | relative_url }}{% endif %}"
+                        >
+                          {{- child.title -}}
+                        </a>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </li>
+              {% else %}
+                {% assign parent_link = p.permalink | remove: 'index.html' %}
+                <li class="nav-item {% if page.url contains parent_link %}active{% endif %}">
+                  {% if p.permalink contains '://' %}
+                    {% assign nav_url = p.permalink %}
+                  {% else %}
+                    {% assign nav_url = p.url %}
+                  {% endif %}
+                  <a class="nav-link" href="{{ nav_url | relative_url }}">
+                    {{- p.title }}
+                    {% if page.url contains p.url %}
+                      <span class="sr-only">(current)</span>
+                    {% endif %}
+                  </a>
+                </li>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ language_page.url | relative_url }}" lang="{% if target_lang == 'en' %}en{% else %}zh-CN{% endif %}">
+              {{- language_label -}}
+            </a>
+          </li>
+          {% if site.search_enabled %}
+            <!-- Search -->
+            <li class="nav-item">
+              <button id="search-toggle" type="button" title="{{ search_title }}" aria-label="{{ search_label }}">
+                <span class="nav-link">ctrl k <i class="fa-solid fa-magnifying-glass"></i></span>
+              </button>
+            </li>
+          {% endif %}
+          {% if site.enable_darkmode %}
+            <!-- Toggle theme mode -->
+            <li class="toggle-container">
+              <button id="light-toggle" type="button" title="{{ theme_title }}" aria-label="{{ theme_label }}">
+                <i class="fa-half-sun-moon" id="light-toggle-system"></i>
+                <i class="fa-solid fa-moon" id="light-toggle-dark"></i>
+                <i class="fa-solid fa-sun" id="light-toggle-light"></i>
+              </button>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+  {% if site.enable_progressbar %}
+    <!-- Scrolling Progress Bar -->
+    <progress id="progress" value="0">
+      <div class="progress-container">
+        <span class="progress-bar"></span>
+      </div>
+    </progress>
+  {% endif %}
+</header>

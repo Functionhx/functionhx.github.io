@@ -1,42 +1,36 @@
-# Yuchen Fan — personal research hub
+# Yuchen Fan
 
-This Hugo site is a bilingual home for research, engineering projects, useful
-tools, finished writing, evolving notes, and chronological work logs.
+Bilingual research, projects, tools, writing, notes, and logs built with the
+MIT-licensed [al-folio](https://github.com/alshedivat/al-folio) v1.1 starter.
 
-The homepage is organized around two layers:
-
-- a live workspace for Rebuttal Reader, Kaggle monitoring, and direct shortcuts;
-- durable editorial archives for projects, research, writing, notes, logs, open
-  source, and profile context.
-
-Chinese under `content/zh/` is the source of truth. English under `content/en/`
-keeps the same relative path and `translationKey`. Shared public facts live in
-`data/showcase/hub.yaml`.
-
-## Local preview
+## Local development
 
 ```bash
-git submodule update --init --recursive
-hugo server -D
+bundle install
+npm ci
+bundle exec jekyll serve
 ```
+
+Open `http://localhost:4000/` for Chinese and
+`http://localhost:4000/en/` for English.
+
+## Content
+
+- Add paired top-level pages under `_pages/`.
+- Add paired projects and tools under `_projects/`.
+- Add paired writing, notes, and logs under `_posts/`.
+- Give every pair the same `translation_key` and set `lang: zh` or `lang: en`.
+- Keep external articles as canonical links until an owner-provided Markdown
+  source or export is available.
 
 ## Validation
 
 ```bash
 python3 scripts/validate_content.py
-python3 scripts/showcase/validate.py
-hugo --cleanDestinationDir --minify
-python3 scripts/check_built_site.py public
+bundle exec jekyll build
+python3 scripts/check_built_site.py _site
 ```
 
-## Maintenance
-
-- Add verified project, research, tool, and publication summaries to
-  `data/showcase/hub.yaml`.
-- Add local writing, notes, and logs as matched Markdown files under
-  `content/zh/` and `content/en/`.
-- Follow `docs/content-pipeline.md` when indexing articles from Zhihu,
-  Xiaohongshu, or WeChat Official Accounts.
-- Keep live Kaggle data at
-  `https://functionhx.github.io/kaggle-agent/data/dashboard.json`; the homepage
-  refreshes it every five minutes and shows an honest unavailable state.
+The homepage Kaggle monitor reads
+`https://functionhx.github.io/kaggle-agent/data/dashboard.json` every five
+minutes and displays an unavailable state when that source is offline.

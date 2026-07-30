@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""Validate bilingual content pairs and their core front matter."""
+"""Validate bilingual source content and project-specific integration contracts."""
 
+from __future__ import annotations
+
+from collections import defaultdict
 from pathlib import Path
 import re
 import sys
@@ -9,111 +12,131 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTENT = ROOT / "content"
-LANGUAGES = ("zh", "en")
-REQUIRED_SECTIONS = {
-    "_index.md": "home",
-    "projects/_index.md": "projects",
-    "research/_index.md": "research",
-    "open-source/_index.md": "open-source",
-    "tools/_index.md": "tools",
-    "writing/_index.md": "writing",
-    "notes/_index.md": "notes",
-    "logs/_index.md": "logs",
-    "about/_index.md": "about",
+CONTENT_DIRECTORIES = ("_pages", "_projects", "_news", "_posts")
+LANGUAGES = {"zh", "en"}
+REQUIRED_ROUTES = {
+    "home": {"/", "/en/"},
+    "projects": {"/projects/", "/en/projects/"},
+    "research": {"/research/", "/en/research/"},
+    "tools": {"/tools/", "/en/tools/"},
+    "writing": {"/writing/", "/en/writing/"},
+    "notes": {"/notes/", "/en/notes/"},
+    "logs": {"/logs/", "/en/logs/"},
+    "news": {"/news/", "/en/news/"},
 }
-MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\((?!https?://|mailto:|#)([^)\s]+)")
 
 
-def read_page(path: Path) -> tuple[dict, str]:
+def front_matter(path: Path) -> dict:
     text = path.read_text(encoding="utf-8")
-    lines = text.splitlines()
-    if not lines or lines[0] != "---":
-        raise ValueError("missing opening front-matter delimiter")
-
-    try:
-        end = lines.index("---", 1)
-    except ValueError as error:
-        raise ValueError("missing closing front-matter delimiter") from error
-
-    front_matter = yaml.safe_load("\n".join(lines[1:end])) or {}
-    if not isinstance(front_matter, dict):
+    match = re.match(r"\A---\s*\n(.*?)\n---\s*(?:\n|\Z)", text, re.DOTALL)
+    if not match:
+        raise ValueError("missing YAML front matter")
+    data = yaml.safe_load(match.group(1))
+    if not isinstance(data, dict):
         raise ValueError("front matter must be a mapping")
-    return front_matter, "\n".join(lines[end + 1 :])
+    return data
 
 
 def main() -> int:
     errors: list[str] = []
-    paths = {
-        language: {
-            path.relative_to(CONTENT / language)
-            for path in (CONTENT / language).rglob("*.md")
-        }
-        for language in LANGUAGES
-    }
+    records: list[tuple[str, Path, dict]] = []
 
-    for language in LANGUAGES:
-        for relative, translation_key in REQUIRED_SECTIONS.items():
-            path = CONTENT / language / relative
-            if not path.exists():
-                errors.append(f"missing page: {path.relative_to(ROOT)}")
-                continue
-            try:
-                data, _ = read_page(path)
-            except ValueError as error:
-                errors.append(f"{path.relative_to(ROOT)}: {error}")
-                continue
-            if data.get("translationKey") != translation_key:
-                errors.append(
-                    f"{path.relative_to(ROOT)}: expected translationKey "
-                    f"{translation_key!r}"
-                )
-            if not data.get("title"):
-                errors.append(f"{path.relative_to(ROOT)}: title is required")
-
-    if paths["zh"] != paths["en"]:
-        for relative in sorted(paths["zh"] - paths["en"]):
-            errors.append(f"missing English translation: content/en/{relative}")
-        for relative in sorted(paths["en"] - paths["zh"]):
-            errors.append(f"missing Chinese source page: content/zh/{relative}")
-
-    for relative in sorted(paths["zh"] & paths["en"]):
-        records: dict[str, tuple[dict, str]] = {}
-        for language in LANGUAGES:
-            path = CONTENT / language / relative
-            try:
-                records[language] = read_page(path)
-            except ValueError as error:
-                errors.append(f"{path.relative_to(ROOT)}: {error}")
-        if len(records) != len(LANGUAGES):
+    for directory_name in CONTENT_DIRECTORIES:
+        directory = ROOT / directory_name
+        if not directory.exists():
             continue
+        for path in sorted(directory.rglob("*")):
+            if path.suffix not in {".md", ".markdown", ".html"}:
+                continue
+            try:
+                data = front_matter(path)
+            except (OSError, ValueError, yaml.YAMLError) as error:
+                errors.append(f"{path.relative_to(ROOT)}: {error}")
+                continue
+            records.append((directory_name, path, data))
 
-        zh_key = records["zh"][0].get("translationKey")
-        en_key = records["en"][0].get("translationKey")
-        if not zh_key or zh_key != en_key:
+    groups: dict[tuple[str, str], list[tuple[Path, dict]]] = defaultdict(list)
+    for collection, path, data in records:
+        relative = path.relative_to(ROOT)
+        language = data.get("lang")
+        key = data.get("translation_key")
+        if language not in LANGUAGES:
+            errors.append(f"{relative}: lang must be one of {sorted(LANGUAGES)}")
+        if not isinstance(key, str) or not key.strip():
+            errors.append(f"{relative}: translation_key is required")
+            continue
+        groups[(collection, key)].append((path, data))
+
+        if collection == "_projects":
+            for field in ("description", "kind", "status", "source"):
+                if not data.get(field):
+                    errors.append(f"{relative}: project field {field!r} is required")
+
+    for (collection, key), items in sorted(groups.items()):
+        languages = [data.get("lang") for _, data in items]
+        if set(languages) != LANGUAGES or len(languages) != len(LANGUAGES):
+            locations = ", ".join(str(path.relative_to(ROOT)) for path, _ in items)
             errors.append(
-                f"{relative}: translationKey mismatch ({zh_key!r} != {en_key!r})"
+                f"{collection}/{key}: expected exactly zh and en; "
+                f"found {languages} in {locations}"
             )
 
-        for language, (_, body) in records.items():
-            page = CONTENT / language / relative
-            for target in MARKDOWN_LINK.findall(body):
-                clean_target = target.split("#", 1)[0].split("?", 1)[0]
-                if not clean_target:
-                    continue
-                resolved = (page.parent / clean_target).resolve()
-                if not resolved.exists():
-                    errors.append(
-                        f"{page.relative_to(ROOT)}: broken local link {target!r}"
-                    )
+    page_routes: dict[str, set[str]] = defaultdict(set)
+    for collection, _, data in records:
+        if collection == "_pages" and data.get("translation_key") in REQUIRED_ROUTES:
+            page_routes[data["translation_key"]].add(data.get("permalink"))
+    for key, expected in REQUIRED_ROUTES.items():
+        if page_routes[key] != expected:
+            errors.append(
+                f"_pages/{key}: expected permalinks {sorted(expected)}, "
+                f"found {sorted(str(route) for route in page_routes[key])}"
+            )
+
+    config_path = ROOT / "_config.yml"
+    try:
+        config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as error:
+        errors.append(f"_config.yml: {error}")
+        config = {}
+    if config.get("theme") != "al_folio_core":
+        errors.append("_config.yml: theme must remain al_folio_core")
+    if config.get("url") != "https://functionhx.github.io":
+        errors.append("_config.yml: canonical url must be https://functionhx.github.io")
+    if config.get("baseurl") != "":
+        errors.append("_config.yml: baseurl must be empty for the user Pages site")
+    if config.get("enable_darkmode") is not True:
+        errors.append("_config.yml: enable_darkmode must remain true")
+
+    kaggle_path = ROOT / "_includes" / "kaggle-monitor.liquid"
+    kaggle_text = kaggle_path.read_text(encoding="utf-8") if kaggle_path.exists() else ""
+    if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" not in kaggle_text:
+        errors.append("_includes/kaggle-monitor.liquid: canonical dashboard endpoint missing")
+    if "5 * 60 * 1000" not in kaggle_text:
+        errors.append("_includes/kaggle-monitor.liquid: five-minute refresh contract missing")
+
+    license_path = ROOT / "LICENSE"
+    license_text = license_path.read_text(encoding="utf-8") if license_path.exists() else ""
+    if "MIT License" not in license_text or "Maruan Al-Shedivat" not in license_text:
+        errors.append("LICENSE: upstream al-folio MIT attribution must be retained")
+
+    forbidden = ("Albert Einstein", "John Doe", "project 1", "your biography here")
+    public_text = "\n".join(
+        path.read_text(encoding="utf-8")
+        for _, path, _ in records
+    )
+    for sample in forbidden:
+        if sample.lower() in public_text.lower():
+            errors.append(f"sample content leaked into public sources: {sample!r}")
 
     if errors:
-        print("\n".join(f"ERROR: {error}" for error in errors), file=sys.stderr)
+        print("Source validation failed:", file=sys.stderr)
+        for error in errors:
+            print(f"- {error}", file=sys.stderr)
         return 1
 
     print(
-        f"Validated {len(paths['zh'])} bilingual page pairs, "
-        "required sections, and local Markdown links."
+        f"Source validation passed: {len(records)} bilingual records, "
+        f"{len(groups)} translation pairs."
     )
     return 0
 

@@ -1,42 +1,58 @@
 # Repository Guidelines
 
-## Site Identity & Scope
+## Site identity
 
-This repository is the bilingual research portfolio of Yuchen Fan (樊宇琛): a robotics engineering undergraduate at Beijing Institute of Technology working across robotics, autonomous systems, embodied AI, 3D scene intelligence, and AI systems engineering. The site should remain a durable research homepage, engineering portfolio, technical notebook, and open-source record—not a one-off résumé page.
+This repository is the bilingual personal site of Yuchen Fan (樊宇琛), a
+Robotics Engineering undergraduate at Beijing Institute of Technology. It
+collects research, engineering projects, useful tools, writing, notes, and work
+logs.
 
-Chinese under `content/zh/` is the source of truth. English under `content/en/` is a translation and must keep the same relative path and `translationKey`. Every public claim must identify its status and source. Never invent metrics, publications, patents, affiliations, project outcomes, or individual contributions. Mark ongoing work accurately and keep confidential or pre-disclosure technical details high-level.
+Chinese content is the source of truth. Every public page or collection record
+must have an English counterpart with the same `translation_key`. Do not invent
+publications, metrics, project outcomes, affiliations, or individual
+contributions. Ongoing and pre-disclosure work must stay accurately labeled and
+high-level.
 
-## Architecture & File Ownership
+## Architecture
 
-The stack is Hugo Extended 0.163.1 with the PaperMod Git submodule. Use `hugo.yaml` for multilingual and site configuration, `layouts/` for project overrides, `assets/css/extended/` for styles, `static/` for copied assets, and `data/showcase/` as the shared public fact source. Do not edit `themes/PaperMod` directly; prefer layout overrides and extended CSS.
+The site is built with Jekyll and the MIT-licensed al-folio v1.1 starter. The
+runtime theme is provided by the pinned `al_folio_core` and companion gems in
+`Gemfile.lock`.
 
-Existing custom features—including the two-row header, search, Giscus, critiques, Sveltia CMS, `/fx/`, motion controls, and hidden interactions—must not be removed casually. Preserve, compatibility-refactor, or explicitly disable them in configuration with a migration note.
+- `_config.yml` owns site and feature configuration.
+- `_pages/` owns bilingual top-level pages.
+- `_projects/` owns bilingual projects and tools.
+- `_posts/` owns writing, notes, and logs.
+- `_news/` owns short bilingual announcements.
+- `_data/` owns social and supporting data.
+- `_includes/` and `_layouts/` contain only bilingual compatibility overrides.
 
-## Visual Direction
+Preserve the upstream al-folio visual language. Do not redesign its typography,
+spacing, cards, navigation, search, or theme system unless the owner explicitly
+requests a deviation. Keep the upstream `LICENSE`.
 
-Use an Apple-inspired editorial product language without copying Apple trademarks or assets. The homepage combines large narrative sections with a restrained macOS-style spatial metaphor: one functional glass workspace and project dock, followed by conventional web content. Use Liquid Glass for navigation, controls, and information layers—not every card. Prefer system typography, neutral surfaces, purposeful wallpaper gradients, generous whitespace, and strong hierarchy. Avoid bento dashboards, pill-heavy metadata, particle fields, neon, copied operating-system screens, decorative tech grids, and other generic AI-generated design signals.
+## Development
 
-Motion must provide immediate feedback and remain restrained: pressed controls respond on pointer-down, reversible transitions follow consistent paths, and reduced-motion users receive static or cross-fade alternatives. Keep optional legacy effects in `/fx/` and disabled by default. See `docs/design.md` before changing the homepage, header, shared tokens, or project presentation.
+```bash
+bundle install
+npm ci
+bundle exec jekyll serve
+```
 
-## Development & Validation
+Validate before publishing:
 
-- `git submodule update --init --recursive` fetches PaperMod.
-- `hugo server -D` previews all content, including drafts.
-- `python scripts/validate_content.py` validates front matter, translations, and internal links.
-- `python scripts/showcase/validate.py` validates the shared fact source.
-- `hugo --minify` performs the production build.
-- `python scripts/check_built_site.py public` checks built links and multilingual SEO metadata.
+```bash
+python3 scripts/validate_content.py
+bundle exec jekyll build
+python3 scripts/check_built_site.py _site
+```
 
-Run a Hugo build after every functional change. After JavaScript edits, load the affected pages and check the browser console. New pages must work in light and dark themes, on mobile and desktop, with keyboard navigation, and with `prefers-reduced-motion`. Keep pages readable without JavaScript.
+The public site must support Chinese and English, light and dark themes,
+desktop and mobile layouts, keyboard navigation, and a readable no-JavaScript
+fallback. Browser JavaScript remains dependency-free.
 
-## Content, URLs & Translation
+## Publishing
 
-Use lowercase kebab-case slugs. Match project front matter to the archetype and omit empty public sections. When changing a URL, add `aliases` or an explicit redirect; do not silently break legacy links.
-
-DeepSeek is a local/CI authoring tool only. Read `DEEPSEEK_API_KEY` from the environment, never from source or browser JavaScript. Machine translation must create a reviewable draft or pull request, preserve human-locked English, and never overwrite content marked `translation_locked: true` or reviewed. Do not log secrets.
-
-## Code & Review Conventions
-
-Follow nearby formatting: two spaces for YAML, CSS, and JavaScript. Keep browser JavaScript dependency-free and effects restrained. Use focused commit subjects such as `feat(i18n): ...`, `feat(home): ...`, `content: ...`, and `fix: ...`.
-
-Pull requests must summarize user-visible changes, affected URLs, migration behavior, and validation results. Include desktop/mobile screenshots for visual changes and identify any unverified content, external configuration, or manual review still required. Final handoff must include a change summary and clear maintenance instructions.
+The owner explicitly deploys from `main`. Use focused commits and push only
+after the full build passes. GitHub Actions publishes `_site` through GitHub
+Pages.

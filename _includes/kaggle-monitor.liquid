@@ -1,0 +1,134 @@
+{% assign current_lang = page.lang | default: 'zh' %}
+<section id="kaggle-mini-card" aria-labelledby="kmc-heading">
+  <h2 id="kmc-heading">
+    {% if current_lang == 'en' %}competition monitor{% else %}竞赛监控{% endif %}
+  </h2>
+  <div class="table-responsive">
+    <table class="table table-sm table-borderless">
+      <tbody>
+        <tr>
+          <th scope="row" id="kmc-title">Kaggle</th>
+          <td class="text-right" id="kmc-time">
+            {% if current_lang == 'en' %}Loading…{% else %}载入中…{% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">CV Score</th>
+          <td class="text-right" id="kmc-cv">--</td>
+        </tr>
+        <tr>
+          <th scope="row">LB Score</th>
+          <td class="text-right" id="kmc-lb">--</td>
+        </tr>
+        <tr>
+          <th scope="row">
+            {% if current_lang == 'en' %}Gap to target{% else %}距目标{% endif %}
+          </th>
+          <td class="text-right" id="kmc-gap">--</td>
+        </tr>
+        <tr>
+          <th scope="row">
+            {% if current_lang == 'en' %}Remaining today{% else %}今日剩余{% endif %}
+          </th>
+          <td class="text-right" id="kmc-quota">--</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p id="kmc-alert" role="status" style="display: none"></p>
+  <p class="text-right">
+    <a href="https://functionhx.github.io/kaggle-agent/" target="_blank" rel="noopener noreferrer">
+      {% if current_lang == 'en' %}Open full dashboard →{% else %}查看完整 dashboard →{% endif %}
+    </a>
+  </p>
+</section>
+
+<script>
+  (() => {
+    const endpoint = 'https://functionhx.github.io/kaggle-agent/data/dashboard.json';
+    const refreshInterval = 5 * 60 * 1000;
+    const language = {{ current_lang | jsonify }};
+    const labels =
+      language === 'en'
+        ? {
+            updated: 'Updated',
+            unavailable: 'Data unavailable',
+            ahead: 'ahead',
+            remaining: 'remaining',
+            decisions: (count) => `⏸ ${count} experiment${count === 1 ? '' : 's'} need a decision`,
+          }
+        : {
+            updated: '更新',
+            unavailable: '数据暂不可用',
+            ahead: '已超目标',
+            remaining: '尚差',
+            decisions: (count) => `⏸ 有 ${count} 个实验需要决策`,
+          };
+
+    const element = (id) => document.getElementById(id);
+    const formatScore = (value) => {
+      const number = Number(value);
+      return Number.isFinite(number) ? number.toFixed(5) : '--';
+    };
+
+    const setUnavailable = () => {
+      element('kmc-time').textContent = labels.unavailable;
+      ['kmc-cv', 'kmc-lb', 'kmc-gap', 'kmc-quota'].forEach((id) => {
+        element(id).textContent = '--';
+      });
+      element('kmc-alert').style.display = 'none';
+    };
+
+    const update = async () => {
+      try {
+        const response = await fetch(endpoint, { cache: 'no-cache' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        element('kmc-title').textContent = data.competition_name || 'Kaggle';
+
+        const updated = data.updated ? new Date(data.updated) : null;
+        element('kmc-time').textContent =
+          updated && !Number.isNaN(updated.getTime())
+            ? `${labels.updated} ${updated.toLocaleString(language === 'en' ? 'en' : 'zh-CN', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}`
+            : labels.unavailable;
+
+        element('kmc-cv').textContent = formatScore(data.best?.cv_score);
+        element('kmc-lb').textContent = formatScore(data.best?.lb_score);
+
+        const score = Number(data.best?.cv_score);
+        const target = Number(data.best?.target);
+        const hasGap = Number.isFinite(score) && Number.isFinite(target);
+        if (hasGap) {
+          const direction = data.best?.lb_direction === 'minimize' ? -1 : 1;
+          const gap = (target - score) * direction;
+          element('kmc-gap').textContent =
+            gap > 0 ? `${labels.remaining} ${Math.abs(gap).toFixed(5)}` : `${labels.ahead} ${Math.abs(gap).toFixed(5)}`;
+        } else {
+          element('kmc-gap').textContent = '--';
+        }
+
+        const remaining = Number(data.quota?.remaining);
+        const limit = Number(data.quota?.limit);
+        element('kmc-quota').textContent =
+          Number.isFinite(remaining) && Number.isFinite(limit) ? `${remaining}/${limit}` : '--';
+
+        const blocked = Array.isArray(data.experiments)
+          ? data.experiments.filter((experiment) => experiment?.status === 'blocked').length
+          : 0;
+        element('kmc-alert').style.display = blocked > 0 ? 'block' : 'none';
+        element('kmc-alert').textContent = blocked > 0 ? labels.decisions(blocked) : '';
+      } catch (error) {
+        setUnavailable();
+      } finally {
+        window.setTimeout(update, refreshInterval);
+      }
+    };
+
+    update();
+  })();
+</script>
