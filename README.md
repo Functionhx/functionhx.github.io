@@ -1,6 +1,6 @@
 # Empty bilingual site shell
 
-This repository intentionally publishes only six empty sections:
+This repository publishes six sections:
 
 - Home
 - Projects
@@ -9,7 +9,9 @@ This repository intentionally publishes only six empty sections:
 - Notes
 - About
 
-The public interface keeps Chinese/English switching and light/dark mode. It contains no profile, project, research, article, timeline, contact, résumé, analytics, comment, search, CMS, or showcase data.
+The homepage also contains one Kaggle competition progress card. It reads `https://functionhx.github.io/kaggle-agent/data/dashboard.json` and refreshes every five minutes.
+
+The public interface otherwise keeps only Chinese/English switching and light/dark mode. It contains no profile, article, timeline, contact, résumé, analytics, comment, search, CMS, or showcase archive.
 
 ## Validate locally
 

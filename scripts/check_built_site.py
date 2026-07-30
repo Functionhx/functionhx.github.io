@@ -29,6 +29,7 @@ class PageParser(HTMLParser):
         self.html_lang = ""
         self.ids: set[str] = set()
         self.classes: set[str] = set()
+        self.hrefs: set[str] = set()
         self.h1: list[str] = []
         self.hreflangs: set[str] = set()
         self.text: list[str] = []
@@ -42,6 +43,8 @@ class PageParser(HTMLParser):
             self.ids.add(values["id"] or "")
         if values.get("class"):
             self.classes.update((values["class"] or "").split())
+        if tag == "a" and values.get("href"):
+            self.hrefs.add(values["href"] or "")
         if tag == "h1":
             self._in_h1 = True
             self.h1.append("")
@@ -97,6 +100,26 @@ def main() -> int:
             errors.append(f"{relative}: missing bilingual hreflang links")
         if "language-switch" not in parser.classes:
             errors.append(f"{relative}: missing language switch")
+
+        card_ids = {
+            "kaggle-mini-card",
+            "kmc-title",
+            "kmc-time",
+            "kmc-cv",
+            "kmc-lb",
+            "kmc-gap",
+            "kmc-quota",
+            "kmc-alert",
+        }
+        if relative in {"index.html", "en/index.html"}:
+            if not card_ids.issubset(parser.ids):
+                errors.append(f"{relative}: missing Kaggle card elements")
+            if "https://functionhx.github.io/kaggle-agent/" not in parser.hrefs:
+                errors.append(f"{relative}: missing full Kaggle dashboard link")
+            if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" not in html:
+                errors.append(f"{relative}: missing Kaggle dashboard data source")
+        elif card_ids & parser.ids:
+            errors.append(f"{relative}: Kaggle card must appear only on the homepage")
 
     redirect = public / DEFAULT_LANGUAGE_REDIRECT
     if redirect.exists():

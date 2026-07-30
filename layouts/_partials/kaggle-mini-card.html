@@ -1,0 +1,280 @@
+{{- $isEnglish := eq .Lang "en" -}}
+<section class="kaggle-mini-card-wrap" aria-label="{{ if $isEnglish }}Kaggle competition progress{{ else }}Kaggle 竞赛进度{{ end }}">
+    <div id="kaggle-mini-card" aria-live="polite">
+        <div class="kmc-header">
+            <span class="kmc-title" id="kmc-title">Kaggle</span>
+            <span class="kmc-time" id="kmc-time">--</span>
+        </div>
+
+        <div class="kmc-grid">
+            <div class="kmc-metric">
+                <div class="kmc-label">CV Score</div>
+                <div class="kmc-score" id="kmc-cv">--</div>
+            </div>
+            <div class="kmc-metric">
+                <div class="kmc-label">LB Score</div>
+                <div class="kmc-score" id="kmc-lb">--</div>
+            </div>
+            <div class="kmc-metric">
+                <div class="kmc-label">{{ if $isEnglish }}Gap to target{{ else }}距目标{{ end }}</div>
+                <div class="kmc-value" id="kmc-gap">--</div>
+            </div>
+            <div class="kmc-metric">
+                <div class="kmc-label">{{ if $isEnglish }}Today{{ else }}今日{{ end }}</div>
+                <div class="kmc-value" id="kmc-quota">--</div>
+            </div>
+        </div>
+
+        <a class="kmc-link" href="https://functionhx.github.io/kaggle-agent/">
+            {{- if $isEnglish }}Open full dashboard{{ else }}查看完整 dashboard{{ end }} →
+        </a>
+
+        <div id="kmc-alert" role="status">
+            {{- if $isEnglish }}⏸ Experiments need your decision{{ else }}⏸ 有实验需要你的决策{{ end }}
+        </div>
+    </div>
+</section>
+
+<style>
+  .kaggle-mini-card-wrap {
+    display: flex;
+    justify-content: flex-end;
+    padding: clamp(48px, 8vw, 96px) 0 0;
+  }
+
+  #kaggle-mini-card {
+    width: 100%;
+    max-width: 380px;
+    padding: 16px;
+    border-radius: 12px;
+    background: #16213e;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    color: #e0e0e0;
+    color-scheme: dark;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .kmc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 12px;
+  }
+
+  .kmc-title {
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .kmc-time,
+  .kmc-label,
+  .kmc-link {
+    font-size: 11px;
+  }
+
+  .kmc-time,
+  .kmc-label {
+    color: #a4a4ad;
+  }
+
+  .kmc-time {
+    flex: 0 0 auto;
+  }
+
+  .kmc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .kmc-metric {
+    min-width: 0;
+    padding: 10px;
+    border-radius: 8px;
+    background: #1a1a2e;
+  }
+
+  .kmc-score {
+    overflow: hidden;
+    margin-top: 2px;
+    color: #4ecca3;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+  }
+
+  .kmc-value {
+    overflow: hidden;
+    margin-top: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+  }
+
+  .kmc-link {
+    display: block;
+    margin-top: 10px;
+    color: #7eb6ff;
+    text-align: right;
+    text-decoration: none;
+  }
+
+  .kmc-link:hover {
+    color: #b9d8ff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  #kmc-alert {
+    display: none;
+    margin-top: 8px;
+    padding: 8px;
+    border-radius: 6px;
+    background: #e94560;
+    color: #fff;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  @media (max-width: 520px) {
+    .kaggle-mini-card-wrap {
+      padding-top: 40px;
+    }
+
+    #kaggle-mini-card {
+      max-width: none;
+      padding: 14px;
+    }
+
+    .kmc-grid {
+      gap: 8px;
+    }
+  }
+</style>
+
+<script>
+  (() => {
+    const card = document.getElementById("kaggle-mini-card");
+    if (!card) return;
+
+    const DATA_URL = "https://functionhx.github.io/kaggle-agent/data/dashboard.json";
+    const CACHE = 5 * 60 * 1000;
+    const locale = "{{ if $isEnglish }}en-US{{ else }}zh-CN{{ end }}";
+    const copy = {
+      updated: "{{ if $isEnglish }}Updated{{ else }}更新{{ end }}",
+      unavailable: "{{ if $isEnglish }}Waiting for data{{ else }}等待数据{{ end }}",
+      gap: "{{ if $isEnglish }}Gap{{ else }}差{{ end }}",
+      reached: "{{ if $isEnglish }}Reached{{ else }}已达标{{ end }}",
+      alertPrefix: "{{ if $isEnglish }}⏸ {{ else }}⏸ 有 {{ end }}",
+      alertSuffix: "{{ if $isEnglish }} experiment(s) need your decision{{ else }} 个 exp 需要你的决策{{ end }}"
+    };
+    const elements = {
+      title: document.getElementById("kmc-title"),
+      time: document.getElementById("kmc-time"),
+      cv: document.getElementById("kmc-cv"),
+      lb: document.getElementById("kmc-lb"),
+      gap: document.getElementById("kmc-gap"),
+      quota: document.getElementById("kmc-quota"),
+      alert: document.getElementById("kmc-alert")
+    };
+    let hasData = false;
+    let refreshTimer;
+
+    function number(value) {
+      if (value === null || value === undefined || value === "") return null;
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function fmt(value) {
+      const parsed = number(value);
+      return parsed === null ? "--" : parsed.toFixed(5);
+    }
+
+    function needsDecision(experiment) {
+      if (!experiment || typeof experiment !== "object") return false;
+      if (experiment.needs_decision === true || experiment.requires_decision === true) return true;
+      const status = String(experiment.status || experiment.state || "").toLowerCase();
+      return ["blocked", "needs_decision", "awaiting_decision", "paused"].includes(status);
+    }
+
+    async function update() {
+      card.setAttribute("aria-busy", "true");
+      try {
+        const response = await fetch(DATA_URL, { cache: "no-cache" });
+        if (!response.ok) throw new Error(`Dashboard returned ${response.status}`);
+
+        const data = await response.json();
+        if (!data || typeof data !== "object") throw new Error("Dashboard payload is empty");
+
+        const best = data.best && typeof data.best === "object" ? data.best : {};
+        const cvScore = number(best.cv_score);
+        const lbScore = number(best.lb_score);
+        const target = number(best.target);
+        const direction = String(best.lb_direction || "").toLowerCase();
+        const quota = data.quota && typeof data.quota === "object" ? data.quota : {};
+        const remaining = number(quota.remaining);
+        const limit = number(quota.limit);
+        const experiments = Array.isArray(data.experiments) ? data.experiments : [];
+
+        elements.title.textContent = data.competition_name || "Kaggle";
+        const updated = data.updated ? new Date(data.updated) : null;
+        elements.time.textContent = updated && !Number.isNaN(updated.getTime())
+          ? `${copy.updated} ${updated.toLocaleString(locale, {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit"
+            })}`
+          : "--";
+        elements.cv.textContent = fmt(cvScore);
+        elements.lb.textContent = fmt(lbScore);
+
+        const gap = cvScore !== null && target !== null
+          ? (target - cvScore) * (direction === "minimize" ? -1 : 1)
+          : null;
+        elements.gap.textContent = gap === null
+          ? "--"
+          : gap > 0
+            ? `${copy.gap} ${fmt(gap)}`
+            : copy.reached;
+        elements.gap.style.color = gap === null
+          ? "#e0e0e0"
+          : gap > 0
+            ? "#ffc107"
+            : "#4ecca3";
+
+        elements.quota.textContent = remaining !== null && limit !== null
+          ? `${remaining}/${limit}`
+          : "--";
+        elements.quota.style.color = remaining !== null && remaining <= 0
+          ? "#e94560"
+          : "#e0e0e0";
+
+        const blocked = experiments.filter(needsDecision).length;
+        if (blocked > 0) {
+          elements.alert.style.display = "block";
+          elements.alert.textContent = `${copy.alertPrefix}${blocked}${copy.alertSuffix}`;
+        } else {
+          elements.alert.style.display = "none";
+        }
+
+        hasData = true;
+      } catch (error) {
+        if (!hasData) elements.time.textContent = copy.unavailable;
+      } finally {
+        card.removeAttribute("aria-busy");
+        window.clearTimeout(refreshTimer);
+        refreshTimer = window.setTimeout(update, CACHE);
+      }
+    }
+
+    update();
+  })();
+</script>
