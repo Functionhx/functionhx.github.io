@@ -1,0 +1,269 @@
+{% assign settings_lang = page.lang | default: 'zh' %}
+{% assign settings_sections = site.pages | where: 'lang', 'zh' | sort: 'nav_order' %}
+{% assign settings_seen_keys = '|' %}
+
+{% if settings_lang == 'en' %}
+  {% assign settings_heading = 'Site settings' %}
+  {% assign settings_intro = 'Show or hide existing sections, or create a bilingual section from a content format.' %}
+  {% assign settings_existing = 'Sections' %}
+  {% assign settings_visible = 'Visible in navigation' %}
+  {% assign settings_hidden = 'Hidden' %}
+  {% assign settings_new = 'Create a section' %}
+  {% assign settings_title_zh = 'Chinese title' %}
+  {% assign settings_title_en = 'English title' %}
+  {% assign settings_description_zh = 'Chinese description' %}
+  {% assign settings_description_en = 'English description' %}
+  {% assign settings_slug = 'URL slug' %}
+  {% assign settings_order = 'Navigation order' %}
+  {% assign settings_format = 'Content format' %}
+  {% assign settings_new_visible = 'Show in navigation after creation' %}
+  {% assign settings_format_page = 'Blank page' %}
+  {% assign settings_format_posts = 'Article list' %}
+  {% assign settings_format_projects = 'Project cards' %}
+  {% assign settings_format_profiles = 'People profiles' %}
+  {% assign settings_format_repositories = 'Repository list' %}
+  {% assign settings_clear = 'Clear new section' %}
+  {% assign settings_translate = 'Translate Chinese with DeepSeek' %}
+  {% assign settings_connect = 'Connect GitHub' %}
+  {% assign settings_commit = 'Commit settings' %}
+  {% assign settings_close = 'Close settings' %}
+  {% assign settings_idle = 'Changes stay in this panel until you commit them.' %}
+  {% assign settings_auth_heading = 'Connect GitHub for this settings session' %}
+  {% assign settings_auth_intro = 'Choose “Only select repositories → functionhx.github.io” and keep only Contents: write permission.' %}
+  {% assign settings_auth_create = 'Create a restricted token on GitHub' %}
+  {% assign settings_auth_token = 'Fine-grained token' %}
+  {% assign settings_auth_security = 'The token stays only in this page memory and disappears when the page reloads.' %}
+  {% assign settings_auth_cancel = 'Cancel' %}
+  {% assign settings_auth_verify = 'Verify and connect' %}
+{% else %}
+  {% assign settings_heading = '站点设置' %}
+  {% assign settings_intro = '显示或隐藏现有栏目，也可以按内容格式创建一组新的中英文栏目。' %}
+  {% assign settings_existing = '栏目' %}
+  {% assign settings_visible = '显示在导航栏' %}
+  {% assign settings_hidden = '已隐藏' %}
+  {% assign settings_new = '新建栏目' %}
+  {% assign settings_title_zh = '中文名称' %}
+  {% assign settings_title_en = '英文名称' %}
+  {% assign settings_description_zh = '中文简介' %}
+  {% assign settings_description_en = '英文简介' %}
+  {% assign settings_slug = '网址短名' %}
+  {% assign settings_order = '导航顺序' %}
+  {% assign settings_format = '内容格式' %}
+  {% assign settings_new_visible = '创建后显示在导航栏' %}
+  {% assign settings_format_page = '普通页面' %}
+  {% assign settings_format_posts = '文章列表' %}
+  {% assign settings_format_projects = '项目卡片' %}
+  {% assign settings_format_profiles = '人物档案' %}
+  {% assign settings_format_repositories = '仓库列表' %}
+  {% assign settings_clear = '清空新栏目' %}
+  {% assign settings_translate = 'DeepSeek 翻译英文' %}
+  {% assign settings_connect = '连接 GitHub' %}
+  {% assign settings_commit = '提交设置' %}
+  {% assign settings_close = '关闭设置' %}
+  {% assign settings_idle = '修改暂时只保留在这个面板中，提交后才会更新站点。' %}
+  {% assign settings_auth_heading = '本次设置连接 GitHub' %}
+  {% assign settings_auth_intro = '创建时选择“Only select repositories → functionhx.github.io”，权限只保留 Contents: write。' %}
+  {% assign settings_auth_create = '在 GitHub 创建受限令牌' %}
+  {% assign settings_auth_token = 'Fine-grained token' %}
+  {% assign settings_auth_security = '令牌只保存在当前页面内存中，刷新页面后自动消失。' %}
+  {% assign settings_auth_cancel = '取消' %}
+  {% assign settings_auth_verify = '验证并连接' %}
+{% endif %}
+
+<dialog id="site-settings-dialog" class="site-settings-dialog" aria-labelledby="site-settings-heading">
+  <div
+    id="site-settings"
+    class="site-settings"
+    data-language="{{ settings_lang }}"
+    data-repository="Functionhx/functionhx.github.io"
+    data-owner="Functionhx"
+    data-branch="main"
+  >
+    <header class="site-settings__header">
+      <div>
+        <p class="site-settings__eyebrow">functionhx.github.io</p>
+        <h2 id="site-settings-heading">{{ settings_heading }}</h2>
+        <p>{{ settings_intro }}</p>
+      </div>
+      <button
+        id="site-settings-close"
+        class="site-settings__icon-button"
+        type="button"
+        title="{{ settings_close }}"
+        aria-label="{{ settings_close }}"
+      >
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </header>
+
+    <section class="site-settings__section" aria-labelledby="site-settings-existing-heading">
+      <div class="site-settings__section-heading">
+        <h3 id="site-settings-existing-heading">{{ settings_existing }}</h3>
+        <span>{{ settings_visible }}</span>
+      </div>
+      <ul id="site-settings-sections" class="site-settings__sections">
+        {% for section in settings_sections %}
+          {% assign settings_page_number = section.pagination_info.curr_page | default: 1 %}
+          {% if section.nav != null and settings_page_number == 1 %}
+            {% capture settings_key_marker %}|{{ section.translation_key }}|{% endcapture %}
+            {% unless settings_seen_keys contains settings_key_marker %}
+              {% assign settings_seen_keys = settings_seen_keys | append: section.translation_key | append: '|' %}
+              {% assign translations = site.pages | where: 'translation_key', section.translation_key %}
+              {% assign english_section = translations | where: 'lang', 'en' | first %}
+              {% assign section_source_stem = section.settings_file_stem | default: section.translation_key %}
+              {% assign section_format = 'page' %}
+              {% if section.layout == 'profiles' %}
+                {% assign section_format = 'profiles' %}
+              {% elsif section.translation_key == 'repositories' %}
+                {% assign section_format = 'repositories' %}
+              {% elsif section.translation_key == 'projects' or section.translation_key == 'tools' %}
+                {% assign section_format = 'projects' %}
+              {% elsif section.translation_key == 'blog' or section.kind %}
+                {% assign section_format = 'posts' %}
+              {% endif %}
+              <li>
+                <div>
+                  <strong>
+                    {% if settings_lang == 'en' %}
+                      {{ english_section.title }}
+                      <span lang="zh-CN">{{ section.title }}</span>
+                    {% else %}
+                      {{ section.title }}
+                      <span lang="en">{{ english_section.title }}</span>
+                    {% endif %}
+                  </strong>
+                  <small>
+                    {% case section_format %}
+                      {% when 'profiles' %}
+                        {{ settings_format_profiles }}
+                      {% when 'repositories' %}
+                        {{ settings_format_repositories }}
+                      {% when 'projects' %}
+                        {{ settings_format_projects }}
+                      {% when 'posts' %}
+                        {{ settings_format_posts }}
+                      {% else %}
+                        {{ settings_format_page }}
+                    {% endcase %}
+                    {% unless section.nav %} · {{ settings_hidden }}{% endunless %}
+                  </small>
+                </div>
+                <label class="site-settings__switch">
+                  <span class="sr-only">{{ settings_visible }}：{{ section.title }}</span>
+                  <input
+                    type="checkbox"
+                    data-section-toggle
+                    data-translation-key="{{ section.translation_key | escape }}"
+                    data-source-path-zh="_pages/{{ section_source_stem | escape }}-zh.md"
+                    data-source-path-en="_pages/{{ section_source_stem | escape }}-en.md"
+                    data-initial-visible="{% if section.nav %}true{% else %}false{% endif %}"
+                    {% if section.nav %}
+                      checked
+                    {% endif %}
+                  >
+                  <span aria-hidden="true"></span>
+                </label>
+              </li>
+            {% endunless %}
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </section>
+
+    <details id="site-settings-new" class="site-settings__new">
+      <summary>{{ settings_new }}</summary>
+      <div class="site-settings__new-grid">
+        <label>
+          <span>{{ settings_title_zh }}</span>
+          <input id="site-settings-title-zh" type="text" autocomplete="off">
+        </label>
+        <label>
+          <span>{{ settings_title_en }}</span>
+          <input id="site-settings-title-en" type="text" autocomplete="off">
+        </label>
+        <label>
+          <span>{{ settings_description_zh }}</span>
+          <input id="site-settings-description-zh" type="text" autocomplete="off">
+        </label>
+        <label>
+          <span>{{ settings_description_en }}</span>
+          <input id="site-settings-description-en" type="text" autocomplete="off">
+        </label>
+        <label>
+          <span>{{ settings_slug }}</span>
+          <input id="site-settings-slug" type="text" inputmode="url" autocomplete="off" spellcheck="false">
+        </label>
+        <label>
+          <span>{{ settings_order }}</span>
+          <input id="site-settings-order" type="number" min="1" max="999" step="1" value="50">
+        </label>
+        <label>
+          <span>{{ settings_format }}</span>
+          <select id="site-settings-format">
+            <option value="page">{{ settings_format_page }}</option>
+            <option value="posts">{{ settings_format_posts }}</option>
+            <option value="projects">{{ settings_format_projects }}</option>
+            <option value="profiles">{{ settings_format_profiles }}</option>
+            <option value="repositories">{{ settings_format_repositories }}</option>
+          </select>
+        </label>
+        <label class="site-settings__new-visible">
+          <input id="site-settings-new-visible" type="checkbox" checked>
+          <span>{{ settings_new_visible }}</span>
+        </label>
+      </div>
+      <div class="site-settings__new-actions">
+        <button id="site-settings-translate" class="site-settings__text-button site-settings__text-button--accent" type="button">
+          <i class="fa-solid fa-language" aria-hidden="true"></i>
+          {{ settings_translate }}
+        </button>
+        <button id="site-settings-clear" class="site-settings__text-button" type="button">{{ settings_clear }}</button>
+      </div>
+    </details>
+
+    <footer class="site-settings__footer">
+      <p id="site-settings-status" role="status" aria-live="polite">{{ settings_idle }}</p>
+      <div>
+        <button id="site-settings-connect" class="site-settings__button site-settings__button--quiet" type="button">
+          <i class="fa-brands fa-github" aria-hidden="true"></i>
+          <span>{{ settings_connect }}</span>
+        </button>
+        <button id="site-settings-commit" class="site-settings__button site-settings__button--primary" type="button">
+          {{ settings_commit }}
+        </button>
+      </div>
+    </footer>
+    <a id="site-settings-result" class="site-settings__result" hidden target="_blank" rel="external noopener"></a>
+  </div>
+</dialog>
+
+<dialog id="site-settings-auth" class="site-settings-auth" aria-labelledby="site-settings-auth-heading">
+  <div>
+    <h2 id="site-settings-auth-heading">{{ settings_auth_heading }}</h2>
+    <p>{{ settings_auth_intro }}</p>
+    <p>
+      <a
+        href="https://github.com/settings/personal-access-tokens/new?name=Functionhx%20site%20settings&description=Manage%20functionhx.github.io%20sections&target_name=Functionhx&expires_in=30&contents=write"
+        target="_blank"
+        rel="external nofollow noopener"
+      >
+        {{- settings_auth_create }}
+        <i class="fa-solid fa-arrow-up-right-from-square fa-xs" aria-hidden="true"></i>
+      </a>
+    </p>
+    <label>
+      <span>{{ settings_auth_token }}</span>
+      <input id="site-settings-token" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="none" spellcheck="false">
+    </label>
+    <p class="site-settings-auth__security">{{ settings_auth_security }}</p>
+    <p id="site-settings-auth-status" class="site-settings-auth__status" role="status" aria-live="polite"></p>
+    <div class="site-settings-auth__actions">
+      <button id="site-settings-auth-cancel" class="site-settings__button site-settings__button--quiet" type="button">
+        {{ settings_auth_cancel }}
+      </button>
+      <button id="site-settings-auth-connect" class="site-settings__button site-settings__button--primary" type="button">
+        {{ settings_auth_verify }}
+      </button>
+    </div>
+  </div>
+</dialog>

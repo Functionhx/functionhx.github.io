@@ -39,6 +39,12 @@
         invalidSlug: "The URL slug may contain only lowercase letters, numbers, and hyphens.",
         noChanges: "There are no unpublished changes.",
         publishing: "Creating one commit for both languages…",
+        translationCanceled: "Translation canceled; the Chinese draft is unchanged.",
+        translationFailed: "The English draft could not be translated.",
+        translationReady: "English translation is ready for review and remains a local draft.",
+        translating: "Waiting for DeepSeek to translate the Chinese draft…",
+        translateMissing: "Add a Chinese title and body before translating.",
+        overwriteTranslation: "Replace the current English draft with a new DeepSeek translation?",
         verify: "Verifying this token and repository access…",
         viewCommit: "View the commit on GitHub →",
       }
@@ -65,6 +71,12 @@
         invalidSlug: "网址短名只能包含小写字母、数字和连字符。",
         noChanges: "当前没有尚未发布的修改。",
         publishing: "正在为中英文创建同一个 Commit…",
+        translationCanceled: "已取消翻译，中文稿保持不变。",
+        translationFailed: "无法生成英文译稿。",
+        translationReady: "英文译稿已经生成，请检查；内容仍是本地草稿。",
+        translating: "正在等待 DeepSeek 翻译中文稿…",
+        translateMissing: "请先填写中文标题和正文。",
+        overwriteTranslation: "用新的 DeepSeek 翻译覆盖当前英文稿？",
         verify: "正在验证令牌和仓库权限…",
         viewCommit: "在 GitHub 查看 Commit →",
       };
@@ -106,6 +118,7 @@
     slug: document.getElementById("site-spark-writer-slug"),
     status: document.getElementById("site-spark-writer-status"),
     token: document.getElementById("site-inline-editor-token"),
+    translate: document.getElementById("site-spark-writer-translate"),
   };
 
   const requiredElements = Object.entries(elements)
@@ -171,6 +184,7 @@
     elements.connect.disabled = nextBusy;
     elements.discard.disabled = nextBusy;
     elements.publish.disabled = nextBusy;
+    elements.translate.disabled = nextBusy;
     elements.authConnect.disabled = nextBusy;
   }
 
@@ -803,6 +817,56 @@
     }
   }
 
+  async function translateChineseDraft() {
+    if (!languageComplete("zh")) {
+      selectLanguage("zh");
+      setStatus(strings.translateMissing, "error");
+      fields.zh.title.focus();
+      return;
+    }
+    if (
+      (fields.en.title.value.trim() || fields.en.summary.value.trim() || fields.en.body.value.trim()) &&
+      !window.confirm(strings.overwriteTranslation)
+    ) {
+      return;
+    }
+    if (!window.functionhxDeepSeek?.translate) {
+      setStatus(strings.translationFailed, "error");
+      return;
+    }
+
+    elements.translate.disabled = true;
+    setStatus(strings.translating);
+    try {
+      const translated = await window.functionhxDeepSeek.translate({
+        body: fields.zh.body.value,
+        summary: fields.zh.summary.value,
+        title: fields.zh.title.value,
+      });
+      fields.en.title.value = translated.title;
+      fields.en.summary.value = translated.summary;
+      fields.en.body.value = translated.body;
+      if (currentMode === "create" && slugIsAutomatic) {
+        const generated = slugify(translated.title);
+        if (generated) elements.slug.value = generated;
+      }
+      autoSize(fields.en.body);
+      updateCompletion();
+      scheduleDraftSave();
+      elements.result.hidden = true;
+      selectLanguage("en");
+      setStatus(strings.translationReady, "success");
+    } catch (error) {
+      if (error.name === "AbortError") {
+        setStatus(strings.translationCanceled);
+      } else {
+        setStatus(`${strings.translationFailed} ${error.message || ""}`.trim(), "error");
+      }
+    } finally {
+      elements.translate.disabled = false;
+    }
+  }
+
   toggle.addEventListener("click", () => {
     if (toggle.dataset.editorAction === "spark-create") {
       openCreate(toggle);
@@ -823,6 +887,7 @@
   elements.discard.addEventListener("click", discardDraft);
   elements.connect.addEventListener("click", () => openAuthDialog(false));
   elements.publish.addEventListener("click", publishPair);
+  elements.translate.addEventListener("click", translateChineseDraft);
   fields.zh.tab.addEventListener("click", () => selectLanguage("zh", true));
   fields.en.tab.addEventListener("click", () => selectLanguage("en", true));
 

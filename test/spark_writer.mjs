@@ -6,6 +6,7 @@ import { chromium } from "playwright";
 
 const siteRoot = new URL("../_site/", import.meta.url);
 const testToken = "not-a-real-spark-token";
+const testDeepSeekKey = "not-a-real-deepseek-spark-key";
 const editPaths = {
   en: "_posts/2026-07-30-existing-spark-en.md",
   zh: "_posts/2026-07-30-existing-spark-zh.md",
@@ -80,6 +81,8 @@ if (!baseUrl) {
 const treeRequests = [];
 const commitRequests = [];
 const refUpdates = [];
+const translationRequests = [];
+const translationAuthorizations = [];
 const authorizations = [];
 const browserCandidates = [
   process.env.PLAYWRIGHT_CHROME_PATH,
@@ -93,6 +96,39 @@ const browser = await chromium.launch({
   ...(browserExecutable ? { executablePath: browserExecutable } : {}),
 });
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+
+await page.route("https://api.deepseek.com/**", async (route) => {
+  const request = route.request();
+  const corsHeaders = {
+    "Access-Control-Allow-Headers": "Authorization, Content-Type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Origin": "*",
+  };
+  if (request.method() === "OPTIONS") {
+    await route.fulfill({ status: 204, headers: corsHeaders });
+    return;
+  }
+  translationRequests.push(request.postDataJSON());
+  translationAuthorizations.push(request.headers().authorization || "");
+  await route.fulfill({
+    body: JSON.stringify({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              body: "Write the English body directly like a note.",
+              summary: "A first note written directly on the site.",
+              title: "First Spark",
+            }),
+          },
+        },
+      ],
+    }),
+    contentType: "application/json",
+    headers: corsHeaders,
+    status: 200,
+  });
+});
 
 await page.route("https://api.github.com/**", async (route) => {
   const request = route.request();
@@ -231,11 +267,23 @@ try {
   assert.equal(await page.locator("#site-inline-editor").isVisible(), false, "the source editor must stay closed");
 
   await page.locator("#site-spark-writer-title-zh").fill("第一条闪耀");
+  await page.locator("#site-spark-writer-summary-zh").fill("第一条直接在站内写下的笔记。");
   await page.locator("#site-spark-writer-body-zh").fill("直接像写笔记一样写下中文正文。");
-  await page.locator("#site-spark-writer-tab-en").click();
-  await page.locator("#site-spark-writer-title-en").fill("First Spark");
-  await page.locator("#site-spark-writer-body-en").fill("Write the English body directly like a note.");
+  await page.locator("#site-spark-writer-translate").click();
+  await page.locator("#deepseek-translator-dialog").waitFor({ state: "visible" });
+  await page.locator("#deepseek-translator-key").fill(testDeepSeekKey);
+  await page.locator("#deepseek-translator-submit").click();
+  await page.locator("#deepseek-translator-dialog").waitFor({ state: "hidden" });
+
+  assert.equal(await page.locator("#site-spark-writer-title-en").inputValue(), "First Spark");
+  assert.equal(await page.locator("#site-spark-writer-summary-en").inputValue(), "A first note written directly on the site.");
+  assert.equal(await page.locator("#site-spark-writer-body-en").inputValue(), "Write the English body directly like a note.");
   assert.equal(await page.locator("#site-spark-writer-slug").inputValue(), "first-spark");
+  assert.equal(translationRequests.length, 1);
+  assert.equal(translationAuthorizations[0], `Bearer ${testDeepSeekKey}`);
+  assert.equal(translationRequests[0].model, "deepseek-v4-pro");
+  assert.deepEqual(translationRequests[0].response_format, { type: "json_object" });
+  assert.match(translationRequests[0].messages[1].content, /第一条闪耀/);
 
   await page.waitForTimeout(450);
   const localDraft = await page.evaluate(() => Object.values(window.localStorage).find((value) => value.includes("第一条闪耀")));
@@ -301,6 +349,7 @@ try {
 
   const browserStorage = await page.evaluate(() => JSON.stringify({ ...window.localStorage, ...window.sessionStorage }));
   assert.equal(browserStorage.includes(testToken), false, "the GitHub token must never enter browser storage");
+  assert.equal(browserStorage.includes(testDeepSeekKey), false, "the DeepSeek key must never enter browser storage");
 
   await page.locator("#site-spark-writer-close").click();
   await page.setViewportSize({ width: 390, height: 844 });

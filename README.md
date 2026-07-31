@@ -39,6 +39,18 @@ source/preview screen. Chinese and English are written as one pair, autosaved
 locally, and published to two independent `_posts` files in one atomic commit.
 Each Spark item can also be reopened from the index and edited in place.
 
+The gear icon opens the in-site section manager. Existing bilingual sections
+can be shown or hidden together. New paired sections can be created as a blank
+page, article list, project-card grid, people-profile page, or repository list.
+All changed files are written in one atomic commit.
+
+Chinese is the authoring source of truth. The Spark writer and section manager
+can generate an English draft through DeepSeek for review. Translation is open
+to any visitor who supplies their own DeepSeek API Key, while publishing remains
+restricted to the site owner. The DeepSeek key is used for that one request,
+cleared immediately, never written to browser storage, and requested again for
+the next translation.
+
 Creating a commit requires a fine-grained GitHub token owned by `Functionhx`,
 restricted to this repository, with `Contents: write`. The token remains only
 in the current page's JavaScript memory and disappears on reload; it is never

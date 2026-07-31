@@ -3,6 +3,7 @@
     "lint:prettier": "prettier . --check",
     "lint:style-contract": "node test/style_contract.js",
     "test:inline-editor": "node test/inline_editor.mjs",
+    "test:site-settings": "node test/site_settings.mjs",
     "test:spark-writer": "node test/spark_writer.mjs",
     "test:visual": "playwright test --config test/visual/playwright.config.js",
     "test:visual:update": "playwright test --config test/visual/playwright.config.js --update-snapshots"

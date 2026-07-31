@@ -171,6 +171,39 @@
   padding: clamp(1.3rem, 4vw, 2.4rem) clamp(0rem, 2vw, 1rem) 1rem;
 }
 
+.site-spark-writer__translation {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+  justify-content: flex-end;
+  padding-top: 0.8rem;
+}
+
+.site-spark-writer__translation button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--global-theme-color);
+  cursor: pointer;
+  padding: 0;
+}
+
+.site-spark-writer__translation button:hover,
+.site-spark-writer__translation button:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+.site-spark-writer__translation button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.site-spark-writer__translation span {
+  color: var(--global-text-color-light);
+  font-size: 0.68rem;
+}
+
 .site-spark-writer__title,
 .site-spark-writer__summary,
 .site-spark-writer__body {
@@ -386,6 +419,11 @@ body.site-spark-entry-writing .post > :not(#site-spark-writer) {
 
   .site-spark-writer__footer .site-spark-writer__button--primary {
     flex: 1 1 auto;
+  }
+
+  .site-spark-writer__translation {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

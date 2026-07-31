@@ -141,6 +141,30 @@ def main() -> int:
         for required_id in ("navbar", "search-toggle", "light-toggle"):
             if required_id not in parser.ids:
                 errors.append(f"{route}: missing required control #{required_id}")
+        for settings_id in (
+            "site-settings-toggle",
+            "site-settings-dialog",
+            "site-settings-format",
+            "site-settings-translate",
+            "site-settings-commit",
+        ):
+            if settings_id not in parser.ids:
+                errors.append(f"{route}: missing settings control #{settings_id}")
+        for translator_id in (
+            "deepseek-translator-dialog",
+            "deepseek-translator-key",
+            "deepseek-translator-submit",
+        ):
+            if translator_id not in parser.ids:
+                errors.append(f"{route}: missing translation control #{translator_id}")
+        settings_start = rendered_html.find('id="site-settings-sections"')
+        settings_end = rendered_html.find('id="site-settings-new"')
+        if (
+            settings_start >= 0
+            and settings_end > settings_start
+            and "page 2" in rendered_html[settings_start:settings_end]
+        ):
+            errors.append(f"{route}: paginated clone leaked into section settings")
         if not {"zh-CN", "en", "x-default"}.issubset(parser.alternates):
             errors.append(f"{route}: incomplete hreflang alternates {parser.alternates}")
         if expected_language == "zh-CN" and "Yuchen Fan" in rendered_html:
@@ -193,6 +217,7 @@ def main() -> int:
             "site-spark-writer-title-en",
             "site-spark-writer-body-zh",
             "site-spark-writer-body-en",
+            "site-spark-writer-translate",
             "site-spark-writer-publish",
         }.difference(parser.ids)
         if missing_writer_ids:
@@ -279,6 +304,10 @@ def main() -> int:
         "assets/js/inline-editor.js",
         "assets/css/spark-writer.css",
         "assets/js/spark-writer.js",
+        "assets/css/site-settings.css",
+        "assets/js/site-settings.js",
+        "assets/css/deepseek-translator.css",
+        "assets/js/deepseek-translator.js",
     ):
         if not (site / asset).is_file():
             errors.append(f"/{asset}: authoring asset missing")

@@ -1,0 +1,105 @@
+.deepseek-translator {
+  background: var(--global-bg-color);
+  border: 1px solid var(--global-divider-color);
+  border-radius: 0.65rem;
+  color: var(--global-text-color);
+  max-width: min(34rem, calc(100vw - 2rem));
+  padding: 0;
+  width: 100%;
+}
+
+.deepseek-translator::backdrop {
+  background: rgba(0, 0, 0, 0.62);
+}
+
+.deepseek-translator > div {
+  padding: 1.25rem;
+}
+
+.deepseek-translator h2 {
+  font-size: 1.4rem;
+  margin: 0 0 0.45rem;
+}
+
+.deepseek-translator h2 + p {
+  color: var(--global-text-color-light);
+  font-size: 0.82rem;
+  margin-bottom: 1rem;
+}
+
+.deepseek-translator label {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.deepseek-translator label > span {
+  color: var(--global-text-color-light);
+  font-size: 0.72rem;
+}
+
+.deepseek-translator input,
+.deepseek-translator button {
+  font: inherit;
+}
+
+.deepseek-translator input {
+  background: var(--global-bg-color);
+  border: 1px solid var(--global-divider-color);
+  border-radius: 0.35rem;
+  color: var(--global-text-color);
+  min-height: 2.5rem;
+  padding: 0.45rem 0.6rem;
+  width: 100%;
+}
+
+.deepseek-translator input:focus {
+  border-color: var(--global-theme-color);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--global-theme-color) 20%, transparent);
+  outline: 0;
+}
+
+.deepseek-translator__security {
+  color: var(--global-text-color-light);
+  font-size: 0.72rem;
+  margin: 0.55rem 0;
+}
+
+.deepseek-translator__status {
+  font-size: 0.78rem;
+  min-height: 1.3rem;
+}
+
+.deepseek-translator__status[data-state="error"] {
+  color: #d73a49;
+}
+
+.deepseek-translator__actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.deepseek-translator__button {
+  appearance: none;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 0.4rem;
+  cursor: pointer;
+  min-height: 2.4rem;
+  padding: 0.4rem 0.8rem;
+}
+
+.deepseek-translator__button--quiet {
+  background: var(--global-bg-color);
+  color: var(--global-text-color);
+}
+
+.deepseek-translator__button--primary {
+  background: var(--global-theme-color);
+  border-color: var(--global-theme-color);
+  color: #fff;
+}
+
+.deepseek-translator__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

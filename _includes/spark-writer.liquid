@@ -45,6 +45,8 @@
   {% assign writer_connect = 'Connect GitHub' %}
   {% assign writer_publish = 'Publish both languages' %}
   {% assign writer_discard = 'Discard draft' %}
+  {% assign writer_translate = 'Translate Chinese with DeepSeek' %}
+  {% assign writer_translate_note = 'Uses the translator’s own API Key; only @Functionhx can publish.' %}
   {% assign writer_close = 'Close writer' %}
   {% assign writer_idle = 'Start writing. Changes will be saved in this browser automatically.' %}
 {% else %}
@@ -77,6 +79,8 @@
   {% assign writer_connect = '连接 GitHub' %}
   {% assign writer_publish = '发布中英双语' %}
   {% assign writer_discard = '丢弃草稿' %}
+  {% assign writer_translate = 'DeepSeek 翻译英文' %}
+  {% assign writer_translate_note = '使用翻译者自己的 API Key；只有 @Functionhx 可以发布。' %}
   {% assign writer_close = '关闭写作区' %}
   {% assign writer_idle = '直接开始写，修改会自动保存在这个浏览器中。' %}
 {% endif %}
@@ -183,6 +187,14 @@
       data-writer-field="body"
       data-writer-language="zh"
     ></textarea>
+  </div>
+
+  <div class="site-spark-writer__translation">
+    <button id="site-spark-writer-translate" type="button">
+      <i class="fa-solid fa-language" aria-hidden="true"></i>
+      {{ writer_translate }}
+    </button>
+    <span>{{ writer_translate_note }}</span>
   </div>
 
   <div

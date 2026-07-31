@@ -25,6 +25,8 @@
   {% assign navigation_label = 'Toggle navigation' %}
   {% assign search_title = 'Search' %}
   {% assign search_label = 'Open search' %}
+  {% assign settings_title = 'Site settings' %}
+  {% assign settings_label = 'Manage navigation and create sections' %}
   {% assign editor_title = 'Edit this page' %}
   {% assign editor_label = 'Edit this page without leaving the site' %}
   {% assign theme_title = 'Change theme' %}
@@ -35,6 +37,8 @@
   {% assign navigation_label = '展开导航' %}
   {% assign search_title = '搜索' %}
   {% assign search_label = '打开搜索' %}
+  {% assign settings_title = '站点设置' %}
+  {% assign settings_label = '管理栏目并新建栏目' %}
   {% assign editor_title = '即时编辑' %}
   {% assign editor_label = '不离开本站，直接编辑当前页面' %}
   {% assign theme_title = '切换主题' %}
@@ -257,6 +261,28 @@
             <a class="nav-link" href="{{ language_page.url | relative_url }}" lang="{% if target_lang == 'en' %}en{% else %}zh-CN{% endif %}">
               {{- language_label -}}
             </a>
+          </li>
+          <li class="nav-item">
+            <button
+              id="site-settings-toggle"
+              type="button"
+              title="{{ settings_title }}"
+              aria-label="{{ settings_label }}"
+              aria-controls="site-settings-dialog"
+              aria-expanded="false"
+            >
+              <span class="nav-link">
+                <i class="fa-solid fa-gear" aria-hidden="true"></i>
+                <span class="sr-only">{{ settings_title }}</span>
+              </span>
+            </button>
+            <noscript>
+              <style>
+                #site-settings-toggle {
+                  display: none;
+                }
+              </style>
+            </noscript>
           </li>
           {% if page.path %}
             <li class="nav-item">

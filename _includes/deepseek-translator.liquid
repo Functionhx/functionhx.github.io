@@ -1,0 +1,51 @@
+{% assign translator_lang = page.lang | default: 'zh' %}
+{% if translator_lang == 'en' %}
+  {% assign translator_heading = 'DeepSeek translation' %}
+  {% assign translator_intro = 'Anyone may translate with their own API Key; only the site owner can publish. Markdown, links, code, and facts are preserved.' %}
+  {% assign translator_key_label = 'DeepSeek API Key' %}
+  {% assign translator_security = 'The key is used for this translation request only. It is not stored in the browser or repository.' %}
+  {% assign translator_cancel = 'Cancel' %}
+  {% assign translator_submit = 'Translate' %}
+{% else %}
+  {% assign translator_heading = 'DeepSeek 信达雅翻译' %}
+  {% assign translator_intro = '任何人都可以使用自己的 API Key 翻译；只有站主能够发布。翻译保留 Markdown、链接、代码与事实。' %}
+  {% assign translator_key_label = 'DeepSeek API Key' %}
+  {% assign translator_security = '密钥只用于这一次翻译请求，不写入浏览器存储或仓库。' %}
+  {% assign translator_cancel = '取消' %}
+  {% assign translator_submit = '开始翻译' %}
+{% endif %}
+
+<dialog
+  id="deepseek-translator-dialog"
+  class="deepseek-translator"
+  data-language="{{ translator_lang }}"
+  data-endpoint="https://api.deepseek.com/chat/completions"
+  data-model="deepseek-v4-pro"
+  aria-labelledby="deepseek-translator-heading"
+>
+  <div>
+    <h2 id="deepseek-translator-heading">{{ translator_heading }}</h2>
+    <p>{{ translator_intro }}</p>
+    <label>
+      <span>{{ translator_key_label }}</span>
+      <input
+        id="deepseek-translator-key"
+        type="password"
+        placeholder="sk-…"
+        autocomplete="off"
+        autocapitalize="none"
+        spellcheck="false"
+      >
+    </label>
+    <p class="deepseek-translator__security">{{ translator_security }}</p>
+    <p id="deepseek-translator-status" class="deepseek-translator__status" role="status" aria-live="polite"></p>
+    <div class="deepseek-translator__actions">
+      <button id="deepseek-translator-cancel" class="deepseek-translator__button deepseek-translator__button--quiet" type="button">
+        {{ translator_cancel }}
+      </button>
+      <button id="deepseek-translator-submit" class="deepseek-translator__button deepseek-translator__button--primary" type="button">
+        {{ translator_submit }}
+      </button>
+    </div>
+  </div>
+</dialog>

@@ -22,7 +22,9 @@
       <meta http-equiv="refresh" content="3; url={{ redirect }}">
     {% endif %}
     {% include head.liquid %}
+    <link rel="stylesheet" href="{{ '/assets/css/deepseek-translator.css' | relative_url }}">
     <link rel="stylesheet" href="{{ '/assets/css/inline-editor.css' | relative_url }}">
+    <link rel="stylesheet" href="{{ '/assets/css/site-settings.css' | relative_url }}">
     {% if spark_writer_enabled %}
       <link rel="stylesheet" href="{{ '/assets/css/spark-writer.css' | relative_url }}">
     {% endif %}
@@ -55,6 +57,8 @@
   >
     <!-- Header -->
     {% include header.liquid %}
+    {% include site-settings.liquid %}
+    {% include deepseek-translator.liquid %}
 
     <!-- Content -->
     <div class="container mt-5" role="main">
@@ -100,7 +104,9 @@
 
     <!-- JavaScripts -->
     {% include scripts.liquid %}
+    <script src="{{ '/assets/js/deepseek-translator.js' | relative_url }}"></script>
     <script src="{{ '/assets/js/inline-editor.js' | relative_url }}"></script>
+    <script src="{{ '/assets/js/site-settings.js' | relative_url }}"></script>
     {% if spark_writer_enabled %}
       <script src="{{ '/assets/js/spark-writer.js' | relative_url }}"></script>
     {% endif %}
