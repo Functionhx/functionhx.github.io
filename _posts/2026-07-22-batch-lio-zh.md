@@ -53,10 +53,10 @@ batch_dt: 0.001
 
 ROS 2 Humble 下的测试结果如下：
 
-| 数据包 | Point-LIO 式更新 | Batch-LIO 1 ms | 加速比 |
-| --- | ---: | ---: | ---: |
-| quick-shack | 12.42 ms | 3.51 ms | 3.5× |
-| outdoor_run | 2.56 ms | 0.54 ms | 4.7× |
+| 数据包      | Point-LIO 式更新 | Batch-LIO 1 ms | 加速比 |
+| ----------- | ---------------: | -------------: | -----: |
+| quick-shack |         12.42 ms |        3.51 ms |   3.5× |
+| outdoor_run |          2.56 ms |        0.54 ms |   4.7× |
 
 这里统计的是每帧点云对应的平均计算耗时。
 
@@ -204,13 +204,13 @@ CPU 保留 IMU 状态传播和小尺寸 EKF 求解，并根据 batch 大小评�
 
 ## 七、参考文献
 
-[1] D. He, W. Xu, N. Chen, F. Kong, C. Yuan and F. Zhang, “Point-LIO: Robust High-Bandwidth Light Detection and Ranging Inertial Odometry,” *Advanced Intelligent Systems*, 2023.
+[1] D. He, W. Xu, N. Chen, F. Kong, C. Yuan and F. Zhang, “Point-LIO: Robust High-Bandwidth Light Detection and Ranging Inertial Odometry,” _Advanced Intelligent Systems_, 2023.
 
 [2] 张昊鹏，《高带宽轮式激光惯性里程计（Batch-LIWO）》，中国科学技术大学本科毕业设计。
 
-[3] W. Xu and F. Zhang, “FAST-LIO: A Fast, Robust LiDAR-Inertial Odometry Package by Tightly-Coupled Iterated Kalman Filter,” *IEEE Robotics and Automation Letters*, 2021.
+[3] W. Xu and F. Zhang, “FAST-LIO: A Fast, Robust LiDAR-Inertial Odometry Package by Tightly-Coupled Iterated Kalman Filter,” _IEEE Robotics and Automation Letters_, 2021.
 
-[4] W. Xu, Y. Cai, D. He, J. Lin and F. Zhang, “FAST-LIO2: Fast Direct LiDAR-Inertial Odometry,” *IEEE Transactions on Robotics*, 2022.
+[4] W. Xu, Y. Cai, D. He, J. Lin and F. Zhang, “FAST-LIO2: Fast Direct LiDAR-Inertial Odometry,” _IEEE Transactions on Robotics_, 2022.
 
 [5] HKU-MARS, Point-LIO: [github.com/hku-mars/Point-LIO](https://github.com/hku-mars/Point-LIO)
 
