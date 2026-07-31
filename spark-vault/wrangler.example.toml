@@ -1,0 +1,21 @@
+name = "functionhx-spark-vault"
+main = "worker.mjs"
+compatibility_date = "2026-07-31"
+workers_dev = true
+
+[vars]
+SITE_ORIGIN = "https://functionhx.github.io"
+WORKER_ORIGIN = "https://REPLACE_WITH_WORKER_HOST"
+ALLOWED_GITHUB_USER_ID = "172989722"
+PRIVATE_REPO = "Functionhx/functionhx-spark-private"
+PRIVATE_BRANCH = "main"
+PUBLIC_REPO = "Functionhx/functionhx.github.io"
+PUBLIC_BRANCH = "main"
+GITHUB_CLIENT_ID = "REPLACE_WITH_GITHUB_APP_CLIENT_ID"
+GITHUB_API_VERSION = "2026-03-10"
+
+# Set these with the hosting provider's encrypted secret store. Never put their
+# values in this file or commit them:
+# - GITHUB_CLIENT_SECRET
+# - SESSION_KEY_B64 (32 random bytes, base64 encoded)
+# - MASTER_KEY_B64  (32 random bytes, base64 encoded and backed up offline)

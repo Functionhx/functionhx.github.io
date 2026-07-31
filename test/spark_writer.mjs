@@ -1,19 +1,18 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { chromium } from "playwright";
 
 const siteRoot = new URL("../_site/", import.meta.url);
-const testToken = "not-a-real-spark-token";
+const vaultOrigin = "https://spark-vault.test";
+const vaultToken = "opaque-not-a-real-spark-session";
 const testDeepSeekKey = "not-a-real-deepseek-spark-key";
+const sha = (value) => createHash("sha1").update(String(value)).digest("hex");
 const editPaths = {
   en: "_posts/2026-07-30-existing-spark-en.md",
   zh: "_posts/2026-07-30-existing-spark-zh.md",
-};
-const privatePaths = {
-  en: "_posts/2026-07-29-private-spark-en.md",
-  zh: "_posts/2026-07-29-private-spark-zh.md",
 };
 const editSources = {
   en: `---
@@ -57,47 +56,22 @@ giscus_comments: true
 已有中文正文。
 `,
 };
-const privateSources = {
-  en: `---
-layout: post
-title: "Private Spark"
-slug: private-spark
-date: 2026-07-29 09:15:00 +0800
-published: false
-description: "A private note."
-permalink: /en/spark/private-spark/
-lang: en
-locale: en
-translation_key: spark-private-spark
-kind: note
-tags: []
-categories: []
-related_posts: false
-giscus_comments: true
----
-
-Private English body.
-`,
-  zh: `---
-layout: post
-title: "私密闪耀"
-slug: private-spark
-date: 2026-07-29 09:15:00 +0800
-published: false
-description: "一条私密笔记。"
-permalink: /spark/private-spark/
-lang: zh
-locale: zh
-translation_key: spark-private-spark
-kind: note
-tags: []
-categories: []
-related_posts: false
-giscus_comments: true
----
-
-私密中文正文。
-`,
+const privateValues = {
+  comments: true,
+  date: "2026-07-29T09:15",
+  en: {
+    body: "Private English body.",
+    summary: "A private note.",
+    title: "Private Spark",
+  },
+  kind: "note",
+  published: false,
+  slug: "private-spark",
+  zh: {
+    body: "私密中文正文。",
+    summary: "一条私密笔记。",
+    title: "私密闪耀",
+  },
 };
 
 let staticServer = null;
@@ -124,13 +98,63 @@ if (!baseUrl) {
   baseUrl = `http://127.0.0.1:${address.port}/`;
 }
 
-const treeRequests = [];
-const commitRequests = [];
-const refUpdates = [];
+const siteOrigin = new URL(baseUrl).origin;
 const translationRequests = [];
 const translationAuthorizations = [];
 const deploymentPolls = new Map();
-const authorizations = [];
+const githubMutationRequests = [];
+const githubAuthorizations = [];
+const vaultAuthorizations = [];
+const vaultWrites = [];
+const publicChanges = [];
+const vaultNotes = new Map();
+let vaultCounter = 0;
+let publicCounter = 0;
+let sessionChecks = 0;
+
+function clone(value) {
+  return structuredClone(value);
+}
+
+function noteSummary(note) {
+  return {
+    date: note.values.date,
+    id: note.id,
+    kind: note.values.kind,
+    published: note.published,
+    sha: note.sha,
+    title: { en: note.values.en.title, zh: note.values.zh.title },
+    updatedAt: note.updatedAt,
+  };
+}
+
+function responseNote(note) {
+  return {
+    ...noteSummary(note),
+    public: note.public,
+    values: clone(note.values),
+  };
+}
+
+function saveVaultNote(id, values, publicState = null, existing = null) {
+  vaultCounter += 1;
+  const actualPublished = existing?.published === true || Boolean(publicState);
+  const normalizedValues = clone(values);
+  normalizedValues.published = actualPublished;
+  const note = {
+    id,
+    public: existing?.public || publicState,
+    published: actualPublished,
+    sha: sha(`vault-${id}-${vaultCounter}`),
+    updatedAt: new Date(1_800_000_000_000 + vaultCounter).toISOString(),
+    values: normalizedValues,
+  };
+  vaultNotes.set(id, note);
+  return note;
+}
+
+saveVaultNote("private-spark", privateValues);
+
 const browserCandidates = [
   process.env.PLAYWRIGHT_CHROME_PATH,
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -143,9 +167,32 @@ const browser = await chromium.launch({
   ...(browserExecutable ? { executablePath: browserExecutable } : {}),
 });
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-await page.addInitScript(() => {
-  window.functionhxDeploymentConfig = { maxWait: 2000, pollInterval: 25 };
-});
+
+await page.addInitScript(
+  ({ endpoint, token }) => {
+    window.functionhxDeploymentConfig = { maxWait: 2000, pollInterval: 25 };
+    window.functionhxSparkVaultConfig = { endpoint };
+    window.__sparkPopupCount = 0;
+    window.open = () => {
+      window.__sparkPopupCount += 1;
+      window.setTimeout(() => {
+        window.dispatchEvent(
+          new MessageEvent("message", {
+            data: {
+              token,
+              type: "functionhx:spark-vault-session",
+              user: { id: 172989722, login: "Functionhx" },
+            },
+            origin: endpoint,
+            source: window,
+          })
+        );
+      }, 20);
+      return window;
+    };
+  },
+  { endpoint: vaultOrigin, token: vaultToken }
+);
 
 await page.route("https://api.deepseek.com/**", async (route) => {
   const request = route.request();
@@ -166,9 +213,9 @@ await page.route("https://api.deepseek.com/**", async (route) => {
         {
           message: {
             content: JSON.stringify({
-              body: "Write the English body directly like a note.",
-              summary: "A first note written directly on the site.",
-              title: "First Spark",
+              body: "An English body translated after the private save.",
+              summary: "A Chinese-first private note.",
+              title: "Chinese First Draft",
             }),
           },
         },
@@ -180,51 +227,177 @@ await page.route("https://api.deepseek.com/**", async (route) => {
   });
 });
 
+await page.route(`${vaultOrigin}/**`, async (route) => {
+  const request = route.request();
+  const url = new URL(request.url());
+  const corsHeaders = {
+    "Access-Control-Allow-Headers": "Authorization, Content-Type",
+    "Access-Control-Allow-Methods": "GET, PUT, POST, OPTIONS",
+    "Access-Control-Allow-Origin": siteOrigin,
+    "Access-Control-Expose-Headers": "X-Spark-Session",
+  };
+  if (request.method() === "OPTIONS") {
+    await route.fulfill({ status: 204, headers: corsHeaders });
+    return;
+  }
+  const authorization = request.headers().authorization || "";
+  vaultAuthorizations.push(authorization);
+  if (authorization !== `Bearer ${vaultToken}`) {
+    await route.fulfill({
+      body: JSON.stringify({ error: { code: "authentication_required", message: "Sign in." } }),
+      contentType: "application/json",
+      headers: corsHeaders,
+      status: 401,
+    });
+    return;
+  }
+  if (url.pathname === "/api/session" && request.method() === "GET") {
+    sessionChecks += 1;
+    await route.fulfill({
+      body: JSON.stringify({ authenticated: true, user: { id: 172989722, login: "Functionhx" } }),
+      contentType: "application/json",
+      headers: corsHeaders,
+      status: 200,
+    });
+    return;
+  }
+  if (url.pathname === "/api/logout" && request.method() === "POST") {
+    await route.fulfill({ body: JSON.stringify({ authenticated: false }), contentType: "application/json", headers: corsHeaders, status: 200 });
+    return;
+  }
+  if (url.pathname === "/api/notes" && request.method() === "GET") {
+    await route.fulfill({
+      body: JSON.stringify({ notes: Array.from(vaultNotes.values(), noteSummary) }),
+      contentType: "application/json",
+      headers: corsHeaders,
+      status: 200,
+    });
+    return;
+  }
+
+  const match = url.pathname.match(/^\/api\/notes\/([^/]+)(?:\/(publish|unpublish))?$/);
+  if (!match) {
+    await route.fulfill({
+      body: JSON.stringify({ error: { code: "not_found", message: "Not found." } }),
+      contentType: "application/json",
+      headers: corsHeaders,
+      status: 404,
+    });
+    return;
+  }
+  const id = decodeURIComponent(match[1]);
+  const action = match[2] || "";
+  const existing = vaultNotes.get(id);
+  if (request.method() === "GET" && !action) {
+    await route.fulfill({
+      body: existing ? JSON.stringify({ note: responseNote(existing) }) : JSON.stringify({ error: { code: "not_found", message: "Not found." } }),
+      contentType: "application/json",
+      headers: corsHeaders,
+      status: existing ? 200 : 404,
+    });
+    return;
+  }
+  if (request.method() === "PUT" && !action) {
+    const body = request.postDataJSON();
+    if (existing && body.expectedSha !== existing.sha) {
+      await route.fulfill({
+        body: JSON.stringify({ error: { code: "vault_conflict", message: "Conflict." } }),
+        contentType: "application/json",
+        headers: corsHeaders,
+        status: 409,
+      });
+      return;
+    }
+    const note = saveVaultNote(id, body.values, body.public || null, existing);
+    vaultWrites.push({ id, public: clone(body.public || null), values: clone(body.values) });
+    await route.fulfill({
+      body: JSON.stringify({ note: responseNote(note) }),
+      contentType: "application/json",
+      headers: corsHeaders,
+      status: 200,
+    });
+    return;
+  }
+  if (request.method() === "POST" && action) {
+    const body = request.postDataJSON();
+    if (!existing || body.expectedSha !== existing.sha) {
+      await route.fulfill({
+        body: JSON.stringify({ error: { code: "vault_conflict", message: "Conflict." } }),
+        contentType: "application/json",
+        headers: corsHeaders,
+        status: 409,
+      });
+      return;
+    }
+    if (action === "publish" && (!existing.values.en.title.trim() || !existing.values.en.body.trim())) {
+      await route.fulfill({
+        body: JSON.stringify({ error: { code: "bilingual_required", message: "English is required." } }),
+        contentType: "application/json",
+        headers: corsHeaders,
+        status: 422,
+      });
+      return;
+    }
+
+    publicCounter += 1;
+    const next = clone(existing);
+    next.published = action === "publish";
+    next.values.published = next.published;
+    next.sha = sha(`visibility-${id}-${publicCounter}`);
+    next.updatedAt = new Date(1_900_000_000_000 + publicCounter).toISOString();
+    next.public = next.published
+      ? {
+          paths: existing.public?.paths || {
+            en: `_posts/${existing.values.date.slice(0, 10)}-${id}-en.md`,
+            zh: `_posts/${existing.values.date.slice(0, 10)}-${id}-zh.md`,
+          },
+          shas: { en: sha(`public-en-${publicCounter}`), zh: sha(`public-zh-${publicCounter}`) },
+        }
+      : null;
+    vaultNotes.set(id, next);
+    const commitSha = sha(`public-commit-${publicCounter}`);
+    const commit = {
+      html_url: `https://github.com/Functionhx/functionhx.github.io/commit/${commitSha}`,
+      sha: commitSha,
+    };
+    publicChanges.push({ action, id, values: clone(next.values) });
+    await route.fulfill({
+      body: JSON.stringify({ commit, note: responseNote(next) }),
+      contentType: "application/json",
+      headers: corsHeaders,
+      status: 200,
+    });
+    return;
+  }
+});
+
 await page.route("https://api.github.com/**", async (route) => {
   const request = route.request();
   const url = new URL(request.url());
   const pathname = decodeURIComponent(url.pathname);
   const corsHeaders = {
     "Access-Control-Allow-Headers": "Authorization, Content-Type, X-GitHub-Api-Version",
-    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Allow-Origin": "*",
   };
-  if (request.headers().authorization) authorizations.push(request.headers().authorization);
-
+  if (request.headers().authorization) githubAuthorizations.push(request.headers().authorization);
+  if (!["GET", "OPTIONS"].includes(request.method())) githubMutationRequests.push(`${request.method()} ${pathname}`);
   if (request.method() === "OPTIONS") {
     await route.fulfill({ status: 204, headers: corsHeaders });
     return;
   }
-  if (pathname === "/user") {
-    await route.fulfill({
-      body: JSON.stringify({ login: "Functionhx" }),
-      contentType: "application/json",
-      headers: corsHeaders,
-      status: 200,
-    });
-    return;
-  }
-  if (pathname === "/repos/Functionhx/functionhx.github.io") {
-    await route.fulfill({
-      body: JSON.stringify({ permissions: { push: true } }),
-      contentType: "application/json",
-      headers: corsHeaders,
-      status: 200,
-    });
-    return;
-  }
   if (pathname === "/repos/Functionhx/functionhx.github.io/actions/runs") {
-    const sha = url.searchParams.get("head_sha") || "";
-    const polls = (deploymentPolls.get(sha) || 0) + 1;
-    deploymentPolls.set(sha, polls);
+    const commitSha = url.searchParams.get("head_sha") || "";
+    const polls = (deploymentPolls.get(commitSha) || 0) + 1;
+    deploymentPolls.set(commitSha, polls);
     const state = polls === 1 ? "queued" : polls === 2 ? "in_progress" : "completed";
     await route.fulfill({
       body: JSON.stringify({
         workflow_runs: [
           {
             conclusion: state === "completed" ? "success" : null,
-            head_sha: sha,
-            html_url: `https://github.com/Functionhx/functionhx.github.io/actions/runs/${sha}`,
+            head_sha: commitSha,
+            html_url: `https://github.com/Functionhx/functionhx.github.io/actions/runs/${commitSha}`,
             status: state,
           },
         ],
@@ -235,114 +408,25 @@ await page.route("https://api.github.com/**", async (route) => {
     });
     return;
   }
-
   const contentsPrefix = "/repos/Functionhx/functionhx.github.io/contents/";
   if (pathname.startsWith(contentsPrefix)) {
     const sourcePath = pathname.slice(contentsPrefix.length);
     const fixture =
       sourcePath === editPaths.zh
-        ? { source: editSources.zh, sha: "existing-zh-sha" }
+        ? { source: editSources.zh, sha: sha("existing-zh") }
         : sourcePath === editPaths.en
-          ? { source: editSources.en, sha: "existing-en-sha" }
-          : sourcePath === privatePaths.zh
-            ? { source: privateSources.zh, sha: "private-zh-sha" }
-            : sourcePath === privatePaths.en
-              ? { source: privateSources.en, sha: "private-en-sha" }
-              : null;
-    if (fixture) {
-      await route.fulfill({
-        body: JSON.stringify({
-          content: Buffer.from(fixture.source, "utf8").toString("base64"),
-          sha: fixture.sha,
-          type: "file",
-        }),
-        contentType: "application/json",
-        headers: corsHeaders,
-        status: 200,
-      });
-      return;
-    }
+          ? { source: editSources.en, sha: sha("existing-en") }
+          : null;
     await route.fulfill({
-      body: JSON.stringify({ message: "Not Found" }),
+      body: fixture
+        ? JSON.stringify({ content: Buffer.from(fixture.source, "utf8").toString("base64"), sha: fixture.sha, type: "file" })
+        : JSON.stringify({ message: "Not Found" }),
       contentType: "application/json",
       headers: corsHeaders,
-      status: 404,
+      status: fixture ? 200 : 404,
     });
     return;
   }
-
-  if (pathname === "/repos/Functionhx/functionhx.github.io/git/trees/main" && request.method() === "GET") {
-    await route.fulfill({
-      body: JSON.stringify({
-        tree: [...Object.values(editPaths), ...Object.values(privatePaths)].map((path) => ({ path, type: "blob" })),
-        truncated: false,
-      }),
-      contentType: "application/json",
-      headers: corsHeaders,
-      status: 200,
-    });
-    return;
-  }
-
-  if (pathname === "/repos/Functionhx/functionhx.github.io/git/ref/heads/main") {
-    await route.fulfill({
-      body: JSON.stringify({ object: { sha: `head-${treeRequests.length + 1}` } }),
-      contentType: "application/json",
-      headers: corsHeaders,
-      status: 200,
-    });
-    return;
-  }
-  if (/\/repos\/Functionhx\/functionhx\.github\.io\/git\/commits\/head-\d+/.test(pathname) && request.method() === "GET") {
-    await route.fulfill({
-      body: JSON.stringify({ tree: { sha: `base-tree-${treeRequests.length + 1}` } }),
-      contentType: "application/json",
-      headers: corsHeaders,
-      status: 200,
-    });
-    return;
-  }
-  if (pathname === "/repos/Functionhx/functionhx.github.io/git/trees" && request.method() === "POST") {
-    const body = request.postDataJSON();
-    treeRequests.push(body);
-    const index = treeRequests.length;
-    await route.fulfill({
-      body: JSON.stringify({
-        sha: `new-tree-${index}`,
-        tree: body.tree.map((item, itemIndex) => ({ path: item.path, sha: `blob-${index}-${itemIndex}` })),
-      }),
-      contentType: "application/json",
-      headers: corsHeaders,
-      status: 201,
-    });
-    return;
-  }
-  if (pathname === "/repos/Functionhx/functionhx.github.io/git/commits" && request.method() === "POST") {
-    const body = request.postDataJSON();
-    commitRequests.push(body);
-    const index = commitRequests.length;
-    await route.fulfill({
-      body: JSON.stringify({
-        html_url: `https://github.com/Functionhx/functionhx.github.io/commit/spark-${index}`,
-        sha: `commit-${index}`,
-      }),
-      contentType: "application/json",
-      headers: corsHeaders,
-      status: 201,
-    });
-    return;
-  }
-  if (pathname === "/repos/Functionhx/functionhx.github.io/git/refs/heads/main" && request.method() === "PATCH") {
-    refUpdates.push(request.postDataJSON());
-    await route.fulfill({
-      body: JSON.stringify({ object: { sha: `commit-${refUpdates.length}` } }),
-      contentType: "application/json",
-      headers: corsHeaders,
-      status: 200,
-    });
-    return;
-  }
-
   await route.fulfill({
     body: JSON.stringify({ message: `Unhandled test endpoint: ${request.method()} ${pathname}` }),
     contentType: "application/json",
@@ -350,6 +434,28 @@ await page.route("https://api.github.com/**", async (route) => {
     status: 404,
   });
 });
+
+async function encryptedDeviceRecords() {
+  return page.evaluate(async () => {
+    const database = await new Promise((resolve, reject) => {
+      const request = window.indexedDB.open("functionhx-site-auth", 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const records = await new Promise((resolve, reject) => {
+      const transaction = database.transaction("vault", "readonly");
+      const request = transaction.objectStore("vault").getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    return records.map((record) => ({
+      ciphertext: record.ciphertext ? Array.from(new Uint8Array(record.ciphertext)) : [],
+      id: record.id,
+      iv: record.iv || [],
+      version: record.version,
+    }));
+  });
+}
 
 try {
   await page.goto(`${baseUrl}spark/`, { waitUntil: "networkidle" });
@@ -359,78 +465,76 @@ try {
   await page.locator("#site-spark-writer").waitFor({ state: "visible" });
   assert.equal(await page.locator("#site-rendered-content").isVisible(), true, "writing should stay inside the Spark page");
   assert.equal(await page.locator("#site-inline-editor").isVisible(), false, "the source editor must stay closed");
-  assert.equal(await page.locator("#site-spark-writer-published").isChecked(), false, "new Sparks must default to website-private");
+  assert.equal(await page.locator("#site-spark-writer-published").isChecked(), false, "new Sparks must default to private");
 
-  await page.locator("#site-spark-writer-title-zh").fill("第一条闪耀");
-  await page.locator("#site-spark-writer-summary-zh").fill("第一条直接在站内写下的笔记。");
-  await page.locator("#site-spark-writer-body-zh").fill("直接像写笔记一样写下中文正文。");
+  await page.locator("#site-spark-writer-title-zh").fill("只写中文的草稿");
+  await page.locator("#site-spark-writer-summary-zh").fill("先保存中文，之后再翻译。");
+  await page.locator("#site-spark-writer-body-zh").fill("这是只写了中文、但应该能够安全保存的正文。");
+  await page.locator(".site-spark-writer__settings > summary").click();
+  await page.locator("#site-spark-writer-slug").fill("chinese-first");
+  await page.waitForTimeout(500);
+
+  assert.equal(
+    await page.evaluate(() => JSON.stringify({ ...window.localStorage, ...window.sessionStorage }).includes("只写中文的草稿")),
+    false,
+    "private autosaves must not be plaintext in ordinary browser storage"
+  );
+  const draftRecords = await encryptedDeviceRecords();
+  assert.ok(
+    draftRecords.some((record) => record.id.includes("spark-draft")),
+    "the autosave should enter the encrypted device vault"
+  );
+  assert.equal(JSON.stringify(draftRecords).includes("只写中文的草稿"), false);
+
+  await page.locator("#site-spark-writer-close").click();
+  await page.locator("#site-spark-create").click();
+  await page.waitForFunction(() => document.querySelector("#site-spark-writer-title-zh").value === "只写中文的草稿");
+  assert.equal(await page.locator("#site-spark-writer-title-en").inputValue(), "");
+
+  await page.locator("#site-spark-writer-publish").click();
+  await page.waitForFunction(() => document.querySelector("#site-spark-writer-status").textContent.includes("已加密保存为私密稿"));
+  assert.equal(await page.locator("#site-spark-writer-result").isVisible(), false);
+  assert.equal(vaultWrites.length, 1);
+  assert.equal(vaultWrites[0].id, "chinese-first");
+  assert.equal(vaultWrites[0].values.en.title, "", "English must be optional for private saves");
+  assert.equal(publicChanges.length, 0, "a private save must not touch the public repository");
+  assert.equal(await page.evaluate(() => window.__sparkPopupCount), 1, "the first private save should use one GitHub login");
+
+  await page.locator("#site-spark-writer-close").click();
+  await page.locator("#site-spark-drafts").click();
+  await page.locator("#site-spark-drafts-panel").waitFor({ state: "visible" });
+  await page.waitForFunction(() => document.querySelectorAll("#site-spark-drafts-list li").length === 2);
+  assert.equal(await page.locator("#site-spark-drafts-list li").count(), 2);
+  const chineseDraft = page.locator("#site-spark-drafts-list li").filter({ hasText: "只写中文的草稿" });
+  await chineseDraft.locator(".site-spark-draft-open").click();
+  await page.waitForFunction(() => document.querySelector("#site-spark-writer-title-zh").value === "只写中文的草稿");
+
+  await page.locator("#site-spark-writer-published").check();
+  await page.locator("#site-spark-writer-publish").click();
+  assert.match(await page.locator("#site-spark-writer-status").textContent(), /英文标题和正文/);
+  assert.equal(vaultWrites.length, 1, "failed public validation must happen before a vault write");
+
   await page.locator("#site-spark-writer-translate").click();
   await page.locator("#deepseek-translator-dialog").waitFor({ state: "visible" });
   await page.locator("#deepseek-translator-key").fill(testDeepSeekKey);
   await page.locator("#deepseek-translator-submit").click();
   await page.locator("#deepseek-translator-dialog").waitFor({ state: "hidden" });
+  assert.equal(await page.locator("#site-spark-writer-title-en").inputValue(), "Chinese First Draft");
+  assert.equal(await page.locator("#site-spark-writer-slug").inputValue(), "chinese-first", "saved slugs must remain stable");
 
-  assert.equal(await page.locator("#site-spark-writer-title-en").inputValue(), "First Spark");
-  assert.equal(await page.locator("#site-spark-writer-summary-en").inputValue(), "A first note written directly on the site.");
-  assert.equal(await page.locator("#site-spark-writer-body-en").inputValue(), "Write the English body directly like a note.");
-  assert.equal(await page.locator("#site-spark-writer-slug").inputValue(), "first-spark");
+  await page.locator("#site-spark-writer-publish").click();
+  await page.locator("#site-spark-writer-result").waitFor({ state: "visible" });
+  await page.locator('#site-deployment-monitor[data-state="success"]').waitFor({ state: "visible" });
+  assert.equal(publicChanges.length, 1);
+  assert.equal(publicChanges[0].action, "publish");
+  assert.equal(publicChanges[0].values.en.title, "Chinese First Draft");
   assert.equal(translationRequests.length, 1);
   assert.equal(translationAuthorizations[0], `Bearer ${testDeepSeekKey}`);
   assert.equal(translationRequests[0].model, "deepseek-v4-pro");
   assert.deepEqual(translationRequests[0].response_format, { type: "json_object" });
-  assert.match(translationRequests[0].messages[1].content, /第一条闪耀/);
-
-  await page.waitForTimeout(450);
-  const localDraft = await page.evaluate(() => Object.values(window.localStorage).find((value) => value.includes("第一条闪耀")));
-  assert.ok(localDraft, "the Spark draft should autosave locally");
-  assert.equal(localDraft.includes(testToken), false);
-
-  await page.locator("#site-spark-writer-publish").click();
-  await page.locator("#site-inline-editor-auth").waitFor({ state: "visible" });
-  await page.locator("#site-inline-editor-token").fill(testToken);
-  await page.locator("#site-inline-editor-auth-connect").click();
-  await page.locator("#site-inline-editor-auth").waitFor({ state: "hidden" });
-  await page.locator("#site-spark-writer-result").waitFor({ state: "visible" });
-  await page.locator('#site-deployment-monitor[data-state="success"]').waitFor({ state: "visible" });
-
-  assert.equal(treeRequests.length, 1, "creation should make one Git tree");
-  assert.equal(treeRequests[0].tree.length, 2, "one tree should contain both language files");
-  const createdZh = treeRequests[0].tree.find((item) => item.path.endsWith("-first-spark-zh.md"));
-  const createdEn = treeRequests[0].tree.find((item) => item.path.endsWith("-first-spark-en.md"));
-  assert.ok(createdZh && createdEn, "both paired Spark files should be created");
-  assert.match(createdZh.content, /translation_key: spark-first-spark/);
-  assert.match(createdEn.content, /translation_key: spark-first-spark/);
-  assert.match(createdZh.content, /^published: false$/m);
-  assert.match(createdEn.content, /^published: false$/m);
-  assert.match(createdZh.content, /permalink: \/spark\/first-spark\//);
-  assert.match(createdEn.content, /permalink: \/en\/spark\/first-spark\//);
-  assert.match(createdZh.content, /直接像写笔记一样写下中文正文/);
-  assert.match(createdEn.content, /Write the English body directly like a note/);
-  assert.deepEqual(refUpdates[0], { force: false, sha: "commit-1" });
-  assert.ok((deploymentPolls.get("commit-1") || 0) >= 3, "Spark publishing should expose deployment progress through success");
+  assert.match(translationRequests[0].messages[1].content, /只写中文的草稿/);
 
   await page.locator("#site-spark-writer-close").click();
-  await page.locator("#site-spark-create").click();
-  assert.equal(await page.locator("#site-spark-writer-title-zh").inputValue(), "", "a second independent Spark can be started");
-  assert.equal(await page.locator("#site-spark-writer-published").isChecked(), false);
-  await page.locator("#site-spark-writer-close").click();
-
-  await page.locator("#site-spark-drafts").click();
-  await page.locator("#site-spark-drafts-panel").waitFor({ state: "visible" });
-  assert.equal(await page.locator("#site-spark-drafts-list li").count(), 1, "only the private paired Spark should be listed");
-  await page.locator(".site-spark-draft-open").click();
-  await page.waitForFunction(() => document.querySelector("#site-spark-writer-title-zh").value === "私密闪耀");
-  assert.equal(await page.locator("#site-spark-writer-title-en").inputValue(), "Private Spark");
-  assert.equal(await page.locator("#site-spark-writer-published").isChecked(), false);
-  await page.locator("#site-spark-writer-published").check();
-  await page.locator("#site-spark-writer-publish").click();
-  await page.waitForFunction(() => window.document.querySelector("#site-spark-writer-result").href.endsWith("spark-2"));
-
-  assert.equal(treeRequests.length, 2, "making a private draft public should create one paired commit");
-  assert.deepEqual(treeRequests[1].tree.map((item) => item.path).sort(), [privatePaths.en, privatePaths.zh].sort());
-  assert.ok(treeRequests[1].tree.every((item) => /^published: true$/m.test(item.content)));
-  await page.locator("#site-spark-writer-close").click();
-
   await page.evaluate(
     ({ editPaths }) => {
       const trigger = document.createElement("button");
@@ -455,17 +559,29 @@ try {
   await page.locator("#site-spark-writer-body-en").fill("English body edited in place.");
   await page.locator("#site-spark-writer-publish").click();
   await page.locator("#site-spark-writer-result").waitFor({ state: "visible" });
-  await page.waitForFunction(() => window.document.querySelector("#site-spark-writer-result").href.endsWith("spark-3"));
+  await page.waitForFunction(() => document.querySelector("#site-spark-writer-status").textContent.includes("公开版本均已保存"));
+  const migrationWrite = vaultWrites.find((write) => write.id === "existing-spark");
+  assert.ok(migrationWrite?.public, "the first edit of a public Spark must adopt its paths and SHAs into the vault");
+  assert.deepEqual(migrationWrite.public.paths, editPaths);
+  assert.equal(publicChanges.at(-1).id, "existing-spark");
+  assert.match(publicChanges.at(-1).values.zh.body, /原位修改后的中文正文/);
+  assert.match(publicChanges.at(-1).values.en.body, /English body edited in place/);
 
-  assert.equal(treeRequests.length, 3, "editing should create a third atomic tree");
-  assert.deepEqual(treeRequests[2].tree.map((item) => item.path).sort(), [editPaths.en, editPaths.zh].sort());
-  assert.match(treeRequests[2].tree.find((item) => item.path === editPaths.zh).content, /原位修改后的中文正文/);
-  assert.match(treeRequests[2].tree.find((item) => item.path === editPaths.en).content, /English body edited in place/);
-  assert.ok(authorizations.every((value) => value === `Bearer ${testToken}`));
+  await page.locator("#site-spark-writer-published").uncheck();
+  await page.locator("#site-spark-writer-publish").click();
+  await page.waitForFunction(() => document.querySelector("#site-spark-writer-status").textContent.includes("私密稿"));
+  assert.equal(publicChanges.at(-1).action, "unpublish", "making a Spark private must remove both public files through the vault");
+
+  assert.deepEqual(githubMutationRequests, [], "browser JavaScript must never write private Sparks directly to the public GitHub API");
+  assert.deepEqual(githubAuthorizations, [], "the Spark browser must never expose a GitHub access token to public-source reads");
+  assert.ok(vaultAuthorizations.every((value) => value === `Bearer ${vaultToken}`));
 
   const browserStorage = await page.evaluate(() => JSON.stringify({ ...window.localStorage, ...window.sessionStorage }));
-  assert.equal(browserStorage.includes(testToken), false, "the GitHub token must never enter browser storage");
+  assert.equal(browserStorage.includes(vaultToken), false, "the opaque session must not enter ordinary browser storage");
   assert.equal(browserStorage.includes(testDeepSeekKey), false, "the DeepSeek key must never enter browser storage");
+  const finalDeviceRecords = await encryptedDeviceRecords();
+  assert.equal(JSON.stringify(finalDeviceRecords).includes(vaultToken), false, "the device vault must store only session ciphertext");
+  assert.equal(JSON.stringify(finalDeviceRecords).includes(testDeepSeekKey), false);
 
   await page.locator("#site-spark-writer-close").click();
   await page.setViewportSize({ width: 390, height: 844 });
@@ -478,12 +594,15 @@ try {
 
   await page.evaluate(() => window.localStorage.setItem("theme", "dark"));
   await page.reload({ waitUntil: "networkidle" });
+  await page.waitForFunction(() => document.querySelector("#site-spark-writer-connect").dataset.connected === "true");
+  assert.equal(await page.evaluate(() => window.__sparkPopupCount), 0, "the encrypted device session must survive reload without another login");
+  assert.ok(sessionChecks >= 1, "reload must verify the remembered opaque session with the backend");
   await page.locator("#site-spark-create").click();
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
   const writerColor = await page.locator("#site-spark-writer").evaluate((element) => window.getComputedStyle(element).color);
   assert.notEqual(writerColor, "rgb(0, 0, 0)");
 
-  console.log("Spark direct writer browser test passed.");
+  console.log("Spark encrypted direct-writer browser test passed.");
 } finally {
   await browser.close();
   if (staticServer) await new Promise((resolve) => staticServer.close(resolve));

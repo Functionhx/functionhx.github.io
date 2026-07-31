@@ -150,10 +150,54 @@
     announce(String(repository || ""), false, false);
   }
 
+  function opaqueId(id) {
+    const normalized = String(id || "").trim();
+    if (!normalized) throw new Error("A device-vault id is required.");
+    return `opaque:${normalized}`;
+  }
+
+  async function saveOpaque({ id, value }) {
+    if (!supportsTrustedDevice()) throw new Error("This browser cannot securely remember the device.");
+    const normalized = String(value || "");
+    if (!normalized) throw new Error("An opaque device credential is required.");
+    const key = await deviceKey();
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const ciphertext = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoder.encode(normalized));
+    await writeRecord({
+      ciphertext,
+      id: opaqueId(id),
+      iv: Array.from(iv),
+      savedAt: new Date().toISOString(),
+      version: 1,
+    });
+  }
+
+  async function restoreOpaque({ id }) {
+    if (!supportsTrustedDevice()) return "";
+    const recordId = opaqueId(id);
+    const record = await readRecord(recordId).catch(() => null);
+    if (!record?.ciphertext || !Array.isArray(record.iv)) return "";
+    try {
+      const key = await deviceKey();
+      const plaintext = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(record.iv) }, key, record.ciphertext);
+      return decoder.decode(plaintext);
+    } catch (_error) {
+      await deleteRecord(recordId).catch(() => undefined);
+      return "";
+    }
+  }
+
+  async function forgetOpaque({ id }) {
+    await deleteRecord(opaqueId(id)).catch(() => undefined);
+  }
+
   window.functionhxGitHubAuth = Object.freeze({
     forget,
+    forgetOpaque,
     restore,
+    restoreOpaque,
     save,
+    saveOpaque,
     supportsTrustedDevice,
   });
 })();

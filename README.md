@@ -37,13 +37,23 @@ Drafts autosave only in that browser.
 
 Spark uses a lighter direct-writing flow. Choose `New Spark` on the Spark index
 and write in the page itself; there is no separate editor route or split
-source/preview screen. Chinese and English are written as one pair, autosaved
-locally, and published to two independent `_posts` files in one atomic commit.
-Each Spark item can also be reopened from the index and edited in place.
-New Spark pairs are website-private by default (`published: false`). The owner
-can reopen them from `Private drafts` and explicitly make both languages public.
-Because this site repository is public, website-private means hidden from the
-built site—not confidential: the Markdown source and Git history remain public.
+source/preview screen. Chinese and English are written as one pair. Browser
+autosaves are encrypted with a non-extractable device key. Saving a private
+entry sends it through the companion Spark Vault service, which encrypts the
+record before committing ciphertext to a dedicated private repository. Private
+Markdown never enters this public repository or its Git history.
+
+A private save requires only the Chinese title and body. English may remain
+unfinished until later; the vault refuses public synchronization until both
+language titles and bodies are complete.
+
+The owner signs in once with the repository-scoped GitHub App. The browser keeps
+only an opaque encrypted session, not a GitHub access token. Explicitly making a
+Spark public creates or updates the two `_posts` files in one atomic commit;
+making it private removes both public files in one recoverable commit. Existing
+public Spark entries can be reopened and adopted into the encrypted vault when
+first saved. See [`spark-vault/README.md`](spark-vault/README.md) for the trust
+boundary, one-time deployment, and key-backup requirements.
 
 The gear icon opens the in-site section manager. Existing bilingual sections
 can be shown or hidden together. New paired sections can be created as a blank
@@ -59,14 +69,13 @@ restricted to the site owner. The DeepSeek key is used for that one request,
 cleared immediately, never written to browser storage, and requested again for
 the next translation.
 
-Creating a commit requires a fine-grained GitHub token owned by `Functionhx`,
-restricted to this repository, with `Contents: write` and `Actions: read`. On a
-private computer, the owner may trust the device: the token is encrypted with a
-non-extractable Web Crypto key and retained in IndexedDB so every editor can
-reconnect after a reload. Without that option it stays in page memory only.
-Disconnecting GitHub removes the encrypted credential; the token is never
-written to the repository, analytics, or logs. The editor checks the account
-and repository push permission before saving a credential.
+The general page and section editors still use a fine-grained GitHub token owned
+by `Functionhx`, restricted to this repository, with `Contents: write` and
+`Actions: read`. On a private computer, the owner may trust the device: the
+token is encrypted with a non-extractable Web Crypto key and retained in
+IndexedDB. Spark does not use that token flow; it uses the narrower GitHub App
+and encrypted vault session described above. Neither credential is written to
+the repository, analytics, or logs.
 
 After a commit, the fixed publishing monitor follows the matching public GitHub
 Actions run by commit SHA. It distinguishes queued, building/deploying, success,
@@ -75,8 +84,9 @@ the new version is live.
 
 Create Chinese and English records with the same `slug` and
 `translation_key`. Their `lang`, `permalink`, and body content remain separate.
-Set `published: false` while either language is still a draft, and turn it on
-only after both records are ready.
+Keep a Spark private while either language is still a draft, and publish only
+after both records are ready. Public pairs always use `published: true`; private
+pairs exist only as encrypted vault records.
 
 Owner-authored posts may enable `giscus_comments: true`. Comments are stored in
 this repository's GitHub Discussions through Giscus.

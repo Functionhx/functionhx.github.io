@@ -163,6 +163,11 @@ disqus_shortname:
 # Optional: Set default categories and tags for posts from each source.
 external_sources: []
 
+# Owner-only encrypted storage for private Spark entries. Keep this blank until
+# the companion service has been deployed and its /health endpoint passes.
+spark_vault:
+  endpoint:
+
 # -----------------------------------------------------------------------------
 # Newsletter
 # -----------------------------------------------------------------------------
@@ -227,6 +232,8 @@ exclude:
   - README.md
   - readme_preview/
   - scripts/
+  - spark-vault/
+  - test/
   - gems/
   - migrations/
   - vendor

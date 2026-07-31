@@ -15,6 +15,8 @@ node_modules/
 output/playwright/
 test-results/
 vendor
+spark-vault/.dev.vars
+spark-vault/wrangler.toml
 
 # Python bytecode from bin/ helper scripts
 __pycache__/

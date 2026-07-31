@@ -428,6 +428,7 @@ def main() -> int:
         "assets/css/inline-editor.css",
         "assets/js/inline-editor.js",
         "assets/css/spark-writer.css",
+        "assets/js/spark-vault-client.js",
         "assets/js/spark-writer.js",
         "assets/css/site-settings.css",
         "assets/js/site-settings.js",

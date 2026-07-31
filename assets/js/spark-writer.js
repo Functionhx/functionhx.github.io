@@ -5,101 +5,105 @@
   const toggle = document.getElementById("site-inline-editor-toggle");
   const authDialog = document.getElementById("site-inline-editor-auth");
 
-  if (!root || !toggle || !authDialog) return;
+  if (!root || !toggle) return;
   if (!(toggle.dataset.editorAction || "").startsWith("spark-")) return;
 
   const repository = root.dataset.repository;
-  const owner = root.dataset.owner;
   const branch = root.dataset.branch;
   const isEnglish = root.dataset.language === "en";
   const isEntryPage = root.dataset.initialMode === "edit";
   const createDraftKey = `functionhx:spark-writer:${repository}:${branch}:new`;
+  const vaultClient = window.functionhxSparkVault;
+  let vaultEndpoint = "";
+  let vaultConfigurationError = "";
+
+  try {
+    const configuredEndpoint = window.functionhxSparkVaultConfig?.endpoint || root.dataset.vaultEndpoint || "";
+    vaultEndpoint = vaultClient?.normalizeEndpoint(configuredEndpoint) || "";
+  } catch (error) {
+    vaultConfigurationError = error.message || "Invalid Spark Vault endpoint.";
+  }
 
   const strings = isEnglish
     ? {
-        authFailed: "GitHub connection failed.",
-        authMissing: "Paste a fine-grained token first.",
-        authRememberFailed: "Connected for this page, but this browser could not remember the token securely.",
-        authRemembered: "Connected as @Functionhx and remembered on this private device.",
-        authSuccess: "Connected as @Functionhx for this browser session.",
+        authFailed: "GitHub sign-in failed.",
+        authSuccess: "Spark Vault is unlocked for @Functionhx on this device.",
         collision: "That URL slug already exists. Change it in Publishing settings.",
-        commitConflict: "One of these files changed on GitHub. Reopen it before publishing your changes.",
+        commitConflict: "This Spark changed after you opened it. Reopen it before saving again.",
         commitFailed: "The Spark entry could not be saved.",
-        commitPrivateSuccess: "Saved as website-private. Reopen it from Private drafts whenever you want to make it public.",
-        commitPublicSuccess: "Saved as public in both languages. Follow the deployment progress in the corner.",
-        confirmDiscard: "Discard this browser draft?",
-        connected: "Disconnect @Functionhx",
-        disconnectConfirm: "Forget the trusted GitHub token on this device?",
-        disconnected: "The trusted GitHub connection was removed from this device.",
-        draftChanged: "Saved in this browser as you type. Nothing has been sent to GitHub.",
-        draftFailed: "This browser could not save the draft.",
-        draftRestored: "Recovered the draft saved in this browser.",
-        draftSaved: "Saved in this browser. Nothing has been sent to GitHub.",
-        editing: "Loading both language files…",
-        editingFailed: "Both language files could not be loaded.",
-        idle: "Start writing. Changes will be saved in this browser automatically.",
+        commitPrivateSuccess: "Encrypted and saved privately. No Markdown was written to the public site repository.",
+        commitPublicSuccess: "Encrypted backup saved and both public languages committed. Follow deployment progress in the corner.",
+        confirmDiscard: "Discard this encrypted browser draft?",
+        connected: "Lock Spark Vault",
+        connecting: "Opening GitHub sign-in…",
+        disconnectConfirm: "Lock Spark Vault and forget this device session?",
+        disconnected: "Spark Vault was locked and its device session was removed.",
+        draftChanged: "Encrypting an autosave on this device. Nothing has been sent to GitHub.",
+        draftFailed: "This browser could not encrypt the local draft.",
+        draftRestored: "Recovered the encrypted draft saved on this device.",
+        draftSaved: "Encrypted on this device. Nothing has been sent to GitHub.",
+        editing: "Loading the bilingual Spark…",
+        editingFailed: "The complete bilingual Spark could not be loaded.",
+        idle: "Start writing. Changes will be encrypted on this device automatically.",
         incompleteEn: "Add an English title and body before saving.",
         incompleteZh: "Add a Chinese title and body before saving.",
         invalidDate: "Choose a valid date and time in Publishing settings.",
         invalidSlug: "The URL slug may contain only lowercase letters, numbers, and hyphens.",
         noChanges: "There are no unsaved changes.",
-        privateDraftsEmpty: "No website-private Spark drafts were found.",
+        privateDraftsEmpty: "No private Spark drafts were found in the encrypted vault.",
         privateDraftsFailed: "Private drafts could not be loaded.",
-        privateDraftsFound: (count) =>
-          String(count) + (count === 1 ? " website-private draft found." : " website-private drafts found.") + " Repository source remains public.",
-        privateDraftsLoading: "Loading private drafts from GitHub…",
+        privateDraftsFound: (count) => String(count) + (count === 1 ? " encrypted private draft found." : " encrypted private drafts found."),
+        privateDraftsLoading: "Decrypting private drafts for @Functionhx…",
         privateDraftOpen: "Continue editing",
-        saving: "Creating one commit for both languages…",
+        saving: "Encrypting the private record…",
         translationCanceled: "Translation canceled; the Chinese draft is unchanged.",
         translationFailed: "The English draft could not be translated.",
-        translationReady: "English translation is ready for review and remains a local draft.",
+        translationReady: "English translation is ready for review and remains an encrypted device draft.",
         translating: "Waiting for DeepSeek to translate the Chinese draft…",
         translateMissing: "Add a Chinese title and body before translating.",
         overwriteTranslation: "Replace the current English draft with a new DeepSeek translation?",
-        verify: "Verifying this token and repository access…",
-        viewCommit: "View the commit on GitHub →",
+        vaultNotConfigured: "Spark Vault is not configured yet. This draft remains encrypted on this device only.",
+        viewCommit: "View the public commit on GitHub →",
       }
     : {
-        authFailed: "GitHub 连接失败。",
-        authMissing: "请先粘贴 fine-grained token。",
-        authRememberFailed: "本页已经连接，但这个浏览器无法安全地记住令牌。",
-        authRemembered: "已连接为 @Functionhx，并记住这台私人电脑。",
-        authSuccess: "本次浏览器会话已连接为 @Functionhx。",
+        authFailed: "GitHub 登录失败。",
+        authSuccess: "已为 @Functionhx 解锁闪耀私密库，并记住这台设备。",
         collision: "这个网址短名已经存在，请在“发布设置”里换一个。",
-        commitConflict: "这组文件已经在 GitHub 上发生变化，请重新打开后再发布。",
+        commitConflict: "这条闪耀在打开后已经发生变化，请重新打开再保存。",
         commitFailed: "无法保存这条闪耀。",
-        commitPrivateSuccess: "已保存为网站私密稿；以后可从“私密草稿”重新打开并设为公开。",
-        commitPublicSuccess: "中英文已公开保存，请在右下角查看部署进度。",
-        confirmDiscard: "丢弃这份浏览器草稿？",
-        connected: "退出 @Functionhx",
-        disconnectConfirm: "从这台设备移除已记住的 GitHub 令牌？",
-        disconnected: "已从这台设备移除 GitHub 连接。",
-        draftChanged: "正在随写随存；内容仍只在这个浏览器中，尚未发送到 GitHub。",
-        draftFailed: "这个浏览器无法保存草稿。",
-        draftRestored: "已恢复保存在这个浏览器中的草稿。",
-        draftSaved: "已自动保存在这个浏览器中，尚未发送到 GitHub。",
+        commitPrivateSuccess: "已加密保存为私密稿；公开网站仓库中没有写入 Markdown。",
+        commitPublicSuccess: "加密备份与中英公开版本均已保存，请在右下角查看部署进度。",
+        confirmDiscard: "丢弃这份加密浏览器草稿？",
+        connected: "锁定闪耀私密库",
+        connecting: "正在打开 GitHub 登录…",
+        disconnectConfirm: "锁定闪耀私密库，并从这台设备移除登录状态？",
+        disconnected: "闪耀私密库已锁定，并移除了这台设备的登录状态。",
+        draftChanged: "正在为这台设备加密随写随存；内容尚未发送到 GitHub。",
+        draftFailed: "这个浏览器无法加密保存本地草稿。",
+        draftRestored: "已恢复这台设备上的加密草稿。",
+        draftSaved: "已加密保存在这台设备中，尚未发送到 GitHub。",
         editing: "正在载入这条闪耀的中英文内容…",
         editingFailed: "无法载入完整的中英文内容。",
-        idle: "直接开始写，修改会自动保存在这个浏览器中。",
+        idle: "直接开始写，修改会自动加密保存在这台设备中。",
         incompleteEn: "保存前还需要补齐英文标题和正文。",
         incompleteZh: "保存前还需要补齐中文标题和正文。",
         invalidDate: "请在“发布设置”里填写有效的日期与时间。",
         invalidSlug: "网址短名只能包含小写字母、数字和连字符。",
         noChanges: "当前没有尚未保存的修改。",
-        privateDraftsEmpty: "没有找到网站私密的闪耀草稿。",
+        privateDraftsEmpty: "加密私密库中没有闪耀草稿。",
         privateDraftsFailed: "无法载入私密草稿。",
-        privateDraftsFound: (count) => "找到 " + String(count) + " 条网站私密稿；仓库源文件仍是公开的。",
-        privateDraftsLoading: "正在从 GitHub 载入私密草稿…",
+        privateDraftsFound: (count) => "已解密载入 " + String(count) + " 条私密草稿。",
+        privateDraftsLoading: "正在为 @Functionhx 解密私密草稿…",
         privateDraftOpen: "继续编辑",
-        saving: "正在为中英文创建同一个 Commit…",
+        saving: "正在加密私密记录…",
         translationCanceled: "已取消翻译，中文稿保持不变。",
         translationFailed: "无法生成英文译稿。",
-        translationReady: "英文译稿已经生成，请检查；内容仍是本地草稿。",
+        translationReady: "英文译稿已经生成，请检查；内容仍是设备加密草稿。",
         translating: "正在等待 DeepSeek 翻译中文稿…",
         translateMissing: "请先填写中文标题和正文。",
         overwriteTranslation: "用新的 DeepSeek 翻译覆盖当前英文稿？",
-        verify: "正在验证令牌和仓库权限…",
-        viewCommit: "在 GitHub 查看 Commit →",
+        vaultNotConfigured: "闪耀私密库尚未配置；当前草稿只会加密保存在这台设备中。",
+        viewCommit: "在 GitHub 查看公开 Commit →",
       };
 
   const fields = {
@@ -122,10 +126,6 @@
   };
 
   const elements = {
-    authCancel: document.getElementById("site-inline-editor-auth-cancel"),
-    authConnect: document.getElementById("site-inline-editor-auth-connect"),
-    authRemember: document.getElementById("site-inline-editor-auth-remember"),
-    authStatus: document.getElementById("site-inline-editor-auth-status"),
     close: document.getElementById("site-spark-writer-close"),
     comments: document.getElementById("site-spark-writer-comments"),
     connect: document.getElementById("site-spark-writer-connect"),
@@ -145,7 +145,6 @@
     result: document.getElementById("site-spark-writer-result"),
     slug: document.getElementById("site-spark-writer-slug"),
     status: document.getElementById("site-spark-writer-status"),
-    token: document.getElementById("site-inline-editor-token"),
     translate: document.getElementById("site-spark-writer-translate"),
   };
 
@@ -153,24 +152,26 @@
   const requiredElements = Object.entries(elements)
     .filter(([name]) => !optionalElements.has(name))
     .map(([, element]) => element);
-  if (!fields.zh.body || !fields.en.body || requiredElements.some((element) => element === null)) {
-    return;
-  }
+  if (!fields.zh.body || !fields.en.body || requiredElements.some((element) => element === null)) return;
 
-  let activeToken = "";
   let activeTrigger = toggle;
   let busy = false;
   let currentLanguage = isEnglish ? "en" : "zh";
   let currentMode = "create";
   let currentTranslationKey = "";
   let currentDraftKey = createDraftKey;
+  let currentVaultPublic = null;
+  let currentVaultPublished = false;
+  let currentVaultSha = "";
   let draftTimer = 0;
+  let draftWritePromise = Promise.resolve();
   let initialSnapshot = "";
-  let pendingAction = "";
-  let slugIsAutomatic = true;
-  let sourcePaths = { zh: "", en: "" };
+  let originalValues = null;
   let originals = { zh: null, en: null };
   let restorePromise = Promise.resolve(null);
+  let slugIsAutomatic = true;
+  let sourcePaths = { zh: "", en: "" };
+  let vaultSession = null;
   const disconnectedLabel = elements.connect.querySelector("span")?.textContent.trim() || "GitHub";
 
   function pad(value) {
@@ -182,9 +183,9 @@
   }
 
   function defaultSlug(date = new Date()) {
-    return `spark-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(
-      date.getSeconds()
-    )}`;
+    return `spark-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(
+      date.getMinutes()
+    )}${pad(date.getSeconds())}`;
   }
 
   function slugify(value) {
@@ -203,10 +204,11 @@
     else delete elements.status.dataset.state;
   }
 
-  function setAuthStatus(message, state = "") {
-    elements.authStatus.textContent = message;
-    if (state) elements.authStatus.dataset.state = state;
-    else delete elements.authStatus.dataset.state;
+  function setDraftsStatus(message, state = "") {
+    if (!elements.draftsStatus) return;
+    elements.draftsStatus.textContent = message;
+    if (state) elements.draftsStatus.dataset.state = state;
+    else delete elements.draftsStatus.dataset.state;
   }
 
   function setBusy(nextBusy) {
@@ -218,7 +220,6 @@
     elements.publish.disabled = nextBusy;
     elements.published.disabled = nextBusy;
     elements.translate.disabled = nextBusy;
-    elements.authConnect.disabled = nextBusy;
   }
 
   function autoSize(textarea) {
@@ -295,37 +296,59 @@
     }
   }
 
-  function saveDraft(showStatus = false) {
+  function draftStorageId(key) {
+    return `spark-draft:${key}`;
+  }
+
+  async function forgetDraft(key = currentDraftKey) {
+    window.localStorage.removeItem(key);
+    await window.functionhxGitHubAuth?.forgetOpaque?.({ id: draftStorageId(key) }).catch(() => undefined);
+  }
+
+  async function persistDraft(showStatus = false) {
     try {
-      if (isDirty()) {
-        window.localStorage.setItem(
-          currentDraftKey,
-          JSON.stringify({
-            mode: currentMode,
-            savedAt: new Date().toISOString(),
-            slugIsAutomatic,
-            sourcePaths,
-            translationKey: currentTranslationKey,
-            values: readValues(),
-          })
-        );
-        if (showStatus) setStatus(strings.draftSaved, "success");
-      } else {
-        window.localStorage.removeItem(currentDraftKey);
+      window.localStorage.removeItem(currentDraftKey);
+      if (!isDirty()) {
+        await forgetDraft(currentDraftKey);
         if (showStatus) setStatus(strings.noChanges);
+        return;
       }
+      if (!window.functionhxGitHubAuth?.saveOpaque) throw new Error("Encrypted device storage is unavailable.");
+      await window.functionhxGitHubAuth.saveOpaque({
+        id: draftStorageId(currentDraftKey),
+        value: JSON.stringify({
+          mode: currentMode,
+          savedAt: new Date().toISOString(),
+          slugIsAutomatic,
+          sourcePaths,
+          translationKey: currentTranslationKey,
+          values: readValues(),
+        }),
+      });
+      if (showStatus) setStatus(strings.draftSaved, "success");
     } catch (_error) {
       if (showStatus) setStatus(strings.draftFailed, "error");
     }
   }
 
-  function restoreDraft() {
+  function saveDraft(showStatus = false) {
+    draftWritePromise = draftWritePromise.catch(() => undefined).then(() => persistDraft(showStatus));
+    return draftWritePromise;
+  }
+
+  async function restoreDraft() {
     try {
-      const draft = JSON.parse(window.localStorage.getItem(currentDraftKey) || "null");
-      if (!draft || !draft.values) return false;
-      if (typeof draft.values.published !== "boolean") {
-        draft.values.published = elements.published.checked;
+      await draftWritePromise.catch(() => undefined);
+      let serialized = await window.functionhxGitHubAuth?.restoreOpaque?.({ id: draftStorageId(currentDraftKey) });
+      const legacy = window.localStorage.getItem(currentDraftKey) || "";
+      window.localStorage.removeItem(currentDraftKey);
+      if (!serialized && legacy) {
+        serialized = legacy;
+        await window.functionhxGitHubAuth?.saveOpaque?.({ id: draftStorageId(currentDraftKey), value: legacy }).catch(() => undefined);
       }
+      const draft = JSON.parse(serialized || "null");
+      if (!draft?.values) return false;
+      if (typeof draft.values.published !== "boolean") draft.values.published = elements.published.checked;
       writeValues(draft.values);
       slugIsAutomatic = draft.slugIsAutomatic !== false;
       return true;
@@ -336,10 +359,7 @@
 
   function scheduleDraftSave() {
     window.clearTimeout(draftTimer);
-    draftTimer = window.setTimeout(() => {
-      saveDraft(false);
-      setStatus(strings.draftSaved, "success");
-    }, 350);
+    draftTimer = window.setTimeout(() => saveDraft(true), 350);
   }
 
   function handleChange() {
@@ -378,98 +398,9 @@
     return extractYamlScalar(frontMatter, key).toLowerCase() === "true";
   }
 
-  function setYamlValue(frontMatter, key, value, type = "string") {
-    let serialized = JSON.stringify(String(value));
-    if (type === "boolean") serialized = value ? "true" : "false";
-    if (type === "raw") serialized = String(value);
-    const pattern = new RegExp(`^${key}:.*$`, "m");
-    if (pattern.test(frontMatter)) return frontMatter.replace(pattern, `${key}: ${serialized}`);
-    return `${frontMatter.replace(/\s+$/, "")}\n${key}: ${serialized}`;
-  }
-
   function toInputDate(value) {
     const match = String(value).match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/);
     return match ? `${match[1]}T${match[2]}` : localDateTime();
-  }
-
-  function toJekyllDate(value) {
-    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return "";
-    return `${value.replace("T", " ")}:00 +0800`;
-  }
-
-  function plainSummary(body) {
-    return body
-      .replace(/```[\s\S]*?```/g, " ")
-      .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-      .replace(/^\s{0,3}(#{1,6}|>|[-*+]|\d+\.)\s+/gm, "")
-      .replace(/[*_`~]/g, "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 180);
-  }
-
-  function composeCreatedSource(language, values, path) {
-    const localized = values[language];
-    const description = localized.summary.trim() || plainSummary(localized.body);
-    const date = toJekyllDate(values.date);
-    const translationKey = `spark-${values.slug}`;
-    const permalink = language === "en" ? `/en/spark/${values.slug}/` : `/spark/${values.slug}/`;
-    const lines = [
-      "---",
-      "layout: post",
-      `title: ${JSON.stringify(localized.title.trim())}`,
-      `slug: ${JSON.stringify(values.slug)}`,
-      `date: ${date}`,
-      "published: " + (values.published ? "true" : "false"),
-      `description: ${JSON.stringify(description)}`,
-      `permalink: ${permalink}`,
-      `lang: ${language}`,
-      `locale: ${language}`,
-      `translation_key: ${translationKey}`,
-      `kind: ${values.kind}`,
-      "tags: []",
-      "categories: []",
-      "related_posts: false",
-      `giscus_comments: ${values.comments ? "true" : "false"}`,
-      "---",
-      "",
-      localized.body.replace(/\r\n/g, "\n").trimEnd(),
-      "",
-    ];
-    return { content: lines.join("\n"), path };
-  }
-
-  function composeEditedSource(language, values) {
-    const original = originals[language];
-    if (!original) throw new Error(`Missing ${language} source`);
-    const localized = values[language];
-    const description = localized.summary.trim() || plainSummary(localized.body);
-    let frontMatter = original.frontMatter;
-    frontMatter = setYamlValue(frontMatter, "title", localized.title.trim());
-    frontMatter = setYamlValue(frontMatter, "description", description);
-    frontMatter = setYamlValue(frontMatter, "date", toJekyllDate(values.date), "raw");
-    frontMatter = setYamlValue(frontMatter, "kind", values.kind, "raw");
-    frontMatter = setYamlValue(frontMatter, "published", values.published, "boolean");
-    frontMatter = setYamlValue(frontMatter, "giscus_comments", values.comments, "boolean");
-    const normalized = `---\n${frontMatter}\n---\n${localized.body.replace(/\r\n/g, "\n").trimEnd()}\n`;
-    const content = original.newline === "\r\n" ? normalized.replace(/\n/g, "\r\n") : normalized;
-    return { content, path: sourcePaths[language] };
-  }
-
-  function composePair() {
-    const values = readValues();
-    if (currentMode === "create") {
-      const datePrefix = values.date.slice(0, 10);
-      return {
-        en: composeCreatedSource("en", values, `_posts/${datePrefix}-${values.slug}-en.md`),
-        zh: composeCreatedSource("zh", values, `_posts/${datePrefix}-${values.slug}-zh.md`),
-      };
-    }
-    return {
-      en: composeEditedSource("en", values),
-      zh: composeEditedSource("zh", values),
-    };
   }
 
   function validate() {
@@ -479,7 +410,7 @@
       fields.zh.title.focus();
       return false;
     }
-    if (!languageComplete("en")) {
+    if (elements.published.checked && !languageComplete("en")) {
       selectLanguage("en");
       setStatus(strings.incompleteEn, "error");
       fields.en.title.focus();
@@ -491,7 +422,7 @@
       elements.slug.focus();
       return false;
     }
-    if (!toJekyllDate(elements.date.value)) {
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(elements.date.value)) {
       setStatus(strings.invalidDate, "error");
       root.querySelector(".site-spark-writer__settings").open = true;
       elements.date.focus();
@@ -507,22 +438,16 @@
       .join("/");
   }
 
-  async function githubRequest(endpoint, options = {}) {
-    const headers = {
-      Accept: "application/vnd.github+json",
-      "Content-Type": "application/json",
-      "X-GitHub-Api-Version": "2026-03-10",
-      ...options.headers,
-    };
-    if (options.token) headers.Authorization = `Bearer ${options.token}`;
+  async function githubRequest(endpoint) {
     const response = await window.fetch(`https://api.github.com${endpoint}`, {
-      body: options.body ? JSON.stringify(options.body) : undefined,
       cache: "no-store",
-      headers,
-      method: options.method || "GET",
+      headers: {
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2026-03-10",
+      },
+      method: "GET",
     });
     const payload = await response.json().catch(() => ({}));
-    if (response.status === 404 && options.allowNotFound) return null;
     if (!response.ok) {
       const error = new Error(payload.message || `GitHub API ${response.status}`);
       error.status = response.status;
@@ -532,116 +457,12 @@
   }
 
   async function loadRemoteSource(language, path) {
-    const remote = await githubRequest(
-      `/repos/${repository}/contents/${encodePath(path)}?ref=${encodeURIComponent(branch)}`,
-      activeToken ? { token: activeToken } : {}
-    );
+    const remote = await githubRequest(`/repos/${repository}/contents/${encodePath(path)}?ref=${encodeURIComponent(branch)}`);
     if (remote.type !== "file" || !remote.content || !remote.sha) throw new Error(`Unsupported ${language} source`);
     const binary = window.atob(remote.content.replace(/\s/g, ""));
     const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
     const source = new TextDecoder().decode(bytes);
     return { ...splitSource(source), sha: remote.sha, source };
-  }
-
-  function setDraftsStatus(message, state = "") {
-    if (!elements.draftsStatus) return;
-    elements.draftsStatus.textContent = message;
-    if (state) elements.draftsStatus.dataset.state = state;
-    else delete elements.draftsStatus.dataset.state;
-  }
-
-  function draftMetadata(source, path, language) {
-    return {
-      date: extractYamlScalar(source.frontMatter, "date"),
-      kind: extractYamlScalar(source.frontMatter, "kind"),
-      language,
-      path,
-      published: extractYamlBoolean(source.frontMatter, "published"),
-      title: extractYamlScalar(source.frontMatter, "title"),
-      translationKey: extractYamlScalar(source.frontMatter, "translation_key"),
-    };
-  }
-
-  function renderPrivateDrafts(drafts) {
-    elements.draftsList.replaceChildren();
-    setDraftsStatus(drafts.length ? strings.privateDraftsFound(drafts.length) : strings.privateDraftsEmpty);
-    for (const pair of drafts) {
-      const item = document.createElement("li");
-      const meta = document.createElement("div");
-      meta.className = "site-spark-draft-meta";
-      const title = document.createElement("strong");
-      title.textContent = pair.zh.title || pair.en.title || pair.zh.translationKey;
-      const detail = document.createElement("span");
-      detail.textContent = (pair.zh.date || "").slice(0, 16).replace("T", " ");
-      meta.append(title, detail);
-
-      const open = document.createElement("button");
-      open.type = "button";
-      open.className = "site-spark-draft-open";
-      open.textContent = strings.privateDraftOpen;
-      open.addEventListener("click", () => {
-        elements.draftsPanel.hidden = true;
-        openEdit(
-          {
-            enPath: pair.en.path,
-            translationKey: pair.zh.translationKey,
-            zhPath: pair.zh.path,
-          },
-          open
-        );
-      });
-      item.append(meta, open);
-      elements.draftsList.append(item);
-    }
-  }
-
-  async function loadPrivateDrafts() {
-    if (!elements.draftsPanel) return;
-    await restorePromise;
-    if (!activeToken) {
-      openAuthDialog("drafts");
-      return;
-    }
-    if (!root.hidden) closeWriter();
-    elements.draftsPanel.hidden = false;
-    elements.draftsList.replaceChildren();
-    setDraftsStatus(strings.privateDraftsLoading);
-    setBusy(true);
-    try {
-      const tree = await githubRequest("/repos/" + repository + "/git/trees/" + encodeURIComponent(branch) + "?recursive=1", { token: activeToken });
-      if (tree.truncated) throw new Error("Repository tree response was truncated.");
-      const paths = (tree.tree || [])
-        .filter((item) => item.type === "blob" && /^_posts\/.+-(zh|en)\.(md|markdown)$/.test(item.path))
-        .map((item) => item.path);
-      const records = (
-        await Promise.all(
-          paths.map(async (path) => {
-            const language = /-en\.(md|markdown)$/.test(path) ? "en" : "zh";
-            try {
-              return draftMetadata(await loadRemoteSource(language, path), path, language);
-            } catch (_error) {
-              return null;
-            }
-          })
-        )
-      ).filter(Boolean);
-      const groups = new Map();
-      for (const record of records) {
-        if (!record.translationKey || !["note", "log"].includes(record.kind)) continue;
-        const pair = groups.get(record.translationKey) || {};
-        pair[record.language] = record;
-        groups.set(record.translationKey, pair);
-      }
-      const drafts = Array.from(groups.values())
-        .filter((pair) => pair.zh && pair.en && pair.zh.published === false)
-        .sort((a, b) => (b.zh.date || "").localeCompare(a.zh.date || ""));
-      renderPrivateDrafts(drafts);
-    } catch (error) {
-      if (error.status === 401 || error.status === 403) await disconnectGitHub(false);
-      setDraftsStatus((strings.privateDraftsFailed + " " + (error.message || "")).trim(), "error");
-    } finally {
-      setBusy(false);
-    }
   }
 
   function valuesFromSources(zhSource, enSource) {
@@ -657,7 +478,7 @@
       },
       kind: extractYamlScalar(zhFrontMatter, "kind") || "note",
       message: "",
-      published: extractYamlBoolean(zhFrontMatter, "published"),
+      published: true,
       slug: extractYamlScalar(zhFrontMatter, "slug"),
       zh: {
         body: zhSource.body,
@@ -667,12 +488,135 @@
     };
   }
 
-  function prepareCreate() {
+  function setConnection(session) {
+    vaultSession = session || null;
+    const connectLabel = elements.connect.querySelector("span");
+    if (connectLabel) connectLabel.textContent = vaultSession ? strings.connected : disconnectedLabel;
+    elements.connect.dataset.connected = String(Boolean(vaultSession));
+  }
+
+  function vaultReady() {
+    return Boolean(vaultClient && vaultEndpoint && !vaultConfigurationError);
+  }
+
+  async function restoreVaultSession() {
+    if (!vaultReady()) {
+      setConnection(null);
+      return null;
+    }
+    const session = await vaultClient.restore(vaultEndpoint).catch(() => null);
+    setConnection(session);
+    return session;
+  }
+
+  async function ensureVaultSession() {
+    await restorePromise;
+    if (!vaultReady()) {
+      setStatus(`${strings.vaultNotConfigured}${vaultConfigurationError ? ` ${vaultConfigurationError}` : ""}`, "error");
+      return null;
+    }
+    if (vaultSession) return vaultSession;
+    setStatus(strings.connecting);
+    try {
+      const session = await vaultClient.login(vaultEndpoint, {
+        returnTo: `${window.location.pathname}${window.location.search}`,
+      });
+      setConnection(session);
+      setStatus(strings.authSuccess, "success");
+      return session;
+    } catch (error) {
+      setConnection(null);
+      setStatus(`${strings.authFailed} ${error.message || ""}`.trim(), "error");
+      return null;
+    }
+  }
+
+  async function disconnectVault(ask = true) {
+    if (ask && !window.confirm(strings.disconnectConfirm)) return;
+    if (vaultReady()) await vaultClient.logout(vaultEndpoint).catch(() => undefined);
+    setConnection(null);
+    setStatus(strings.disconnected);
+  }
+
+  async function handleConnectButton() {
+    await restorePromise;
+    if (vaultSession) {
+      await disconnectVault(true);
+      return;
+    }
+    await ensureVaultSession();
+  }
+
+  async function vaultRequest(path, options = {}) {
+    try {
+      return await vaultClient.request(vaultEndpoint, path, options);
+    } catch (error) {
+      if (error.status === 401) setConnection(null);
+      throw error;
+    }
+  }
+
+  function renderPrivateDrafts(notes) {
+    elements.draftsList.replaceChildren();
+    const drafts = notes.filter((note) => note.published === false);
+    setDraftsStatus(drafts.length ? strings.privateDraftsFound(drafts.length) : strings.privateDraftsEmpty);
+    for (const note of drafts) {
+      const item = document.createElement("li");
+      const meta = document.createElement("div");
+      meta.className = "site-spark-draft-meta";
+      const title = document.createElement("strong");
+      title.textContent = note.title?.zh || note.title?.en || note.id;
+      const detail = document.createElement("span");
+      detail.textContent = String(note.date || "")
+        .slice(0, 16)
+        .replace("T", " ");
+      meta.append(title, detail);
+
+      const open = document.createElement("button");
+      open.type = "button";
+      open.className = "site-spark-draft-open";
+      open.textContent = strings.privateDraftOpen;
+      open.addEventListener("click", () => {
+        elements.draftsPanel.hidden = true;
+        openEdit({ translationKey: `spark-${note.id}`, vaultId: note.id }, open);
+      });
+      item.append(meta, open);
+      elements.draftsList.append(item);
+    }
+  }
+
+  async function loadPrivateDrafts() {
+    if (!elements.draftsPanel) return;
+    if (!(await ensureVaultSession())) return;
+    if (!root.hidden) closeWriter();
+    elements.draftsPanel.hidden = false;
+    elements.draftsList.replaceChildren();
+    setDraftsStatus(strings.privateDraftsLoading);
+    setBusy(true);
+    try {
+      const payload = await vaultRequest("/api/notes");
+      renderPrivateDrafts(Array.isArray(payload.notes) ? payload.notes : []);
+    } catch (error) {
+      setDraftsStatus(`${strings.privateDraftsFailed} ${error.message || ""}`.trim(), "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function resetVaultState() {
+    currentVaultPublic = null;
+    currentVaultPublished = false;
+    currentVaultSha = "";
+    originalValues = null;
+    originals = { zh: null, en: null };
+  }
+
+  async function prepareCreate() {
     currentMode = "create";
     currentTranslationKey = "";
     currentDraftKey = createDraftKey;
     sourcePaths = { zh: "", en: "" };
-    originals = { zh: null, en: null };
+    resetVaultState();
     slugIsAutomatic = true;
     const now = new Date();
     writeValues({
@@ -686,31 +630,73 @@
       zh: { body: "", summary: "", title: "" },
     });
     initialSnapshot = snapshot();
-    const restored = restoreDraft();
+    const restored = await restoreDraft();
     elements.slug.readOnly = false;
     elements.heading.textContent = elements.heading.dataset.newHeading;
     elements.result.hidden = true;
     setStatus(restored ? strings.draftRestored : strings.idle, restored ? "success" : "");
   }
 
+  function noteIdFromConfig(config) {
+    if (config.vaultId) return config.vaultId;
+    return String(config.translationKey || "").replace(/^spark-/, "");
+  }
+
+  async function loadVaultNote(id, requiredNote) {
+    if (!id || !vaultSession) return null;
+    try {
+      const payload = await vaultRequest(`/api/notes/${encodeURIComponent(id)}`);
+      return payload.note || null;
+    } catch (error) {
+      if (error.status === 404 && !requiredNote) return null;
+      throw error;
+    }
+  }
+
+  function adoptLoadedVaultNote(note) {
+    currentVaultSha = note.sha || "";
+    currentVaultPublished = note.published === true;
+    currentVaultPublic = note.public || null;
+    sourcePaths = note.public?.paths || sourcePaths;
+    const values = { ...note.values, message: "", published: note.published === true };
+    writeValues(values);
+    originalValues = structuredClone(values);
+  }
+
   async function prepareEdit(config) {
     currentMode = "edit";
     currentTranslationKey = config.translationKey;
     currentDraftKey = `functionhx:spark-writer:${repository}:${branch}:${currentTranslationKey}`;
-    sourcePaths = { en: config.enPath, zh: config.zhPath };
-    originals = { zh: null, en: null };
+    sourcePaths = { en: config.enPath || "", zh: config.zhPath || "" };
+    resetVaultState();
     elements.slug.readOnly = true;
     elements.heading.textContent = elements.heading.dataset.editHeading;
     elements.result.hidden = true;
     setStatus(strings.editing);
     setBusy(true);
     try {
-      const [zhSource, enSource] = await Promise.all([loadRemoteSource("zh", sourcePaths.zh), loadRemoteSource("en", sourcePaths.en)]);
-      originals = { en: enSource, zh: zhSource };
-      writeValues(valuesFromSources(zhSource, enSource));
+      await restorePromise;
+      if (config.vaultId && !vaultSession && !(await ensureVaultSession())) return;
+      const id = noteIdFromConfig(config);
+      const note = await loadVaultNote(id, Boolean(config.vaultId));
+      if (note) {
+        adoptLoadedVaultNote(note);
+      } else {
+        if (!sourcePaths.zh || !sourcePaths.en) throw new Error("The public source paths are unavailable.");
+        const [zhSource, enSource] = await Promise.all([loadRemoteSource("zh", sourcePaths.zh), loadRemoteSource("en", sourcePaths.en)]);
+        originals = { en: enSource, zh: zhSource };
+        const values = valuesFromSources(zhSource, enSource);
+        writeValues(values);
+        originalValues = structuredClone(values);
+        currentVaultPublished = true;
+        currentVaultPublic = {
+          paths: { ...sourcePaths },
+          shas: { en: enSource.sha, zh: zhSource.sha },
+        };
+      }
       initialSnapshot = snapshot();
       slugIsAutomatic = false;
-      const restored = restoreDraft();
+      const restored = await restoreDraft();
       setStatus(restored ? strings.draftRestored : strings.noChanges, restored ? "success" : "");
       window.requestAnimationFrame(() => fields[currentLanguage].title.focus());
     } catch (error) {
@@ -727,27 +713,27 @@
     root.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function openCreate(trigger = elements.create || toggle) {
+  async function openCreate(trigger = elements.create || toggle) {
     if (elements.draftsPanel) elements.draftsPanel.hidden = true;
     if (!root.hidden && currentMode === "create") {
       selectLanguage(currentLanguage, true);
       return;
     }
-    if (!root.hidden) saveDraft(false);
+    if (!root.hidden) await saveDraft(false);
     activeTrigger = trigger;
-    prepareCreate();
+    await prepareCreate();
     revealWriter();
     selectLanguage(isEnglish ? "en" : "zh");
     window.requestAnimationFrame(() => fields[currentLanguage].title.focus());
   }
 
-  function openEdit(config, trigger = toggle) {
+  async function openEdit(config, trigger = toggle) {
     if (elements.draftsPanel) elements.draftsPanel.hidden = true;
-    if (!root.hidden) saveDraft(false);
+    if (!root.hidden) await saveDraft(false);
     activeTrigger = trigger;
     revealWriter();
     selectLanguage(isEnglish ? "en" : "zh");
-    prepareEdit(config);
+    await prepareEdit(config);
   }
 
   function closeWriter() {
@@ -758,192 +744,27 @@
     if (activeTrigger && typeof activeTrigger.focus === "function") activeTrigger.focus();
   }
 
-  function openAuthDialog(action = "") {
-    pendingAction = action;
-    setAuthStatus("");
-    elements.token.value = "";
-    if (typeof authDialog.showModal === "function") authDialog.showModal();
-    else authDialog.setAttribute("open", "");
-    window.requestAnimationFrame(() => elements.token.focus());
+  function publicStateForMigration() {
+    if (currentVaultSha || !currentVaultPublished) return undefined;
+    if (!currentVaultPublic?.paths?.zh || !currentVaultPublic?.paths?.en) return undefined;
+    if (!currentVaultPublic?.shas?.zh || !currentVaultPublic?.shas?.en) return undefined;
+    return currentVaultPublic;
   }
 
-  function closeAuthDialog() {
-    elements.token.value = "";
-    if (typeof authDialog.close === "function") authDialog.close();
-    else authDialog.removeAttribute("open");
-  }
-
-  function setConnection(session) {
-    activeToken = session?.token || "";
-    const connectLabel = elements.connect.querySelector("span");
-    if (connectLabel) connectLabel.textContent = activeToken ? strings.connected : disconnectedLabel;
-    elements.connect.dataset.connected = String(Boolean(activeToken));
-  }
-
-  async function restoreGitHubSession() {
-    const session = await window.functionhxGitHubAuth?.restore({ owner, repository }).catch(() => null);
-    setConnection(session);
-    return session;
-  }
-
-  async function saveGitHubSession(token) {
-    const remember = elements.authRemember.checked;
-    if (!window.functionhxGitHubAuth) return { failed: remember, remembered: false };
-    try {
-      return await window.functionhxGitHubAuth.save({ owner, remember, repository, token });
-    } catch (_error) {
-      await window.functionhxGitHubAuth.save({ owner, remember: false, repository, token }).catch(() => undefined);
-      return { failed: true, remembered: false };
-    }
-  }
-
-  async function disconnectGitHub(ask = true) {
-    if (ask && !window.confirm(strings.disconnectConfirm)) return;
-    await window.functionhxGitHubAuth?.forget({ repository }).catch(() => undefined);
-    setConnection(null);
-    setStatus(strings.disconnected);
-  }
-
-  async function handleConnectButton() {
-    await restorePromise;
-    if (activeToken) {
-      await disconnectGitHub(true);
-      return;
-    }
-    openAuthDialog();
-  }
-
-  async function connectGitHub() {
-    const candidate = elements.token.value.trim();
-    if (!candidate) {
-      setAuthStatus(strings.authMissing, "error");
-      return;
-    }
-    setBusy(true);
-    setAuthStatus(strings.verify);
-    try {
-      const [user, repo] = await Promise.all([
-        githubRequest("/user", { token: candidate }),
-        githubRequest(`/repos/${repository}`, { token: candidate }),
-      ]);
-      if (String(user.login).toLowerCase() !== owner.toLowerCase() || !repo.permissions?.push) {
-        throw new Error("This token is not @Functionhx with repository write access.");
-      }
-      const saved = await saveGitHubSession(candidate);
-      setConnection({ token: candidate });
-      setAuthStatus(saved.failed ? strings.authRememberFailed : saved.remembered ? strings.authRemembered : strings.authSuccess, "success");
-      const continueWith = pendingAction;
-      pendingAction = "";
-      window.setTimeout(
-        () => {
-          closeAuthDialog();
-          if (continueWith === "publish") publishPair();
-          if (continueWith === "drafts") loadPrivateDrafts();
-        },
-        saved.failed ? 900 : 350
-      );
-    } catch (error) {
-      setConnection(null);
-      setAuthStatus(`${strings.authFailed} ${error.message || ""}`.trim(), "error");
-    } finally {
-      elements.token.value = "";
-      setBusy(false);
-    }
-  }
-
-  async function verifyTargets(pair) {
-    if (currentMode === "create") {
-      const existing = await Promise.all(
-        ["zh", "en"].map((language) =>
-          githubRequest(`/repos/${repository}/contents/${encodePath(pair[language].path)}?ref=${encodeURIComponent(branch)}`, {
-            allowNotFound: true,
-            token: activeToken,
-          })
-        )
-      );
-      if (existing.some(Boolean)) throw new Error(strings.collision);
-      return;
-    }
-
-    const remotes = await Promise.all(
-      ["zh", "en"].map((language) =>
-        githubRequest(`/repos/${repository}/contents/${encodePath(pair[language].path)}?ref=${encodeURIComponent(branch)}`, {
-          token: activeToken,
-        })
-      )
-    );
-    if (remotes.some((remote, index) => remote.sha !== originals[["zh", "en"][index]].sha)) {
-      throw new Error(strings.commitConflict);
-    }
-  }
-
-  async function createAtomicCommit(pair) {
-    const head = await githubRequest(`/repos/${repository}/git/ref/heads/${encodeURIComponent(branch)}`, {
-      token: activeToken,
-    });
-    const headSha = head.object?.sha;
-    if (!headSha) throw new Error("The branch head is unavailable.");
-    const parent = await githubRequest(`/repos/${repository}/git/commits/${headSha}`, {
-      token: activeToken,
-    });
-    const baseTree = parent.tree?.sha;
-    if (!baseTree) throw new Error("The branch tree is unavailable.");
-
-    const tree = await githubRequest(`/repos/${repository}/git/trees`, {
-      body: {
-        base_tree: baseTree,
-        tree: ["zh", "en"].map((language) => ({
-          content: pair[language].content,
-          mode: "100644",
-          path: pair[language].path,
-          type: "blob",
-        })),
-      },
-      method: "POST",
-      token: activeToken,
-    });
-
-    const values = readValues();
-    const visibility = values.published ? "public" : "private";
-    const defaultMessage =
-      currentMode === "create"
-        ? "content: add " + visibility + ' Spark "' + values.slug + '"'
-        : "content: update " + visibility + ' Spark "' + values.slug + '"';
-    const commit = await githubRequest(`/repos/${repository}/git/commits`, {
-      body: {
-        message: values.message.trim() || defaultMessage,
-        parents: [headSha],
-        tree: tree.sha,
-      },
-      method: "POST",
-      token: activeToken,
-    });
-    await githubRequest(`/repos/${repository}/git/refs/heads/${encodeURIComponent(branch)}`, {
-      body: { force: false, sha: commit.sha },
-      method: "PATCH",
-      token: activeToken,
-    });
-    return { commit, tree };
-  }
-
-  function adoptCommittedPair(pair, result) {
-    const values = readValues();
+  function adoptSavedNote(note) {
     currentMode = "edit";
-    currentTranslationKey = `spark-${values.slug}`;
+    currentTranslationKey = `spark-${note.id}`;
     currentDraftKey = `functionhx:spark-writer:${repository}:${branch}:${currentTranslationKey}`;
-    sourcePaths = { en: pair.en.path, zh: pair.zh.path };
-    for (const language of ["zh", "en"]) {
-      const parsed = splitSource(pair[language].content);
-      const treeItem = result.tree.tree?.find((item) => item.path === pair[language].path);
-      originals[language] = {
-        ...parsed,
-        sha: treeItem?.sha || "",
-        source: pair[language].content,
-      };
-    }
+    currentVaultSha = note.sha || "";
+    currentVaultPublished = note.published === true;
+    currentVaultPublic = note.public || null;
+    sourcePaths = note.public?.paths || { zh: "", en: "" };
+    elements.published.checked = note.published === true;
+    elements.message.value = "";
     elements.slug.readOnly = true;
     elements.heading.textContent = elements.heading.dataset.editHeading;
     initialSnapshot = snapshot();
+    originalValues = structuredClone(readValues());
   }
 
   async function publishPair() {
@@ -953,61 +774,78 @@
       setStatus(strings.noChanges);
       return;
     }
-    if (!activeToken) {
-      openAuthDialog("publish");
-      return;
-    }
+    if (!(await ensureVaultSession())) return;
 
     setBusy(true);
     setStatus(strings.saving);
     elements.result.hidden = true;
-    const modeBeforeCommit = currentMode;
-    const draftKeyBeforeCommit = currentDraftKey;
+    const draftKeyBeforeSave = currentDraftKey;
     try {
-      const pair = composePair();
-      await verifyTargets(pair);
-      const result = await createAtomicCommit(pair);
-      window.localStorage.removeItem(draftKeyBeforeCommit);
-      if (modeBeforeCommit === "create") {
-        adoptCommittedPair(pair, result);
-      } else {
-        for (const language of ["zh", "en"]) {
-          const parsed = splitSource(pair[language].content);
-          const treeItem = result.tree.tree?.find((item) => item.path === pair[language].path);
-          originals[language] = {
-            ...parsed,
-            sha: treeItem?.sha || originals[language].sha,
-            source: pair[language].content,
-          };
-        }
-        initialSnapshot = snapshot();
+      const values = readValues();
+      const desiredPublished = values.published === true;
+      const payload = {
+        expectedSha: currentVaultSha,
+        message: values.message.trim(),
+        public: publicStateForMigration(),
+        values,
+      };
+      const saved = await vaultRequest(`/api/notes/${encodeURIComponent(values.slug)}`, {
+        body: payload,
+        method: "PUT",
+      });
+      let note = saved.note;
+      currentVaultSha = note.sha || "";
+      currentVaultPublished = note.published === true;
+      currentVaultPublic = note.public || null;
+      let commit = null;
+      if (desiredPublished) {
+        const published = await vaultRequest(`/api/notes/${encodeURIComponent(values.slug)}/publish`, {
+          body: { expectedSha: note.sha, message: values.message.trim() },
+          method: "POST",
+        });
+        note = published.note;
+        commit = published.commit;
+      } else if (note.published) {
+        const unpublished = await vaultRequest(`/api/notes/${encodeURIComponent(values.slug)}/unpublish`, {
+          body: { expectedSha: note.sha, message: values.message.trim() },
+          method: "POST",
+        });
+        note = unpublished.note;
+        commit = unpublished.commit;
       }
-      setStatus(readValues().published ? strings.commitPublicSuccess : strings.commitPrivateSuccess, "success");
-      if (result.commit.html_url) {
-        elements.result.href = result.commit.html_url;
+
+      await forgetDraft(draftKeyBeforeSave);
+      adoptSavedNote(note);
+      await forgetDraft(currentDraftKey);
+      setStatus(note.published ? strings.commitPublicSuccess : strings.commitPrivateSuccess, "success");
+      if (commit?.html_url) {
+        elements.result.href = commit.html_url;
         elements.result.textContent = strings.viewCommit;
         elements.result.hidden = false;
       }
-      window.functionhxDeployment?.watch(result.commit);
+      if (commit) window.functionhxDeployment?.watch(commit);
     } catch (error) {
-      if (error.status === 401 || error.status === 403) await disconnectGitHub(false);
-      const knownMessage = [strings.collision, strings.commitConflict].includes(error.message);
-      setStatus(knownMessage ? error.message : `${strings.commitFailed} ${error.message || ""}`.trim(), "error");
+      const known = {
+        public_collision: strings.collision,
+        public_conflict: strings.commitConflict,
+        vault_conflict: strings.commitConflict,
+      }[error.code];
+      setStatus(known || `${strings.commitFailed} ${error.message || ""}`.trim(), "error");
     } finally {
       setBusy(false);
     }
   }
 
-  function discardDraft() {
+  async function discardDraft() {
     if (isDirty() && !window.confirm(strings.confirmDiscard)) return;
-    window.localStorage.removeItem(currentDraftKey);
+    await forgetDraft(currentDraftKey);
     if (currentMode === "create") {
-      prepareCreate();
+      await prepareCreate();
       selectLanguage(isEnglish ? "en" : "zh", true);
       return;
     }
-    if (originals.zh && originals.en) {
-      writeValues(valuesFromSources(originals.zh, originals.en));
+    if (originalValues) {
+      writeValues(structuredClone(originalValues));
       initialSnapshot = snapshot();
       setStatus(strings.noChanges);
     }
@@ -1053,11 +891,8 @@
       selectLanguage("en");
       setStatus(strings.translationReady, "success");
     } catch (error) {
-      if (error.name === "AbortError") {
-        setStatus(strings.translationCanceled);
-      } else {
-        setStatus(`${strings.translationFailed} ${error.message || ""}`.trim(), "error");
-      }
+      if (error.name === "AbortError") setStatus(strings.translationCanceled);
+      else setStatus(`${strings.translationFailed} ${error.message || ""}`.trim(), "error");
     } finally {
       elements.translate.disabled = false;
     }
@@ -1130,28 +965,16 @@
     handleChange();
   });
 
-  elements.authCancel.addEventListener("click", () => {
-    pendingAction = "";
-    closeAuthDialog();
-  });
-  elements.authConnect.addEventListener("click", connectGitHub);
-  authDialog.addEventListener("close", () => {
-    elements.token.value = "";
-  });
-  elements.token.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") connectGitHub();
-  });
-
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !root.hidden && !authDialog.open) closeWriter();
+    if (event.key === "Escape" && !root.hidden && !authDialog?.open) closeWriter();
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !root.hidden) publishPair();
   });
 
-  window.addEventListener("functionhx:github-auth-changed", (event) => {
-    if (event.detail?.repository !== repository) return;
-    restorePromise = restoreGitHubSession();
+  window.addEventListener("functionhx:spark-vault-auth-changed", (event) => {
+    if (event.detail?.endpoint !== vaultEndpoint) return;
+    if (!event.detail.connected) setConnection(null);
   });
-  restorePromise = restoreGitHubSession();
 
+  restorePromise = restoreVaultSession();
   selectLanguage(currentLanguage);
 })();

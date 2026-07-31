@@ -192,22 +192,75 @@ def main() -> int:
         else ""
     )
     for contract in (
-        "window.localStorage",
         "window.functionhxGitHubAuth",
+        "window.functionhxSparkVault",
         "window.functionhxDeployment",
-        "/git/trees",
+        "saveOpaque",
+        "restoreOpaque",
+        'vaultRequest("/api/notes")',
+        'method: "PUT"',
         'method: "POST"',
-        'method: "PATCH"',
-        "force: false",
-        "_posts/",
-        '"published: " + (values.published ? "true" : "false")',
-        'setYamlValue(frontMatter, "published"',
+        "/publish",
+        "/unpublish",
         "loadPrivateDrafts",
     ):
         if contract not in spark_writer_text:
             errors.append(
                 f"assets/js/spark-writer.js: integration contract "
                 f"{contract!r} missing"
+            )
+    for forbidden_contract in (
+        'headers.Authorization = `Bearer ${options.token}`',
+        "/git/trees",
+        'method: "PATCH"',
+    ):
+        if forbidden_contract in spark_writer_text:
+            errors.append(
+                "assets/js/spark-writer.js: private Spark must not write "
+                f"directly to the public repository ({forbidden_contract!r})"
+            )
+
+    spark_client_path = ROOT / "assets" / "js" / "spark-vault-client.js"
+    spark_client_text = (
+        spark_client_path.read_text(encoding="utf-8")
+        if spark_client_path.exists()
+        else ""
+    )
+    for contract in (
+        "functionhxSparkVault",
+        "X-Spark-Session",
+        "saveOpaque",
+        "restoreOpaque",
+        "functionhx:spark-vault-session",
+        "event.origin !== expectedOrigin",
+    ):
+        if contract not in spark_client_text:
+            errors.append(
+                f"assets/js/spark-vault-client.js: security contract "
+                f"{contract!r} missing"
+            )
+
+    spark_worker_path = ROOT / "spark-vault" / "worker.mjs"
+    spark_worker_text = (
+        spark_worker_path.read_text(encoding="utf-8")
+        if spark_worker_path.exists()
+        else ""
+    )
+    for contract in (
+        "AES-GCM",
+        "MASTER_KEY_B64",
+        "SESSION_KEY_B64",
+        "ALLOWED_GITHUB_USER_ID",
+        "PRIVATE_REPO",
+        "PUBLIC_REPO",
+        "assertAllowedOrigin",
+        "commitPublicPair",
+        "encryptRecord",
+        '"published: true"',
+    ):
+        if contract not in spark_worker_text:
+            errors.append(
+                f"spark-vault/worker.mjs: security contract {contract!r} missing"
             )
 
     site_settings_path = ROOT / "assets" / "js" / "site-settings.js"
@@ -246,6 +299,8 @@ def main() -> int:
         "generateKey",
         "functionhx:github-auth-changed",
         "ciphertext",
+        "saveOpaque",
+        "restoreOpaque",
     ):
         if contract not in auth_vault_text:
             errors.append(

@@ -6,6 +6,7 @@
     "test:navigation": "node test/navigation_consistency.mjs",
     "test:site-settings": "node test/site_settings.mjs",
     "test:spark-writer": "node test/spark_writer.mjs",
+    "test:spark-vault": "node test/spark_vault_worker.mjs",
     "test:visual": "playwright test --config test/visual/playwright.config.js",
     "test:visual:update": "playwright test --config test/visual/playwright.config.js --update-snapshots"
   },
