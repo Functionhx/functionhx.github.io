@@ -37,7 +37,9 @@ authentication enabled.
 2. Register a private GitHub App owned by `Functionhx`.
    - Homepage: `https://functionhx.github.io/`
    - Callback: `https://vault.fanyuchen.com.cn/auth/callback`
-   - Request user authorization during installation.
+   - Leave “Request user authorization (OAuth) during installation” off. The
+     Spark login button starts the state-protected OAuth flow after the app is
+     installed.
    - Enable expiring user authorization tokens so the 30-day device session can
      refresh GitHub's short-lived user token without another login.
    - Repository permission: Contents read/write only.
