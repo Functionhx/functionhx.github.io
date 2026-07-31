@@ -14,6 +14,7 @@
       <meta http-equiv="refresh" content="3; url={{ redirect }}">
     {% endif %}
     {% include head.liquid %}
+    <link rel="stylesheet" href="{{ '/assets/css/inline-editor.css' | relative_url }}">
 
     {% assign translation_pool = site.pages
       | concat: site.projects
@@ -46,39 +47,44 @@
 
     <!-- Content -->
     <div class="container mt-5" role="main">
-      {% if page.toc and page.toc.sidebar %}
-        {% assign toc_collapse = page.toc.collapse | default: 'expanded' %}
-        {% assign toc_collapse_depth = page.toc.collapse_depth | default: '' %}
-        {% if page.toc.sidebar == 'right' %}
-          <div class="row">
-            <div class="col-sm-9">{{ content }}</div>
-            <div class="col-sm-3">
-              <nav
-                id="toc-sidebar"
-                class="sticky-top toc toc-sidebar"
-                aria-label="Table of contents"
-                data-toc-collapse="{{ toc_collapse }}"
-                data-toc-collapse-depth="{{ toc_collapse_depth }}"
-              ></nav>
-            </div>
-          </div>
-        {% else %}
-          <div class="row">
-            <div class="col-sm-3">
-              <nav
-                id="toc-sidebar"
-                class="sticky-top toc toc-sidebar"
-                aria-label="Table of contents"
-                data-toc-collapse="{{ toc_collapse }}"
-                data-toc-collapse-depth="{{ toc_collapse_depth }}"
-              ></nav>
-            </div>
-            <div class="col-sm-9">{{ content }}</div>
-          </div>
-        {% endif %}
-      {% else %}
-        {{ content }}
+      {% if page.path %}
+        {% include inline-editor.liquid %}
       {% endif %}
+      <div id="site-rendered-content">
+        {% if page.toc and page.toc.sidebar %}
+          {% assign toc_collapse = page.toc.collapse | default: 'expanded' %}
+          {% assign toc_collapse_depth = page.toc.collapse_depth | default: '' %}
+          {% if page.toc.sidebar == 'right' %}
+            <div class="row">
+              <div class="col-sm-9">{{ content }}</div>
+              <div class="col-sm-3">
+                <nav
+                  id="toc-sidebar"
+                  class="sticky-top toc toc-sidebar"
+                  aria-label="Table of contents"
+                  data-toc-collapse="{{ toc_collapse }}"
+                  data-toc-collapse-depth="{{ toc_collapse_depth }}"
+                ></nav>
+              </div>
+            </div>
+          {% else %}
+            <div class="row">
+              <div class="col-sm-3">
+                <nav
+                  id="toc-sidebar"
+                  class="sticky-top toc toc-sidebar"
+                  aria-label="Table of contents"
+                  data-toc-collapse="{{ toc_collapse }}"
+                  data-toc-collapse-depth="{{ toc_collapse_depth }}"
+                ></nav>
+              </div>
+              <div class="col-sm-9">{{ content }}</div>
+            </div>
+          {% endif %}
+        {% else %}
+          {{ content }}
+        {% endif %}
+      </div>
     </div>
 
     <!-- Footer -->
@@ -86,5 +92,6 @@
 
     <!-- JavaScripts -->
     {% include scripts.liquid %}
+    <script src="{{ '/assets/js/inline-editor.js' | relative_url }}"></script>
   </body>
 </html>

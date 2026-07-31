@@ -138,6 +138,24 @@ def main() -> int:
     if not giscus.get("repo_id") or not giscus.get("category_id"):
         errors.append("_config.yml: Giscus repository and category IDs are required")
 
+    inline_editor_path = ROOT / "assets" / "js" / "inline-editor.js"
+    inline_editor_text = (
+        inline_editor_path.read_text(encoding="utf-8")
+        if inline_editor_path.exists()
+        else ""
+    )
+    for contract in (
+        "https://api.github.com",
+        "Functionhx",
+        "window.localStorage",
+        'method: "PUT"',
+        "Authorization",
+    ):
+        if contract not in inline_editor_text:
+            errors.append(
+                f"assets/js/inline-editor.js: integration contract {contract!r} missing"
+            )
+
     kaggle_path = ROOT / "_includes" / "kaggle-monitor.liquid"
     kaggle_text = kaggle_path.read_text(encoding="utf-8") if kaggle_path.exists() else ""
     if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" not in kaggle_text:

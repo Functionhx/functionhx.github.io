@@ -1,0 +1,218 @@
+{% assign editor_lang = page.lang | default: 'zh' %}
+{% if editor_lang == 'en' %}
+  {% assign editor_heading = 'Edit this page' %}
+  {% assign editor_loading = 'Loading the Markdown source from GitHub…' %}
+  {% assign editor_title_label = 'Title' %}
+  {% assign editor_description_label = 'Summary' %}
+  {% assign editor_published_label = 'Published' %}
+  {% assign editor_comments_label = 'GitHub comments' %}
+  {% assign editor_body_label = 'Body' %}
+  {% assign editor_metadata_label = 'Front matter' %}
+  {% assign editor_preview_label = 'Live preview' %}
+  {% assign editor_preview_note = 'The final Jekyll rendering may include richer math and plugins.' %}
+  {% assign editor_save_label = 'Save draft' %}
+  {% assign editor_commit_label = 'Commit' %}
+  {% assign editor_connect_label = 'Connect GitHub' %}
+  {% assign editor_close_label = 'Close editor' %}
+  {% assign editor_discard_label = 'Discard local draft' %}
+  {% assign editor_message_label = 'Commit message' %}
+  {% assign editor_auth_heading = 'Connect GitHub for this session' %}
+  {% assign editor_auth_intro = 'Choose “Only select repositories → functionhx.github.io” and keep only Contents: write permission.' %}
+  {% assign editor_auth_create = 'Create a restricted token on GitHub' %}
+  {% assign editor_auth_token_label = 'Fine-grained token' %}
+  {% assign editor_auth_token_placeholder = 'github_pat_…' %}
+  {% assign editor_auth_security = 'The token stays only in this page memory. It is never stored in the repository, browser storage, analytics, or logs.' %}
+  {% assign editor_auth_cancel = 'Cancel' %}
+  {% assign editor_auth_verify = 'Verify and connect' %}
+{% else %}
+  {% assign editor_heading = '即时编辑当前页面' %}
+  {% assign editor_loading = '正在从 GitHub 载入 Markdown 源文件…' %}
+  {% assign editor_title_label = '标题' %}
+  {% assign editor_description_label = '摘要' %}
+  {% assign editor_published_label = '公开发布' %}
+  {% assign editor_comments_label = 'GitHub 评论' %}
+  {% assign editor_body_label = '正文' %}
+  {% assign editor_metadata_label = '页面元数据' %}
+  {% assign editor_preview_label = '即时预览' %}
+  {% assign editor_preview_note = '最终页面仍以 Jekyll 构建结果为准，数学公式和插件效果可能更完整。' %}
+  {% assign editor_save_label = '保存草稿' %}
+  {% assign editor_commit_label = 'Commit' %}
+  {% assign editor_connect_label = '连接 GitHub' %}
+  {% assign editor_close_label = '关闭编辑' %}
+  {% assign editor_discard_label = '丢弃本地草稿' %}
+  {% assign editor_message_label = '提交说明' %}
+  {% assign editor_auth_heading = '本次编辑连接 GitHub' %}
+  {% assign editor_auth_intro = '创建时选择“Only select repositories → functionhx.github.io”，权限只保留 Contents: write。' %}
+  {% assign editor_auth_create = '在 GitHub 创建受限令牌' %}
+  {% assign editor_auth_token_label = 'Fine-grained token' %}
+  {% assign editor_auth_token_placeholder = 'github_pat_…' %}
+  {% assign editor_auth_security = '令牌只保存在当前页面内存中，不写入仓库、浏览器存储、分析服务或日志；刷新页面后自动消失。' %}
+  {% assign editor_auth_cancel = '取消' %}
+  {% assign editor_auth_verify = '验证并连接' %}
+{% endif %}
+
+<section
+  id="site-inline-editor"
+  class="site-inline-editor"
+  data-language="{{ editor_lang }}"
+  data-repository="Functionhx/functionhx.github.io"
+  data-owner="Functionhx"
+  data-branch="main"
+  data-source-path="{{ page.path | escape }}"
+  hidden
+  aria-labelledby="site-inline-editor-heading"
+>
+  <header class="site-inline-editor__header">
+    <div>
+      <p class="site-inline-editor__eyebrow">functionhx.github.io</p>
+      <h1 id="site-inline-editor-heading">{{ editor_heading }}</h1>
+      <code id="site-inline-editor-path">{{ page.path }}</code>
+    </div>
+    <div class="site-inline-editor__header-actions">
+      <button id="site-inline-editor-connect" type="button" class="site-inline-editor__button site-inline-editor__button--quiet">
+        <i class="fa-brands fa-github" aria-hidden="true"></i>
+        <span>{{ editor_connect_label }}</span>
+      </button>
+      <button id="site-inline-editor-save" type="button" class="site-inline-editor__button site-inline-editor__button--quiet">
+        {{ editor_save_label }}
+      </button>
+      <button id="site-inline-editor-commit" type="button" class="site-inline-editor__button site-inline-editor__button--primary" disabled>
+        {{ editor_commit_label }}
+      </button>
+      <button
+        id="site-inline-editor-close"
+        type="button"
+        class="site-inline-editor__icon-button"
+        title="{{ editor_close_label }}"
+        aria-label="{{ editor_close_label }}"
+      >
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+  </header>
+
+  <p id="site-inline-editor-status" class="site-inline-editor__status" role="status" aria-live="polite">
+    {{ editor_loading }}
+  </p>
+
+  <div id="site-inline-editor-form" class="site-inline-editor__form" hidden>
+    <div class="site-inline-editor__metadata">
+      <label>
+        <span>{{ editor_title_label }}</span>
+        <input id="site-inline-editor-title" type="text" autocomplete="off">
+      </label>
+      <label>
+        <span>{{ editor_description_label }}</span>
+        <input id="site-inline-editor-description" type="text" autocomplete="off">
+      </label>
+      <label class="site-inline-editor__check">
+        <input id="site-inline-editor-published" type="checkbox">
+        <span>{{ editor_published_label }}</span>
+      </label>
+      <label
+        class="site-inline-editor__check"
+        {% unless page.path contains '_posts/' %}
+          hidden
+        {% endunless %}
+      >
+        <input id="site-inline-editor-comments" type="checkbox">
+        <span>{{ editor_comments_label }}</span>
+      </label>
+    </div>
+
+    <div class="site-inline-editor__tabs" role="tablist">
+      <button
+        id="site-inline-editor-body-tab"
+        type="button"
+        role="tab"
+        aria-selected="true"
+        aria-controls="site-inline-editor-body-panel"
+      >
+        {{ editor_body_label }}
+      </button>
+      <button
+        id="site-inline-editor-metadata-tab"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="site-inline-editor-metadata-panel"
+      >
+        {{ editor_metadata_label }}
+      </button>
+      <button id="site-inline-editor-discard" type="button" class="site-inline-editor__discard">
+        {{ editor_discard_label }}
+      </button>
+    </div>
+
+    <div class="site-inline-editor__workspace">
+      <div class="site-inline-editor__source">
+        <div id="site-inline-editor-body-panel" role="tabpanel" aria-labelledby="site-inline-editor-body-tab">
+          <textarea id="site-inline-editor-body" spellcheck="true"></textarea>
+        </div>
+        <div
+          id="site-inline-editor-metadata-panel"
+          role="tabpanel"
+          aria-labelledby="site-inline-editor-metadata-tab"
+          hidden
+        >
+          <textarea id="site-inline-editor-front-matter" spellcheck="false"></textarea>
+        </div>
+      </div>
+
+      <aside class="site-inline-editor__preview" aria-labelledby="site-inline-editor-preview-heading">
+        <div class="site-inline-editor__preview-heading">
+          <h2 id="site-inline-editor-preview-heading">{{ editor_preview_label }}</h2>
+          <span>{{ editor_preview_note }}</span>
+        </div>
+        <article>
+          <h1 id="site-inline-editor-preview-title"></h1>
+          <div id="site-inline-editor-preview-body"></div>
+        </article>
+      </aside>
+    </div>
+
+    <label class="site-inline-editor__commit-message">
+      <span>{{ editor_message_label }}</span>
+      <input id="site-inline-editor-message" type="text" autocomplete="off">
+    </label>
+    <a id="site-inline-editor-result" class="site-inline-editor__result" hidden target="_blank" rel="external noopener"></a>
+  </div>
+</section>
+
+<dialog id="site-inline-editor-auth" class="site-inline-editor-auth" aria-labelledby="site-inline-editor-auth-heading">
+  <div class="site-inline-editor-auth__content">
+    <h2 id="site-inline-editor-auth-heading">{{ editor_auth_heading }}</h2>
+    <p>{{ editor_auth_intro }}</p>
+    <p>
+      <a
+        href="https://github.com/settings/personal-access-tokens/new?name=Functionhx%20inline%20editor&description=Edit%20functionhx.github.io%20from%20the%20site&target_name=Functionhx&expires_in=30&contents=write"
+        target="_blank"
+        rel="external nofollow noopener"
+      >
+        {{- editor_auth_create }}
+        <i class="fa-solid fa-arrow-up-right-from-square fa-xs" aria-hidden="true"></i>
+      </a>
+    </p>
+    <label>
+      <span>{{ editor_auth_token_label }}</span>
+      <input
+        id="site-inline-editor-token"
+        type="password"
+        placeholder="{{ editor_auth_token_placeholder }}"
+        autocomplete="off"
+        autocapitalize="none"
+        spellcheck="false"
+      >
+    </label>
+    <p class="site-inline-editor-auth__security">{{ editor_auth_security }}</p>
+    <p id="site-inline-editor-auth-status" class="site-inline-editor-auth__status" role="status" aria-live="polite"></p>
+    <div class="site-inline-editor-auth__actions">
+      <button id="site-inline-editor-auth-cancel" type="button" class="site-inline-editor__button site-inline-editor__button--quiet">
+        {{ editor_auth_cancel }}
+      </button>
+      <button id="site-inline-editor-auth-connect" type="button" class="site-inline-editor__button site-inline-editor__button--primary">
+        {{ editor_auth_verify }}
+      </button>
+    </div>
+  </div>
+</dialog>

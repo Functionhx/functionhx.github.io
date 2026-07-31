@@ -14,8 +14,8 @@
   {% assign navigation_label = 'Toggle navigation' %}
   {% assign search_title = 'Search' %}
   {% assign search_label = 'Open search' %}
-  {% assign editor_title = 'Edit on GitHub' %}
-  {% assign editor_label = "Open this site's GitHub web editor" %}
+  {% assign editor_title = 'Edit this page' %}
+  {% assign editor_label = 'Edit this page without leaving the site' %}
   {% assign theme_title = 'Change theme' %}
   {% assign theme_label = 'Change color theme' %}
 {% else %}
@@ -24,8 +24,8 @@
   {% assign navigation_label = '展开导航' %}
   {% assign search_title = '搜索' %}
   {% assign search_label = '打开搜索' %}
-  {% assign editor_title = '在 GitHub 中编辑' %}
-  {% assign editor_label = '使用 GitHub 网页编辑器打开本站' %}
+  {% assign editor_title = '即时编辑' %}
+  {% assign editor_label = '不离开本站，直接编辑当前页面' %}
   {% assign theme_title = '切换主题' %}
   {% assign theme_label = '切换日间或夜间主题' %}
 {% endif %}
@@ -230,19 +230,38 @@
               {{- language_label -}}
             </a>
           </li>
-          <li class="nav-item">
-            <a
-              class="nav-link"
-              href="https://github.dev/Functionhx/functionhx.github.io"
-              title="{{ editor_title }}"
-              aria-label="{{ editor_label }}"
-              target="_blank"
-              rel="external nofollow noopener"
-            >
-              <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-              <span class="sr-only">{{ editor_title }}</span>
-            </a>
-          </li>
+          {% if page.path %}
+            <li class="nav-item">
+              <button
+                id="site-inline-editor-toggle"
+                type="button"
+                title="{{ editor_title }}"
+                aria-label="{{ editor_label }}"
+                aria-controls="site-inline-editor"
+                aria-expanded="false"
+              >
+                <span class="nav-link">
+                  <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                  <span class="sr-only">{{ editor_title }}</span>
+                </span>
+              </button>
+              <noscript>
+                <style>
+                  #site-inline-editor-toggle {
+                    display: none;
+                  }
+                </style>
+                <a
+                  class="nav-link"
+                  href="https://github.com/Functionhx/functionhx.github.io/edit/main/{{ page.path }}"
+                  title="{{ editor_title }}"
+                  aria-label="{{ editor_label }}"
+                >
+                  <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                </a>
+              </noscript>
+            </li>
+          {% endif %}
           {% if site.search_enabled %}
             <!-- Search -->
             <li class="nav-item">

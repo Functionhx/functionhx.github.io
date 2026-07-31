@@ -235,11 +235,27 @@ def main() -> int:
         parser = parsed_pages.get(route)
         if not parser:
             continue
-        if "https://github.dev/Functionhx/functionhx.github.io" not in parser.links:
-            errors.append(f"{route}: online editor link missing")
+        missing_editor_ids = {
+            "site-inline-editor-toggle",
+            "site-inline-editor",
+            "site-inline-editor-body",
+            "site-inline-editor-commit",
+        }.difference(parser.ids)
+        if missing_editor_ids:
+            errors.append(f"{route}: inline editor controls missing {sorted(missing_editor_ids)}")
+        external_editors = {
+            "https://app.pagescms.org/",
+            "https://github.dev/Functionhx/functionhx.github.io",
+        }.intersection(parser.links)
+        if external_editors:
+            errors.append(f"{route}: external editor link leaked {sorted(external_editors)}")
         missing_links = required_social_links.difference(parser.links)
         if missing_links:
             errors.append(f"{route}: missing social links {sorted(missing_links)}")
+
+    for asset in ("assets/css/inline-editor.css", "assets/js/inline-editor.js"):
+        if not (site / asset).is_file():
+            errors.append(f"/{asset}: inline editor asset missing")
 
     chinese_nav = " ".join(parsed_pages.get("/", PageParser()).nav_text)
     english_nav = " ".join(parsed_pages.get("/en/", PageParser()).nav_text)

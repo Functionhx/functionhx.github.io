@@ -28,11 +28,16 @@ Open `http://localhost:4000/` for Chinese and
 
 ## Online editing
 
-The pencil icon in the site header opens the repository in GitHub's official
-[github.dev web editor](https://github.dev/Functionhx/functionhx.github.io).
-It is a browser-based VS Code experience intended for desktop editing. Sign in
-to GitHub, edit the Markdown files, then use Source Control to `Commit & Push`;
-the commit triggers the normal GitHub Pages deployment.
+The pencil icon turns the current public page into an inline Markdown editor
+without navigating away from the site. Title, summary, publication state,
+comments, front matter, and body can be edited alongside a live preview.
+Drafts autosave only in that browser.
+
+Creating a commit requires a fine-grained GitHub token owned by `Functionhx`,
+restricted to this repository, with `Contents: write`. The token remains only
+in the current page's JavaScript memory and disappears on reload; it is never
+written to browser storage or the repository. The editor checks the account and
+repository push permission before enabling authenticated commits.
 
 Create Chinese and English records with the same `slug` and
 `translation_key`. Their `lang`, `permalink`, and body content remain separate.
