@@ -4,7 +4,7 @@ permalink: /en/cv/
 title: CV
 lang: en
 translation_key: cv
-nav: true
+nav: false
 nav_order: 5
 cv_pdf: /assets/pdf/example_pdf.pdf
 cv_format: rendercv
