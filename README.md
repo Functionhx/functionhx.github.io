@@ -28,16 +28,16 @@ Open `http://localhost:4000/` for Chinese and
 
 ## Online editing
 
-The pencil icon in the site header opens [Pages CMS](https://app.pagescms.org/).
-Sign in with GitHub, select `Functionhx/functionhx.github.io`, and edit the
-`写作与闪耀 / Writing & Spark` collection. Saving writes a Git commit and
-triggers the normal GitHub Pages deployment.
+The pencil icon in the site header opens the repository in GitHub's official
+[github.dev web editor](https://github.dev/Functionhx/functionhx.github.io).
+It is a browser-based VS Code experience intended for desktop editing. Sign in
+to GitHub, edit the Markdown files, then use Source Control to `Commit & Push`;
+the commit triggers the normal GitHub Pages deployment.
 
 Create Chinese and English records with the same `slug` and
 `translation_key`. Their `lang`, `permalink`, and body content remain separate.
-New records are drafts by default, so either language can be saved repeatedly
-without becoming public. Turn on `published` only after both records are ready.
-The editor cannot delete or rename post files.
+Set `published: false` while either language is still a draft, and turn it on
+only after both records are ready.
 
 Owner-authored posts may enable `giscus_comments: true`. Comments are stored in
 this repository's GitHub Discussions through Giscus.

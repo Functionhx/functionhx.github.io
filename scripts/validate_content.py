@@ -138,21 +138,6 @@ def main() -> int:
     if not giscus.get("repo_id") or not giscus.get("category_id"):
         errors.append("_config.yml: Giscus repository and category IDs are required")
 
-    cms_path = ROOT / ".pages.yml"
-    try:
-        cms_config = yaml.safe_load(cms_path.read_text(encoding="utf-8"))
-    except (OSError, yaml.YAMLError) as error:
-        errors.append(f".pages.yml: {error}")
-        cms_config = {}
-    cms_content = cms_config.get("content", []) if isinstance(cms_config, dict) else []
-    if not any(
-        isinstance(entry, dict)
-        and entry.get("type") == "collection"
-        and entry.get("path") == "_posts"
-        for entry in cms_content
-    ):
-        errors.append(".pages.yml: an editable _posts collection is required")
-
     kaggle_path = ROOT / "_includes" / "kaggle-monitor.liquid"
     kaggle_text = kaggle_path.read_text(encoding="utf-8") if kaggle_path.exists() else ""
     if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" not in kaggle_text:

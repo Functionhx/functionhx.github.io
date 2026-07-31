@@ -235,7 +235,7 @@ def main() -> int:
         parser = parsed_pages.get(route)
         if not parser:
             continue
-        if "https://app.pagescms.org/" not in parser.links:
+        if "https://github.dev/Functionhx/functionhx.github.io" not in parser.links:
             errors.append(f"{route}: online editor link missing")
         missing_links = required_social_links.difference(parser.links)
         if missing_links:
