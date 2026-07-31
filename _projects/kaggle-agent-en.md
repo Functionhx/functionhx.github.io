@@ -11,6 +11,8 @@ category: fun
 img: assets/img/1.jpg
 ---
 
-Tracks Kaggle competition CV / LB scores, target gap, daily quota, and experiments awaiting a decision. The homepage monitor requests the public JSON endpoint every five minutes; when the endpoint is not deployed or unavailable, the page reports that state explicitly.
+Tracks Kaggle competition CV / LB scores, target gap, daily quota, and experiments awaiting a decision. The monitor below requests the public JSON endpoint every five minutes; when the endpoint is not deployed or unavailable, it reports that state explicitly.
+
+{% include kaggle-monitor.liquid %}
 
 [Open the Kaggle Agent dashboard](https://functionhx.github.io/kaggle-agent/)
