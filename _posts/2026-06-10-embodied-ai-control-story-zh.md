@@ -78,4 +78,4 @@ VLA 的思路是把“视觉 + 语言 + 本体状态 → 动作”重新表述�
 
 ---
 
-本文于 2026 年 6 月 10 日发布于[知乎](https://zhuanlan.zhihu.com/p/2048053637985859286)。
+本文于 2026 年 6 月 10 日发布于[知乎](https://zhuanlan.zhihu.com/p/2048053637985859286)，后于 2026 年 6 月 26 日由自动驾驶之心推出的「具身智能之心 TechDaily」[转载](https://mp.weixin.qq.com/s/dPT0KzO_EZo1ASydmB_HHw)。

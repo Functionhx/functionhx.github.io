@@ -78,4 +78,4 @@ The rational response is neither to argue that one discipline is superior nor to
 
 ---
 
-The Chinese original was published on [Zhihu](https://zhuanlan.zhihu.com/p/2048053637985859286) on June 10, 2026.
+The Chinese original was published on [Zhihu](https://zhuanlan.zhihu.com/p/2048053637985859286) on June 10, 2026, and [republished](https://mp.weixin.qq.com/s/dPT0KzO_EZo1ASydmB_HHw) on June 26, 2026 by 具身智能之心 TechDaily, the embodied-AI platform launched by 自动驾驶之心.
