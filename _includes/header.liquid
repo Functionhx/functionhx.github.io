@@ -36,6 +36,20 @@
       width: calc(100% - 2rem);
       max-width: 1320px;
     }
+
+    #navbar .navbar-container-home {
+      justify-content: center;
+    }
+
+    #navbar .navbar-container-home .navbar-collapse-main {
+      flex-basis: auto;
+      flex-grow: 0;
+      width: auto;
+    }
+
+    #navbar .navbar-container-home .navbar-menu-list {
+      margin-left: 0;
+    }
   }
 
   @media (min-width: 992px) and (max-width: 1199.98px) {
@@ -96,7 +110,7 @@
 <header>
   <!-- Nav Bar -->
   <nav id="navbar" class="navbar navbar-light navbar-expand-sm {% if site.navbar_fixed %}fixed-top{% else %}sticky-top{% endif %}" role="navigation">
-    <div class="container navbar-container">
+    <div class="container navbar-container{% if page.home %} navbar-container-home{% endif %}">
       {% unless page.home %}
         <a class="navbar-brand title font-weight-lighter" href="{{ home_page.url | relative_url }}">
           {% if current_lang == 'zh' %}
