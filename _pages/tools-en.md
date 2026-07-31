@@ -5,7 +5,8 @@ permalink: /en/tools/
 description: Small things I build, public products, and experimental tools.
 lang: en
 translation_key: tools
-nav: false
+nav: true
+nav_order: 10
 ---
 
 <div class="projects">

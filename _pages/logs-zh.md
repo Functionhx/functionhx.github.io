@@ -5,7 +5,8 @@ permalink: /logs/
 description: 按时间记录实验、开发与学习现场。
 lang: zh
 translation_key: logs
-nav: false
+nav: true
+nav_order: 12
 kind: log
 empty_text: 暂无公开日志。
 ---

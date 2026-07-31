@@ -4,8 +4,8 @@ title: more
 permalink: /en/more/
 lang: en
 translation_key: more
-nav: true
-nav_order: 8
+nav: false
+nav_order: 13
 dropdown: true
 children:
   - title: bookshelf

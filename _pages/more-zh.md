@@ -4,8 +4,8 @@ title: 更多
 permalink: /more/
 lang: zh
 translation_key: more
-nav: true
-nav_order: 8
+nav: false
+nav_order: 13
 dropdown: true
 children:
   - title: 书架

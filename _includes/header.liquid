@@ -30,10 +30,73 @@
   {% assign language_page = site.pages | where: 'home', true | where: 'lang', target_lang | first %}
 {% endunless %}
 
+<style>
+  @media (min-width: 992px) {
+    #navbar .navbar-container {
+      width: calc(100% - 2rem);
+      max-width: 1320px;
+    }
+  }
+
+  @media (min-width: 992px) and (max-width: 1199.98px) {
+    #navbar .navbar-menu-list > .nav-item > .nav-link {
+      padding-right: 0.35rem;
+      padding-left: 0.35rem;
+      font-size: 0.85rem;
+    }
+
+    #navbar #search-toggle .nav-link {
+      white-space: nowrap;
+    }
+  }
+
+  @media (min-width: 576px) and (max-width: 991.98px) {
+    #navbar.navbar-expand-sm > .navbar-container {
+      padding-right: 0;
+      padding-left: 0;
+    }
+
+    #navbar.navbar-expand-sm .navbar-toggler-main {
+      display: block;
+      margin-left: auto;
+    }
+
+    #navbar.navbar-expand-sm .navbar-collapse-main {
+      flex-basis: 100%;
+      width: 100%;
+      text-align: left;
+    }
+
+    #navbar.navbar-expand-sm .navbar-menu-list {
+      align-items: flex-start;
+      flex-direction: column;
+      width: 100%;
+      margin-left: 0;
+    }
+
+    #navbar.navbar-expand-sm .navbar-menu-list .nav-link {
+      padding-right: 0;
+      padding-left: 0;
+    }
+  }
+
+  @layer components {
+    @media (min-width: 576px) and (max-width: 991.98px) {
+      #navbar.navbar-expand-sm .navbar-collapse-main {
+        display: none !important;
+      }
+
+      #navbar.navbar-expand-sm .navbar-collapse-main.show {
+        display: block !important;
+      }
+    }
+  }
+</style>
+
 <header>
   <!-- Nav Bar -->
   <nav id="navbar" class="navbar navbar-light navbar-expand-sm {% if site.navbar_fixed %}fixed-top{% else %}sticky-top{% endif %}" role="navigation">
-    <div class="container">
+    <div class="container navbar-container">
       {% unless page.home %}
         <a class="navbar-brand title font-weight-lighter" href="{{ home_page.url | relative_url }}">
           {% if current_lang == 'zh' %}

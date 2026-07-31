@@ -5,7 +5,8 @@ permalink: /tools/
 description: 自己做的小玩意、公开产品与实验性工具。
 lang: zh
 translation_key: tools
-nav: false
+nav: true
+nav_order: 10
 ---
 
 <div class="projects">

@@ -14,6 +14,10 @@ EXPECTED_ROUTES = (
     "/en/",
     "/blog/",
     "/en/blog/",
+    "/blog/2026/embodied-ai-control-story/",
+    "/en/blog/2026/embodied-ai-control-story/",
+    "/blog/2026/batch-lio/",
+    "/en/blog/2026/batch-lio/",
     "/publications/",
     "/en/publications/",
     "/projects/",
@@ -32,6 +36,8 @@ EXPECTED_ROUTES = (
     "/en/books/",
     "/tools/",
     "/en/tools/",
+    "/tools/kaggle-agent/",
+    "/en/tools/kaggle-agent/",
     "/notes/",
     "/en/notes/",
     "/logs/",
@@ -146,6 +152,16 @@ def main() -> int:
             errors.append(
                 f"{route}: expected identity heading {expected_identity!r}, found {heading!r}"
             )
+        html = route_file(site, route).read_text(encoding="utf-8")
+        if "kaggle-mini-card" in html:
+            errors.append(f"{route}: Kaggle monitor must not render on the homepage")
+        if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" in html:
+            errors.append(f"{route}: Kaggle monitor script must not load on the homepage")
+
+    for route in ("/tools/kaggle-agent/", "/en/tools/kaggle-agent/"):
+        parser = parsed_pages.get(route)
+        if not parser:
+            continue
         for required_id in (
             "kaggle-mini-card",
             "kmc-title",
@@ -161,6 +177,36 @@ def main() -> int:
         html = route_file(site, route).read_text(encoding="utf-8")
         if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" not in html:
             errors.append(f"{route}: Kaggle data endpoint missing from generated HTML")
+
+    article_sources = {
+        "/blog/2026/embodied-ai-control-story/": (
+            "https://zhuanlan.zhihu.com/p/2048053637985859286"
+        ),
+        "/en/blog/2026/embodied-ai-control-story/": (
+            "https://zhuanlan.zhihu.com/p/2048053637985859286"
+        ),
+        "/blog/2026/batch-lio/": (
+            "https://bbs.robomaster.com/article/1936372?source=1"
+        ),
+        "/en/blog/2026/batch-lio/": (
+            "https://bbs.robomaster.com/article/1936372?source=1"
+        ),
+    }
+    for route, source in article_sources.items():
+        parser = parsed_pages.get(route)
+        if parser and source not in parser.links:
+            errors.append(f"{route}: source publication link missing")
+        if not parser:
+            continue
+        html = route_file(site, route).read_text(encoding="utf-8")
+        if route.startswith("/en/"):
+            if "Created on" not in html:
+                errors.append(f"{route}: English publication date label missing")
+        else:
+            if "发布于" not in html:
+                errors.append(f"{route}: Chinese publication date label missing")
+            if "Created on" in html:
+                errors.append(f"{route}: English publication date label leaked")
 
     required_social_links = {
         "https://functionhx.github.io/",
@@ -180,12 +226,46 @@ def main() -> int:
 
     chinese_nav = " ".join(parsed_pages.get("/", PageParser()).nav_text)
     english_nav = " ".join(parsed_pages.get("/en/", PageParser()).nav_text)
-    for label in ("关于", "博客", "论文", "项目", "仓库", "简历", "教学", "人物", "更多", "EN"):
+    for label in (
+        "关于",
+        "博客",
+        "论文",
+        "项目",
+        "仓库",
+        "简历",
+        "教学",
+        "人物",
+        "书架",
+        "动态",
+        "工具",
+        "思考",
+        "日志",
+        "EN",
+    ):
         if label not in chinese_nav:
             errors.append(f"/: navigation label {label!r} missing")
-    for label in ("about", "blog", "publications", "projects", "repositories", "CV", "teaching", "people", "more", "中"):
+    for label in (
+        "about",
+        "blog",
+        "publications",
+        "projects",
+        "repositories",
+        "CV",
+        "teaching",
+        "people",
+        "bookshelf",
+        "news",
+        "tools",
+        "thoughts",
+        "logs",
+        "中",
+    ):
         if label not in english_nav:
             errors.append(f"/en/: navigation label {label!r} missing")
+    if "更多" in chinese_nav:
+        errors.append("/: collapsed more navigation must not render")
+    if "more" in english_nav:
+        errors.append("/en/: collapsed more navigation must not render")
 
     for route in ("/projects/", "/en/projects/"):
         path = route_file(site, route)
