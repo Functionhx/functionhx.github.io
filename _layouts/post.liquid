@@ -97,7 +97,7 @@ layout: default
     {% endif %}
   {% endif %}
 
-  {% if site.plugins contains 'al_comments' %}
-    {% include plugins/al_comments.liquid %}
+  {% if page.giscus_comments %}
+    {% include giscus-comments.liquid %}
   {% endif %}
 </div>

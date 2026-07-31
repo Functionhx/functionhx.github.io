@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "【RM2026-LIO算法开源】Batch-LIO：批量更新加速 Point-LIO 最高 4.7 倍"
+slug: batch-lio
 date: 2026-07-22 22:16:07 +0800
 description: Batch-LIO 将相邻约 1 ms 内的激光点批量更新，在当前哨兵 Livox rosbag 测试中将每帧平均计算耗时降低至 Point-LIO 式更新的约 1/3.5 至 1/4.7。
 permalink: /blog/2026/batch-lio/
@@ -11,6 +12,7 @@ kind: writing
 tags: [LIO, 机器人, 开源]
 categories: [技术]
 related_posts: false
+giscus_comments: true
 ---
 
 ## 一、项目简介

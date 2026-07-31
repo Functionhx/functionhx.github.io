@@ -1,6 +1,7 @@
 ---
 layout: post
 title: a distill-style blog post
+slug: distill
 date: 2018-12-22 10:00:00 +0800
 description: an example of a distill-style blog post and main elements
 permalink: /en/blog/2018/distill/

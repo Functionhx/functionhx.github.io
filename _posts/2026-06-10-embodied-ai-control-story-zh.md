@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "纯 CS 搞具身，正在把一个控制问题硬讲成一个融资故事"
+slug: embodied-ai-control-story
 date: 2026-06-10 15:19:40 +0800
 description: 从动态系统、反馈闭环与真实工程的角度，讨论纯 CS 范式主导具身智能和 VLA 叙事时容易忽略的问题。
 permalink: /blog/2026/embodied-ai-control-story/
@@ -11,6 +12,7 @@ kind: writing
 tags: [具身智能, 控制, VLA]
 categories: [观点]
 related_posts: false
+giscus_comments: true
 ---
 
 ## 让纯 CS 范式主导具身智能，正在制造一场以 VLA 为名的泡沫

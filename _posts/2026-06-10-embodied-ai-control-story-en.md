@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Pure CS Is Turning an Embodied-AI Control Problem into a Funding Story"
+slug: embodied-ai-control-story
 date: 2026-06-10 15:19:40 +0800
 description: A control-and-systems perspective on what gets lost when a pure-CS paradigm and the VLA narrative take the lead in embodied AI.
 permalink: /en/blog/2026/embodied-ai-control-story/
@@ -11,6 +12,7 @@ kind: writing
 tags: [embodied-ai, control, VLA]
 categories: [opinion]
 related_posts: false
+giscus_comments: true
 ---
 
 ## Letting a Pure-CS Paradigm Lead Embodied AI Is Creating a VLA-Shaped Bubble

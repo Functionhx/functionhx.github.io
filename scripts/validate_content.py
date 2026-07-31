@@ -86,6 +86,13 @@ def main() -> int:
             for field in ("description", "kind"):
                 if not data.get(field):
                     errors.append(f"{relative}: project field {field!r} is required")
+        if collection == "_posts":
+            slug = data.get("slug")
+            if not isinstance(slug, str) or not re.fullmatch(r"[a-z0-9-]+", slug):
+                errors.append(
+                    f"{relative}: slug must contain only lowercase letters, "
+                    "numbers, and hyphens"
+                )
 
     for (collection, key), items in sorted(groups.items()):
         languages = [data.get("lang") for _, data in items]
@@ -121,6 +128,26 @@ def main() -> int:
         errors.append("_config.yml: baseurl must be empty for the user Pages site")
     if config.get("enable_darkmode") is not True:
         errors.append("_config.yml: enable_darkmode must remain true")
+    giscus = config.get("giscus", {})
+    if giscus.get("repo") != "Functionhx/functionhx.github.io":
+        errors.append("_config.yml: Giscus repository is not configured")
+    if not giscus.get("repo_id") or not giscus.get("category_id"):
+        errors.append("_config.yml: Giscus repository and category IDs are required")
+
+    cms_path = ROOT / ".pages.yml"
+    try:
+        cms_config = yaml.safe_load(cms_path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as error:
+        errors.append(f".pages.yml: {error}")
+        cms_config = {}
+    cms_content = cms_config.get("content", []) if isinstance(cms_config, dict) else []
+    if not any(
+        isinstance(entry, dict)
+        and entry.get("type") == "collection"
+        and entry.get("path") == "_posts"
+        for entry in cms_content
+    ):
+        errors.append(".pages.yml: an editable _posts collection is required")
 
     kaggle_path = ROOT / "_includes" / "kaggle-monitor.liquid"
     kaggle_text = kaggle_path.read_text(encoding="utf-8") if kaggle_path.exists() else ""

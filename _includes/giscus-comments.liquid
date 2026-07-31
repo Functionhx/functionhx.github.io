@@ -1,0 +1,57 @@
+{% assign giscus_lang = 'zh-CN' %}
+{% assign comments_title = '评论' %}
+{% assign comments_fallback = '前往 GitHub Discussions 查看或参与评论' %}
+{% if page.lang == 'en' %}
+  {% assign giscus_lang = 'en' %}
+  {% assign comments_title = 'Comments' %}
+  {% assign comments_fallback = 'View or join the discussion on GitHub' %}
+{% endif %}
+
+<section class="comments" aria-labelledby="comments-title">
+  <h2 id="comments-title">{{ comments_title }}</h2>
+  <div id="giscus_thread">
+    <script>
+      (function setupGiscus() {
+        function determineGiscusTheme() {
+          var theme =
+            localStorage.getItem('theme') ||
+            document.documentElement.getAttribute('data-theme') ||
+            'system';
+
+          if (theme === 'dark') return {{ site.giscus.dark_theme | jsonify }};
+          if (theme === 'light') return {{ site.giscus.light_theme | jsonify }};
+
+          return window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? {{ site.giscus.dark_theme | jsonify }}
+            : {{ site.giscus.light_theme | jsonify }};
+        }
+
+        var attributes = {
+          src: 'https://giscus.app/client.js',
+          'data-repo': {{ site.giscus.repo | jsonify }},
+          'data-repo-id': {{ site.giscus.repo_id | jsonify }},
+          'data-category': {{ site.giscus.category | jsonify }},
+          'data-category-id': {{ site.giscus.category_id | jsonify }},
+          'data-mapping': {{ site.giscus.mapping | jsonify }},
+          'data-strict': {{ site.giscus.strict | jsonify }},
+          'data-reactions-enabled': {{ site.giscus.reactions_enabled | jsonify }},
+          'data-emit-metadata': {{ site.giscus.emit_metadata | jsonify }},
+          'data-input-position': {{ site.giscus.input_position | jsonify }},
+          'data-theme': determineGiscusTheme(),
+          'data-lang': {{ giscus_lang | jsonify }},
+          crossorigin: 'anonymous',
+          async: 'true',
+        };
+
+        var script = document.createElement('script');
+        Object.keys(attributes).forEach(function (key) {
+          script.setAttribute(key, attributes[key]);
+        });
+        document.getElementById('giscus_thread').appendChild(script);
+      })();
+    </script>
+    <noscript>
+      <a href="https://github.com/Functionhx/functionhx.github.io/discussions">{{ comments_fallback }}</a>
+    </noscript>
+  </div>
+</section>

@@ -1,0 +1,133 @@
+media:
+  name: site_images
+  label: 图片
+  input: assets/img
+  output: /assets/img
+  categories: [image]
+  rename: safe
+
+content:
+  - name: writing
+    label: 写作与闪耀 / Writing & Spark
+    type: collection
+    path: _posts
+    format: yaml-frontmatter
+    filename:
+      template: "{year}-{month}-{day}-{slug}-{lang}.md"
+      field: create
+    subfolders: false
+    operations:
+      create: true
+      rename: false
+      delete: false
+    view:
+      fields: [title, lang, kind, date]
+      primary: title
+      sort: [date, title, lang, kind]
+      search: [title, description, translation_key, tags, categories]
+      default:
+        sort: date
+        order: desc
+    fields:
+      - name: layout
+        type: string
+        default: post
+        hidden: true
+      - name: title
+        label: 标题 / Title
+        type: string
+        required: true
+      - name: slug
+        label: 文件短名 / Slug
+        type: string
+        required: true
+        pattern:
+          regex: "^[a-z0-9-]+$"
+          message: 仅使用小写英文字母、数字和连字符。
+        description: 用于文件名，例如 batch-lio；中英文配对使用相同值。
+      - name: date
+        label: 时间 / Date
+        type: date
+        required: true
+        options:
+          time: true
+          format: "yyyy-MM-dd HH:mm:ss xx"
+      - name: description
+        label: 摘要 / Description
+        type: text
+        required: true
+      - name: permalink
+        label: 页面地址 / Permalink
+        type: string
+        required: true
+        description: 中文使用 /blog/... 或 /spark/...；英文在前面增加 /en。
+      - name: lang
+        label: 语言 / Language
+        type: select
+        required: true
+        default: zh
+        options:
+          values:
+            - name: zh
+              label: 中文
+            - name: en
+              label: English
+      - name: translation_key
+        label: 双语配对键 / Translation key
+        type: string
+        required: true
+        pattern:
+          regex: "^[a-z0-9-]+$"
+          message: 仅使用小写英文字母、数字和连字符；中英文必须完全一致。
+      - name: kind
+        label: 栏目 / Section
+        type: select
+        required: true
+        default: note
+        options:
+          values:
+            - name: writing
+              label: 博客 / Blog
+            - name: note
+              label: 闪耀·思考 / Spark · Thought
+            - name: log
+              label: 闪耀·日志 / Spark · Log
+            - name: demo
+              label: 示例占位 / Demo placeholder
+      - name: tags
+        label: 标签 / Tags
+        type: string
+        list: true
+      - name: categories
+        label: 分类 / Categories
+        type: string
+        list: true
+      - name: related_posts
+        label: 显示相关文章 / Related posts
+        type: boolean
+        default: false
+      - name: giscus_comments
+        label: 开启 GitHub 评论 / Enable comments
+        type: boolean
+        default: true
+      - name: body
+        label: 正文 / Body
+        type: rich-text
+        required: true
+        options:
+          format: markdown
+          switcher: true
+          media: site_images
+          path: posts
+          rename: safe
+
+settings:
+  content:
+    merge: true
+  commit:
+    identity: user
+    templates:
+      create: 'content: add "{filename}"'
+      update: 'content: update "{filename}"'
+      delete: 'content: remove "{filename}"'
+      rename: 'content: rename "{oldFilename}" to "{newFilename}"'

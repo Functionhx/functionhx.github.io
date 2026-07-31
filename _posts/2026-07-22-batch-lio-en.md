@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Batch-LIO: Batch Updates Make Point-LIO up to 4.7× Faster"
+slug: batch-lio
 date: 2026-07-22 22:16:07 +0800
 description: Batch-LIO groups LiDAR points over roughly 1 ms and performs a joint update, reducing mean per-frame compute time by factors of 3.5× to 4.7× in the current sentinel Livox rosbag tests.
 permalink: /en/blog/2026/batch-lio/
@@ -11,6 +12,7 @@ kind: writing
 tags: [LIO, robotics, open-source]
 categories: [engineering]
 related_posts: false
+giscus_comments: true
 ---
 
 ## 1. Project Overview

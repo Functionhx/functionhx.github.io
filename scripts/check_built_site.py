@@ -204,11 +204,24 @@ def main() -> int:
         if route.startswith("/en/"):
             if "Created on" not in html:
                 errors.append(f"{route}: English publication date label missing")
+            expected_comment_language = "en"
+            expected_comment_heading = ">Comments</h2>"
         else:
             if "发布于" not in html:
                 errors.append(f"{route}: Chinese publication date label missing")
             if "Created on" in html:
                 errors.append(f"{route}: English publication date label leaked")
+            expected_comment_language = "zh-CN"
+            expected_comment_heading = ">评论</h2>"
+        for expected_comment_markup in (
+            '"Functionhx/functionhx.github.io"',
+            f"'data-lang': \"{expected_comment_language}\"",
+            expected_comment_heading,
+        ):
+            if expected_comment_markup not in html:
+                errors.append(
+                    f"{route}: Giscus markup {expected_comment_markup!r} missing"
+                )
 
     required_social_links = {
         "https://functionhx.github.io/",
@@ -222,6 +235,8 @@ def main() -> int:
         parser = parsed_pages.get(route)
         if not parser:
             continue
+        if "https://app.pagescms.org/" not in parser.links:
+            errors.append(f"{route}: online editor link missing")
         missing_links = required_social_links.difference(parser.links)
         if missing_links:
             errors.append(f"{route}: missing social links {sorted(missing_links)}")

@@ -26,6 +26,20 @@ Open `http://localhost:4000/` for Chinese and
 - Keep the public presentation faithful to al-folio v1.1. Upstream sample
   records may remain where owner content is not yet available.
 
+## Online editing
+
+The pencil icon in the site header opens [Pages CMS](https://app.pagescms.org/).
+Sign in with GitHub, select `Functionhx/functionhx.github.io`, and edit the
+`写作与闪耀 / Writing & Spark` collection. Saving writes a Git commit and
+triggers the normal GitHub Pages deployment.
+
+Create Chinese and English records with the same `slug` and
+`translation_key`. Their `lang`, `permalink`, and body content remain separate.
+The editor cannot delete or rename post files.
+
+Owner-authored posts may enable `giscus_comments: true`. Comments are stored in
+this repository's GitHub Discussions through Giscus.
+
 ## Validation
 
 ```bash

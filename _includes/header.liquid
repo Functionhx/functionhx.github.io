@@ -14,6 +14,8 @@
   {% assign navigation_label = 'Toggle navigation' %}
   {% assign search_title = 'Search' %}
   {% assign search_label = 'Open search' %}
+  {% assign editor_title = 'Online editor' %}
+  {% assign editor_label = 'Open the online editor' %}
   {% assign theme_title = 'Change theme' %}
   {% assign theme_label = 'Change color theme' %}
 {% else %}
@@ -22,6 +24,8 @@
   {% assign navigation_label = '展开导航' %}
   {% assign search_title = '搜索' %}
   {% assign search_label = '打开搜索' %}
+  {% assign editor_title = '在线编辑' %}
+  {% assign editor_label = '打开在线编辑器' %}
   {% assign theme_title = '切换主题' %}
   {% assign theme_label = '切换日间或夜间主题' %}
 {% endif %}
@@ -224,6 +228,19 @@
           <li class="nav-item">
             <a class="nav-link" href="{{ language_page.url | relative_url }}" lang="{% if target_lang == 'en' %}en{% else %}zh-CN{% endif %}">
               {{- language_label -}}
+            </a>
+          </li>
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              href="https://app.pagescms.org/"
+              title="{{ editor_title }}"
+              aria-label="{{ editor_label }}"
+              target="_blank"
+              rel="external nofollow noopener"
+            >
+              <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+              <span class="sr-only">{{ editor_title }}</span>
             </a>
           </li>
           {% if site.search_enabled %}
