@@ -1,0 +1,67 @@
+每个项目都有一个漂亮的功能展示页面。
+你可以轻松地用灵活的三栏网格加入图片。
+图片可以占据三分之一、三分之二或整行宽度。
+
+要在项目列表页中为项目添加背景图，只需在 front matter 中加入 img 字段：
+
+    ---
+    layout: page
+    title: project
+    description: a project with a background image
+    img: /assets/img/12.jpg
+    ---
+
+<div class="row">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="eager" path="assets/img/1.jpg" title="示例图片" class="img-fluid rounded z-depth-1" %}
+  </div>
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="eager" path="assets/img/3.jpg" title="示例图片" class="img-fluid rounded z-depth-1" %}
+  </div>
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="eager" path="assets/img/5.jpg" title="示例图片" class="img-fluid rounded z-depth-1" %}
+  </div>
+</div>
+<div class="caption">
+  添加图片说明很简单。左侧是一条穿过隧道的道路，中间是飘落的树叶，右侧是一位握着松针的伐木工。
+</div>
+<div class="row">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="eager" path="assets/img/5.jpg" title="示例图片" class="img-fluid rounded z-depth-1" %}
+  </div>
+</div>
+<div class="caption">这张图片也可以带有说明，就像魔法一样。</div>
+
+图片行之间也可以放置普通文本。
+你可以先写一点项目介绍，再展示其余图片。
+写下你如何为项目辛苦劳作、挥洒汗水，甚至付出心血，然后……在下一行图片中揭开它的全貌。
+
+<div class="row justify-content-sm-center">
+  <div class="col-sm-8 mt-3 mt-md-0">
+    {% include figure.liquid path="assets/img/6.jpg" title="示例图片" class="img-fluid rounded z-depth-1" %}
+  </div>
+  <div class="col-sm-4 mt-3 mt-md-0">
+    {% include figure.liquid path="assets/img/11.jpg" title="示例图片" class="img-fluid rounded z-depth-1" %}
+  </div>
+</div>
+<div class="caption">你也可以像这样，以三分之二加三分之一的比例排布图片。</div>
+
+代码很简单。
+只需用 `<div class="col-sm">` 包裹图片，再把它们放入 `<div class="row">` 中（更多内容请参阅 <a href="https://getbootstrap.com/docs/4.4/layout/grid/">Bootstrap Grid</a>）。
+要让图片自适应宽度，请添加 `img-fluid` 类；要使用圆角和阴影，请添加 `rounded` 与 `z-depth-1` 类。
+上面最后一行图片的代码如下：
+
+{% raw %}
+
+```html
+<div class="row justify-content-sm-center">
+  <div class="col-sm-8 mt-3 mt-md-0">
+    {% include figure.liquid path="assets/img/6.jpg" title="example image" class="img-fluid rounded z-depth-1" %}
+  </div>
+  <div class="col-sm-4 mt-3 mt-md-0">
+    {% include figure.liquid path="assets/img/11.jpg" title="example image" class="img-fluid rounded z-depth-1" %}
+  </div>
+</div>
+```
+
+{% endraw %}

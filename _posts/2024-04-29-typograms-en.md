@@ -11,11 +11,9 @@ kind: demo
 tags: [formatting, diagrams]
 categories: [sample-posts]
 related_posts: false
-placeholder: true
-source: al-folio v1.1 demo
 ---
 
-> Original al-folio demo placeholder; not an owner article.
+This is an example post with some [typograms](https://github.com/google/typograms/) code.
 
 ```text
 +----------+       +----------+
@@ -23,4 +21,4 @@ source: al-folio v1.1 demo
 +----------+       +----------+
 ```
 
-Text-native diagrams remain readable when scripts are unavailable.
+For more examples, check out the [typograms documentation](https://google.github.io/typograms/#examples).

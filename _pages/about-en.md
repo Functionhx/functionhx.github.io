@@ -11,7 +11,6 @@ profile:
   image: prof_pic.jpg
   image_circular: false
   more_info: >
-    <p><strong>original demo placeholder</strong></p>
     <p>555 your office number</p>
     <p>123 your address street</p>
     <p>Your City, State 12345</p>
@@ -28,17 +27,15 @@ latest_posts:
 labels:
   news: news
   latest_posts: latest posts
-  selected_publications: selected publications · original demo
+  selected_publications: selected publications
 news_path: /en/news/
 writing_path: /en/blog/
 research_path: /en/publications/
-contact_note: GitHub is mine. CV, email, Scholar, InspireHEP, and the final custom icon are original al-folio demo placeholders.
+contact_note: You can even add a little note about which of these is the best way to reach you.
 ---
 
 I am Yuchen Fan, a Robotics Engineering undergraduate. This is a living home for my [projects](/en/projects/), [tools](/en/tools/), [writing](/en/blog/), [thoughts](/en/notes/), and [work logs](/en/logs/).
 
-My current interests span robotics, autonomous systems, embodied AI, 3D scene intelligence, and AI systems engineering. Public records identify their status and source; ongoing and pre-disclosure work remains appropriately high-level.
-
-The portrait, address, selected bibliography, and any item explicitly marked **original demo placeholder** come from al-folio v1.1 and are not my personal information or achievements. They remain only until verified replacements are available.
+My current interests span robotics, autonomous systems, embodied AI, 3D scene intelligence, and AI systems engineering.
 
 {% include kaggle-monitor.liquid %}

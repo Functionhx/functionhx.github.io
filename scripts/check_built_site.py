@@ -118,7 +118,8 @@ def main() -> int:
             errors.append(f"{route}: missing generated file {path}")
             continue
         parser = PageParser()
-        parser.feed(path.read_text(encoding="utf-8"))
+        rendered_html = path.read_text(encoding="utf-8")
+        parser.feed(rendered_html)
         parsed_pages[route] = parser
 
         expected_language = "en" if route.startswith("/en/") else "zh-CN"
@@ -132,14 +133,19 @@ def main() -> int:
                 errors.append(f"{route}: missing required control #{required_id}")
         if not {"zh-CN", "en", "x-default"}.issubset(parser.alternates):
             errors.append(f"{route}: incomplete hreflang alternates {parser.alternates}")
+        if expected_language == "zh-CN" and "Yuchen Fan" in rendered_html:
+            errors.append(f"{route}: English identity leaked into the Chinese page")
 
     for route in ("/", "/en/"):
         parser = parsed_pages.get(route)
         if not parser:
             continue
         heading = " ".join(" ".join(parser.h1_text).split())
-        if "Yuchen Fan" not in heading:
-            errors.append(f"{route}: main identity heading is missing")
+        expected_identity = "Yuchen Fan" if route == "/en/" else "樊宇琛"
+        if expected_identity not in heading:
+            errors.append(
+                f"{route}: expected identity heading {expected_identity!r}, found {heading!r}"
+            )
         for required_id in (
             "kaggle-mini-card",
             "kmc-title",
@@ -177,7 +183,24 @@ def main() -> int:
         if path.is_file():
             html = path.read_text(encoding="utf-8")
             if "PhysRev.47.777" not in html and "Can Quantum-Mechanical Description" not in html:
-                errors.append(f"{route}: original demo bibliography did not render")
+                errors.append(f"{route}: bibliography did not render")
+
+    banned_editorial_phrases = (
+        "原版占位",
+        "原版节奏",
+        "完整复刻",
+        "original demo",
+        "original demo placeholder",
+        "original al-folio demo",
+    )
+    for route in EXPECTED_ROUTES:
+        path = route_file(site, route)
+        if not path.is_file():
+            continue
+        html = path.read_text(encoding="utf-8").lower()
+        for phrase in banned_editorial_phrases:
+            if phrase.lower() in html:
+                errors.append(f"{route}: editorial phrase {phrase!r} leaked into HTML")
 
     for route, locale in (("/repositories/", "cn"), ("/en/repositories/", "en")):
         path = route_file(site, route)

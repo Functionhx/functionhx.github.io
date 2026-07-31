@@ -20,5 +20,3 @@ children:
   - title: 日志
     permalink: /logs/
 ---
-
-其他栏目收在导航栏的下拉菜单中。

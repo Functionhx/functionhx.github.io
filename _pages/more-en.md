@@ -20,5 +20,3 @@ children:
   - title: logs
     permalink: /en/logs/
 ---
-
-Additional collections live in the navigation submenu.

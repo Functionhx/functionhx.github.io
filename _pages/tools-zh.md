@@ -2,7 +2,7 @@
 layout: page
 title: 工具
 permalink: /tools/
-description: 自己做的小玩意、公开产品与实验性工具；通用照片为原版占位。
+description: 自己做的小玩意、公开产品与实验性工具。
 lang: zh
 translation_key: tools
 nav: false

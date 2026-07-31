@@ -2,15 +2,15 @@
 layout: page
 permalink: /en/teaching/
 title: teaching
-description: Original al-folio course placeholders; these are not courses taught by Yuchen Fan.
+description: Course materials, schedules, and resources for classes taught.
 lang: en
 translation_key: teaching
 nav: true
 nav_order: 6
-placeholder: true
-source: al-folio v1.1 demo
 ---
 
-This page preserves the original course-material layout until verified teaching material exists.
+This page displays a collection of courses with detailed schedules, materials, and resources. You can organize your courses by years, terms, or topics.
+
+{% include calendar.liquid calendar_id='test@gmail.com' timezone='Asia/Shanghai' %}
 
 {% include courses.liquid %}

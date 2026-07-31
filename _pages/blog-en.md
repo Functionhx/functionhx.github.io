@@ -6,8 +6,8 @@ lang: en
 translation_key: blog
 nav: true
 nav_order: 1
-blog_name: field notes
-blog_description: writing, thoughts, and work logs in the original al-folio rhythm
+blog_name: al-folio
+blog_description: a simple whitespace theme for academics
 display_tags: [formatting, images, links, math, code, blockquotes]
 display_categories: [external-services]
 pagination:

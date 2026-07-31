@@ -1,8 +1,5 @@
-# Owner link
 github_username: Functionhx
 
-# Original al-folio demo placeholders retained to reproduce the starter's
-# complete social row. The homepage contact note identifies them as demos.
 cv_pdf: /assets/pdf/example_pdf.pdf
 email: you@example.com
 inspirehep_id: 1010907
@@ -10,5 +7,5 @@ rss_icon: true
 scholar_userid: qc6CJjYAAAAJ
 custom_social:
   logo: https://www.alberteinstein.com/wp-content/uploads/2024/03/cropped-favicon-192x192.png
-  title: Original demo placeholder
+  title: Custom Social
   url: https://www.alberteinstein.com/

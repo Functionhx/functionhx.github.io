@@ -12,12 +12,8 @@ featured: true
 tags: [formatting, math]
 categories: [sample-posts]
 related_posts: false
-placeholder: true
-source: al-folio v1.1 demo
 ---
 
-> Original al-folio demo placeholder; not an owner article.
+This theme supports Distill-style articles with equations, citations, figures, footnotes, and code blocks.
 
-This compact page stands in for the original Distill demonstration while preserving its featured-card position on the blog index.
-
-An explanatory article can combine prose, equations, figures, citations, and margin notes without turning the index into a custom dashboard.
+An explanatory article can combine prose, equations, figures, citations, and margin notes.

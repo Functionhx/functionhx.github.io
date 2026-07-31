@@ -7,7 +7,7 @@ lang: zh
 translation_key: logs
 nav: false
 kind: log
-empty_text: 暂无公开日志；原版示例文章保留在博客中。
+empty_text: 暂无公开日志。
 ---
 
 {% include post-lane.liquid %}

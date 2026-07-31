@@ -82,16 +82,9 @@ def main() -> int:
         groups[(collection, key)].append((path, data))
 
         if collection == "_projects":
-            for field in ("description", "kind", "status", "source"):
+            for field in ("description", "kind"):
                 if not data.get(field):
                     errors.append(f"{relative}: project field {field!r} is required")
-
-        if data.get("placeholder"):
-            source = str(data.get("source", "")).lower()
-            if "al-folio" not in source:
-                errors.append(
-                    f"{relative}: placeholder records must identify al-folio as their source"
-                )
 
     for (collection, key), items in sorted(groups.items()):
         languages = [data.get("lang") for _, data in items]
@@ -143,18 +136,21 @@ def main() -> int:
     bibliography = (ROOT / "_bibliography" / "papers.bib").read_text(encoding="utf-8")
     if "PhysRev.47.777" not in bibliography:
         errors.append("_bibliography/papers.bib: original demo bibliography is missing")
-    publication_pages = [
-        data
-        for collection, _, data in records
-        if collection == "_pages" and data.get("translation_key") == "publications"
-    ]
-    if len(publication_pages) != 2 or not all(
-        page.get("placeholder") and "al-folio" in str(page.get("source", "")).lower()
-        for page in publication_pages
-    ):
-        errors.append(
-            "_pages/publications: demo bibliography must be visibly governed by placeholder metadata"
-        )
+    banned_editorial_phrases = (
+        "原版占位",
+        "原版节奏",
+        "完整复刻",
+        "original demo",
+        "original demo placeholder",
+        "original al-folio demo",
+    )
+    for _, path, _ in records:
+        text = path.read_text(encoding="utf-8").lower()
+        for phrase in banned_editorial_phrases:
+            if phrase.lower() in text:
+                errors.append(
+                    f"{path.relative_to(ROOT)}: remove editorial phrase {phrase!r}"
+                )
 
     if errors:
         print("Source validation failed:", file=sys.stderr)

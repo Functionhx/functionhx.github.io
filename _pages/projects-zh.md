@@ -2,7 +2,7 @@
 layout: page
 title: 项目
 permalink: /projects/
-description: 持续收纳研究、工程实践与有用的小东西；通用照片均为 al-folio 原版图片占位。
+description: 持续收录一些有趣的项目。
 lang: zh
 translation_key: projects
 nav: true

@@ -7,7 +7,7 @@ lang: en
 translation_key: logs
 nav: false
 kind: log
-empty_text: No public logs yet; original demo posts remain under the blog.
+empty_text: No public logs yet.
 ---
 
 {% include post-lane.liquid %}

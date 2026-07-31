@@ -2,7 +2,7 @@
 layout: page
 title: projects
 permalink: /en/projects/
-description: A growing collection of research, engineering work, and useful things. Generic photographs are original al-folio placeholders.
+description: A growing collection of your cool projects.
 lang: en
 translation_key: projects
 nav: true

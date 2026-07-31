@@ -1,8 +1,7 @@
-# Yuchen Fan
+# 樊宇琛 / Yuchen Fan
 
-Bilingual research, projects, tools, writing, notes, and logs built as a
-content-adapted replica of the MIT-licensed
-[al-folio](https://github.com/alshedivat/al-folio) v1.1 demo.
+Bilingual research, projects, tools, writing, notes, and logs built on the
+MIT-licensed [al-folio](https://github.com/alshedivat/al-folio) v1.1 starter.
 
 ## Local development
 
@@ -24,8 +23,8 @@ Open `http://localhost:4000/` for Chinese and
 - Give every pair the same `translation_key` and set `lang: zh` or `lang: en`.
 - Keep external articles as canonical links until an owner-provided Markdown
   source or export is available.
-- Mark retained upstream examples with `placeholder: true` and
-  `source: al-folio v1.1 demo`. Never present them as owner achievements.
+- Keep the public presentation faithful to al-folio v1.1. Upstream sample
+  records may remain where owner content is not yet available.
 
 ## Validation
 

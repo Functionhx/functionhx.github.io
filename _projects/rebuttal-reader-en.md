@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Rebuttal Reader
-description: Live · Trace reviewer conversations from initial reviews through author responses and final decisions.
+description: Trace reviewer conversations from initial reviews through author responses and final decisions.
 permalink: /en/tools/rebuttal-reader/
 redirect: https://rebuttal-reader.tart-morel-3407.chatgpt.site/
 lang: en
@@ -10,14 +10,6 @@ kind: tool
 importance: 1
 category: fun
 img: assets/img/7.jpg
-placeholder_image: true
-status: Live
-source: Public product page
 ---
 
-- **Status:** Live
-- **Source:** [Public product page](https://rebuttal-reader.tart-morel-3407.chatgpt.site/)
-
 Trace rebuttal conversations and score changes by reviewer, from initial reviews through author responses and final decisions.
-
-<small>Cover image: original al-folio demo placeholder; it does not depict this product.</small>

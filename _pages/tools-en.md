@@ -2,7 +2,7 @@
 layout: page
 title: tools
 permalink: /en/tools/
-description: Small things I build, public products, and experimental tools. Generic photographs are original demo placeholders.
+description: Small things I build, public products, and experimental tools.
 lang: en
 translation_key: tools
 nav: false

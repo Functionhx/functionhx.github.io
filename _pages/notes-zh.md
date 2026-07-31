@@ -7,7 +7,7 @@ lang: zh
 translation_key: notes
 nav: false
 kind: note
-empty_text: 暂无公开思考；原版示例文章保留在博客中。
+empty_text: 暂无公开思考。
 ---
 
 {% include post-lane.liquid %}

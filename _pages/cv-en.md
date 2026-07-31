@@ -8,9 +8,7 @@ nav: true
 nav_order: 5
 cv_pdf: /assets/pdf/example_pdf.pdf
 cv_format: rendercv
-description: Owner-verified profile fields are mixed with entries explicitly labelled “Original al-folio demo placeholder”; those entries and the PDF are not Yuchen Fan's record.
+description: This is a description of the page. You can modify it in `_pages/cv.md`. You can also change or remove the top PDF download button.
 toc:
   sidebar: left
-placeholder: true
-source: owner-provided profile brief and al-folio v1.1 demo
 ---
