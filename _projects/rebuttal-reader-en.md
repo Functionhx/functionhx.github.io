@@ -10,7 +10,7 @@ translation_key: rebuttal-reader
 kind: tool
 importance: 1
 category: fun
-img: https://raw.githubusercontent.com/Functionhx/rebuttal-reader/main/public/og.png?raw=1
+img: assets/img/tools/rebuttal-reader-cover.webp
 ---
 
 Trace rebuttal conversations and score changes by reviewer, from initial reviews through author responses and final decisions.

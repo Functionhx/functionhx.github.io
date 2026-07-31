@@ -321,11 +321,14 @@ def main() -> int:
         if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" not in html:
             errors.append(f"{route}: Kaggle data endpoint missing from generated HTML")
 
-    arc_agi_2_cover = "https://arcprize.org/media/images/blog/arc-agi-task-1ae2feb7.png?v=2"
+    arc_agi_2_cover = "/assets/img/tools/kaggle-agent-arc-agi-cover.webp"
+    arc_agi_2_remote_cover = "https://arcprize.org/media/images/blog/arc-agi-task-1ae2feb7.png?v=2"
     for route in ("/tools/", "/en/tools/"):
         html = route_file(site, route).read_text(encoding="utf-8")
         if arc_agi_2_cover not in html:
             errors.append(f"{route}: Kaggle Agent ARC-AGI-2 cover missing")
+        if arc_agi_2_remote_cover in html:
+            errors.append(f"{route}: Kaggle Agent cover must be served locally")
 
     for route in ("/spark/", "/en/spark/"):
         parser = parsed_pages.get(route)
@@ -515,7 +518,10 @@ def main() -> int:
 
     rebuttal_url = "https://rebuttal-reader-functionhx.functionhx.chatgpt.site/"
     rebuttal_github = "https://github.com/Functionhx/rebuttal-reader"
-    rebuttal_cover = "https://raw.githubusercontent.com/Functionhx/rebuttal-reader/main/public/og.png?raw=1"
+    rebuttal_cover = "/assets/img/tools/rebuttal-reader-cover.webp"
+    rebuttal_remote_cover = (
+        "https://raw.githubusercontent.com/Functionhx/rebuttal-reader/main/public/og.png?raw=1"
+    )
     for route in ("/tools/", "/en/tools/"):
         parser = parsed_pages.get(route)
         if parser and rebuttal_url not in parser.links:
@@ -525,6 +531,15 @@ def main() -> int:
         html = route_file(site, route).read_text(encoding="utf-8")
         if rebuttal_cover not in html:
             errors.append(f"{route}: Rebuttal Reader README cover missing")
+        if rebuttal_remote_cover in html:
+            errors.append(f"{route}: Rebuttal Reader cover must be served locally")
+
+    for cover in (arc_agi_2_cover, rebuttal_cover):
+        cover_file = site / cover.removeprefix("/")
+        if not cover_file.exists():
+            errors.append(f"built asset missing: {cover}")
+        elif cover_file.stat().st_size > 200_000:
+            errors.append(f"built tool cover is unexpectedly large: {cover}")
 
     if errors:
         print("Built-site validation failed:", file=sys.stderr)
