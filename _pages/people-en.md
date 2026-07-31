@@ -5,7 +5,7 @@ title: people
 description: members of the lab or group
 lang: en
 translation_key: people
-nav: true
+nav: false
 nav_order: 7
 profiles:
   - align: right

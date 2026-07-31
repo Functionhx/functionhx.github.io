@@ -5,7 +5,7 @@ title: 人物
 description: 实验室或团队成员
 lang: zh
 translation_key: people
-nav: true
+nav: false
 nav_order: 7
 profiles:
   - align: right

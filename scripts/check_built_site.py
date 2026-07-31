@@ -290,9 +290,7 @@ def main() -> int:
         "博客",
         "论文",
         "项目",
-        "仓库",
         "简历",
-        "人物",
         "动态",
         "工具",
         "闪耀",
@@ -305,9 +303,7 @@ def main() -> int:
         "blog",
         "publications",
         "projects",
-        "repositories",
         "CV",
-        "people",
         "news",
         "tools",
         "Spark",
@@ -319,10 +315,17 @@ def main() -> int:
         errors.append("/: collapsed more navigation must not render")
     if "more" in english_nav:
         errors.append("/en/: collapsed more navigation must not render")
-    for label in ("教学", "书架", "思考", "日志"):
+    for label in ("教学", "书架", "思考", "日志", "人物", "仓库"):
         if label in chinese_nav:
             errors.append(f"/: removed navigation label {label!r} still renders")
-    for label in ("teaching", "bookshelf", "thoughts", "logs"):
+    for label in (
+        "teaching",
+        "bookshelf",
+        "thoughts",
+        "logs",
+        "people",
+        "repositories",
+    ):
         if label in english_nav:
             errors.append(f"/en/: removed navigation label {label!r} still renders")
 
