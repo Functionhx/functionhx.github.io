@@ -1,0 +1,35 @@
+[Unit]
+Description=Functionhx Spark Vault
+Documentation=https://github.com/Functionhx/functionhx.github.io
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=spark-vault
+Group=spark-vault
+WorkingDirectory=/opt/functionhx-spark-vault
+EnvironmentFile=/etc/functionhx-spark-vault.env
+ExecStart=/usr/bin/node /opt/functionhx-spark-vault/server.mjs
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=20s
+UMask=0077
+
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+RestrictNamespaces=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
