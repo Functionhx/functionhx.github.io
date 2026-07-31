@@ -200,6 +200,9 @@ def main() -> int:
         'method: "PATCH"',
         "force: false",
         "_posts/",
+        '"published: " + (values.published ? "true" : "false")',
+        'setYamlValue(frontMatter, "published"',
+        "loadPrivateDrafts",
     ):
         if contract not in spark_writer_text:
             errors.append(

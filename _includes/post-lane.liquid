@@ -3,18 +3,52 @@
 {% assign visible_post_count = 0 %}
 {% if page.translation_key == 'spark' %}
   <div class="site-spark-toolbar">
-    <button id="site-spark-create" type="button" class="site-spark-create">
-      <i class="fa-solid fa-plus" aria-hidden="true"></i>
-      {% if current_lang == 'en' %}New Spark{% else %}新建闪耀{% endif %}
-    </button>
+    <div class="site-spark-toolbar__actions">
+      <button id="site-spark-create" type="button" class="site-spark-create">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        {% if current_lang == 'en' %}New Spark{% else %}新建闪耀{% endif %}
+      </button>
+      <button id="site-spark-drafts" type="button" class="site-spark-drafts-toggle">
+        <i class="fa-solid fa-lock" aria-hidden="true"></i>
+        {% if current_lang == 'en' %}Private drafts{% else %}私密草稿{% endif %}
+      </button>
+    </div>
     <span>
-      {% if current_lang == 'en' %}Drafts are saved in this browser as you type.{% else %}随写随存，发布时再连接 GitHub。{% endif %}
+      {% if current_lang == 'en' -%}
+        New entries are hidden from the site by default; repository source is public.
+      {%- else -%}
+        新内容默认不在网站公开；仓库源文件仍是公开的。
+      {%- endif %}
     </span>
   </div>
+  <section id="site-spark-drafts-panel" class="site-spark-drafts-panel" hidden aria-labelledby="site-spark-drafts-heading">
+    <header>
+      <div>
+        <p>
+          {% if current_lang == 'en' %}OWNER WORKSPACE{% else %}站长工作区{% endif %}
+        </p>
+        <h2 id="site-spark-drafts-heading">
+          {% if current_lang == 'en' %}Private drafts{% else %}私密草稿{% endif %}
+        </h2>
+      </div>
+      <button
+        id="site-spark-drafts-close"
+        class="site-spark-writer__icon-button"
+        type="button"
+        title="{% if current_lang == 'en' %}Close private drafts{% else %}关闭私密草稿{% endif %}"
+        aria-label="{% if current_lang == 'en' %}Close private drafts{% else %}关闭私密草稿{% endif %}"
+      >
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </header>
+    <p id="site-spark-drafts-status" role="status" aria-live="polite"></p>
+    <ul id="site-spark-drafts-list"></ul>
+  </section>
   {% include spark-writer.liquid mode='create' %}
   <noscript>
     <style>
       #site-spark-create,
+      #site-spark-drafts,
       .site-spark-edit-trigger {
         display: none;
       }

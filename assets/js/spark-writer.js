@@ -24,8 +24,9 @@
         authSuccess: "Connected as @Functionhx for this browser session.",
         collision: "That URL slug already exists. Change it in Publishing settings.",
         commitConflict: "One of these files changed on GitHub. Reopen it before publishing your changes.",
-        commitFailed: "The Spark entry could not be published.",
-        commitSuccess: "Both languages were committed together. Follow the publishing progress in the corner.",
+        commitFailed: "The Spark entry could not be saved.",
+        commitPrivateSuccess: "Saved as website-private. Reopen it from Private drafts whenever you want to make it public.",
+        commitPublicSuccess: "Saved as public in both languages. Follow the deployment progress in the corner.",
         confirmDiscard: "Discard this browser draft?",
         connected: "Disconnect @Functionhx",
         disconnectConfirm: "Forget the trusted GitHub token on this device?",
@@ -37,12 +38,18 @@
         editing: "Loading both language files…",
         editingFailed: "Both language files could not be loaded.",
         idle: "Start writing. Changes will be saved in this browser automatically.",
-        incompleteEn: "Add an English title and body before publishing.",
-        incompleteZh: "Add a Chinese title and body before publishing.",
+        incompleteEn: "Add an English title and body before saving.",
+        incompleteZh: "Add a Chinese title and body before saving.",
         invalidDate: "Choose a valid date and time in Publishing settings.",
         invalidSlug: "The URL slug may contain only lowercase letters, numbers, and hyphens.",
-        noChanges: "There are no unpublished changes.",
-        publishing: "Creating one commit for both languages…",
+        noChanges: "There are no unsaved changes.",
+        privateDraftsEmpty: "No website-private Spark drafts were found.",
+        privateDraftsFailed: "Private drafts could not be loaded.",
+        privateDraftsFound: (count) =>
+          String(count) + (count === 1 ? " website-private draft found." : " website-private drafts found.") + " Repository source remains public.",
+        privateDraftsLoading: "Loading private drafts from GitHub…",
+        privateDraftOpen: "Continue editing",
+        saving: "Creating one commit for both languages…",
         translationCanceled: "Translation canceled; the Chinese draft is unchanged.",
         translationFailed: "The English draft could not be translated.",
         translationReady: "English translation is ready for review and remains a local draft.",
@@ -60,8 +67,9 @@
         authSuccess: "本次浏览器会话已连接为 @Functionhx。",
         collision: "这个网址短名已经存在，请在“发布设置”里换一个。",
         commitConflict: "这组文件已经在 GitHub 上发生变化，请重新打开后再发布。",
-        commitFailed: "无法发布这条闪耀。",
-        commitSuccess: "中英文已在同一个 Commit 中提交，请在右下角查看发布进度。",
+        commitFailed: "无法保存这条闪耀。",
+        commitPrivateSuccess: "已保存为网站私密稿；以后可从“私密草稿”重新打开并设为公开。",
+        commitPublicSuccess: "中英文已公开保存，请在右下角查看部署进度。",
         confirmDiscard: "丢弃这份浏览器草稿？",
         connected: "退出 @Functionhx",
         disconnectConfirm: "从这台设备移除已记住的 GitHub 令牌？",
@@ -73,12 +81,17 @@
         editing: "正在载入这条闪耀的中英文内容…",
         editingFailed: "无法载入完整的中英文内容。",
         idle: "直接开始写，修改会自动保存在这个浏览器中。",
-        incompleteEn: "发布前还需要补齐英文标题和正文。",
-        incompleteZh: "发布前还需要补齐中文标题和正文。",
+        incompleteEn: "保存前还需要补齐英文标题和正文。",
+        incompleteZh: "保存前还需要补齐中文标题和正文。",
         invalidDate: "请在“发布设置”里填写有效的日期与时间。",
         invalidSlug: "网址短名只能包含小写字母、数字和连字符。",
-        noChanges: "当前没有尚未发布的修改。",
-        publishing: "正在为中英文创建同一个 Commit…",
+        noChanges: "当前没有尚未保存的修改。",
+        privateDraftsEmpty: "没有找到网站私密的闪耀草稿。",
+        privateDraftsFailed: "无法载入私密草稿。",
+        privateDraftsFound: (count) => "找到 " + String(count) + " 条网站私密稿；仓库源文件仍是公开的。",
+        privateDraftsLoading: "正在从 GitHub 载入私密草稿…",
+        privateDraftOpen: "继续编辑",
+        saving: "正在为中英文创建同一个 Commit…",
         translationCanceled: "已取消翻译，中文稿保持不变。",
         translationFailed: "无法生成英文译稿。",
         translationReady: "英文译稿已经生成，请检查；内容仍是本地草稿。",
@@ -119,10 +132,16 @@
     create: document.getElementById("site-spark-create"),
     date: document.getElementById("site-spark-writer-date"),
     discard: document.getElementById("site-spark-writer-discard"),
+    drafts: document.getElementById("site-spark-drafts"),
+    draftsClose: document.getElementById("site-spark-drafts-close"),
+    draftsList: document.getElementById("site-spark-drafts-list"),
+    draftsPanel: document.getElementById("site-spark-drafts-panel"),
+    draftsStatus: document.getElementById("site-spark-drafts-status"),
     heading: document.getElementById("site-spark-writer-heading"),
     kind: document.getElementById("site-spark-writer-kind"),
     message: document.getElementById("site-spark-writer-message"),
     publish: document.getElementById("site-spark-writer-publish"),
+    published: document.getElementById("site-spark-writer-published"),
     result: document.getElementById("site-spark-writer-result"),
     slug: document.getElementById("site-spark-writer-slug"),
     status: document.getElementById("site-spark-writer-status"),
@@ -130,8 +149,9 @@
     translate: document.getElementById("site-spark-writer-translate"),
   };
 
+  const optionalElements = new Set(["create", "drafts", "draftsClose", "draftsList", "draftsPanel", "draftsStatus"]);
   const requiredElements = Object.entries(elements)
-    .filter(([name]) => name !== "create")
+    .filter(([name]) => !optionalElements.has(name))
     .map(([, element]) => element);
   if (!fields.zh.body || !fields.en.body || requiredElements.some((element) => element === null)) {
     return;
@@ -146,7 +166,7 @@
   let currentDraftKey = createDraftKey;
   let draftTimer = 0;
   let initialSnapshot = "";
-  let pendingPublish = false;
+  let pendingAction = "";
   let slugIsAutomatic = true;
   let sourcePaths = { zh: "", en: "" };
   let originals = { zh: null, en: null };
@@ -194,7 +214,9 @@
     elements.close.disabled = nextBusy;
     elements.connect.disabled = nextBusy;
     elements.discard.disabled = nextBusy;
+    if (elements.drafts) elements.drafts.disabled = nextBusy;
     elements.publish.disabled = nextBusy;
+    elements.published.disabled = nextBusy;
     elements.translate.disabled = nextBusy;
     elements.authConnect.disabled = nextBusy;
   }
@@ -226,6 +248,7 @@
       },
       kind: elements.kind.value,
       message: elements.message.value,
+      published: elements.published.checked,
       slug: elements.slug.value,
       zh: {
         body: fields.zh.body.value,
@@ -247,6 +270,7 @@
     elements.date.value = values.date || localDateTime();
     elements.slug.value = values.slug || defaultSlug();
     elements.comments.checked = values.comments !== false;
+    elements.published.checked = values.published === true;
     elements.message.value = values.message || "";
     updateCompletion();
   }
@@ -299,6 +323,9 @@
     try {
       const draft = JSON.parse(window.localStorage.getItem(currentDraftKey) || "null");
       if (!draft || !draft.values) return false;
+      if (typeof draft.values.published !== "boolean") {
+        draft.values.published = elements.published.checked;
+      }
       writeValues(draft.values);
       slugIsAutomatic = draft.slugIsAutomatic !== false;
       return true;
@@ -394,7 +421,7 @@
       `title: ${JSON.stringify(localized.title.trim())}`,
       `slug: ${JSON.stringify(values.slug)}`,
       `date: ${date}`,
-      "published: true",
+      "published: " + (values.published ? "true" : "false"),
       `description: ${JSON.stringify(description)}`,
       `permalink: ${permalink}`,
       `lang: ${language}`,
@@ -423,6 +450,7 @@
     frontMatter = setYamlValue(frontMatter, "description", description);
     frontMatter = setYamlValue(frontMatter, "date", toJekyllDate(values.date), "raw");
     frontMatter = setYamlValue(frontMatter, "kind", values.kind, "raw");
+    frontMatter = setYamlValue(frontMatter, "published", values.published, "boolean");
     frontMatter = setYamlValue(frontMatter, "giscus_comments", values.comments, "boolean");
     const normalized = `---\n${frontMatter}\n---\n${localized.body.replace(/\r\n/g, "\n").trimEnd()}\n`;
     const content = original.newline === "\r\n" ? normalized.replace(/\n/g, "\r\n") : normalized;
@@ -515,6 +543,107 @@
     return { ...splitSource(source), sha: remote.sha, source };
   }
 
+  function setDraftsStatus(message, state = "") {
+    if (!elements.draftsStatus) return;
+    elements.draftsStatus.textContent = message;
+    if (state) elements.draftsStatus.dataset.state = state;
+    else delete elements.draftsStatus.dataset.state;
+  }
+
+  function draftMetadata(source, path, language) {
+    return {
+      date: extractYamlScalar(source.frontMatter, "date"),
+      kind: extractYamlScalar(source.frontMatter, "kind"),
+      language,
+      path,
+      published: extractYamlBoolean(source.frontMatter, "published"),
+      title: extractYamlScalar(source.frontMatter, "title"),
+      translationKey: extractYamlScalar(source.frontMatter, "translation_key"),
+    };
+  }
+
+  function renderPrivateDrafts(drafts) {
+    elements.draftsList.replaceChildren();
+    setDraftsStatus(drafts.length ? strings.privateDraftsFound(drafts.length) : strings.privateDraftsEmpty);
+    for (const pair of drafts) {
+      const item = document.createElement("li");
+      const meta = document.createElement("div");
+      meta.className = "site-spark-draft-meta";
+      const title = document.createElement("strong");
+      title.textContent = pair.zh.title || pair.en.title || pair.zh.translationKey;
+      const detail = document.createElement("span");
+      detail.textContent = (pair.zh.date || "").slice(0, 16).replace("T", " ");
+      meta.append(title, detail);
+
+      const open = document.createElement("button");
+      open.type = "button";
+      open.className = "site-spark-draft-open";
+      open.textContent = strings.privateDraftOpen;
+      open.addEventListener("click", () => {
+        elements.draftsPanel.hidden = true;
+        openEdit(
+          {
+            enPath: pair.en.path,
+            translationKey: pair.zh.translationKey,
+            zhPath: pair.zh.path,
+          },
+          open
+        );
+      });
+      item.append(meta, open);
+      elements.draftsList.append(item);
+    }
+  }
+
+  async function loadPrivateDrafts() {
+    if (!elements.draftsPanel) return;
+    await restorePromise;
+    if (!activeToken) {
+      openAuthDialog("drafts");
+      return;
+    }
+    if (!root.hidden) closeWriter();
+    elements.draftsPanel.hidden = false;
+    elements.draftsList.replaceChildren();
+    setDraftsStatus(strings.privateDraftsLoading);
+    setBusy(true);
+    try {
+      const tree = await githubRequest("/repos/" + repository + "/git/trees/" + encodeURIComponent(branch) + "?recursive=1", { token: activeToken });
+      if (tree.truncated) throw new Error("Repository tree response was truncated.");
+      const paths = (tree.tree || [])
+        .filter((item) => item.type === "blob" && /^_posts\/.+-(zh|en)\.(md|markdown)$/.test(item.path))
+        .map((item) => item.path);
+      const records = (
+        await Promise.all(
+          paths.map(async (path) => {
+            const language = /-en\.(md|markdown)$/.test(path) ? "en" : "zh";
+            try {
+              return draftMetadata(await loadRemoteSource(language, path), path, language);
+            } catch (_error) {
+              return null;
+            }
+          })
+        )
+      ).filter(Boolean);
+      const groups = new Map();
+      for (const record of records) {
+        if (!record.translationKey || !["note", "log"].includes(record.kind)) continue;
+        const pair = groups.get(record.translationKey) || {};
+        pair[record.language] = record;
+        groups.set(record.translationKey, pair);
+      }
+      const drafts = Array.from(groups.values())
+        .filter((pair) => pair.zh && pair.en && pair.zh.published === false)
+        .sort((a, b) => (b.zh.date || "").localeCompare(a.zh.date || ""));
+      renderPrivateDrafts(drafts);
+    } catch (error) {
+      if (error.status === 401 || error.status === 403) await disconnectGitHub(false);
+      setDraftsStatus((strings.privateDraftsFailed + " " + (error.message || "")).trim(), "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function valuesFromSources(zhSource, enSource) {
     const zhFrontMatter = zhSource.frontMatter;
     const enFrontMatter = enSource.frontMatter;
@@ -528,6 +657,7 @@
       },
       kind: extractYamlScalar(zhFrontMatter, "kind") || "note",
       message: "",
+      published: extractYamlBoolean(zhFrontMatter, "published"),
       slug: extractYamlScalar(zhFrontMatter, "slug"),
       zh: {
         body: zhSource.body,
@@ -551,6 +681,7 @@
       en: { body: "", summary: "", title: "" },
       kind: "note",
       message: "",
+      published: false,
       slug: defaultSlug(now),
       zh: { body: "", summary: "", title: "" },
     });
@@ -597,6 +728,7 @@
   }
 
   function openCreate(trigger = elements.create || toggle) {
+    if (elements.draftsPanel) elements.draftsPanel.hidden = true;
     if (!root.hidden && currentMode === "create") {
       selectLanguage(currentLanguage, true);
       return;
@@ -610,6 +742,7 @@
   }
 
   function openEdit(config, trigger = toggle) {
+    if (elements.draftsPanel) elements.draftsPanel.hidden = true;
     if (!root.hidden) saveDraft(false);
     activeTrigger = trigger;
     revealWriter();
@@ -625,8 +758,8 @@
     if (activeTrigger && typeof activeTrigger.focus === "function") activeTrigger.focus();
   }
 
-  function openAuthDialog(shouldPublish = false) {
-    pendingPublish = shouldPublish;
+  function openAuthDialog(action = "") {
+    pendingAction = action;
     setAuthStatus("");
     elements.token.value = "";
     if (typeof authDialog.showModal === "function") authDialog.showModal();
@@ -677,7 +810,7 @@
       await disconnectGitHub(true);
       return;
     }
-    openAuthDialog(false);
+    openAuthDialog();
   }
 
   async function connectGitHub() {
@@ -699,12 +832,13 @@
       const saved = await saveGitHubSession(candidate);
       setConnection({ token: candidate });
       setAuthStatus(saved.failed ? strings.authRememberFailed : saved.remembered ? strings.authRemembered : strings.authSuccess, "success");
-      const continuePublishing = pendingPublish;
-      pendingPublish = false;
+      const continueWith = pendingAction;
+      pendingAction = "";
       window.setTimeout(
         () => {
           closeAuthDialog();
-          if (continuePublishing) publishPair();
+          if (continueWith === "publish") publishPair();
+          if (continueWith === "drafts") loadPrivateDrafts();
         },
         saved.failed ? 900 : 350
       );
@@ -770,7 +904,11 @@
     });
 
     const values = readValues();
-    const defaultMessage = currentMode === "create" ? `content: add Spark "${values.slug}"` : `content: update Spark "${values.slug}"`;
+    const visibility = values.published ? "public" : "private";
+    const defaultMessage =
+      currentMode === "create"
+        ? "content: add " + visibility + ' Spark "' + values.slug + '"'
+        : "content: update " + visibility + ' Spark "' + values.slug + '"';
     const commit = await githubRequest(`/repos/${repository}/git/commits`, {
       body: {
         message: values.message.trim() || defaultMessage,
@@ -816,12 +954,12 @@
       return;
     }
     if (!activeToken) {
-      openAuthDialog(true);
+      openAuthDialog("publish");
       return;
     }
 
     setBusy(true);
-    setStatus(strings.publishing);
+    setStatus(strings.saving);
     elements.result.hidden = true;
     const modeBeforeCommit = currentMode;
     const draftKeyBeforeCommit = currentDraftKey;
@@ -844,7 +982,7 @@
         }
         initialSnapshot = snapshot();
       }
-      setStatus(strings.commitSuccess, "success");
+      setStatus(readValues().published ? strings.commitPublicSuccess : strings.commitPrivateSuccess, "success");
       if (result.commit.html_url) {
         elements.result.href = result.commit.html_url;
         elements.result.textContent = strings.viewCommit;
@@ -941,6 +1079,13 @@
   });
 
   if (elements.create) elements.create.addEventListener("click", () => openCreate(elements.create));
+  if (elements.drafts) elements.drafts.addEventListener("click", loadPrivateDrafts);
+  if (elements.draftsClose) {
+    elements.draftsClose.addEventListener("click", () => {
+      elements.draftsPanel.hidden = true;
+      elements.drafts.focus();
+    });
+  }
   elements.close.addEventListener("click", closeWriter);
   elements.discard.addEventListener("click", discardDraft);
   elements.connect.addEventListener("click", handleConnectButton);
@@ -975,7 +1120,7 @@
     }
   }
 
-  for (const field of [elements.comments, elements.date, elements.kind, elements.message]) {
+  for (const field of [elements.comments, elements.date, elements.kind, elements.message, elements.published]) {
     field.addEventListener("input", handleChange);
     field.addEventListener("change", handleChange);
   }
@@ -986,7 +1131,7 @@
   });
 
   elements.authCancel.addEventListener("click", () => {
-    pendingPublish = false;
+    pendingAction = "";
     closeAuthDialog();
   });
   elements.authConnect.addEventListener("click", connectGitHub);

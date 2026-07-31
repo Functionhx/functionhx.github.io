@@ -40,6 +40,10 @@ and write in the page itself; there is no separate editor route or split
 source/preview screen. Chinese and English are written as one pair, autosaved
 locally, and published to two independent `_posts` files in one atomic commit.
 Each Spark item can also be reopened from the index and edited in place.
+New Spark pairs are website-private by default (`published: false`). The owner
+can reopen them from `Private drafts` and explicitly make both languages public.
+Because this site repository is public, website-private means hidden from the
+built site—not confidential: the Markdown source and Git history remain public.
 
 The gear icon opens the in-site section manager. Existing bilingual sections
 can be shown or hidden together. New paired sections can be created as a blank

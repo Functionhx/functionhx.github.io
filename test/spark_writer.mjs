@@ -11,6 +11,10 @@ const editPaths = {
   en: "_posts/2026-07-30-existing-spark-en.md",
   zh: "_posts/2026-07-30-existing-spark-zh.md",
 };
+const privatePaths = {
+  en: "_posts/2026-07-29-private-spark-en.md",
+  zh: "_posts/2026-07-29-private-spark-zh.md",
+};
 const editSources = {
   en: `---
 layout: post
@@ -51,6 +55,48 @@ giscus_comments: true
 ---
 
 已有中文正文。
+`,
+};
+const privateSources = {
+  en: `---
+layout: post
+title: "Private Spark"
+slug: private-spark
+date: 2026-07-29 09:15:00 +0800
+published: false
+description: "A private note."
+permalink: /en/spark/private-spark/
+lang: en
+locale: en
+translation_key: spark-private-spark
+kind: note
+tags: []
+categories: []
+related_posts: false
+giscus_comments: true
+---
+
+Private English body.
+`,
+  zh: `---
+layout: post
+title: "私密闪耀"
+slug: private-spark
+date: 2026-07-29 09:15:00 +0800
+published: false
+description: "一条私密笔记。"
+permalink: /spark/private-spark/
+lang: zh
+locale: zh
+translation_key: spark-private-spark
+kind: note
+tags: []
+categories: []
+related_posts: false
+giscus_comments: true
+---
+
+私密中文正文。
 `,
 };
 
@@ -193,12 +239,21 @@ await page.route("https://api.github.com/**", async (route) => {
   const contentsPrefix = "/repos/Functionhx/functionhx.github.io/contents/";
   if (pathname.startsWith(contentsPrefix)) {
     const sourcePath = pathname.slice(contentsPrefix.length);
-    const language = sourcePath === editPaths.zh ? "zh" : sourcePath === editPaths.en ? "en" : "";
-    if (language) {
+    const fixture =
+      sourcePath === editPaths.zh
+        ? { source: editSources.zh, sha: "existing-zh-sha" }
+        : sourcePath === editPaths.en
+          ? { source: editSources.en, sha: "existing-en-sha" }
+          : sourcePath === privatePaths.zh
+            ? { source: privateSources.zh, sha: "private-zh-sha" }
+            : sourcePath === privatePaths.en
+              ? { source: privateSources.en, sha: "private-en-sha" }
+              : null;
+    if (fixture) {
       await route.fulfill({
         body: JSON.stringify({
-          content: Buffer.from(editSources[language], "utf8").toString("base64"),
-          sha: `existing-${language}-sha`,
+          content: Buffer.from(fixture.source, "utf8").toString("base64"),
+          sha: fixture.sha,
           type: "file",
         }),
         contentType: "application/json",
@@ -212,6 +267,19 @@ await page.route("https://api.github.com/**", async (route) => {
       contentType: "application/json",
       headers: corsHeaders,
       status: 404,
+    });
+    return;
+  }
+
+  if (pathname === "/repos/Functionhx/functionhx.github.io/git/trees/main" && request.method() === "GET") {
+    await route.fulfill({
+      body: JSON.stringify({
+        tree: [...Object.values(editPaths), ...Object.values(privatePaths)].map((path) => ({ path, type: "blob" })),
+        truncated: false,
+      }),
+      contentType: "application/json",
+      headers: corsHeaders,
+      status: 200,
     });
     return;
   }
@@ -291,6 +359,7 @@ try {
   await page.locator("#site-spark-writer").waitFor({ state: "visible" });
   assert.equal(await page.locator("#site-rendered-content").isVisible(), true, "writing should stay inside the Spark page");
   assert.equal(await page.locator("#site-inline-editor").isVisible(), false, "the source editor must stay closed");
+  assert.equal(await page.locator("#site-spark-writer-published").isChecked(), false, "new Sparks must default to website-private");
 
   await page.locator("#site-spark-writer-title-zh").fill("第一条闪耀");
   await page.locator("#site-spark-writer-summary-zh").fill("第一条直接在站内写下的笔记。");
@@ -331,6 +400,8 @@ try {
   assert.ok(createdZh && createdEn, "both paired Spark files should be created");
   assert.match(createdZh.content, /translation_key: spark-first-spark/);
   assert.match(createdEn.content, /translation_key: spark-first-spark/);
+  assert.match(createdZh.content, /^published: false$/m);
+  assert.match(createdEn.content, /^published: false$/m);
   assert.match(createdZh.content, /permalink: \/spark\/first-spark\//);
   assert.match(createdEn.content, /permalink: \/en\/spark\/first-spark\//);
   assert.match(createdZh.content, /直接像写笔记一样写下中文正文/);
@@ -341,6 +412,23 @@ try {
   await page.locator("#site-spark-writer-close").click();
   await page.locator("#site-spark-create").click();
   assert.equal(await page.locator("#site-spark-writer-title-zh").inputValue(), "", "a second independent Spark can be started");
+  assert.equal(await page.locator("#site-spark-writer-published").isChecked(), false);
+  await page.locator("#site-spark-writer-close").click();
+
+  await page.locator("#site-spark-drafts").click();
+  await page.locator("#site-spark-drafts-panel").waitFor({ state: "visible" });
+  assert.equal(await page.locator("#site-spark-drafts-list li").count(), 1, "only the private paired Spark should be listed");
+  await page.locator(".site-spark-draft-open").click();
+  await page.waitForFunction(() => document.querySelector("#site-spark-writer-title-zh").value === "私密闪耀");
+  assert.equal(await page.locator("#site-spark-writer-title-en").inputValue(), "Private Spark");
+  assert.equal(await page.locator("#site-spark-writer-published").isChecked(), false);
+  await page.locator("#site-spark-writer-published").check();
+  await page.locator("#site-spark-writer-publish").click();
+  await page.waitForFunction(() => window.document.querySelector("#site-spark-writer-result").href.endsWith("spark-2"));
+
+  assert.equal(treeRequests.length, 2, "making a private draft public should create one paired commit");
+  assert.deepEqual(treeRequests[1].tree.map((item) => item.path).sort(), [privatePaths.en, privatePaths.zh].sort());
+  assert.ok(treeRequests[1].tree.every((item) => /^published: true$/m.test(item.content)));
   await page.locator("#site-spark-writer-close").click();
 
   await page.evaluate(
@@ -367,12 +455,12 @@ try {
   await page.locator("#site-spark-writer-body-en").fill("English body edited in place.");
   await page.locator("#site-spark-writer-publish").click();
   await page.locator("#site-spark-writer-result").waitFor({ state: "visible" });
-  await page.waitForFunction(() => window.document.querySelector("#site-spark-writer-result").href.endsWith("spark-2"));
+  await page.waitForFunction(() => window.document.querySelector("#site-spark-writer-result").href.endsWith("spark-3"));
 
-  assert.equal(treeRequests.length, 2, "editing should create a second atomic tree");
-  assert.deepEqual(treeRequests[1].tree.map((item) => item.path).sort(), [editPaths.en, editPaths.zh].sort());
-  assert.match(treeRequests[1].tree.find((item) => item.path === editPaths.zh).content, /原位修改后的中文正文/);
-  assert.match(treeRequests[1].tree.find((item) => item.path === editPaths.en).content, /English body edited in place/);
+  assert.equal(treeRequests.length, 3, "editing should create a third atomic tree");
+  assert.deepEqual(treeRequests[2].tree.map((item) => item.path).sort(), [editPaths.en, editPaths.zh].sort());
+  assert.match(treeRequests[2].tree.find((item) => item.path === editPaths.zh).content, /原位修改后的中文正文/);
+  assert.match(treeRequests[2].tree.find((item) => item.path === editPaths.en).content, /English body edited in place/);
   assert.ok(authorizations.every((value) => value === `Bearer ${testToken}`));
 
   const browserStorage = await page.evaluate(() => JSON.stringify({ ...window.localStorage, ...window.sessionStorage }));

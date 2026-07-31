@@ -321,18 +321,27 @@ def main() -> int:
         if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" not in html:
             errors.append(f"{route}: Kaggle data endpoint missing from generated HTML")
 
+    arc_agi_2_cover = "https://arcprize.org/media/images/blog/arc-agi-task-1ae2feb7.png?v=2"
+    for route in ("/tools/", "/en/tools/"):
+        html = route_file(site, route).read_text(encoding="utf-8")
+        if arc_agi_2_cover not in html:
+            errors.append(f"{route}: Kaggle Agent ARC-AGI-2 cover missing")
+
     for route in ("/spark/", "/en/spark/"):
         parser = parsed_pages.get(route)
         if not parser:
             continue
         missing_writer_ids = {
             "site-spark-create",
+            "site-spark-drafts",
+            "site-spark-drafts-panel",
             "site-spark-writer",
             "site-spark-writer-title-zh",
             "site-spark-writer-title-en",
             "site-spark-writer-body-zh",
             "site-spark-writer-body-en",
             "site-spark-writer-translate",
+            "site-spark-writer-published",
             "site-spark-writer-publish",
         }.difference(parser.ids)
         if missing_writer_ids:
@@ -503,11 +512,18 @@ def main() -> int:
             if not target.exists():
                 errors.append(f"{page_route}: broken internal link {href!r}")
 
-    rebuttal_url = "https://rebuttal-reader.tart-morel-3407.chatgpt.site/"
+    rebuttal_url = "https://rebuttal-reader-functionhx.functionhx.chatgpt.site/"
+    rebuttal_github = "https://github.com/Functionhx/rebuttal-reader"
+    rebuttal_cover = "https://raw.githubusercontent.com/Functionhx/rebuttal-reader/main/public/og.png?raw=1"
     for route in ("/tools/", "/en/tools/"):
         parser = parsed_pages.get(route)
         if parser and rebuttal_url not in parser.links:
             errors.append(f"{route}: Rebuttal Reader link missing")
+        if parser and rebuttal_github not in parser.links:
+            errors.append(f"{route}: Rebuttal Reader GitHub link missing")
+        html = route_file(site, route).read_text(encoding="utf-8")
+        if rebuttal_cover not in html:
+            errors.append(f"{route}: Rebuttal Reader README cover missing")
 
     if errors:
         print("Built-site validation failed:", file=sys.stderr)
