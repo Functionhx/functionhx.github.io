@@ -1,5 +1,13 @@
 <!doctype html>
 {% assign page_lang = page.lang | default: 'zh' %}
+{% assign spark_writer_enabled = false %}
+{% if page.translation_key == 'spark' %}
+  {% assign spark_writer_enabled = true %}
+{% elsif page.path contains '_posts/' %}
+  {% if page.kind == 'note' or page.kind == 'log' %}
+    {% assign spark_writer_enabled = true %}
+  {% endif %}
+{% endif %}
 <html lang="{% if page_lang == 'en' %}en{% else %}zh-CN{% endif %}">
   <!-- Head -->
   <head>
@@ -15,6 +23,9 @@
     {% endif %}
     {% include head.liquid %}
     <link rel="stylesheet" href="{{ '/assets/css/inline-editor.css' | relative_url }}">
+    {% if spark_writer_enabled %}
+      <link rel="stylesheet" href="{{ '/assets/css/spark-writer.css' | relative_url }}">
+    {% endif %}
 
     {% assign translation_pool = site.pages
       | concat: site.projects
@@ -39,7 +50,7 @@
 
   <!-- Body -->
   <body
-    class="{% if site.navbar_fixed %}fixed-top-nav{% endif %} {% unless site.footer_fixed %}sticky-bottom-footer{% endunless %}"
+    class="{% if site.navbar_fixed %}fixed-top-nav{% endif %}"
     data-page-language="{{ page_lang }}"
   >
     <!-- Header -->
@@ -87,11 +98,11 @@
       </div>
     </div>
 
-    <!-- Footer -->
-    {% include footer.liquid %}
-
     <!-- JavaScripts -->
     {% include scripts.liquid %}
     <script src="{{ '/assets/js/inline-editor.js' | relative_url }}"></script>
+    {% if spark_writer_enabled %}
+      <script src="{{ '/assets/js/spark-writer.js' | relative_url }}"></script>
+    {% endif %}
   </body>
 </html>

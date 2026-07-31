@@ -1,6 +1,26 @@
 {% assign current_lang = page.lang | default: 'zh' %}
 {% assign localized_posts = site.posts | where: 'lang', current_lang %}
 {% assign visible_post_count = 0 %}
+{% if page.translation_key == 'spark' %}
+  <div class="site-spark-toolbar">
+    <button id="site-spark-create" type="button" class="site-spark-create">
+      <i class="fa-solid fa-plus" aria-hidden="true"></i>
+      {% if current_lang == 'en' %}New Spark{% else %}新建闪耀{% endif %}
+    </button>
+    <span>
+      {% if current_lang == 'en' %}Drafts are saved in this browser as you type.{% else %}随写随存，发布时再连接 GitHub。{% endif %}
+    </span>
+  </div>
+  {% include spark-writer.liquid mode='create' %}
+  <noscript>
+    <style>
+      #site-spark-create,
+      .site-spark-edit-trigger {
+        display: none;
+      }
+    </style>
+  </noscript>
+{% endif %}
 <ul class="post-list">
   {% for post in localized_posts %}
     {% assign show_post = false %}
@@ -20,27 +40,46 @@
         {% assign read_time = post.feed_content | strip_html | number_of_words | divided_by: 180 | plus: 1 %}
       {% endif %}
       <li>
-        <h3>
-          {% if post.redirect == blank %}
-            <a class="post-title" href="{{ post.url | relative_url }}">{{ post.title }}</a>
-          {% elsif post.redirect contains '://' %}
-            <a class="post-title" href="{{ post.redirect }}" target="_blank" rel="noopener noreferrer">{{ post.title }}</a>
-            <svg width="2rem" height="2rem" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path
-                d="M17 13.5v6H5v-12h6m3-3h6v6m0-6-9 9"
-                class="icon_svg-stroke"
-                stroke="#999"
-                stroke-width="1.5"
-                fill="none"
-                fill-rule="evenodd"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              ></path>
-            </svg>
-          {% else %}
-            <a class="post-title" href="{{ post.redirect | relative_url }}">{{ post.title }}</a>
+        <div class="site-spark-list-heading">
+          <h3>
+            {% if post.redirect == blank %}
+              <a class="post-title" href="{{ post.url | relative_url }}">{{ post.title }}</a>
+            {% elsif post.redirect contains '://' %}
+              <a class="post-title" href="{{ post.redirect }}" target="_blank" rel="noopener noreferrer">{{ post.title }}</a>
+              <svg width="2rem" height="2rem" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path
+                  d="M17 13.5v6H5v-12h6m3-3h6v6m0-6-9 9"
+                  class="icon_svg-stroke"
+                  stroke="#999"
+                  stroke-width="1.5"
+                  fill="none"
+                  fill-rule="evenodd"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ></path>
+              </svg>
+            {% else %}
+              <a class="post-title" href="{{ post.redirect | relative_url }}">{{ post.title }}</a>
+            {% endif %}
+          </h3>
+          {% if page.translation_key == 'spark' %}
+            {% assign spark_translations = site.posts | where: 'translation_key', post.translation_key %}
+            {% assign spark_zh_post = spark_translations | where: 'lang', 'zh' | first %}
+            {% assign spark_en_post = spark_translations | where: 'lang', 'en' | first %}
+            <button
+              class="site-spark-edit-trigger"
+              type="button"
+              title="{% if current_lang == 'en' %}Edit in place{% else %}原位编辑{% endif %}"
+              aria-label="{% if current_lang == 'en' %}Edit {{ post.title }} in place{% else %}原位编辑《{{ post.title }}》{% endif %}"
+              data-spark-edit
+              data-translation-key="{{ post.translation_key | escape }}"
+              data-source-path-zh="{{ spark_zh_post.path | escape }}"
+              data-source-path-en="{{ spark_en_post.path | escape }}"
+            >
+              <i class="fa-solid fa-pen" aria-hidden="true"></i>
+            </button>
           {% endif %}
-        </h3>
+        </div>
         <p>{{ post.description }}</p>
         <p class="post-meta">
           {{ read_time }}

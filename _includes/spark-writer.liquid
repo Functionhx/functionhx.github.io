@@ -1,0 +1,275 @@
+{% assign writer_lang = page.lang | default: 'zh' %}
+{% assign writer_mode = include.mode | default: 'create' %}
+{% assign writer_translation_key = page.translation_key | default: '' %}
+{% assign writer_zh_path = '' %}
+{% assign writer_en_path = '' %}
+{% if writer_mode == 'edit' %}
+  {% assign writer_translations = site.posts | where: 'translation_key', page.translation_key %}
+  {% assign writer_zh_post = writer_translations | where: 'lang', 'zh' | first %}
+  {% assign writer_en_post = writer_translations | where: 'lang', 'en' | first %}
+  {% if writer_zh_post %}
+    {% assign writer_zh_path = writer_zh_post.path %}
+  {% endif %}
+  {% if writer_en_post %}
+    {% assign writer_en_path = writer_en_post.path %}
+  {% endif %}
+{% endif %}
+
+{% if writer_lang == 'en' %}
+  {% assign writer_eyebrow = 'SPARK · DIRECT WRITING' %}
+  {% assign writer_new_heading = 'A new Spark' %}
+  {% assign writer_edit_heading = 'Edit this Spark' %}
+  {% assign writer_subtitle = 'Write first. Your browser saves as you type; GitHub is only needed when you publish.' %}
+  {% assign writer_zh_tab = '中文' %}
+  {% assign writer_en_tab = 'English' %}
+  {% assign writer_title_zh = 'Chinese title' %}
+  {% assign writer_title_en = 'English title' %}
+  {% assign writer_title_zh_placeholder = '先写下中文标题' %}
+  {% assign writer_title_en_placeholder = 'Write the English title' %}
+  {% assign writer_summary_zh = '中文摘要（可选）' %}
+  {% assign writer_summary_en = 'English summary (optional)' %}
+  {% assign writer_summary_zh_placeholder = '留空时会取正文开头' %}
+  {% assign writer_summary_en_placeholder = 'Uses the opening of the body when left blank' %}
+  {% assign writer_body_zh = '中文正文' %}
+  {% assign writer_body_en = 'English body' %}
+  {% assign writer_body_zh_placeholder = '从这里开始写……' %}
+  {% assign writer_body_en_placeholder = 'Start writing here…' %}
+  {% assign writer_settings = 'Publishing settings' %}
+  {% assign writer_kind = 'Type' %}
+  {% assign writer_kind_note = 'Thought / note' %}
+  {% assign writer_kind_log = 'Work log' %}
+  {% assign writer_date = 'Date and time' %}
+  {% assign writer_slug = 'URL slug' %}
+  {% assign writer_comments = 'Enable GitHub comments' %}
+  {% assign writer_message = 'Commit message' %}
+  {% assign writer_connect = 'Connect GitHub' %}
+  {% assign writer_publish = 'Publish both languages' %}
+  {% assign writer_discard = 'Discard draft' %}
+  {% assign writer_close = 'Close writer' %}
+  {% assign writer_idle = 'Start writing. Changes will be saved in this browser automatically.' %}
+{% else %}
+  {% assign writer_eyebrow = '闪耀 · 原位写作' %}
+  {% assign writer_new_heading = '写一条新的闪耀' %}
+  {% assign writer_edit_heading = '编辑这条闪耀' %}
+  {% assign writer_subtitle = '先直接写。浏览器会随写随存，只有发布时才需要连接 GitHub。' %}
+  {% assign writer_zh_tab = '中文' %}
+  {% assign writer_en_tab = 'English' %}
+  {% assign writer_title_zh = '中文标题' %}
+  {% assign writer_title_en = '英文标题' %}
+  {% assign writer_title_zh_placeholder = '写下标题' %}
+  {% assign writer_title_en_placeholder = 'Write the English title' %}
+  {% assign writer_summary_zh = '中文摘要（可选）' %}
+  {% assign writer_summary_en = '英文摘要（可选）' %}
+  {% assign writer_summary_zh_placeholder = '留空时自动取正文开头' %}
+  {% assign writer_summary_en_placeholder = 'Uses the opening of the body when left blank' %}
+  {% assign writer_body_zh = '中文正文' %}
+  {% assign writer_body_en = '英文正文' %}
+  {% assign writer_body_zh_placeholder = '从这里开始写……' %}
+  {% assign writer_body_en_placeholder = 'Start writing here…' %}
+  {% assign writer_settings = '发布设置' %}
+  {% assign writer_kind = '类型' %}
+  {% assign writer_kind_note = '思考 / 笔记' %}
+  {% assign writer_kind_log = '工作日志' %}
+  {% assign writer_date = '日期与时间' %}
+  {% assign writer_slug = '网址短名' %}
+  {% assign writer_comments = '开启 GitHub 评论' %}
+  {% assign writer_message = '提交说明' %}
+  {% assign writer_connect = '连接 GitHub' %}
+  {% assign writer_publish = '发布中英双语' %}
+  {% assign writer_discard = '丢弃草稿' %}
+  {% assign writer_close = '关闭写作区' %}
+  {% assign writer_idle = '直接开始写，修改会自动保存在这个浏览器中。' %}
+{% endif %}
+
+<section
+  id="site-spark-writer"
+  class="site-spark-writer"
+  data-language="{{ writer_lang }}"
+  data-initial-mode="{{ writer_mode }}"
+  data-repository="Functionhx/functionhx.github.io"
+  data-owner="Functionhx"
+  data-branch="main"
+  data-translation-key="{{ writer_translation_key | escape }}"
+  data-source-path-zh="{{ writer_zh_path | escape }}"
+  data-source-path-en="{{ writer_en_path | escape }}"
+  hidden
+  aria-labelledby="site-spark-writer-heading"
+>
+  <header class="site-spark-writer__header">
+    <div>
+      <p class="site-spark-writer__eyebrow">{{ writer_eyebrow }}</p>
+      <h2
+        id="site-spark-writer-heading"
+        data-new-heading="{{ writer_new_heading | escape }}"
+        data-edit-heading="{{ writer_edit_heading | escape }}"
+      >
+        {% if writer_mode == 'edit' %}{{ writer_edit_heading }}{% else %}{{ writer_new_heading }}{% endif %}
+      </h2>
+      <p>{{ writer_subtitle }}</p>
+    </div>
+    <button
+      id="site-spark-writer-close"
+      class="site-spark-writer__icon-button"
+      type="button"
+      title="{{ writer_close }}"
+      aria-label="{{ writer_close }}"
+    >
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </header>
+
+  <div class="site-spark-writer__language-tabs" role="tablist" aria-label="{% if writer_lang == 'en' %}Writing language{% else %}写作语言{% endif %}">
+    <button
+      id="site-spark-writer-tab-zh"
+      type="button"
+      role="tab"
+      aria-selected="{% if writer_lang == 'zh' %}true{% else %}false{% endif %}"
+      aria-controls="site-spark-writer-panel-zh"
+      data-language-tab="zh"
+    >
+      {{ writer_zh_tab }}
+      <span id="site-spark-writer-complete-zh" aria-hidden="true"></span>
+    </button>
+    <button
+      id="site-spark-writer-tab-en"
+      type="button"
+      role="tab"
+      aria-selected="{% if writer_lang == 'en' %}true{% else %}false{% endif %}"
+      aria-controls="site-spark-writer-panel-en"
+      data-language-tab="en"
+    >
+      {{ writer_en_tab }}
+      <span id="site-spark-writer-complete-en" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <div
+    id="site-spark-writer-panel-zh"
+    class="site-spark-writer__paper"
+    role="tabpanel"
+    aria-labelledby="site-spark-writer-tab-zh"
+    data-language-panel="zh"
+    {% if writer_lang == 'en' %}
+      hidden
+    {% endif %}
+  >
+    <label class="sr-only" for="site-spark-writer-title-zh">{{ writer_title_zh }}</label>
+    <input
+      id="site-spark-writer-title-zh"
+      class="site-spark-writer__title"
+      type="text"
+      placeholder="{{ writer_title_zh_placeholder }}"
+      autocomplete="off"
+      data-writer-field="title"
+      data-writer-language="zh"
+    >
+    <label class="sr-only" for="site-spark-writer-summary-zh">{{ writer_summary_zh }}</label>
+    <input
+      id="site-spark-writer-summary-zh"
+      class="site-spark-writer__summary"
+      type="text"
+      placeholder="{{ writer_summary_zh_placeholder }}"
+      autocomplete="off"
+      data-writer-field="summary"
+      data-writer-language="zh"
+    >
+    <label class="sr-only" for="site-spark-writer-body-zh">{{ writer_body_zh }}</label>
+    <textarea
+      id="site-spark-writer-body-zh"
+      class="site-spark-writer__body"
+      rows="12"
+      placeholder="{{ writer_body_zh_placeholder }}"
+      spellcheck="true"
+      data-writer-field="body"
+      data-writer-language="zh"
+    ></textarea>
+  </div>
+
+  <div
+    id="site-spark-writer-panel-en"
+    class="site-spark-writer__paper"
+    role="tabpanel"
+    aria-labelledby="site-spark-writer-tab-en"
+    data-language-panel="en"
+    {% if writer_lang != 'en' %}
+      hidden
+    {% endif %}
+  >
+    <label class="sr-only" for="site-spark-writer-title-en">{{ writer_title_en }}</label>
+    <input
+      id="site-spark-writer-title-en"
+      class="site-spark-writer__title"
+      type="text"
+      placeholder="{{ writer_title_en_placeholder }}"
+      autocomplete="off"
+      data-writer-field="title"
+      data-writer-language="en"
+    >
+    <label class="sr-only" for="site-spark-writer-summary-en">{{ writer_summary_en }}</label>
+    <input
+      id="site-spark-writer-summary-en"
+      class="site-spark-writer__summary"
+      type="text"
+      placeholder="{{ writer_summary_en_placeholder }}"
+      autocomplete="off"
+      data-writer-field="summary"
+      data-writer-language="en"
+    >
+    <label class="sr-only" for="site-spark-writer-body-en">{{ writer_body_en }}</label>
+    <textarea
+      id="site-spark-writer-body-en"
+      class="site-spark-writer__body"
+      rows="12"
+      placeholder="{{ writer_body_en_placeholder }}"
+      spellcheck="true"
+      data-writer-field="body"
+      data-writer-language="en"
+    ></textarea>
+  </div>
+
+  <details class="site-spark-writer__settings">
+    <summary>{{ writer_settings }}</summary>
+    <div class="site-spark-writer__settings-grid">
+      <label>
+        <span>{{ writer_kind }}</span>
+        <select id="site-spark-writer-kind">
+          <option value="note">{{ writer_kind_note }}</option>
+          <option value="log">{{ writer_kind_log }}</option>
+        </select>
+      </label>
+      <label>
+        <span>{{ writer_date }}</span>
+        <input id="site-spark-writer-date" type="datetime-local">
+      </label>
+      <label>
+        <span>{{ writer_slug }}</span>
+        <input id="site-spark-writer-slug" type="text" inputmode="url" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="site-spark-writer__check">
+        <input id="site-spark-writer-comments" type="checkbox" checked>
+        <span>{{ writer_comments }}</span>
+      </label>
+      <label class="site-spark-writer__message">
+        <span>{{ writer_message }}</span>
+        <input id="site-spark-writer-message" type="text" autocomplete="off">
+      </label>
+    </div>
+  </details>
+
+  <footer class="site-spark-writer__footer">
+    <p id="site-spark-writer-status" role="status" aria-live="polite">{{ writer_idle }}</p>
+    <div>
+      <button id="site-spark-writer-discard" class="site-spark-writer__button site-spark-writer__button--quiet" type="button">
+        {{ writer_discard }}
+      </button>
+      <button id="site-spark-writer-connect" class="site-spark-writer__button site-spark-writer__button--quiet" type="button">
+        <i class="fa-brands fa-github" aria-hidden="true"></i>
+        <span>{{ writer_connect }}</span>
+      </button>
+      <button id="site-spark-writer-publish" class="site-spark-writer__button site-spark-writer__button--primary" type="button">
+        {{ writer_publish }}
+      </button>
+    </div>
+  </footer>
+  <a id="site-spark-writer-result" class="site-spark-writer__result" hidden target="_blank" rel="external noopener"></a>
+</section>

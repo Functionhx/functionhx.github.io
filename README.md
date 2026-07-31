@@ -33,6 +33,12 @@ without navigating away from the site. Title, summary, publication state,
 comments, front matter, and body can be edited alongside a live preview.
 Drafts autosave only in that browser.
 
+Spark uses a lighter direct-writing flow. Choose `New Spark` on the Spark index
+and write in the page itself; there is no separate editor route or split
+source/preview screen. Chinese and English are written as one pair, autosaved
+locally, and published to two independent `_posts` files in one atomic commit.
+Each Spark item can also be reopened from the index and edited in place.
+
 Creating a commit requires a fine-grained GitHub token owned by `Functionhx`,
 restricted to this repository, with `Contents: write`. The token remains only
 in the current page's JavaScript memory and disappears on reload; it is never
@@ -55,6 +61,6 @@ bundle exec jekyll build
 python3 scripts/check_built_site.py _site
 ```
 
-The homepage Kaggle monitor reads
+The Kaggle Agent tool page reads
 `https://functionhx.github.io/kaggle-agent/data/dashboard.json` every five
 minutes and displays an unavailable state when that source is offline.

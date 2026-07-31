@@ -7,6 +7,7 @@
   const authDialog = document.getElementById("site-inline-editor-auth");
 
   if (!root || !toggle || !renderedContent || !authDialog) return;
+  if ((toggle.dataset.editorAction || "").startsWith("spark-")) return;
 
   const repository = root.dataset.repository;
   const owner = root.dataset.owner;

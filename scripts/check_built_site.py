@@ -129,6 +129,8 @@ def main() -> int:
         rendered_html = path.read_text(encoding="utf-8")
         parser.feed(rendered_html)
         parsed_pages[route] = parser
+        if 'role="contentinfo"' in rendered_html:
+            errors.append(f"{route}: removed global footer still renders")
 
         expected_language = "en" if route.startswith("/en/") else "zh-CN"
         if parser.html_lang != expected_language:
@@ -179,6 +181,25 @@ def main() -> int:
         html = route_file(site, route).read_text(encoding="utf-8")
         if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" not in html:
             errors.append(f"{route}: Kaggle data endpoint missing from generated HTML")
+
+    for route in ("/spark/", "/en/spark/"):
+        parser = parsed_pages.get(route)
+        if not parser:
+            continue
+        missing_writer_ids = {
+            "site-spark-create",
+            "site-spark-writer",
+            "site-spark-writer-title-zh",
+            "site-spark-writer-title-en",
+            "site-spark-writer-body-zh",
+            "site-spark-writer-body-en",
+            "site-spark-writer-publish",
+        }.difference(parser.ids)
+        if missing_writer_ids:
+            errors.append(
+                f"{route}: direct Spark writer controls missing "
+                f"{sorted(missing_writer_ids)}"
+            )
 
     article_sources = {
         "/blog/2026/embodied-ai-control-story/": (
@@ -253,9 +274,14 @@ def main() -> int:
         if missing_links:
             errors.append(f"{route}: missing social links {sorted(missing_links)}")
 
-    for asset in ("assets/css/inline-editor.css", "assets/js/inline-editor.js"):
+    for asset in (
+        "assets/css/inline-editor.css",
+        "assets/js/inline-editor.js",
+        "assets/css/spark-writer.css",
+        "assets/js/spark-writer.js",
+    ):
         if not (site / asset).is_file():
-            errors.append(f"/{asset}: inline editor asset missing")
+            errors.append(f"/{asset}: authoring asset missing")
 
     chinese_nav = " ".join(parsed_pages.get("/", PageParser()).nav_text)
     english_nav = " ".join(parsed_pages.get("/en/", PageParser()).nav_text)

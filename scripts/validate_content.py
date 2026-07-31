@@ -132,6 +132,8 @@ def main() -> int:
         errors.append("_config.yml: baseurl must be empty for the user Pages site")
     if config.get("enable_darkmode") is not True:
         errors.append("_config.yml: enable_darkmode must remain true")
+    if config.get("footer_fixed") is not False:
+        errors.append("_config.yml: the removed global footer must remain disabled")
     giscus = config.get("giscus", {})
     if giscus.get("repo") != "Functionhx/functionhx.github.io":
         errors.append("_config.yml: Giscus repository is not configured")
@@ -154,6 +156,26 @@ def main() -> int:
         if contract not in inline_editor_text:
             errors.append(
                 f"assets/js/inline-editor.js: integration contract {contract!r} missing"
+            )
+
+    spark_writer_path = ROOT / "assets" / "js" / "spark-writer.js"
+    spark_writer_text = (
+        spark_writer_path.read_text(encoding="utf-8")
+        if spark_writer_path.exists()
+        else ""
+    )
+    for contract in (
+        "window.localStorage",
+        "/git/trees",
+        'method: "POST"',
+        'method: "PATCH"',
+        "force: false",
+        "_posts/",
+    ):
+        if contract not in spark_writer_text:
+            errors.append(
+                f"assets/js/spark-writer.js: integration contract "
+                f"{contract!r} missing"
             )
 
     kaggle_path = ROOT / "_includes" / "kaggle-monitor.liquid"
