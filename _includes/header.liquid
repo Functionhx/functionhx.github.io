@@ -67,6 +67,36 @@
 {% endunless %}
 
 <style>
+  :root {
+    --site-nav-measure: min(72vw, 62rem);
+    --site-nav-gap: clamp(0.2rem, 0.65vw, 0.8rem);
+    --site-nav-link-padding: clamp(0.2rem, 0.4vw, 0.45rem);
+  }
+
+  html[data-nav-density='compact'] {
+    --site-nav-measure: min(68vw, 50rem);
+    --site-nav-gap: clamp(0.05rem, 0.35vw, 0.35rem);
+    --site-nav-link-padding: clamp(0.08rem, 0.2vw, 0.22rem);
+  }
+
+  html[data-nav-density='relaxed'] {
+    --site-nav-measure: min(82vw, 72rem);
+    --site-nav-gap: clamp(0.45rem, 1vw, 1.15rem);
+    --site-nav-link-padding: clamp(0.35rem, 0.55vw, 0.6rem);
+  }
+
+  #navbar .site-wordmark {
+    font-family: SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+    font-size: 0.94em;
+    font-weight: 650;
+    letter-spacing: -0.055em;
+  }
+
+  #navbar .site-wordmark__argument {
+    color: var(--global-theme-color);
+    font-weight: 500;
+  }
+
   @media (min-width: 992px) {
     #navbar .navbar-container {
       width: calc(100% - 2rem);
@@ -78,20 +108,37 @@
     }
 
     #navbar .navbar-container-home .navbar-collapse-main {
-      flex-basis: auto;
-      flex-grow: 0;
-      width: auto;
+      flex: 1 1 var(--site-nav-measure);
+      max-width: var(--site-nav-measure);
+      min-width: 0;
+      width: 100%;
     }
 
     #navbar .navbar-container-home .navbar-menu-list {
+      column-gap: var(--site-nav-gap);
+      justify-content: space-between;
       margin-left: 0;
+      width: 100%;
+    }
+
+    #navbar .navbar-container:not(.navbar-container-home) .navbar-menu-list {
+      column-gap: var(--site-nav-gap);
+      justify-content: flex-end;
+    }
+
+    #navbar .navbar-menu-list > .nav-item,
+    #navbar .navbar-menu-list > .toggle-container {
+      flex: 0 0 auto;
+    }
+
+    #navbar .navbar-menu-list .nav-link {
+      padding-right: var(--site-nav-link-padding);
+      padding-left: var(--site-nav-link-padding);
     }
   }
 
   @media (min-width: 992px) and (max-width: 1199.98px) {
     #navbar .navbar-menu-list > .nav-item > .nav-link {
-      padding-right: 0.35rem;
-      padding-left: 0.35rem;
       font-size: 0.85rem;
     }
 
@@ -149,23 +196,9 @@
     <div class="container navbar-container{% if page.home %} navbar-container-home{% endif %}">
       {% unless page.home %}
         <a class="navbar-brand title font-weight-lighter" href="{{ home_page.url | relative_url }}">
-          {% if current_lang == 'zh' %}
-            <span class="font-weight-bold">樊宇琛</span>
-          {% elsif site.title == 'blank' %}
-            {% if site.first_name %}
-              <span class="font-weight-bold">
-                {{- site.first_name -}}
-              </span>
-            {% endif %}
-            {% if site.middle_name %}
-              {{- site.middle_name -}}
-            {% endif %}
-            {% if site.last_name %}
-              {{- site.last_name -}}
-            {% endif %}
-          {% else %}
-            {{- site.title -}}
-          {% endif %}
+          <span class="site-wordmark" aria-label="{% if current_lang == 'en' %}f h x, Yuchen Fan's home{% else %}f h x，樊宇琛的主页{% endif %}">
+            f<span class="site-wordmark__argument" aria-hidden="true">(hx)</span>
+          </span>
         </a>
       {% elsif site.enable_navbar_social %}
         <!-- Social Icons -->

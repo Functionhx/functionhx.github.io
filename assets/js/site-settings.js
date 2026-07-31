@@ -11,6 +11,7 @@
   const repository = root.dataset.repository;
   const owner = root.dataset.owner;
   const branch = root.dataset.branch;
+  const uiSettingsPath = root.dataset.uiSettingsPath;
   const isEnglish = root.dataset.language === "en";
 
   const strings = isEnglish
@@ -26,13 +27,13 @@
         connected: "Disconnect @Functionhx",
         disconnectConfirm: "Forget the trusted GitHub token on this device?",
         disconnected: "The trusted GitHub connection was removed from this device.",
-        defaultMessage: "site: update sections",
+        defaultMessage: "site: update site settings",
         incompleteNew: "Add both titles and a URL slug for the new section.",
         invalidOrder: "Navigation order must be a number from 1 to 999.",
         invalidSlug: "The URL slug may contain only lowercase letters, numbers, and hyphens.",
-        loading: "Preparing all changed bilingual section files…",
+        loading: "Preparing all changed site settings…",
         missingChinese: "Add a Chinese title or description before translating.",
-        noChanges: "There are no section changes to commit.",
+        noChanges: "There are no site settings changes to commit.",
         pending: "Changes are ready in this panel but have not been committed.",
         translationCanceled: "Translation canceled; the Chinese fields are unchanged.",
         translationFailed: "The English fields could not be translated.",
@@ -54,13 +55,13 @@
         connected: "退出 @Functionhx",
         disconnectConfirm: "从这台设备移除已记住的 GitHub 令牌？",
         disconnected: "已从这台设备移除 GitHub 连接。",
-        defaultMessage: "site: update sections",
+        defaultMessage: "site: update site settings",
         incompleteNew: "新栏目需要同时填写中英文名称和网址短名。",
         invalidOrder: "导航顺序必须是 1 到 999 之间的数字。",
         invalidSlug: "网址短名只能包含小写字母、数字和连字符。",
-        loading: "正在准备所有发生变化的中英文栏目文件…",
+        loading: "正在准备所有发生变化的站点设置…",
         missingChinese: "请先填写中文名称或中文简介。",
-        noChanges: "当前没有需要提交的栏目修改。",
+        noChanges: "当前没有需要提交的站点设置。",
         pending: "修改已保留在这个面板中，但尚未提交。",
         translationCanceled: "已取消翻译，中文内容保持不变。",
         translationFailed: "无法生成英文翻译。",
@@ -95,8 +96,11 @@
     translate: document.getElementById("site-settings-translate"),
   };
   const sectionToggles = [...document.querySelectorAll("[data-section-toggle]")];
+  const navigationDensityInputs = [...document.querySelectorAll("[data-navigation-density]")];
 
-  if (Object.values(elements).some((element) => !element) || !sectionToggles.length) return;
+  if (Object.values(elements).some((element) => !element) || !sectionToggles.length || !navigationDensityInputs.length || !uiSettingsPath) {
+    return;
+  }
 
   let activeToken = "";
   let busy = false;
@@ -126,6 +130,9 @@
     elements.connect.disabled = nextBusy;
     elements.translate.disabled = nextBusy;
     sectionToggles.forEach((input) => {
+      input.disabled = nextBusy;
+    });
+    navigationDensityInputs.forEach((input) => {
       input.disabled = nextBusy;
     });
   }
@@ -163,6 +170,22 @@
 
   function changedSections() {
     return sectionToggles.filter((input) => input.checked !== (input.dataset.initialVisible === "true"));
+  }
+
+  function selectedNavigationDensity() {
+    return navigationDensityInputs.find((input) => input.checked)?.value || "auto";
+  }
+
+  function navigationDensityChanged() {
+    return selectedNavigationDensity() !== root.dataset.initialNavigationDensity;
+  }
+
+  function hasPendingSettings() {
+    return changedSections().length > 0 || navigationDensityChanged() || hasNewSection();
+  }
+
+  function previewNavigationDensity() {
+    document.documentElement.dataset.navDensity = selectedNavigationDensity();
   }
 
   function readNewSection() {
@@ -215,7 +238,7 @@
     elements.format.value = "page";
     elements.newVisible.checked = true;
     slugIsAutomatic = true;
-    setStatus(changedSections().length ? strings.pending : strings.noChanges);
+    setStatus(hasPendingSettings() ? strings.pending : strings.noChanges);
   }
 
   async function translateNewSection() {
@@ -303,6 +326,13 @@
     return `${source.slice(0, closing)}\n${replacement}${source.slice(closing)}`;
   }
 
+  function setNavigationDensity(source, density) {
+    if (!/^(?:auto|compact|relaxed)$/.test(density)) throw new Error("Unsupported navigation density");
+    const replacement = `navigation_density: ${density}`;
+    if (/^navigation_density:.*$/m.test(source)) return source.replace(/^navigation_density:.*$/m, replacement);
+    return `${source.trimEnd()}\n${replacement}\n`;
+  }
+
   function projectGridBody(language, slug) {
     return `<div class="projects">
   {% assign localized_projects = site.projects | where: "lang", "${language}" | where: "section_key", "${slug}" | sort: "importance" %}
@@ -359,7 +389,7 @@
     return decodeBase64Utf8(remote.content);
   }
 
-  async function prepareTreeEntries(headSha, sectionChanges, newSection) {
+  async function prepareTreeEntries(headSha, sectionChanges, newSection, navigationDensity) {
     const existingEntries = await Promise.all(
       sectionChanges.flatMap((input) =>
         ["zh", "en"].map(async (language) => {
@@ -376,7 +406,18 @@
       )
     );
 
-    if (!hasNewSection(newSection)) return existingEntries;
+    const uiEntries = [];
+    if (navigationDensity !== root.dataset.initialNavigationDensity) {
+      const source = await fetchFileAt(uiSettingsPath, headSha);
+      uiEntries.push({
+        content: setNavigationDensity(source, navigationDensity),
+        mode: "100644",
+        path: uiSettingsPath,
+        type: "blob",
+      });
+    }
+
+    if (!hasNewSection(newSection)) return [...existingEntries, ...uiEntries];
     const newPaths = {
       en: `_pages/${newSection.slug}-en.md`,
       zh: `_pages/${newSection.slug}-zh.md`,
@@ -393,6 +434,7 @@
 
     return [
       ...existingEntries,
+      ...uiEntries,
       ...["zh", "en"].map((language) => ({
         content: createPageSource(language, newSection),
         mode: "100644",
@@ -517,8 +559,9 @@
     if (busy) return;
     const sectionChanges = changedSections();
     const newSection = readNewSection();
+    const navigationDensity = selectedNavigationDensity();
     if (!validateNewSection(newSection)) return;
-    if (!sectionChanges.length && !hasNewSection(newSection)) {
+    if (!sectionChanges.length && !hasNewSection(newSection) && !navigationDensityChanged()) {
       setStatus(strings.noChanges);
       return;
     }
@@ -541,12 +584,13 @@
       });
       const baseTree = parent.tree?.sha;
       if (!baseTree) throw new Error("The branch tree is unavailable.");
-      const entries = await prepareTreeEntries(headSha, sectionChanges, newSection);
+      const entries = await prepareTreeEntries(headSha, sectionChanges, newSection, navigationDensity);
       const commit = await createAtomicCommit(entries, headSha, baseTree, newSection);
 
       sectionChanges.forEach((input) => {
         input.dataset.initialVisible = String(input.checked);
       });
+      root.dataset.initialNavigationDensity = navigationDensity;
       clearNewSection();
       setStatus(strings.commitSuccess, "success");
       if (commit.html_url) {
@@ -572,6 +616,13 @@
   sectionToggles.forEach((input) => {
     input.addEventListener("change", () => {
       setStatus(strings.pending);
+      elements.result.hidden = true;
+    });
+  });
+  navigationDensityInputs.forEach((input) => {
+    input.addEventListener("change", () => {
+      previewNavigationDensity();
+      setStatus(hasPendingSettings() ? strings.pending : strings.noChanges);
       elements.result.hidden = true;
     });
   });

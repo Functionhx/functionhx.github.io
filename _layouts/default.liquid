@@ -8,7 +8,10 @@
     {% assign spark_writer_enabled = true %}
   {% endif %}
 {% endif %}
-<html lang="{% if page_lang == 'en' %}en{% else %}zh-CN{% endif %}">
+<html
+  lang="{% if page_lang == 'en' %}en{% else %}zh-CN{% endif %}"
+  data-nav-density="{{ site.data.site_ui.navigation_density | default: 'auto' | escape }}"
+>
   <!-- Head -->
   <head>
     {% if page.redirect %}

@@ -9,7 +9,7 @@ const repositoryRoot = new URL("../", import.meta.url);
 const testToken = "not-a-real-settings-token";
 const testDeepSeekKey = "not-a-real-deepseek-settings-key";
 const testIntruderToken = "not-a-real-helper-github-token";
-const managedPaths = ["_pages/blog-zh.md", "_pages/blog-en.md", "_pages/people-zh.md", "_pages/people-en.md"];
+const managedPaths = ["_pages/blog-zh.md", "_pages/blog-en.md", "_pages/people-zh.md", "_pages/people-en.md", "_data/site_ui.yml"];
 const managedSources = Object.fromEntries(
   await Promise.all(managedPaths.map(async (path) => [path, await readFile(new URL(path, repositoryRoot), "utf8")]))
 );
@@ -258,6 +258,12 @@ try {
   assert.equal(await peopleToggle.isChecked(), false);
   assert.equal(await repositoriesToggle.isChecked(), false);
   assert.equal(await blogToggle.isChecked(), true);
+  assert.equal(await page.locator("html").getAttribute("data-nav-density"), "auto");
+  const automaticNavWidth = await page.locator("#navbarNav").evaluate((element) => element.getBoundingClientRect().width);
+  await page.locator("#site-settings-density-relaxed").check();
+  assert.equal(await page.locator("html").getAttribute("data-nav-density"), "relaxed", "navigation density should preview immediately");
+  const relaxedNavWidth = await page.locator("#navbarNav").evaluate((element) => element.getBoundingClientRect().width);
+  assert.ok(relaxedNavWidth > automaticNavWidth + 40, "relaxed navigation should use more of the available header width");
   await peopleToggle.check();
   await blogToggle.uncheck();
 
@@ -307,8 +313,9 @@ try {
 
   assert.ok(treeRequest, "settings should create a Git tree");
   assert.equal(treeRequest.base_tree, "base-settings-tree");
-  assert.equal(treeRequest.tree.length, 6, "two changed pairs and one new pair should share one commit");
+  assert.equal(treeRequest.tree.length, 7, "layout, two changed pairs, and one new pair should share one commit");
   const byPath = Object.fromEntries(treeRequest.tree.map((item) => [item.path, item.content]));
+  assert.match(byPath["_data/site_ui.yml"], /^navigation_density: relaxed$/m);
   assert.match(byPath["_pages/people-zh.md"], /^nav: true$/m);
   assert.match(byPath["_pages/people-en.md"], /^nav: true$/m);
   assert.match(byPath["_pages/blog-zh.md"], /^nav: false$/m);

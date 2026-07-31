@@ -2,6 +2,8 @@
 
 Bilingual research, projects, tools, writing, notes, and logs built on the
 MIT-licensed [al-folio](https://github.com/alshedivat/al-folio) v1.1 starter.
+The compact `f(hx)` wordmark and `ƒ` favicon provide the browser and navigation
+identity without replacing the author's bilingual name in the content.
 
 ## Local development
 
@@ -42,7 +44,9 @@ Each Spark item can also be reopened from the index and edited in place.
 The gear icon opens the in-site section manager. Existing bilingual sections
 can be shown or hidden together. New paired sections can be created as a blank
 page, article list, project-card grid, people-profile page, or repository list.
-All changed files are written in one atomic commit.
+Desktop navigation spacing can be previewed and published as automatic,
+compact, or relaxed; the selected layout is stored in `_data/site_ui.yml`. All
+changed files are written in one atomic commit.
 
 Chinese is the authoring source of truth. The Spark writer and section manager
 can generate an English draft through DeepSeek for review. Translation is open

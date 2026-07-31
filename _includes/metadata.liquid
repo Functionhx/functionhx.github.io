@@ -16,10 +16,12 @@
 
 {% if page.lang == 'en' %}
   {% assign author_name = 'Yuchen Fan' %}
+  {% assign site_identity = 'f(hx)' %}
   {% assign localized_description = site.description %}
   {% assign metadata_locale = 'en_US' %}
 {% else %}
   {% assign author_name = '樊宇琛' %}
+  {% assign site_identity = 'f(hx)' %}
   {% assign localized_description = '樊宇琛的个人主页，记录项目、写作与工具，并以「闪耀」汇集思考和工作日志。' %}
   {% assign metadata_locale = 'zh_CN' %}
 {% endif %}
@@ -29,18 +31,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title>
-  {% if site.title == 'blank' %}
-    {% capture title %}{{ author_name }}{% endcapture %}
-  {% else %}
-    {% capture title %}{{ site.title }}{% endcapture %}
-  {% endif %}
+  {% capture title %}{{ site_identity }}{% endcapture %}
   {% if page.url == '/blog/index.html' %}
-    {{ page.title }} | {{ title }}
+    {{ page.title }} · {{ title }}
   {% elsif page.title != 'blank' and page.home != true %}
     {% if page.title == null or page.title == '' %}
-      {{ page.date | date: '%Y' }} | {{ title }}
+      {{ page.date | date: '%Y' }} · {{ title }}
     {% else %}
-      {{ page.title }} | {{ title }}
+      {{ page.title }} · {{ title }}
     {% endif %}
   {% else %}
     {{ title }}

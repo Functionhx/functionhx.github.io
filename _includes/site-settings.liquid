@@ -6,6 +6,14 @@
   {% assign settings_heading = 'Site settings' %}
   {% assign settings_intro = 'Show or hide existing sections, or create a bilingual section from a content format.' %}
   {% assign settings_existing = 'Sections' %}
+  {% assign settings_layout = 'Navigation layout' %}
+  {% assign settings_layout_intro = 'Preview and publish how widely the desktop navigation breathes.' %}
+  {% assign settings_density_auto = 'Auto' %}
+  {% assign settings_density_auto_note = 'Balances the available width and number of items.' %}
+  {% assign settings_density_compact = 'Compact' %}
+  {% assign settings_density_compact_note = 'Keeps controls close together.' %}
+  {% assign settings_density_relaxed = 'Relaxed' %}
+  {% assign settings_density_relaxed_note = 'Uses more of the header width.' %}
   {% assign settings_visible = 'Visible in navigation' %}
   {% assign settings_hidden = 'Hidden' %}
   {% assign settings_new = 'Create a section' %}
@@ -40,6 +48,14 @@
   {% assign settings_heading = '站点设置' %}
   {% assign settings_intro = '显示或隐藏现有栏目，也可以按内容格式创建一组新的中英文栏目。' %}
   {% assign settings_existing = '栏目' %}
+  {% assign settings_layout = '导航布局' %}
+  {% assign settings_layout_intro = '选择桌面端导航的呼吸感，可即时预览并随设置一起发布。' %}
+  {% assign settings_density_auto = '自动' %}
+  {% assign settings_density_auto_note = '根据可用宽度与栏目数量自动平衡。' %}
+  {% assign settings_density_compact = '紧凑' %}
+  {% assign settings_density_compact_note = '让栏目与工具靠得更近。' %}
+  {% assign settings_density_relaxed = '舒展' %}
+  {% assign settings_density_relaxed_note = '充分利用顶部横向空间。' %}
   {% assign settings_visible = '显示在导航栏' %}
   {% assign settings_hidden = '已隐藏' %}
   {% assign settings_new = '新建栏目' %}
@@ -80,6 +96,8 @@
     data-repository="Functionhx/functionhx.github.io"
     data-owner="Functionhx"
     data-branch="main"
+    data-initial-navigation-density="{{ site.data.site_ui.navigation_density | default: 'auto' | escape }}"
+    data-ui-settings-path="_data/site_ui.yml"
   >
     <header class="site-settings__header">
       <div>
@@ -97,6 +115,66 @@
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
       </button>
     </header>
+
+    <section class="site-settings__section site-settings__layout" aria-labelledby="site-settings-layout-heading">
+      <div class="site-settings__section-heading site-settings__layout-heading">
+        <div>
+          <h3 id="site-settings-layout-heading">{{ settings_layout }}</h3>
+          <p>{{ settings_layout_intro }}</p>
+        </div>
+        <div class="site-settings__nav-preview" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <fieldset class="site-settings__density" aria-labelledby="site-settings-layout-heading">
+        <legend class="sr-only">{{ settings_layout }}</legend>
+        <label>
+          <input
+            id="site-settings-density-auto"
+            type="radio"
+            name="site-settings-navigation-density"
+            value="auto"
+            data-navigation-density
+            {% if site.data.site_ui.navigation_density == 'auto' or site.data.site_ui.navigation_density == null %}
+              checked
+            {% endif %}
+          >
+          <span
+            ><strong>{{ settings_density_auto }}</strong><small>{{ settings_density_auto_note }}</small></span
+          >
+        </label>
+        <label>
+          <input
+            id="site-settings-density-compact"
+            type="radio"
+            name="site-settings-navigation-density"
+            value="compact"
+            data-navigation-density
+            {% if site.data.site_ui.navigation_density == 'compact' %}
+              checked
+            {% endif %}
+          >
+          <span
+            ><strong>{{ settings_density_compact }}</strong><small>{{ settings_density_compact_note }}</small></span
+          >
+        </label>
+        <label>
+          <input
+            id="site-settings-density-relaxed"
+            type="radio"
+            name="site-settings-navigation-density"
+            value="relaxed"
+            data-navigation-density
+            {% if site.data.site_ui.navigation_density == 'relaxed' %}
+              checked
+            {% endif %}
+          >
+          <span
+            ><strong>{{ settings_density_relaxed }}</strong><small>{{ settings_density_relaxed_note }}</small></span
+          >
+        </label>
+      </fieldset>
+    </section>
 
     <section class="site-settings__section" aria-labelledby="site-settings-existing-heading">
       <div class="site-settings__section-heading">

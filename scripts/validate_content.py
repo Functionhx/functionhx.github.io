@@ -134,11 +134,27 @@ def main() -> int:
         errors.append("_config.yml: enable_darkmode must remain true")
     if config.get("footer_fixed") is not False:
         errors.append("_config.yml: the removed global footer must remain disabled")
+    if config.get("icon") != "ƒ":
+        errors.append("_config.yml: the site favicon must use the f(hx) identity mark")
     giscus = config.get("giscus", {})
     if giscus.get("repo") != "Functionhx/functionhx.github.io":
         errors.append("_config.yml: Giscus repository is not configured")
     if not giscus.get("repo_id") or not giscus.get("category_id"):
         errors.append("_config.yml: Giscus repository and category IDs are required")
+
+    site_ui_path = ROOT / "_data" / "site_ui.yml"
+    try:
+        site_ui = yaml.safe_load(site_ui_path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as error:
+        errors.append(f"_data/site_ui.yml: {error}")
+        site_ui = {}
+    if not isinstance(site_ui, dict):
+        errors.append("_data/site_ui.yml: settings must be a mapping")
+        site_ui = {}
+    if site_ui.get("navigation_density") not in {"auto", "compact", "relaxed"}:
+        errors.append(
+            "_data/site_ui.yml: navigation_density must be auto, compact, or relaxed"
+        )
 
     workflow_path = ROOT / ".github" / "workflows" / "deploy.yml"
     workflow_text = (
@@ -206,6 +222,7 @@ def main() -> int:
         "window.functionhxGitHubAuth",
         "window.functionhxDeployment",
         "setNavigationVisibility",
+        "setNavigationDensity",
         "createPageSource",
     ):
         if contract not in site_settings_text:

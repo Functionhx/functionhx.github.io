@@ -54,11 +54,14 @@ class PageParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
         self.html_lang = ""
+        self.html_nav_density = ""
         self.ids: set[str] = set()
         self.links: list[str] = []
         self.alternates: dict[str, str] = {}
         self.in_h1 = False
+        self.in_title = False
         self.h1_text: list[str] = []
+        self.title_text: list[str] = []
         self.in_nav = False
         self.nav_text: list[str] = []
         self.nav_translation_keys: list[str] = []
@@ -68,6 +71,7 @@ class PageParser(HTMLParser):
         attributes = dict(attrs)
         if tag == "html":
             self.html_lang = attributes.get("lang") or ""
+            self.html_nav_density = attributes.get("data-nav-density") or ""
         if attributes.get("id"):
             self.ids.add(attributes["id"])
         nav_translation_key = attributes.get("data-nav-translation-key")
@@ -88,18 +92,24 @@ class PageParser(HTMLParser):
                 self.alternates[language] = href
         if tag == "h1":
             self.in_h1 = True
+        if tag == "title":
+            self.in_title = True
         if tag == "nav" and attributes.get("id") == "navbar":
             self.in_nav = True
 
     def handle_endtag(self, tag: str) -> None:
         if tag == "h1":
             self.in_h1 = False
+        if tag == "title":
+            self.in_title = False
         if tag == "nav":
             self.in_nav = False
 
     def handle_data(self, data: str) -> None:
         if self.in_h1:
             self.h1_text.append(data)
+        if self.in_title:
+            self.title_text.append(data)
         if self.in_nav:
             self.nav_text.append(data)
 
@@ -149,6 +159,18 @@ def main() -> int:
                 f"{route}: expected html lang {expected_language!r}, "
                 f"found {parser.html_lang!r}"
             )
+        if parser.html_nav_density not in {"auto", "compact", "relaxed"}:
+            errors.append(
+                f"{route}: invalid navigation density {parser.html_nav_density!r}"
+            )
+        title = " ".join(" ".join(parser.title_text).split())
+        if route in {"/", "/en/"}:
+            if title != "f(hx)":
+                errors.append(f"{route}: expected browser title 'f(hx)', found {title!r}")
+        elif not title.endswith("· f(hx)"):
+            errors.append(f"{route}: browser title does not use the f(hx) identity: {title!r}")
+        if "🤖" in rendered_html:
+            errors.append(f"{route}: generic robot favicon still renders")
         for required_id in ("navbar", "search-toggle", "light-toggle"):
             if required_id not in parser.ids:
                 errors.append(f"{route}: missing required control #{required_id}")
@@ -159,6 +181,9 @@ def main() -> int:
             "site-settings-translate",
             "site-settings-commit",
             "site-settings-auth-remember",
+            "site-settings-density-auto",
+            "site-settings-density-compact",
+            "site-settings-density-relaxed",
         ):
             if settings_id not in parser.ids:
                 errors.append(f"{route}: missing settings control #{settings_id}")
