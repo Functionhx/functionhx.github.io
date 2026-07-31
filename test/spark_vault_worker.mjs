@@ -49,7 +49,7 @@ const originalFetch = globalThis.fetch;
 globalThis.fetch = async (input, init = {}) => {
   const request = input instanceof Request ? input : new Request(input, init);
   const url = new URL(request.url);
-  requests.push({ method: request.method, url: request.url });
+  requests.push({ method: request.method, url: request.url, userAgent: request.headers.get("User-Agent") || "" });
 
   if (url.origin === "https://github.test" && url.pathname === "/login/oauth/access_token") {
     return json({
@@ -286,6 +286,12 @@ try {
   assert.ok(
     requests.some((request) => request.url.includes("/repos/Functionhx/functionhx-spark-private")),
     "OAuth callback must verify private repository access"
+  );
+  assert.ok(
+    requests
+      .filter((request) => request.url.startsWith("https://api.github.test/"))
+      .every((request) => request.userAgent === "functionhx-spark-vault"),
+    "every GitHub REST request must include the app User-Agent"
   );
 } finally {
   globalThis.fetch = originalFetch;

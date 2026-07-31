@@ -242,6 +242,7 @@ function repoEndpoint(repository, suffix) {
 async function githubRequest(env, token, endpoint, options = {}) {
   const headers = {
     Accept: "application/vnd.github+json",
+    "User-Agent": "functionhx-spark-vault",
     "X-GitHub-Api-Version": String(env.GITHUB_API_VERSION || DEFAULT_API_VERSION),
     ...options.headers,
   };
@@ -252,10 +253,20 @@ async function githubRequest(env, token, endpoint, options = {}) {
     headers,
     method: options.method || "GET",
   });
-  const payload = await response.json().catch(() => ({}));
+  const responseText = await response.text();
+  let payload = {};
+  try {
+    payload = responseText ? JSON.parse(responseText) : {};
+  } catch (_error) {
+    payload = {};
+  }
   if (response.status === 404 && options.allowNotFound) return null;
   if (!response.ok) {
-    const error = new HttpError(response.status, payload.message || `GitHub API ${response.status}`, "github_api_error");
+    const githubMessage = String(payload.message || responseText)
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 300);
+    const error = new HttpError(response.status, githubMessage || `GitHub API ${response.status}`, "github_api_error");
     error.githubStatus = response.status;
     throw error;
   }
