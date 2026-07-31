@@ -35,6 +35,8 @@ triggers the normal GitHub Pages deployment.
 
 Create Chinese and English records with the same `slug` and
 `translation_key`. Their `lang`, `permalink`, and body content remain separate.
+New records are drafts by default, so either language can be saved repeatedly
+without becoming public. Turn on `published` only after both records are ready.
 The editor cannot delete or rename post files.
 
 Owner-authored posts may enable `giscus_comments: true`. Comments are stored in

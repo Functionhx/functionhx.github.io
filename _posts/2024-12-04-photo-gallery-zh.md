@@ -3,6 +3,7 @@ layout: post
 title: 一篇带图片画廊的文章
 slug: photo-gallery
 date: 2024-12-04 10:00:00 +0800
+published: true
 description: 一篇包含图片画廊的文章
 permalink: /blog/2024/photo-gallery/
 lang: zh

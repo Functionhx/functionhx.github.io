@@ -80,7 +80,6 @@ def main() -> int:
         if not isinstance(key, str) or not key.strip():
             errors.append(f"{relative}: translation_key is required")
             continue
-        groups[(collection, key)].append((path, data))
 
         if collection == "_projects":
             for field in ("description", "kind"):
@@ -93,6 +92,11 @@ def main() -> int:
                     f"{relative}: slug must contain only lowercase letters, "
                     "numbers, and hyphens"
                 )
+            if not isinstance(data.get("published"), bool):
+                errors.append(f"{relative}: published must be true or false")
+
+        if collection != "_posts" or data.get("published") is not False:
+            groups[(collection, key)].append((path, data))
 
     for (collection, key), items in sorted(groups.items()):
         languages = [data.get("lang") for _, data in items]

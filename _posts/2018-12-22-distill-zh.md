@@ -3,6 +3,7 @@ layout: post
 title: 一篇 Distill 风格博客
 slug: distill
 date: 2018-12-22 10:00:00 +0800
+published: true
 description: 一篇展示主要元素的 Distill 风格博客文章
 permalink: /blog/2018/distill/
 lang: zh

@@ -21,7 +21,7 @@ content:
       rename: false
       delete: false
     view:
-      fields: [title, lang, kind, date]
+      fields: [title, lang, kind, published, date]
       primary: title
       sort: [date, title, lang, kind]
       search: [title, description, translation_key, tags, categories]
@@ -52,6 +52,11 @@ content:
         options:
           time: true
           format: "yyyy-MM-dd HH:mm:ss xx"
+      - name: published
+        label: 公开发布 / Publish
+        type: boolean
+        default: false
+        description: 日常保存请保持关闭；中英文都完成后再分别开启。
       - name: description
         label: 摘要 / Description
         type: text

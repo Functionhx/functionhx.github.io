@@ -3,6 +3,7 @@ layout: post
 title: "纯 CS 搞具身，正在把一个控制问题硬讲成一个融资故事"
 slug: embodied-ai-control-story
 date: 2026-06-10 15:19:40 +0800
+published: true
 description: 从动态系统、反馈闭环与真实工程的角度，讨论纯 CS 范式主导具身智能和 VLA 叙事时容易忽略的问题。
 permalink: /blog/2026/embodied-ai-control-story/
 lang: zh

@@ -3,6 +3,7 @@ layout: post
 title: a post with typograms
 slug: typograms
 date: 2024-04-29 10:00:00 +0800
+published: true
 description: this is what included typograms code could look like
 permalink: /en/blog/2024/typograms/
 lang: en

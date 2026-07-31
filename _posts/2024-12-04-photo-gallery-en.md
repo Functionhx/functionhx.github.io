@@ -3,6 +3,7 @@ layout: post
 title: a post with image galleries
 slug: photo-gallery
 date: 2024-12-04 10:00:00 +0800
+published: true
 description: this is what included image galleries could look like
 permalink: /en/blog/2024/photo-gallery/
 lang: en
