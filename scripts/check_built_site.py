@@ -65,10 +65,16 @@ class PageParser(HTMLParser):
         self.in_nav = False
         self.nav_text: list[str] = []
         self.nav_translation_keys: list[str] = []
+        self.active_nav_translation_keys: list[str] = []
         self.settings_visibility: dict[str, bool] = {}
+        self.current_nav_item_active = False
+        self.has_stable_nav_container = False
+        self.has_title_brand = False
+        self.inline_editor_source_path = ""
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = dict(attrs)
+        classes = set((attributes.get("class") or "").split())
         if tag == "html":
             self.html_lang = attributes.get("lang") or ""
             self.html_nav_density = attributes.get("data-nav-density") or ""
@@ -77,6 +83,16 @@ class PageParser(HTMLParser):
         nav_translation_key = attributes.get("data-nav-translation-key")
         if nav_translation_key:
             self.nav_translation_keys.append(nav_translation_key)
+            if self.current_nav_item_active:
+                self.active_nav_translation_keys.append(nav_translation_key)
+        if "navbar-container-stable" in classes:
+            self.has_stable_nav_container = True
+        if "navbar-brand" in classes and "title" in classes:
+            self.has_title_brand = True
+        if attributes.get("id") == "site-inline-editor":
+            self.inline_editor_source_path = attributes.get("data-source-path") or ""
+        if self.in_nav and tag == "li":
+            self.current_nav_item_active = "active" in classes
         if "data-section-toggle" in attributes:
             translation_key = attributes.get("data-translation-key")
             if translation_key:
@@ -104,6 +120,8 @@ class PageParser(HTMLParser):
             self.in_title = False
         if tag == "nav":
             self.in_nav = False
+        if tag == "li" and self.in_nav:
+            self.current_nav_item_active = False
 
     def handle_data(self, data: str) -> None:
         if self.in_h1:
@@ -163,6 +181,10 @@ def main() -> int:
             errors.append(
                 f"{route}: invalid navigation density {parser.html_nav_density!r}"
             )
+        if not parser.has_stable_nav_container:
+            errors.append(f"{route}: navigation does not use the shared stable layout")
+        if parser.has_title_brand:
+            errors.append(f"{route}: page-specific brand shifts the navigation layout")
         title = " ".join(" ".join(parser.title_text).split())
         if route in {"/", "/en/"}:
             if title != "f(hx)":
@@ -171,7 +193,12 @@ def main() -> int:
             errors.append(f"{route}: browser title does not use the f(hx) identity: {title!r}")
         if "🤖" in rendered_html:
             errors.append(f"{route}: generic robot favicon still renders")
-        for required_id in ("navbar", "search-toggle", "light-toggle"):
+        for required_id in (
+            "navbar",
+            "search-toggle",
+            "light-toggle",
+            "site-inline-editor-toggle",
+        ):
             if required_id not in parser.ids:
                 errors.append(f"{route}: missing required control #{required_id}")
         for settings_id in (
@@ -224,6 +251,30 @@ def main() -> int:
             errors.append(
                 f"{route}: navigation keys {sorted(actual_nav_keys)} do not match "
                 f"settings {sorted(expected_nav_keys)}"
+            )
+        expected_active_key = None
+        route_without_language = route.removeprefix("/en")
+        if route_without_language == "/":
+            expected_active_key = "home"
+        elif route_without_language.startswith("/blog/"):
+            expected_active_key = "blog"
+        elif route_without_language.startswith("/tools/"):
+            expected_active_key = "tools"
+        elif route_without_language.startswith("/spark/"):
+            expected_active_key = "spark"
+        if expected_active_key and parser.active_nav_translation_keys != [expected_active_key]:
+            errors.append(
+                f"{route}: expected only {expected_active_key!r} to be active, "
+                f"found {parser.active_nav_translation_keys}"
+            )
+        expected_blog_source = {
+            "/blog/": "_pages/blog-zh.md",
+            "/en/blog/": "_pages/blog-en.md",
+        }.get(route)
+        if expected_blog_source and parser.inline_editor_source_path != expected_blog_source:
+            errors.append(
+                f"{route}: expected inline editor source {expected_blog_source!r}, "
+                f"found {parser.inline_editor_source_path!r}"
             )
         if not {"zh-CN", "en", "x-default"}.issubset(parser.alternates):
             errors.append(f"{route}: incomplete hreflang alternates {parser.alternates}")

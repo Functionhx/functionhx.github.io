@@ -8,6 +8,13 @@
     {% assign spark_writer_enabled = true %}
   {% endif %}
 {% endif %}
+{% assign editor_source_path = page.path %}
+{% unless editor_source_path contains '_' %}
+  {% assign editor_source_stem = page.settings_file_stem | default: page.translation_key %}
+  {% if editor_source_stem %}
+    {% capture editor_source_path %}_pages/{{ editor_source_stem }}-{{ page_lang }}.md{% endcapture %}
+  {% endif %}
+{% endunless %}
 <html
   lang="{% if page_lang == 'en' %}en{% else %}zh-CN{% endif %}"
   data-nav-density="{{ site.data.site_ui.navigation_density | default: 'auto' | escape }}"
@@ -67,8 +74,8 @@
 
     <!-- Content -->
     <div class="container mt-5" role="main">
-      {% if page.path %}
-        {% include inline-editor.liquid %}
+      {% if editor_source_path %}
+        {% include inline-editor.liquid source_path=editor_source_path %}
       {% endif %}
       <div id="site-rendered-content">
         {% if page.toc and page.toc.sidebar %}

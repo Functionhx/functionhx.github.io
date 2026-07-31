@@ -85,16 +85,8 @@
     --site-nav-link-padding: clamp(0.35rem, 0.55vw, 0.6rem);
   }
 
-  #navbar .site-wordmark {
-    font-family: SFMono-Regular, Consolas, 'Liberation Mono', monospace;
-    font-size: 0.94em;
-    font-weight: 650;
-    letter-spacing: -0.055em;
-  }
-
-  #navbar .site-wordmark__argument {
-    color: var(--global-theme-color);
-    font-weight: 500;
+  #navbar .navbar-menu-list .nav-item.active > .nav-link {
+    font-weight: inherit;
   }
 
   @media (min-width: 992px) {
@@ -119,11 +111,6 @@
       justify-content: space-between;
       margin-left: 0;
       width: 100%;
-    }
-
-    #navbar .navbar-container:not(.navbar-container-home) .navbar-menu-list {
-      column-gap: var(--site-nav-gap);
-      justify-content: flex-end;
     }
 
     #navbar .navbar-menu-list > .nav-item,
@@ -193,17 +180,7 @@
 <header>
   <!-- Nav Bar -->
   <nav id="navbar" class="navbar navbar-light navbar-expand-sm {% if site.navbar_fixed %}fixed-top{% else %}sticky-top{% endif %}" role="navigation">
-    <div class="container navbar-container{% if page.home %} navbar-container-home{% endif %}">
-      {% unless page.home %}
-        <a class="navbar-brand title font-weight-lighter" href="{{ home_page.url | relative_url }}">
-          <span class="site-wordmark" aria-label="{% if current_lang == 'en' %}f h x, Yuchen Fan's home{% else %}f h x，樊宇琛的主页{% endif %}">
-            f<span class="site-wordmark__argument" aria-hidden="true">(hx)</span>
-          </span>
-        </a>
-      {% elsif site.enable_navbar_social %}
-        <!-- Social Icons -->
-        <div class="navbar-brand social">{% social_links %}</div>
-      {% endunless %}
+    <div class="container navbar-container navbar-container-home navbar-container-stable">
       <!-- Navbar Toggle -->
       <button
         class="navbar-toggler collapsed navbar-toggler-main"
@@ -318,7 +295,7 @@
               </style>
             </noscript>
           </li>
-          {% if page.path %}
+          {% if editor_source_path %}
             <li class="nav-item">
               <button
                 id="site-inline-editor-toggle"
@@ -352,7 +329,7 @@
                 {% else %}
                   <a
                     class="nav-link"
-                    href="https://github.com/Functionhx/functionhx.github.io/edit/main/{{ page.path }}"
+                    href="https://github.com/Functionhx/functionhx.github.io/edit/main/{{ editor_source_path }}"
                     title="{{ editor_title }}"
                     aria-label="{{ editor_label }}"
                   >

@@ -1,4 +1,5 @@
 {% assign editor_lang = page.lang | default: 'zh' %}
+{% assign editor_source_path = include.source_path | default: page.path %}
 {% if editor_lang == 'en' %}
   {% assign editor_heading = 'Edit this page' %}
   {% assign editor_loading = 'Loading the Markdown source from GitHub…' %}
@@ -60,7 +61,7 @@
   data-repository="Functionhx/functionhx.github.io"
   data-owner="Functionhx"
   data-branch="main"
-  data-source-path="{{ page.path | escape }}"
+  data-source-path="{{ editor_source_path | escape }}"
   hidden
   aria-labelledby="site-inline-editor-heading"
 >
@@ -68,7 +69,7 @@
     <div>
       <p class="site-inline-editor__eyebrow">functionhx.github.io</p>
       <h1 id="site-inline-editor-heading">{{ editor_heading }}</h1>
-      <code id="site-inline-editor-path">{{ page.path }}</code>
+      <code id="site-inline-editor-path">{{ editor_source_path }}</code>
     </div>
     <div class="site-inline-editor__header-actions">
       <button id="site-inline-editor-connect" type="button" class="site-inline-editor__button site-inline-editor__button--quiet">
