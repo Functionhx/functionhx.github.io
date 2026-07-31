@@ -17,11 +17,15 @@
     ? {
         authFailed: "GitHub connection failed.",
         authMissing: "Paste a fine-grained token first.",
+        authRememberFailed: "Connected for this page, but this browser could not remember the token securely.",
+        authRemembered: "Connected as @Functionhx and remembered on this private device.",
         authSuccess: "Connected as @Functionhx for this settings session.",
         collision: "That section already exists. Choose another URL slug.",
         commitFailed: "The site settings could not be committed.",
-        commitSuccess: "Settings committed. GitHub Pages is deploying the new navigation.",
-        connected: "@Functionhx connected",
+        commitSuccess: "Settings committed. Follow the publishing progress in the corner.",
+        connected: "Disconnect @Functionhx",
+        disconnectConfirm: "Forget the trusted GitHub token on this device?",
+        disconnected: "The trusted GitHub connection was removed from this device.",
         defaultMessage: "site: update sections",
         incompleteNew: "Add both titles and a URL slug for the new section.",
         invalidOrder: "Navigation order must be a number from 1 to 999.",
@@ -41,11 +45,15 @@
     : {
         authFailed: "GitHub 连接失败。",
         authMissing: "请先粘贴 fine-grained token。",
+        authRememberFailed: "本页已经连接，但这个浏览器无法安全地记住令牌。",
+        authRemembered: "已连接为 @Functionhx，并记住这台私人电脑。",
         authSuccess: "本次设置会话已连接为 @Functionhx。",
         collision: "这个栏目已经存在，请更换网址短名。",
         commitFailed: "无法提交站点设置。",
-        commitSuccess: "设置已提交，GitHub Pages 正在部署新的导航。",
-        connected: "已连接 @Functionhx",
+        commitSuccess: "设置已提交，请在右下角查看发布进度。",
+        connected: "退出 @Functionhx",
+        disconnectConfirm: "从这台设备移除已记住的 GitHub 令牌？",
+        disconnected: "已从这台设备移除 GitHub 连接。",
         defaultMessage: "site: update sections",
         incompleteNew: "新栏目需要同时填写中英文名称和网址短名。",
         invalidOrder: "导航顺序必须是 1 到 999 之间的数字。",
@@ -66,6 +74,7 @@
   const elements = {
     authCancel: document.getElementById("site-settings-auth-cancel"),
     authConnect: document.getElementById("site-settings-auth-connect"),
+    authRemember: document.getElementById("site-settings-auth-remember"),
     authStatus: document.getElementById("site-settings-auth-status"),
     clear: document.getElementById("site-settings-clear"),
     close: document.getElementById("site-settings-close"),
@@ -93,6 +102,8 @@
   let busy = false;
   let pendingCommit = false;
   let slugIsAutomatic = true;
+  let restorePromise = Promise.resolve(null);
+  const disconnectedLabel = elements.connect.querySelector("span")?.textContent.trim() || "GitHub";
 
   function setStatus(message, state = "") {
     elements.status.textContent = message;
@@ -424,6 +435,46 @@
     closeDialog(authDialog);
   }
 
+  function setConnection(session) {
+    activeToken = session?.token || "";
+    const connectLabel = elements.connect.querySelector("span");
+    if (connectLabel) connectLabel.textContent = activeToken ? strings.connected : disconnectedLabel;
+    elements.connect.dataset.connected = String(Boolean(activeToken));
+  }
+
+  async function restoreGitHubSession() {
+    const session = await window.functionhxGitHubAuth?.restore({ owner, repository }).catch(() => null);
+    setConnection(session);
+    return session;
+  }
+
+  async function saveGitHubSession(token) {
+    const remember = elements.authRemember.checked;
+    if (!window.functionhxGitHubAuth) return { failed: remember, remembered: false };
+    try {
+      return await window.functionhxGitHubAuth.save({ owner, remember, repository, token });
+    } catch (_error) {
+      await window.functionhxGitHubAuth.save({ owner, remember: false, repository, token }).catch(() => undefined);
+      return { failed: true, remembered: false };
+    }
+  }
+
+  async function disconnectGitHub(ask = true) {
+    if (ask && !window.confirm(strings.disconnectConfirm)) return;
+    await window.functionhxGitHubAuth?.forget({ repository }).catch(() => undefined);
+    setConnection(null);
+    setStatus(strings.disconnected);
+  }
+
+  async function handleConnectButton() {
+    await restorePromise;
+    if (activeToken) {
+      await disconnectGitHub(true);
+      return;
+    }
+    openAuth(false);
+  }
+
   async function connectGitHub() {
     const candidate = elements.token.value.trim();
     if (!candidate) {
@@ -440,16 +491,20 @@
       if (String(user.login).toLowerCase() !== owner.toLowerCase() || !repo.permissions?.push) {
         throw new Error("This token is not @Functionhx with repository write access.");
       }
-      activeToken = candidate;
-      const connectLabel = elements.connect.querySelector("span");
-      if (connectLabel) connectLabel.textContent = strings.connected;
-      setAuthStatus(strings.authSuccess, "success");
+      const saved = await saveGitHubSession(candidate);
+      setConnection({ token: candidate });
+      setAuthStatus(saved.failed ? strings.authRememberFailed : saved.remembered ? strings.authRemembered : strings.authSuccess, "success");
       const continueCommit = pendingCommit;
       pendingCommit = false;
-      closeAuth();
-      if (continueCommit) window.setTimeout(commitSettings, 0);
+      window.setTimeout(
+        () => {
+          closeAuth();
+          if (continueCommit) commitSettings();
+        },
+        saved.failed ? 900 : 350
+      );
     } catch (error) {
-      activeToken = "";
+      setConnection(null);
       setAuthStatus(`${strings.authFailed} ${error.message || ""}`.trim(), "error");
     } finally {
       elements.token.value = "";
@@ -458,6 +513,7 @@
   }
 
   async function commitSettings() {
+    await restorePromise;
     if (busy) return;
     const sectionChanges = changedSections();
     const newSection = readNewSection();
@@ -498,7 +554,9 @@
         elements.result.textContent = strings.viewCommit;
         elements.result.hidden = false;
       }
+      window.functionhxDeployment?.watch(commit);
     } catch (error) {
+      if (error.status === 401 || error.status === 403) await disconnectGitHub(false);
       const message = error.message === strings.collision ? error.message : `${strings.commitFailed} ${error.message || ""}`.trim();
       setStatus(message, "error");
     } finally {
@@ -539,7 +597,7 @@
   });
   elements.clear.addEventListener("click", clearNewSection);
   elements.translate.addEventListener("click", translateNewSection);
-  elements.connect.addEventListener("click", () => openAuth(false));
+  elements.connect.addEventListener("click", handleConnectButton);
   elements.commit.addEventListener("click", commitSettings);
   elements.authCancel.addEventListener("click", () => {
     pendingCommit = false;
@@ -552,4 +610,9 @@
   authDialog.addEventListener("close", () => {
     elements.token.value = "";
   });
+  window.addEventListener("functionhx:github-auth-changed", (event) => {
+    if (event.detail?.repository !== repository) return;
+    restorePromise = restoreGitHubSession();
+  });
+  restorePromise = restoreGitHubSession();
 })();

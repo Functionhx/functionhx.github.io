@@ -28,11 +28,12 @@
   {% assign settings_commit = 'Commit settings' %}
   {% assign settings_close = 'Close settings' %}
   {% assign settings_idle = 'Changes stay in this panel until you commit them.' %}
-  {% assign settings_auth_heading = 'Connect GitHub for this settings session' %}
-  {% assign settings_auth_intro = 'Choose “Only select repositories → functionhx.github.io” and keep only Contents: write permission.' %}
+  {% assign settings_auth_heading = 'Connect GitHub' %}
+  {% assign settings_auth_intro = 'Choose “Only select repositories → functionhx.github.io” with Contents: write and Actions: read.' %}
   {% assign settings_auth_create = 'Create a restricted token on GitHub' %}
   {% assign settings_auth_token = 'Fine-grained token' %}
-  {% assign settings_auth_security = 'The token stays only in this page memory and disappears when the page reloads.' %}
+  {% assign settings_auth_remember = 'Trust this private device and reconnect automatically' %}
+  {% assign settings_auth_security = 'When trusted, the token is encrypted in this browser’s device vault. Use this only on your own computer; it is never written to the repository, analytics, or logs.' %}
   {% assign settings_auth_cancel = 'Cancel' %}
   {% assign settings_auth_verify = 'Verify and connect' %}
 {% else %}
@@ -61,11 +62,12 @@
   {% assign settings_commit = '提交设置' %}
   {% assign settings_close = '关闭设置' %}
   {% assign settings_idle = '修改暂时只保留在这个面板中，提交后才会更新站点。' %}
-  {% assign settings_auth_heading = '本次设置连接 GitHub' %}
-  {% assign settings_auth_intro = '创建时选择“Only select repositories → functionhx.github.io”，权限只保留 Contents: write。' %}
+  {% assign settings_auth_heading = '连接 GitHub' %}
+  {% assign settings_auth_intro = '创建时选择“Only select repositories → functionhx.github.io”，权限只开启 Contents: write 与 Actions: read。' %}
   {% assign settings_auth_create = '在 GitHub 创建受限令牌' %}
   {% assign settings_auth_token = 'Fine-grained token' %}
-  {% assign settings_auth_security = '令牌只保存在当前页面内存中，刷新页面后自动消失。' %}
+  {% assign settings_auth_remember = '信任这台私人电脑，以后自动连接' %}
+  {% assign settings_auth_security = '勾选后令牌会加密保存在这台浏览器的设备凭据库中。只应在你自己的电脑使用；令牌不会写入仓库、分析服务或日志。' %}
   {% assign settings_auth_cancel = '取消' %}
   {% assign settings_auth_verify = '验证并连接' %}
 {% endif %}
@@ -243,7 +245,7 @@
     <p>{{ settings_auth_intro }}</p>
     <p>
       <a
-        href="https://github.com/settings/personal-access-tokens/new?name=Functionhx%20site%20settings&description=Manage%20functionhx.github.io%20sections&target_name=Functionhx&expires_in=30&contents=write"
+        href="https://github.com/settings/personal-access-tokens/new?name=Functionhx%20site%20settings&description=Manage%20functionhx.github.io%20sections&target_name=Functionhx&expires_in=30&contents=write&actions=read"
         target="_blank"
         rel="external nofollow noopener"
       >
@@ -254,6 +256,10 @@
     <label>
       <span>{{ settings_auth_token }}</span>
       <input id="site-settings-token" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="none" spellcheck="false">
+    </label>
+    <label class="site-settings-auth__remember">
+      <input id="site-settings-auth-remember" type="checkbox" checked>
+      <span>{{ settings_auth_remember }}</span>
     </label>
     <p class="site-settings-auth__security">{{ settings_auth_security }}</p>
     <p id="site-settings-auth-status" class="site-settings-auth__status" role="status" aria-live="polite"></p>

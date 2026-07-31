@@ -190,7 +190,7 @@
         <ul class="navbar-nav navbar-menu-list flex-nowrap">
           <!-- About -->
           <li class="nav-item {% if page.home %}active{% endif %}">
-            <a class="nav-link" href="{{ home_page.url | relative_url }}">
+            <a class="nav-link" href="{{ home_page.url | relative_url }}" data-nav-translation-key="home">
               {{- home_page.title }}
               {% if page.home %}
                 <span class="sr-only">(current)</span>
@@ -215,6 +215,7 @@
                     href="#"
                     id="navbarDropdown"
                     role="button"
+                    data-nav-translation-key="{{ p.translation_key | escape }}"
                     data-nav-dropdown-toggle="true"
                     aria-haspopup="true"
                     aria-expanded="false"
@@ -247,7 +248,7 @@
                   {% else %}
                     {% assign nav_url = p.url %}
                   {% endif %}
-                  <a class="nav-link" href="{{ nav_url | relative_url }}">
+                  <a class="nav-link" href="{{ nav_url | relative_url }}" data-nav-translation-key="{{ p.translation_key | escape }}">
                     {{- p.title }}
                     {% if page.url contains p.url %}
                       <span class="sr-only">(current)</span>

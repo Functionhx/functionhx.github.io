@@ -140,6 +140,15 @@ def main() -> int:
     if not giscus.get("repo_id") or not giscus.get("category_id"):
         errors.append("_config.yml: Giscus repository and category IDs are required")
 
+    workflow_path = ROOT / ".github" / "workflows" / "deploy.yml"
+    workflow_text = (
+        workflow_path.read_text(encoding="utf-8") if workflow_path.exists() else ""
+    )
+    if "cancel-in-progress: true" not in workflow_text:
+        errors.append(
+            ".github/workflows/deploy.yml: newer site commits must supersede older deployments"
+        )
+
     inline_editor_path = ROOT / "assets" / "js" / "inline-editor.js"
     inline_editor_text = (
         inline_editor_path.read_text(encoding="utf-8")
@@ -150,6 +159,8 @@ def main() -> int:
         "https://api.github.com",
         "Functionhx",
         "window.localStorage",
+        "window.functionhxGitHubAuth",
+        "window.functionhxDeployment",
         'method: "PUT"',
         "Authorization",
     ):
@@ -166,6 +177,8 @@ def main() -> int:
     )
     for contract in (
         "window.localStorage",
+        "window.functionhxGitHubAuth",
+        "window.functionhxDeployment",
         "/git/trees",
         'method: "POST"',
         'method: "PATCH"',
@@ -190,12 +203,58 @@ def main() -> int:
         'method: "PATCH"',
         "force: false",
         "window.functionhxDeepSeek.translate",
+        "window.functionhxGitHubAuth",
+        "window.functionhxDeployment",
         "setNavigationVisibility",
         "createPageSource",
     ):
         if contract not in site_settings_text:
             errors.append(
                 f"assets/js/site-settings.js: integration contract "
+                f"{contract!r} missing"
+            )
+
+    auth_vault_path = ROOT / "assets" / "js" / "github-auth-vault.js"
+    auth_vault_text = (
+        auth_vault_path.read_text(encoding="utf-8")
+        if auth_vault_path.exists()
+        else ""
+    )
+    for contract in (
+        "indexedDB",
+        "AES-GCM",
+        "generateKey",
+        "functionhx:github-auth-changed",
+        "ciphertext",
+    ):
+        if contract not in auth_vault_text:
+            errors.append(
+                f"assets/js/github-auth-vault.js: trusted-device contract "
+                f"{contract!r} missing"
+            )
+    for forbidden_storage in ("localStorage", "sessionStorage"):
+        if forbidden_storage in auth_vault_text:
+            errors.append(
+                "assets/js/github-auth-vault.js: GitHub credentials must not "
+                f"use {forbidden_storage}"
+            )
+
+    deployment_path = ROOT / "assets" / "js" / "deployment-monitor.js"
+    deployment_text = (
+        deployment_path.read_text(encoding="utf-8")
+        if deployment_path.exists()
+        else ""
+    )
+    for contract in (
+        "/actions/runs",
+        'url.searchParams.set("head_sha", sha)',
+        'url.searchParams.set("event", "push")',
+        "functionhxDeployment",
+        'run.conclusion === "success"',
+    ):
+        if contract not in deployment_text:
+            errors.append(
+                f"assets/js/deployment-monitor.js: deployment contract "
                 f"{contract!r} missing"
             )
 

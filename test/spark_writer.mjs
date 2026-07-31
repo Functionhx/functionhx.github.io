@@ -83,6 +83,7 @@ const commitRequests = [];
 const refUpdates = [];
 const translationRequests = [];
 const translationAuthorizations = [];
+const deploymentPolls = new Map();
 const authorizations = [];
 const browserCandidates = [
   process.env.PLAYWRIGHT_CHROME_PATH,
@@ -96,6 +97,9 @@ const browser = await chromium.launch({
   ...(browserExecutable ? { executablePath: browserExecutable } : {}),
 });
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+await page.addInitScript(() => {
+  window.functionhxDeploymentConfig = { maxWait: 2000, pollInterval: 25 };
+});
 
 await page.route("https://api.deepseek.com/**", async (route) => {
   const request = route.request();
@@ -157,6 +161,28 @@ await page.route("https://api.github.com/**", async (route) => {
   if (pathname === "/repos/Functionhx/functionhx.github.io") {
     await route.fulfill({
       body: JSON.stringify({ permissions: { push: true } }),
+      contentType: "application/json",
+      headers: corsHeaders,
+      status: 200,
+    });
+    return;
+  }
+  if (pathname === "/repos/Functionhx/functionhx.github.io/actions/runs") {
+    const sha = url.searchParams.get("head_sha") || "";
+    const polls = (deploymentPolls.get(sha) || 0) + 1;
+    deploymentPolls.set(sha, polls);
+    const state = polls === 1 ? "queued" : polls === 2 ? "in_progress" : "completed";
+    await route.fulfill({
+      body: JSON.stringify({
+        workflow_runs: [
+          {
+            conclusion: state === "completed" ? "success" : null,
+            head_sha: sha,
+            html_url: `https://github.com/Functionhx/functionhx.github.io/actions/runs/${sha}`,
+            status: state,
+          },
+        ],
+      }),
       contentType: "application/json",
       headers: corsHeaders,
       status: 200,
@@ -296,6 +322,7 @@ try {
   await page.locator("#site-inline-editor-auth-connect").click();
   await page.locator("#site-inline-editor-auth").waitFor({ state: "hidden" });
   await page.locator("#site-spark-writer-result").waitFor({ state: "visible" });
+  await page.locator('#site-deployment-monitor[data-state="success"]').waitFor({ state: "visible" });
 
   assert.equal(treeRequests.length, 1, "creation should make one Git tree");
   assert.equal(treeRequests[0].tree.length, 2, "one tree should contain both language files");
@@ -309,6 +336,7 @@ try {
   assert.match(createdZh.content, /直接像写笔记一样写下中文正文/);
   assert.match(createdEn.content, /Write the English body directly like a note/);
   assert.deepEqual(refUpdates[0], { force: false, sha: "commit-1" });
+  assert.ok((deploymentPolls.get("commit-1") || 0) >= 3, "Spark publishing should expose deployment progress through success");
 
   await page.locator("#site-spark-writer-close").click();
   await page.locator("#site-spark-create").click();

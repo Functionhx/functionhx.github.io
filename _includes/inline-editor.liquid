@@ -16,12 +16,13 @@
   {% assign editor_close_label = 'Close editor' %}
   {% assign editor_discard_label = 'Discard local draft' %}
   {% assign editor_message_label = 'Commit message' %}
-  {% assign editor_auth_heading = 'Connect GitHub for this session' %}
-  {% assign editor_auth_intro = 'Choose “Only select repositories → functionhx.github.io” and keep only Contents: write permission.' %}
+  {% assign editor_auth_heading = 'Connect GitHub' %}
+  {% assign editor_auth_intro = 'Choose “Only select repositories → functionhx.github.io” with Contents: write and Actions: read.' %}
   {% assign editor_auth_create = 'Create a restricted token on GitHub' %}
   {% assign editor_auth_token_label = 'Fine-grained token' %}
   {% assign editor_auth_token_placeholder = 'github_pat_…' %}
-  {% assign editor_auth_security = 'The token stays only in this page memory. It is never stored in the repository, browser storage, analytics, or logs.' %}
+  {% assign editor_auth_remember = 'Trust this private device and reuse the token' %}
+  {% assign editor_auth_security = 'When trusted, the token is encrypted in this browser’s device vault. Use this only on your own computer; it is never written to the repository, analytics, or logs.' %}
   {% assign editor_auth_cancel = 'Cancel' %}
   {% assign editor_auth_verify = 'Verify and connect' %}
 {% else %}
@@ -41,12 +42,13 @@
   {% assign editor_close_label = '关闭编辑' %}
   {% assign editor_discard_label = '丢弃本地草稿' %}
   {% assign editor_message_label = '提交说明' %}
-  {% assign editor_auth_heading = '本次编辑连接 GitHub' %}
-  {% assign editor_auth_intro = '创建时选择“Only select repositories → functionhx.github.io”，权限只保留 Contents: write。' %}
+  {% assign editor_auth_heading = '连接 GitHub' %}
+  {% assign editor_auth_intro = '创建时选择“Only select repositories → functionhx.github.io”，权限只开启 Contents: write 与 Actions: read。' %}
   {% assign editor_auth_create = '在 GitHub 创建受限令牌' %}
   {% assign editor_auth_token_label = 'Fine-grained token' %}
   {% assign editor_auth_token_placeholder = 'github_pat_…' %}
-  {% assign editor_auth_security = '令牌只保存在当前页面内存中，不写入仓库、浏览器存储、分析服务或日志；刷新页面后自动消失。' %}
+  {% assign editor_auth_remember = '信任这台私人电脑，以后自动连接' %}
+  {% assign editor_auth_security = '勾选后令牌会加密保存在这台浏览器的设备凭据库中。只应在你自己的电脑使用；令牌不会写入仓库、分析服务或日志。' %}
   {% assign editor_auth_cancel = '取消' %}
   {% assign editor_auth_verify = '验证并连接' %}
 {% endif %}
@@ -185,7 +187,7 @@
     <p>{{ editor_auth_intro }}</p>
     <p>
       <a
-        href="https://github.com/settings/personal-access-tokens/new?name=Functionhx%20inline%20editor&description=Edit%20functionhx.github.io%20from%20the%20site&target_name=Functionhx&expires_in=30&contents=write"
+        href="https://github.com/settings/personal-access-tokens/new?name=Functionhx%20inline%20editor&description=Edit%20functionhx.github.io%20from%20the%20site&target_name=Functionhx&expires_in=30&contents=write&actions=read"
         target="_blank"
         rel="external nofollow noopener"
       >
@@ -203,6 +205,10 @@
         autocapitalize="none"
         spellcheck="false"
       >
+    </label>
+    <label class="site-inline-editor-auth__remember">
+      <input id="site-inline-editor-auth-remember" type="checkbox" checked>
+      <span>{{ editor_auth_remember }}</span>
     </label>
     <p class="site-inline-editor-auth__security">{{ editor_auth_security }}</p>
     <p id="site-inline-editor-auth-status" class="site-inline-editor-auth__status" role="status" aria-live="polite"></p>

@@ -19,13 +19,17 @@
     ? {
         authFailed: "GitHub connection failed.",
         authMissing: "Paste a fine-grained token first.",
+        authRememberFailed: "Connected for this page, but this browser could not remember the token securely.",
+        authRemembered: "Connected as @Functionhx and remembered on this private device.",
         authSuccess: "Connected as @Functionhx for this browser session.",
         collision: "That URL slug already exists. Change it in Publishing settings.",
         commitConflict: "One of these files changed on GitHub. Reopen it before publishing your changes.",
         commitFailed: "The Spark entry could not be published.",
-        commitSuccess: "Both languages were committed together. GitHub Pages is deploying the update.",
+        commitSuccess: "Both languages were committed together. Follow the publishing progress in the corner.",
         confirmDiscard: "Discard this browser draft?",
-        connected: "@Functionhx connected",
+        connected: "Disconnect @Functionhx",
+        disconnectConfirm: "Forget the trusted GitHub token on this device?",
+        disconnected: "The trusted GitHub connection was removed from this device.",
         draftChanged: "Saved in this browser as you type. Nothing has been sent to GitHub.",
         draftFailed: "This browser could not save the draft.",
         draftRestored: "Recovered the draft saved in this browser.",
@@ -51,13 +55,17 @@
     : {
         authFailed: "GitHub 连接失败。",
         authMissing: "请先粘贴 fine-grained token。",
+        authRememberFailed: "本页已经连接，但这个浏览器无法安全地记住令牌。",
+        authRemembered: "已连接为 @Functionhx，并记住这台私人电脑。",
         authSuccess: "本次浏览器会话已连接为 @Functionhx。",
         collision: "这个网址短名已经存在，请在“发布设置”里换一个。",
         commitConflict: "这组文件已经在 GitHub 上发生变化，请重新打开后再发布。",
         commitFailed: "无法发布这条闪耀。",
-        commitSuccess: "中英文已在同一个 Commit 中提交，GitHub Pages 正在部署。",
+        commitSuccess: "中英文已在同一个 Commit 中提交，请在右下角查看发布进度。",
         confirmDiscard: "丢弃这份浏览器草稿？",
-        connected: "已连接 @Functionhx",
+        connected: "退出 @Functionhx",
+        disconnectConfirm: "从这台设备移除已记住的 GitHub 令牌？",
+        disconnected: "已从这台设备移除 GitHub 连接。",
         draftChanged: "正在随写随存；内容仍只在这个浏览器中，尚未发送到 GitHub。",
         draftFailed: "这个浏览器无法保存草稿。",
         draftRestored: "已恢复保存在这个浏览器中的草稿。",
@@ -103,6 +111,7 @@
   const elements = {
     authCancel: document.getElementById("site-inline-editor-auth-cancel"),
     authConnect: document.getElementById("site-inline-editor-auth-connect"),
+    authRemember: document.getElementById("site-inline-editor-auth-remember"),
     authStatus: document.getElementById("site-inline-editor-auth-status"),
     close: document.getElementById("site-spark-writer-close"),
     comments: document.getElementById("site-spark-writer-comments"),
@@ -141,6 +150,8 @@
   let slugIsAutomatic = true;
   let sourcePaths = { zh: "", en: "" };
   let originals = { zh: null, en: null };
+  let restorePromise = Promise.resolve(null);
+  const disconnectedLabel = elements.connect.querySelector("span")?.textContent.trim() || "GitHub";
 
   function pad(value) {
     return String(value).padStart(2, "0");
@@ -629,6 +640,46 @@
     else authDialog.removeAttribute("open");
   }
 
+  function setConnection(session) {
+    activeToken = session?.token || "";
+    const connectLabel = elements.connect.querySelector("span");
+    if (connectLabel) connectLabel.textContent = activeToken ? strings.connected : disconnectedLabel;
+    elements.connect.dataset.connected = String(Boolean(activeToken));
+  }
+
+  async function restoreGitHubSession() {
+    const session = await window.functionhxGitHubAuth?.restore({ owner, repository }).catch(() => null);
+    setConnection(session);
+    return session;
+  }
+
+  async function saveGitHubSession(token) {
+    const remember = elements.authRemember.checked;
+    if (!window.functionhxGitHubAuth) return { failed: remember, remembered: false };
+    try {
+      return await window.functionhxGitHubAuth.save({ owner, remember, repository, token });
+    } catch (_error) {
+      await window.functionhxGitHubAuth.save({ owner, remember: false, repository, token }).catch(() => undefined);
+      return { failed: true, remembered: false };
+    }
+  }
+
+  async function disconnectGitHub(ask = true) {
+    if (ask && !window.confirm(strings.disconnectConfirm)) return;
+    await window.functionhxGitHubAuth?.forget({ repository }).catch(() => undefined);
+    setConnection(null);
+    setStatus(strings.disconnected);
+  }
+
+  async function handleConnectButton() {
+    await restorePromise;
+    if (activeToken) {
+      await disconnectGitHub(true);
+      return;
+    }
+    openAuthDialog(false);
+  }
+
   async function connectGitHub() {
     const candidate = elements.token.value.trim();
     if (!candidate) {
@@ -645,16 +696,20 @@
       if (String(user.login).toLowerCase() !== owner.toLowerCase() || !repo.permissions?.push) {
         throw new Error("This token is not @Functionhx with repository write access.");
       }
-      activeToken = candidate;
-      const connectLabel = elements.connect.querySelector("span");
-      if (connectLabel) connectLabel.textContent = strings.connected;
-      setAuthStatus(strings.authSuccess, "success");
+      const saved = await saveGitHubSession(candidate);
+      setConnection({ token: candidate });
+      setAuthStatus(saved.failed ? strings.authRememberFailed : saved.remembered ? strings.authRemembered : strings.authSuccess, "success");
       const continuePublishing = pendingPublish;
       pendingPublish = false;
-      closeAuthDialog();
-      if (continuePublishing) window.setTimeout(publishPair, 0);
+      window.setTimeout(
+        () => {
+          closeAuthDialog();
+          if (continuePublishing) publishPair();
+        },
+        saved.failed ? 900 : 350
+      );
     } catch (error) {
-      activeToken = "";
+      setConnection(null);
       setAuthStatus(`${strings.authFailed} ${error.message || ""}`.trim(), "error");
     } finally {
       elements.token.value = "";
@@ -754,6 +809,7 @@
   }
 
   async function publishPair() {
+    await restorePromise;
     if (busy || !validate()) return;
     if (!isDirty()) {
       setStatus(strings.noChanges);
@@ -794,7 +850,9 @@
         elements.result.textContent = strings.viewCommit;
         elements.result.hidden = false;
       }
+      window.functionhxDeployment?.watch(result.commit);
     } catch (error) {
+      if (error.status === 401 || error.status === 403) await disconnectGitHub(false);
       const knownMessage = [strings.collision, strings.commitConflict].includes(error.message);
       setStatus(knownMessage ? error.message : `${strings.commitFailed} ${error.message || ""}`.trim(), "error");
     } finally {
@@ -885,7 +943,7 @@
   if (elements.create) elements.create.addEventListener("click", () => openCreate(elements.create));
   elements.close.addEventListener("click", closeWriter);
   elements.discard.addEventListener("click", discardDraft);
-  elements.connect.addEventListener("click", () => openAuthDialog(false));
+  elements.connect.addEventListener("click", handleConnectButton);
   elements.publish.addEventListener("click", publishPair);
   elements.translate.addEventListener("click", translateChineseDraft);
   fields.zh.tab.addEventListener("click", () => selectLanguage("zh", true));
@@ -943,6 +1001,12 @@
     if (event.key === "Escape" && !root.hidden && !authDialog.open) closeWriter();
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !root.hidden) publishPair();
   });
+
+  window.addEventListener("functionhx:github-auth-changed", (event) => {
+    if (event.detail?.repository !== repository) return;
+    restorePromise = restoreGitHubSession();
+  });
+  restorePromise = restoreGitHubSession();
 
   selectLanguage(currentLanguage);
 })();

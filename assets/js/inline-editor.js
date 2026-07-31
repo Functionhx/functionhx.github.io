@@ -25,12 +25,16 @@
     ? {
         authFailed: "GitHub connection failed.",
         authMissing: "Paste a fine-grained token first.",
-        authSuccess: "Connected as @Functionhx for this page session.",
+        authRememberFailed: "Connected for this page, but this browser could not remember the token securely.",
+        authRemembered: "Connected as @Functionhx and remembered on this private device.",
+        authSuccess: "Connected as @Functionhx for this browser session.",
         commitConflict: "The source changed on GitHub after this editor loaded. Close and reopen the editor before committing.",
         commitFailed: "The commit could not be created.",
-        commitSuccess: "Committed successfully. GitHub Pages is deploying the update.",
+        commitSuccess: "Commit created. Follow the publishing progress in the corner.",
         confirmDiscard: "Discard the browser draft and restore the current GitHub version?",
-        connected: "@Functionhx connected",
+        connected: "Disconnect @Functionhx",
+        disconnectConfirm: "Forget the trusted GitHub token on this device?",
+        disconnected: "The trusted GitHub connection was removed from this device.",
         defaultMessage: `content: update "${sourcePath}"`,
         draftChanged: "Changes are local only and have not been committed.",
         draftFailed: "This browser could not save the local draft.",
@@ -47,12 +51,16 @@
     : {
         authFailed: "GitHub 连接失败。",
         authMissing: "请先粘贴 fine-grained token。",
-        authSuccess: "本次页面会话已连接为 @Functionhx。",
+        authRememberFailed: "本页已经连接，但这个浏览器无法安全地记住令牌。",
+        authRemembered: "已连接为 @Functionhx，并记住这台私人电脑。",
+        authSuccess: "本次浏览器会话已连接为 @Functionhx。",
         commitConflict: "编辑期间 GitHub 源文件已经变化。请关闭并重新打开编辑器后再提交。",
         commitFailed: "无法创建 Commit。",
-        commitSuccess: "Commit 已成功创建，GitHub Pages 正在部署更新。",
+        commitSuccess: "Commit 已创建，请在右下角查看发布进度。",
         confirmDiscard: "丢弃浏览器草稿，恢复到 GitHub 当前版本？",
-        connected: "已连接 @Functionhx",
+        connected: "退出 @Functionhx",
+        disconnectConfirm: "从这台设备移除已记住的 GitHub 令牌？",
+        disconnected: "已从这台设备移除 GitHub 连接。",
         defaultMessage: `content: update "${sourcePath}"`,
         draftChanged: "修改仍只在本页和浏览器草稿中，尚未 Commit。",
         draftFailed: "这个浏览器无法保存本地草稿。",
@@ -70,6 +78,7 @@
   const elements = {
     authCancel: document.getElementById("site-inline-editor-auth-cancel"),
     authConnect: document.getElementById("site-inline-editor-auth-connect"),
+    authRemember: document.getElementById("site-inline-editor-auth-remember"),
     authStatus: document.getElementById("site-inline-editor-auth-status"),
     body: document.getElementById("site-inline-editor-body"),
     bodyPanel: document.getElementById("site-inline-editor-body-panel"),
@@ -108,9 +117,12 @@
   let sourceNewline = "\n";
   let editorLoaded = false;
   let editorBusy = false;
+  let pendingCommit = false;
   let draftTimer = 0;
   let previewTimer = 0;
   let previousScrollY = 0;
+  let restorePromise = Promise.resolve(null);
+  const disconnectedLabel = elements.connect.querySelector("span")?.textContent.trim() || "GitHub";
 
   function setStatus(message, state = "") {
     elements.status.textContent = message;
@@ -459,7 +471,8 @@
     toggle.focus();
   }
 
-  function openAuthDialog() {
+  function openAuthDialog(shouldCommit = false) {
+    pendingCommit = shouldCommit;
     setAuthStatus("");
     elements.token.value = "";
     if (typeof authDialog.showModal === "function") authDialog.showModal();
@@ -471,6 +484,46 @@
     elements.token.value = "";
     if (typeof authDialog.close === "function") authDialog.close();
     else authDialog.removeAttribute("open");
+  }
+
+  function setConnection(session) {
+    activeToken = session?.token || "";
+    const connectLabel = elements.connect.querySelector("span");
+    if (connectLabel) connectLabel.textContent = activeToken ? strings.connected : disconnectedLabel;
+    elements.connect.dataset.connected = String(Boolean(activeToken));
+  }
+
+  async function restoreGitHubSession() {
+    const session = await window.functionhxGitHubAuth?.restore({ owner, repository }).catch(() => null);
+    setConnection(session);
+    return session;
+  }
+
+  async function saveGitHubSession(token) {
+    const remember = elements.authRemember.checked;
+    if (!window.functionhxGitHubAuth) return { failed: remember, remembered: false };
+    try {
+      return await window.functionhxGitHubAuth.save({ owner, remember, repository, token });
+    } catch (_error) {
+      await window.functionhxGitHubAuth.save({ owner, remember: false, repository, token }).catch(() => undefined);
+      return { failed: true, remembered: false };
+    }
+  }
+
+  async function disconnectGitHub(ask = true) {
+    if (ask && !window.confirm(strings.disconnectConfirm)) return;
+    await window.functionhxGitHubAuth?.forget({ repository }).catch(() => undefined);
+    setConnection(null);
+    setStatus(strings.disconnected);
+  }
+
+  async function handleConnectButton() {
+    await restorePromise;
+    if (activeToken) {
+      await disconnectGitHub(true);
+      return;
+    }
+    openAuthDialog(false);
   }
 
   async function connectGitHub() {
@@ -490,13 +543,20 @@
       if (String(user.login).toLowerCase() !== owner.toLowerCase() || !repo.permissions?.push) {
         throw new Error("This token is not @Functionhx with repository write access.");
       }
-      activeToken = candidate;
-      const connectLabel = elements.connect.querySelector("span");
-      if (connectLabel) connectLabel.textContent = strings.connected;
-      setAuthStatus(strings.authSuccess, "success");
-      window.setTimeout(closeAuthDialog, 500);
+      const saved = await saveGitHubSession(candidate);
+      setConnection({ token: candidate });
+      setAuthStatus(saved.failed ? strings.authRememberFailed : saved.remembered ? strings.authRemembered : strings.authSuccess, "success");
+      const continueCommit = pendingCommit;
+      pendingCommit = false;
+      window.setTimeout(
+        () => {
+          closeAuthDialog();
+          if (continueCommit) commitChanges();
+        },
+        saved.failed ? 900 : 350
+      );
     } catch (error) {
-      activeToken = "";
+      setConnection(null);
       setAuthStatus(`${strings.authFailed} ${error.message || ""}`.trim(), "error");
     } finally {
       elements.token.value = "";
@@ -505,12 +565,13 @@
   }
 
   async function commitChanges() {
+    await restorePromise;
     if (!isDirty()) {
       setStatus(strings.noChanges);
       return;
     }
     if (!activeToken) {
-      openAuthDialog();
+      openAuthDialog(true);
       return;
     }
 
@@ -545,7 +606,9 @@
         elements.result.textContent = strings.viewCommit;
         elements.result.hidden = false;
       }
+      window.functionhxDeployment?.watch(result.commit);
     } catch (error) {
+      if (error.status === 401 || error.status === 403) await disconnectGitHub(false);
       const message = error.message === strings.commitConflict ? error.message : `${strings.commitFailed} ${error.message || ""}`.trim();
       setStatus(message, "error");
     } finally {
@@ -564,8 +627,11 @@
 
   toggle.addEventListener("click", openEditor);
   elements.close.addEventListener("click", closeEditor);
-  elements.connect.addEventListener("click", openAuthDialog);
-  elements.authCancel.addEventListener("click", closeAuthDialog);
+  elements.connect.addEventListener("click", handleConnectButton);
+  elements.authCancel.addEventListener("click", () => {
+    pendingCommit = false;
+    closeAuthDialog();
+  });
   elements.authConnect.addEventListener("click", connectGitHub);
   authDialog.addEventListener("close", () => {
     elements.token.value = "";
@@ -612,6 +678,12 @@
       closeEditor();
     }
   });
+
+  window.addEventListener("functionhx:github-auth-changed", (event) => {
+    if (event.detail?.repository !== repository) return;
+    restorePromise = restoreGitHubSession();
+  });
+  restorePromise = restoreGitHubSession();
 
   if (hasYamlKey(elements.frontMatter.value, "published") || hasYamlKey(elements.frontMatter.value, "giscus_comments")) {
     syncMetadataFromFrontMatter();

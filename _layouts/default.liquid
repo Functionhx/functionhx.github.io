@@ -23,6 +23,7 @@
     {% endif %}
     {% include head.liquid %}
     <link rel="stylesheet" href="{{ '/assets/css/deepseek-translator.css' | relative_url }}">
+    <link rel="stylesheet" href="{{ '/assets/css/deployment-monitor.css' | relative_url }}">
     <link rel="stylesheet" href="{{ '/assets/css/inline-editor.css' | relative_url }}">
     <link rel="stylesheet" href="{{ '/assets/css/site-settings.css' | relative_url }}">
     {% if spark_writer_enabled %}
@@ -59,6 +60,7 @@
     {% include header.liquid %}
     {% include site-settings.liquid %}
     {% include deepseek-translator.liquid %}
+    {% include deployment-monitor.liquid %}
 
     <!-- Content -->
     <div class="container mt-5" role="main">
@@ -104,6 +106,8 @@
 
     <!-- JavaScripts -->
     {% include scripts.liquid %}
+    <script src="{{ '/assets/js/github-auth-vault.js' | relative_url }}"></script>
+    <script src="{{ '/assets/js/deployment-monitor.js' | relative_url }}"></script>
     <script src="{{ '/assets/js/deepseek-translator.js' | relative_url }}"></script>
     <script src="{{ '/assets/js/inline-editor.js' | relative_url }}"></script>
     <script src="{{ '/assets/js/site-settings.js' | relative_url }}"></script>

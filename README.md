@@ -52,10 +52,18 @@ cleared immediately, never written to browser storage, and requested again for
 the next translation.
 
 Creating a commit requires a fine-grained GitHub token owned by `Functionhx`,
-restricted to this repository, with `Contents: write`. The token remains only
-in the current page's JavaScript memory and disappears on reload; it is never
-written to browser storage or the repository. The editor checks the account and
-repository push permission before enabling authenticated commits.
+restricted to this repository, with `Contents: write` and `Actions: read`. On a
+private computer, the owner may trust the device: the token is encrypted with a
+non-extractable Web Crypto key and retained in IndexedDB so every editor can
+reconnect after a reload. Without that option it stays in page memory only.
+Disconnecting GitHub removes the encrypted credential; the token is never
+written to the repository, analytics, or logs. The editor checks the account
+and repository push permission before saving a credential.
+
+After a commit, the fixed publishing monitor follows the matching public GitHub
+Actions run by commit SHA. It distinguishes queued, building/deploying, success,
+and failure states, keeps an elapsed timer, and enables page refresh only after
+the new version is live.
 
 Create Chinese and English records with the same `slug` and
 `translation_key`. Their `lang`, `permalink`, and body content remain separate.

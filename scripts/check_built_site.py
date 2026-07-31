@@ -61,6 +61,8 @@ class PageParser(HTMLParser):
         self.h1_text: list[str] = []
         self.in_nav = False
         self.nav_text: list[str] = []
+        self.nav_translation_keys: list[str] = []
+        self.settings_visibility: dict[str, bool] = {}
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = dict(attrs)
@@ -68,6 +70,15 @@ class PageParser(HTMLParser):
             self.html_lang = attributes.get("lang") or ""
         if attributes.get("id"):
             self.ids.add(attributes["id"])
+        nav_translation_key = attributes.get("data-nav-translation-key")
+        if nav_translation_key:
+            self.nav_translation_keys.append(nav_translation_key)
+        if "data-section-toggle" in attributes:
+            translation_key = attributes.get("data-translation-key")
+            if translation_key:
+                self.settings_visibility[translation_key] = (
+                    attributes.get("data-initial-visible") == "true"
+                )
         if tag == "a" and attributes.get("href"):
             self.links.append(attributes["href"])
         if tag == "link" and attributes.get("rel") == "alternate":
@@ -147,6 +158,7 @@ def main() -> int:
             "site-settings-format",
             "site-settings-translate",
             "site-settings-commit",
+            "site-settings-auth-remember",
         ):
             if settings_id not in parser.ids:
                 errors.append(f"{route}: missing settings control #{settings_id}")
@@ -157,6 +169,14 @@ def main() -> int:
         ):
             if translator_id not in parser.ids:
                 errors.append(f"{route}: missing translation control #{translator_id}")
+        for deployment_id in (
+            "site-deployment-monitor",
+            "site-deployment-monitor-progress",
+            "site-deployment-monitor-status",
+            "site-deployment-monitor-refresh",
+        ):
+            if deployment_id not in parser.ids:
+                errors.append(f"{route}: missing deployment control #{deployment_id}")
         settings_start = rendered_html.find('id="site-settings-sections"')
         settings_end = rendered_html.find('id="site-settings-new"')
         if (
@@ -165,6 +185,21 @@ def main() -> int:
             and "page 2" in rendered_html[settings_start:settings_end]
         ):
             errors.append(f"{route}: paginated clone leaked into section settings")
+        expected_nav_keys = {
+            key for key, visible in parser.settings_visibility.items() if visible
+        }
+        actual_nav_keys = set(parser.nav_translation_keys)
+        if len(parser.nav_translation_keys) != len(actual_nav_keys):
+            errors.append(
+                f"{route}: duplicate navigation translation keys "
+                f"{parser.nav_translation_keys}"
+            )
+        expected_nav_keys.add("home")
+        if actual_nav_keys != expected_nav_keys:
+            errors.append(
+                f"{route}: navigation keys {sorted(actual_nav_keys)} do not match "
+                f"settings {sorted(expected_nav_keys)}"
+            )
         if not {"zh-CN", "en", "x-default"}.issubset(parser.alternates):
             errors.append(f"{route}: incomplete hreflang alternates {parser.alternates}")
         if expected_language == "zh-CN" and "Yuchen Fan" in rendered_html:
@@ -286,6 +321,7 @@ def main() -> int:
             "site-inline-editor",
             "site-inline-editor-body",
             "site-inline-editor-commit",
+            "site-inline-editor-auth-remember",
         }.difference(parser.ids)
         if missing_editor_ids:
             errors.append(f"{route}: inline editor controls missing {sorted(missing_editor_ids)}")
@@ -308,55 +344,25 @@ def main() -> int:
         "assets/js/site-settings.js",
         "assets/css/deepseek-translator.css",
         "assets/js/deepseek-translator.js",
+        "assets/css/deployment-monitor.css",
+        "assets/js/deployment-monitor.js",
+        "assets/js/github-auth-vault.js",
     ):
         if not (site / asset).is_file():
             errors.append(f"/{asset}: authoring asset missing")
 
     chinese_nav = " ".join(parsed_pages.get("/", PageParser()).nav_text)
     english_nav = " ".join(parsed_pages.get("/en/", PageParser()).nav_text)
-    for label in (
-        "关于",
-        "博客",
-        "论文",
-        "项目",
-        "简历",
-        "动态",
-        "工具",
-        "闪耀",
-        "EN",
-    ):
+    for label in ("关于", "EN"):
         if label not in chinese_nav:
             errors.append(f"/: navigation label {label!r} missing")
-    for label in (
-        "about",
-        "blog",
-        "publications",
-        "projects",
-        "CV",
-        "news",
-        "tools",
-        "Spark",
-        "中",
-    ):
+    for label in ("about", "中"):
         if label not in english_nav:
             errors.append(f"/en/: navigation label {label!r} missing")
     if "更多" in chinese_nav:
         errors.append("/: collapsed more navigation must not render")
     if "more" in english_nav:
         errors.append("/en/: collapsed more navigation must not render")
-    for label in ("教学", "书架", "思考", "日志", "人物", "仓库"):
-        if label in chinese_nav:
-            errors.append(f"/: removed navigation label {label!r} still renders")
-    for label in (
-        "teaching",
-        "bookshelf",
-        "thoughts",
-        "logs",
-        "people",
-        "repositories",
-    ):
-        if label in english_nav:
-            errors.append(f"/en/: removed navigation label {label!r} still renders")
 
     for route in ("/projects/", "/en/projects/"):
         path = route_file(site, route)

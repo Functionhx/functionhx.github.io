@@ -43,6 +43,7 @@ let commitRequest = null;
 let refUpdate = null;
 let translationRequest = null;
 let translationAuthorization = "";
+let deploymentPolls = 0;
 const authorizations = [];
 const githubRequests = [];
 const browserCandidates = [
@@ -57,6 +58,9 @@ const browser = await chromium.launch({
   ...(browserExecutable ? { executablePath: browserExecutable } : {}),
 });
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+await page.addInitScript(() => {
+  window.functionhxDeploymentConfig = { maxWait: 2000, pollInterval: 25 };
+});
 
 await page.route("https://api.deepseek.com/**", async (route) => {
   const request = route.request();
@@ -122,6 +126,26 @@ await page.route("https://api.github.com/**", async (route) => {
   if (pathname === "/repos/Functionhx/functionhx.github.io") {
     await route.fulfill({
       body: JSON.stringify({ permissions: { push: true } }),
+      contentType: "application/json",
+      headers: corsHeaders,
+      status: 200,
+    });
+    return;
+  }
+  if (pathname === "/repos/Functionhx/functionhx.github.io/actions/runs") {
+    deploymentPolls += 1;
+    const state = deploymentPolls === 1 ? "queued" : deploymentPolls === 2 ? "in_progress" : "completed";
+    await route.fulfill({
+      body: JSON.stringify({
+        workflow_runs: [
+          {
+            conclusion: state === "completed" ? "success" : null,
+            head_sha: "settings-commit",
+            html_url: "https://github.com/Functionhx/functionhx.github.io/actions/runs/settings-test",
+            status: state,
+          },
+        ],
+      }),
       contentType: "application/json",
       headers: corsHeaders,
       status: 200,
@@ -279,6 +303,7 @@ try {
   await page.locator("#site-settings-auth-connect").click();
   await page.locator("#site-settings-auth").waitFor({ state: "hidden" });
   await page.locator("#site-settings-result").waitFor({ state: "visible" });
+  await page.locator('#site-deployment-monitor[data-state="success"]').waitFor({ state: "visible" });
 
   assert.ok(treeRequest, "settings should create a Git tree");
   assert.equal(treeRequest.base_tree, "base-settings-tree");
@@ -312,6 +337,7 @@ try {
     mutationAuthorizations.every((authorization) => authorization === `Bearer ${testToken}`),
     "only the owner token may reach GitHub mutation endpoints"
   );
+  assert.ok(deploymentPolls >= 3, "settings commits should expose deployment progress through success");
 
   const browserStorage = await page.evaluate(() => JSON.stringify({ ...window.localStorage, ...window.sessionStorage }));
   assert.equal(browserStorage.includes(testToken), false, "the settings token must never enter browser storage");
@@ -324,6 +350,7 @@ try {
   await page.reload({ waitUntil: "networkidle" });
   await page.locator('[data-nav-toggle="navbarNav"]').click();
   await page.locator("#site-settings-toggle").click();
+  await page.waitForFunction(() => document.querySelector("#site-settings-connect span")?.textContent.includes("退出"));
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
   const dialogBounds = await page.locator("#site-settings-dialog").evaluate((element) => {
     const rect = element.getBoundingClientRect();

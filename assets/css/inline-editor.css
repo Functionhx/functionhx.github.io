@@ -356,6 +356,23 @@ body.site-inline-editor-active > .container[role="main"] {
   margin-bottom: 0.7rem;
 }
 
+.site-inline-editor-auth__remember {
+  align-items: center;
+  display: flex !important;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.site-inline-editor-auth__remember input {
+  accent-color: var(--global-theme-color);
+  min-height: auto;
+  width: auto;
+}
+
+.site-inline-editor-auth__remember > span {
+  color: var(--global-text-color) !important;
+}
+
 .site-inline-editor-auth__status {
   border-left: 3px solid transparent;
   font-size: 0.82rem;

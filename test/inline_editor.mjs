@@ -22,6 +22,8 @@ giscus_comments: false
 
 let committedBody = null;
 let committedAuthorization = "";
+let deploymentPolls = 0;
+let identityChecks = 0;
 
 let staticServer = null;
 let baseUrl = process.env.INLINE_EDITOR_TEST_URL || "";
@@ -59,6 +61,9 @@ const browser = await chromium.launch({
   ...(browserExecutable ? { executablePath: browserExecutable } : {}),
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+await page.addInitScript(() => {
+  window.functionhxDeploymentConfig = { maxWait: 2000, pollInterval: 25 };
+});
 
 await page.route("https://api.github.com/**", async (route) => {
   const request = route.request();
@@ -75,6 +80,7 @@ await page.route("https://api.github.com/**", async (route) => {
   }
 
   if (url.pathname === "/user") {
+    identityChecks += 1;
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -94,6 +100,27 @@ await page.route("https://api.github.com/**", async (route) => {
     return;
   }
 
+  if (url.pathname === "/repos/Functionhx/functionhx.github.io/actions/runs") {
+    deploymentPolls += 1;
+    const state = deploymentPolls === 1 ? "queued" : deploymentPolls === 2 ? "in_progress" : "completed";
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: corsHeaders,
+      body: JSON.stringify({
+        workflow_runs: [
+          {
+            conclusion: state === "completed" ? "success" : null,
+            head_sha: "test-deployment-sha",
+            html_url: "https://github.com/Functionhx/functionhx.github.io/actions/runs/test",
+            status: state,
+          },
+        ],
+      }),
+    });
+    return;
+  }
+
   if (url.pathname === "/repos/Functionhx/functionhx.github.io/contents/_pages/about-zh.md") {
     if (request.method() === "PUT") {
       committedAuthorization = request.headers().authorization || "";
@@ -104,7 +131,10 @@ await page.route("https://api.github.com/**", async (route) => {
         headers: corsHeaders,
         body: JSON.stringify({
           content: { sha: "new-sha" },
-          commit: { html_url: "https://github.com/Functionhx/functionhx.github.io/commit/test" },
+          commit: {
+            html_url: "https://github.com/Functionhx/functionhx.github.io/commit/test",
+            sha: "test-deployment-sha",
+          },
         }),
       });
       return;
@@ -161,14 +191,39 @@ try {
 
   await page.locator("#site-inline-editor-commit").click();
   await page.locator("#site-inline-editor-result").waitFor({ state: "visible" });
+  await page.locator('#site-deployment-monitor[data-state="success"]').waitFor({ state: "visible" });
 
   assert.ok(committedBody, "the editor should send a Contents API PUT request");
   assert.equal(committedAuthorization, `Bearer ${testToken}`);
   assert.match(Buffer.from(committedBody.content, "base64").toString("utf8"), /页面内即时编辑/);
   assert.match(Buffer.from(committedBody.content, "base64").toString("utf8"), /这是页面里的编辑结果/);
+  assert.equal(await page.locator("#site-deployment-monitor-progress").getAttribute("aria-valuenow"), "100");
+  assert.equal(await page.locator("#site-deployment-monitor-refresh").isVisible(), true);
+  assert.ok(deploymentPolls >= 3, "deployment progress should follow the workflow through success");
+  await page.waitForFunction(() => document.querySelector("#site-settings-connect span")?.textContent.includes("退出"));
 
   const browserStorage = await page.evaluate(() => JSON.stringify({ ...window.localStorage, ...window.sessionStorage }));
   assert.equal(browserStorage.includes(testToken), false, "the GitHub token must never enter browser storage");
+  const vaultStorage = await page.evaluate(
+    () =>
+      new Promise((resolve, reject) => {
+        const request = window.indexedDB.open("functionhx-site-auth");
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const database = request.result;
+          const transaction = database.transaction("vault", "readonly");
+          const records = transaction.objectStore("vault").getAll();
+          records.onerror = () => reject(records.error);
+          records.onsuccess = () =>
+            resolve({
+              ids: records.result.map((record) => record.id),
+              serialized: JSON.stringify(records.result),
+            });
+        };
+      })
+  );
+  assert.equal(vaultStorage.serialized.includes(testToken), false, "the trusted-device vault must contain only ciphertext");
+  assert.ok(vaultStorage.ids.includes("github:functionhx/functionhx.github.io"));
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileLayout = await page.evaluate(() => {
@@ -187,6 +242,8 @@ try {
   await page.evaluate(() => window.localStorage.setItem("theme", "dark"));
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.reload({ waitUntil: "networkidle" });
+  await page.waitForFunction(() => document.querySelector("#site-inline-editor-connect span")?.textContent.includes("退出"));
+  assert.equal(identityChecks, 1, "a trusted device should reconnect without repeating identity verification");
   await page.locator("#site-inline-editor-toggle").click();
   await page.locator("#site-inline-editor-form").waitFor({ state: "visible" });
   await page.locator("#site-inline-editor-preview-body p").waitFor({ state: "visible" });
@@ -199,6 +256,24 @@ try {
   if (screenshotDirectory) {
     await page.screenshot({ path: `${screenshotDirectory}/inline-editor-dark.png`, fullPage: true });
   }
+
+  page.once("dialog", (prompt) => prompt.accept());
+  await page.locator("#site-inline-editor-connect").click();
+  await page.waitForFunction(() => document.querySelector("#site-inline-editor-connect span")?.textContent.includes("连接"));
+  const remainingCredentials = await page.evaluate(
+    () =>
+      new Promise((resolve, reject) => {
+        const request = window.indexedDB.open("functionhx-site-auth");
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const transaction = request.result.transaction("vault", "readonly");
+          const records = transaction.objectStore("vault").getAll();
+          records.onerror = () => reject(records.error);
+          records.onsuccess = () => resolve(records.result.map((record) => record.id));
+        };
+      })
+  );
+  assert.equal(remainingCredentials.includes("github:functionhx/functionhx.github.io"), false, "disconnect should clear the trusted token");
 
   console.log("Inline editor browser test passed.");
 } finally {

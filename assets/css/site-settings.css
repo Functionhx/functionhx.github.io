@@ -376,6 +376,23 @@
   margin-bottom: 0.75rem;
 }
 
+.site-settings-auth__remember {
+  align-items: center;
+  display: flex !important;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.site-settings-auth__remember input {
+  accent-color: var(--global-theme-color);
+  min-height: auto;
+  width: auto;
+}
+
+.site-settings-auth__remember > span {
+  color: var(--global-text-color) !important;
+}
+
 .site-settings-auth__status {
   font-size: 0.78rem;
   min-height: 1.35rem;

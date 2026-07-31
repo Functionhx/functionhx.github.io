@@ -1,0 +1,73 @@
+{% assign monitor_lang = page.lang | default: 'zh' %}
+{% if monitor_lang == 'en' %}
+  {% assign monitor_heading = 'Publishing update' %}
+  {% assign monitor_commit = 'Committed' %}
+  {% assign monitor_queue = 'Queued' %}
+  {% assign monitor_build = 'Build & deploy' %}
+  {% assign monitor_ready = 'Live' %}
+  {% assign monitor_waiting = 'Waiting for GitHub Actions…' %}
+  {% assign monitor_elapsed = 'Elapsed' %}
+  {% assign monitor_commit_link = 'Commit' %}
+  {% assign monitor_run_link = 'Build details' %}
+  {% assign monitor_refresh = 'Refresh page' %}
+  {% assign monitor_close = 'Dismiss publishing status' %}
+{% else %}
+  {% assign monitor_heading = '正在发布更新' %}
+  {% assign monitor_commit = '已提交' %}
+  {% assign monitor_queue = '等待构建' %}
+  {% assign monitor_build = '构建与部署' %}
+  {% assign monitor_ready = '已上线' %}
+  {% assign monitor_waiting = '正在等待 GitHub Actions…' %}
+  {% assign monitor_elapsed = '已用时' %}
+  {% assign monitor_commit_link = '查看 Commit' %}
+  {% assign monitor_run_link = '构建详情' %}
+  {% assign monitor_refresh = '刷新页面' %}
+  {% assign monitor_close = '关闭发布进度' %}
+{% endif %}
+
+<aside
+  id="site-deployment-monitor"
+  class="site-deployment-monitor"
+  data-language="{{ monitor_lang }}"
+  data-repository="Functionhx/functionhx.github.io"
+  hidden
+  aria-labelledby="site-deployment-monitor-heading"
+>
+  <header>
+    <div>
+      <p class="site-deployment-monitor__eyebrow">GitHub Pages</p>
+      <h2 id="site-deployment-monitor-heading">{{ monitor_heading }}</h2>
+    </div>
+    <button id="site-deployment-monitor-close" type="button" title="{{ monitor_close }}" aria-label="{{ monitor_close }}">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </header>
+  <ol class="site-deployment-monitor__steps" aria-label="{{ monitor_heading }}">
+    <li data-monitor-step="commit"><span></span>{{ monitor_commit }}</li>
+    <li data-monitor-step="queue"><span></span>{{ monitor_queue }}</li>
+    <li data-monitor-step="build"><span></span>{{ monitor_build }}</li>
+    <li data-monitor-step="ready"><span></span>{{ monitor_ready }}</li>
+  </ol>
+  <div
+    id="site-deployment-monitor-progress"
+    class="site-deployment-monitor__progress"
+    role="progressbar"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    aria-valuenow="15"
+  >
+    <span></span>
+  </div>
+  <div class="site-deployment-monitor__copy">
+    <p id="site-deployment-monitor-status" role="status" aria-live="polite">{{ monitor_waiting }}</p>
+    <span>
+      {{- monitor_elapsed }}
+      <time id="site-deployment-monitor-elapsed">0:00</time></span
+    >
+  </div>
+  <div class="site-deployment-monitor__actions">
+    <a id="site-deployment-monitor-commit" href="#" target="_blank" rel="external noopener">{{ monitor_commit_link }}</a>
+    <a id="site-deployment-monitor-run" href="#" target="_blank" rel="external noopener" hidden>{{ monitor_run_link }}</a>
+    <button id="site-deployment-monitor-refresh" type="button" hidden>{{ monitor_refresh }}</button>
+  </div>
+</aside>
