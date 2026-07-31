@@ -163,10 +163,9 @@ disqus_shortname:
 # Optional: Set default categories and tags for posts from each source.
 external_sources: []
 
-# Owner-only encrypted storage for private Spark entries. Keep this blank until
-# the companion service has been deployed and its /health endpoint passes.
+# Owner-only encrypted storage for private Spark entries.
 spark_vault:
-  endpoint:
+  endpoint: https://functionhx-spark-vault.functionhx.workers.dev
 
 # -----------------------------------------------------------------------------
 # Newsletter
