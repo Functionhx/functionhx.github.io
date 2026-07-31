@@ -12,5 +12,4 @@ kinds:
   - log
 empty_text: 暂无公开的思考或日志。
 ---
-
-{% include post-lane.liquid %}
+你好
