@@ -162,6 +162,22 @@ def main() -> int:
         if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" not in html:
             errors.append(f"{route}: Kaggle data endpoint missing from generated HTML")
 
+    required_social_links = {
+        "https://functionhx.github.io/",
+        "mailto:functionhx@gmail.com",
+        "https://github.com/Functionhx",
+        "https://www.kaggle.com/funcnano",
+        "https://www.linkedin.com/in/zaizai-fan-152611414",
+        "https://huggingface.co/Func-nano",
+    }
+    for route in ("/", "/en/"):
+        parser = parsed_pages.get(route)
+        if not parser:
+            continue
+        missing_links = required_social_links.difference(parser.links)
+        if missing_links:
+            errors.append(f"{route}: missing social links {sorted(missing_links)}")
+
     chinese_nav = " ".join(parsed_pages.get("/", PageParser()).nav_text)
     english_nav = " ".join(parsed_pages.get("/en/", PageParser()).nav_text)
     for label in ("关于", "博客", "论文", "项目", "仓库", "简历", "教学", "人物", "更多", "EN"):

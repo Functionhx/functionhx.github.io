@@ -1,11 +1,13 @@
+website:
+  logo: fa-solid fa-globe
+  title: Website
+  url: https://functionhx.github.io/
+email: functionhx@gmail.com
 github_username: Functionhx
-
-cv_pdf: /assets/pdf/example_pdf.pdf
-email: you@example.com
-inspirehep_id: 1010907
+kaggle_id: funcnano
+linkedin_username: zaizai-fan-152611414
+huggingface:
+  logo: fa-solid fa-face-smile
+  title: Hugging Face
+  url: https://huggingface.co/Func-nano
 rss_icon: true
-scholar_userid: qc6CJjYAAAAJ
-custom_social:
-  logo: https://www.alberteinstein.com/wp-content/uploads/2024/03/cropped-favicon-192x192.png
-  title: Custom Social
-  url: https://www.alberteinstein.com/
