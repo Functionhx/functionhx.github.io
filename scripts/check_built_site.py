@@ -187,10 +187,14 @@ def main() -> int:
             errors.append(f"{route}: page-specific brand shifts the navigation layout")
         title = " ".join(" ".join(parser.title_text).split())
         if route in {"/", "/en/"}:
-            if title != "f(hx)":
-                errors.append(f"{route}: expected browser title 'f(hx)', found {title!r}")
-        elif not title.endswith("· f(hx)"):
-            errors.append(f"{route}: browser title does not use the f(hx) identity: {title!r}")
+            if title != "Magic ✨":
+                errors.append(
+                    f"{route}: expected browser title 'Magic ✨', found {title!r}"
+                )
+        elif not title.endswith("· Magic ✨"):
+            errors.append(
+                f"{route}: browser title does not use the Magic identity: {title!r}"
+            )
         if "🤖" in rendered_html:
             errors.append(f"{route}: generic robot favicon still renders")
         for required_id in (

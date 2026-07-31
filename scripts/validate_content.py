@@ -135,7 +135,7 @@ def main() -> int:
     if config.get("footer_fixed") is not False:
         errors.append("_config.yml: the removed global footer must remain disabled")
     if config.get("icon") != "ƒ":
-        errors.append("_config.yml: the site favicon must use the f(hx) identity mark")
+        errors.append("_config.yml: the site favicon must use the Magic identity mark")
     giscus = config.get("giscus", {})
     if giscus.get("repo") != "Functionhx/functionhx.github.io":
         errors.append("_config.yml: Giscus repository is not configured")

@@ -2,8 +2,8 @@
 
 Bilingual research, projects, tools, writing, notes, and logs built on the
 MIT-licensed [al-folio](https://github.com/alshedivat/al-folio) v1.1 starter.
-The compact `f(hx)` wordmark and `ƒ` favicon provide the browser and navigation
-identity without replacing the author's bilingual name in the content.
+The `Magic ✨` browser label and `ƒ` favicon provide a compact identity without
+replacing the author's bilingual name in the content.
 
 ## Local development
 
