@@ -4,7 +4,7 @@ title: bookshelf
 permalink: /en/books/
 lang: en
 translation_key: books
-nav: true
+nav: false
 nav_order: 8
 collection: books
 ---

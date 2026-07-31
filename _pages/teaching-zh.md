@@ -5,7 +5,7 @@ title: 教学
 description: 课程材料、教学计划与相关资源。
 lang: zh
 translation_key: teaching
-nav: true
+nav: false
 nav_order: 6
 ---
 

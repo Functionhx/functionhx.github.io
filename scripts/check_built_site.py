@@ -42,6 +42,8 @@ EXPECTED_ROUTES = (
     "/en/notes/",
     "/logs/",
     "/en/logs/",
+    "/spark/",
+    "/en/spark/",
     "/news/",
     "/en/news/",
 )
@@ -233,13 +235,10 @@ def main() -> int:
         "项目",
         "仓库",
         "简历",
-        "教学",
         "人物",
-        "书架",
         "动态",
         "工具",
-        "思考",
-        "日志",
+        "闪耀",
         "EN",
     ):
         if label not in chinese_nav:
@@ -251,13 +250,10 @@ def main() -> int:
         "projects",
         "repositories",
         "CV",
-        "teaching",
         "people",
-        "bookshelf",
         "news",
         "tools",
-        "thoughts",
-        "logs",
+        "Spark",
         "中",
     ):
         if label not in english_nav:
@@ -266,6 +262,12 @@ def main() -> int:
         errors.append("/: collapsed more navigation must not render")
     if "more" in english_nav:
         errors.append("/en/: collapsed more navigation must not render")
+    for label in ("教学", "书架", "思考", "日志"):
+        if label in chinese_nav:
+            errors.append(f"/: removed navigation label {label!r} still renders")
+    for label in ("teaching", "bookshelf", "thoughts", "logs"):
+        if label in english_nav:
+            errors.append(f"/en/: removed navigation label {label!r} still renders")
 
     for route in ("/projects/", "/en/projects/"):
         path = route_file(site, route)

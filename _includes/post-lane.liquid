@@ -1,47 +1,61 @@
 {% assign current_lang = page.lang | default: 'zh' %}
-{% assign localized_posts = site.posts | where: 'lang', current_lang | where: 'kind', page.kind %}
+{% assign localized_posts = site.posts | where: 'lang', current_lang %}
+{% assign visible_post_count = 0 %}
 <ul class="post-list">
   {% for post in localized_posts %}
-    {% if post.external_source == blank %}
-      {% assign read_time = post.content | number_of_words | divided_by: 180 | plus: 1 %}
-    {% else %}
-      {% assign read_time = post.feed_content | strip_html | number_of_words | divided_by: 180 | plus: 1 %}
+    {% assign show_post = false %}
+    {% if page.kinds %}
+      {% if page.kinds contains post.kind %}
+        {% assign show_post = true %}
+      {% endif %}
+    {% elsif post.kind == page.kind %}
+      {% assign show_post = true %}
     {% endif %}
-    <li>
-      <h3>
-        {% if post.redirect == blank %}
-          <a class="post-title" href="{{ post.url | relative_url }}">{{ post.title }}</a>
-        {% elsif post.redirect contains '://' %}
-          <a class="post-title" href="{{ post.redirect }}" target="_blank" rel="noopener noreferrer">{{ post.title }}</a>
-          <svg width="2rem" height="2rem" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path
-              d="M17 13.5v6H5v-12h6m3-3h6v6m0-6-9 9"
-              class="icon_svg-stroke"
-              stroke="#999"
-              stroke-width="1.5"
-              fill="none"
-              fill-rule="evenodd"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            ></path>
-          </svg>
-        {% else %}
-          <a class="post-title" href="{{ post.redirect | relative_url }}">{{ post.title }}</a>
-        {% endif %}
-      </h3>
-      <p>{{ post.description }}</p>
-      <p class="post-meta">
-        {{ read_time }}
-        {% if current_lang == 'en' %}min read{% else %}分钟阅读{% endif %}
-        &nbsp; · &nbsp; {{ post.date | date: '%Y-%m-%d' }}
-        {% if post.external_source %}
-          &nbsp; · &nbsp; {{ post.external_source }}
-        {% endif %}
-      </p>
-    </li>
-  {% else %}
+
+    {% if show_post %}
+      {% assign visible_post_count = visible_post_count | plus: 1 %}
+      {% if post.external_source == blank %}
+        {% assign read_time = post.content | number_of_words | divided_by: 180 | plus: 1 %}
+      {% else %}
+        {% assign read_time = post.feed_content | strip_html | number_of_words | divided_by: 180 | plus: 1 %}
+      {% endif %}
+      <li>
+        <h3>
+          {% if post.redirect == blank %}
+            <a class="post-title" href="{{ post.url | relative_url }}">{{ post.title }}</a>
+          {% elsif post.redirect contains '://' %}
+            <a class="post-title" href="{{ post.redirect }}" target="_blank" rel="noopener noreferrer">{{ post.title }}</a>
+            <svg width="2rem" height="2rem" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path
+                d="M17 13.5v6H5v-12h6m3-3h6v6m0-6-9 9"
+                class="icon_svg-stroke"
+                stroke="#999"
+                stroke-width="1.5"
+                fill="none"
+                fill-rule="evenodd"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+            </svg>
+          {% else %}
+            <a class="post-title" href="{{ post.redirect | relative_url }}">{{ post.title }}</a>
+          {% endif %}
+        </h3>
+        <p>{{ post.description }}</p>
+        <p class="post-meta">
+          {{ read_time }}
+          {% if current_lang == 'en' %}min read{% else %}分钟阅读{% endif %}
+          &nbsp; · &nbsp; {{ post.date | date: '%Y-%m-%d' }}
+          {% if post.external_source %}
+            &nbsp; · &nbsp; {{ post.external_source }}
+          {% endif %}
+        </p>
+      </li>
+    {% endif %}
+  {% endfor %}
+  {% if visible_post_count == 0 %}
     <li>
       <p>{{ page.empty_text }}</p>
     </li>
-  {% endfor %}
+  {% endif %}
 </ul>

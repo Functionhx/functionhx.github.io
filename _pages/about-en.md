@@ -34,6 +34,6 @@ research_path: /en/publications/
 contact_note: You can even add a little note about which of these is the best way to reach you.
 ---
 
-I am Yuchen Fan, a Robotics Engineering undergraduate. This is a living home for my [projects](/en/projects/), [tools](/en/tools/), [writing](/en/blog/), [thoughts](/en/notes/), and [work logs](/en/logs/).
+I am Yuchen Fan, a Robotics Engineering undergraduate. This is a living home for my [projects](/en/projects/), [tools](/en/tools/), [writing](/en/blog/), and [Spark](/en/spark/), where thoughts and work logs come together.
 
 My current interests span robotics, autonomous systems, embodied AI, 3D scene intelligence, and AI systems engineering.

@@ -5,7 +5,7 @@ title: teaching
 description: Course materials, schedules, and resources for classes taught.
 lang: en
 translation_key: teaching
-nav: true
+nav: false
 nav_order: 6
 ---
 

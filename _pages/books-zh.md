@@ -4,7 +4,7 @@ title: 书架
 permalink: /books/
 lang: zh
 translation_key: books
-nav: true
+nav: false
 nav_order: 8
 collection: books
 ---
