@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from html.parser import HTMLParser
+import json
 from pathlib import Path
 import sys
 from urllib.parse import unquote, urlsplit
@@ -46,6 +47,8 @@ EXPECTED_ROUTES = (
     "/en/spark/",
     "/news/",
     "/en/news/",
+    "/search/",
+    "/en/search/",
 )
 SKIP_SCHEMES = {"mailto", "tel", "javascript", "data"}
 
@@ -476,9 +479,80 @@ def main() -> int:
         "assets/css/deployment-monitor.css",
         "assets/js/deployment-monitor.js",
         "assets/js/github-auth-vault.js",
+        "assets/css/magic-search.css",
+        "assets/js/magic-search-loader.js",
+        "assets/js/magic-search.js",
+        "assets/css/media-embeds.css",
     ):
         if not (site / asset).is_file():
             errors.append(f"/{asset}: authoring asset missing")
+
+    search_indexes = {}
+    for language in ("zh", "en"):
+        index_path = site / "assets" / "search" / f"index-{language}.json"
+        if not index_path.is_file():
+            errors.append(f"/assets/search/index-{language}.json: search index missing")
+            continue
+        try:
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            errors.append(f"/assets/search/index-{language}.json: {error}")
+            continue
+        search_indexes[language] = index
+        if index.get("version") != 1 or index.get("language") != language:
+            errors.append(f"/assets/search/index-{language}.json: incompatible metadata")
+        documents = index.get("documents", [])
+        chunks = index.get("chunks", [])
+        if len(documents) < 30 or len(chunks) < len(documents):
+            errors.append(
+                f"/assets/search/index-{language}.json: incomplete public index "
+                f"({len(documents)} documents, {len(chunks)} chunks)"
+            )
+        if not index.get("postings") or not index.get("semantic_endpoint"):
+            errors.append(f"/assets/search/index-{language}.json: retrieval metadata missing")
+        for chunk in chunks:
+            document_index = chunk.get("document")
+            document = (
+                documents[document_index]
+                if isinstance(document_index, int) and 0 <= document_index < len(documents)
+                else {}
+            )
+            if len(chunk.get("chain", [])) < 2 and document.get("kind") != "pages":
+                errors.append(
+                    f"/assets/search/index-{language}.json: source chain missing for "
+                    f"{chunk.get('id', 'unknown')}"
+                )
+                break
+            if not chunk.get("content_hash") or not chunk.get("url"):
+                errors.append(
+                    f"/assets/search/index-{language}.json: RAG metadata missing for "
+                    f"{chunk.get('id', 'unknown')}"
+                )
+                break
+    if set(search_indexes) == {"zh", "en"}:
+        chinese_keys = {
+            document.get("translation_key")
+            for document in search_indexes["zh"].get("documents", [])
+        }
+        english_keys = {
+            document.get("translation_key")
+            for document in search_indexes["en"].get("documents", [])
+        }
+        if chinese_keys != english_keys:
+            errors.append("search indexes do not contain matching bilingual documents")
+
+    for route in ("/", "/en/"):
+        html = route_file(site, route).read_text(encoding="utf-8")
+        if "/assets/js/magic-search-loader.js" not in html:
+            errors.append(f"{route}: lazy Magic Search loader missing")
+        for eager_search_asset in ("ninja-keys", "/assets/al_search/"):
+            if eager_search_asset in html:
+                errors.append(f"{route}: legacy search loads eagerly: {eager_search_asset}")
+
+    for route in ("/search/", "/en/search/"):
+        html = route_file(site, route).read_text(encoding="utf-8")
+        if "data-magic-search-autostart" not in html or "<noscript>" not in html:
+            errors.append(f"{route}: interactive search or no-JavaScript fallback missing")
 
     chinese_nav = " ".join(parsed_pages.get("/", PageParser()).nav_text)
     english_nav = " ".join(parsed_pages.get("/en/", PageParser()).nav_text)

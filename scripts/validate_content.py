@@ -37,6 +37,7 @@ REQUIRED_ROUTES = {
     "logs": {"/logs/", "/en/logs/"},
     "spark": {"/spark/", "/en/spark/"},
     "news": {"/news/", "/en/news/"},
+    "search": {"/search/", "/en/search/"},
     "not-found": {"/404.html", "/en/404/"},
 }
 
@@ -375,6 +376,72 @@ def main() -> int:
         errors.append("_includes/kaggle-monitor.liquid: canonical dashboard endpoint missing")
     if "5 * 60 * 1000" not in kaggle_text:
         errors.append("_includes/kaggle-monitor.liquid: five-minute refresh contract missing")
+
+    video_path = ROOT / "_includes" / "video.liquid"
+    video_text = video_path.read_text(encoding="utf-8") if video_path.exists() else ""
+    for contract in (
+        "preload=\"none\"",
+        "playsinline",
+        "kind=\"captions\"",
+        "captions_zh",
+        "captions_en",
+    ):
+        if contract not in video_text:
+            errors.append(f"_includes/video.liquid: video contract {contract!r} missing")
+
+    search_generator_path = ROOT / "_plugins" / "magic_search_generator.rb"
+    search_generator_text = (
+        search_generator_path.read_text(encoding="utf-8")
+        if search_generator_path.exists()
+        else ""
+    )
+    for contract in (
+        'data["published"] != false',
+        'data["private"] != true',
+        'data["visibility"] != "private"',
+        "content_hash",
+        "postings",
+        "search_path",
+    ):
+        if contract not in search_generator_text:
+            errors.append(
+                f"_plugins/magic_search_generator.rb: search boundary "
+                f"contract {contract!r} missing"
+            )
+
+    semantic_server_path = ROOT / "magic-search" / "server.py"
+    semantic_server_text = (
+        semantic_server_path.read_text(encoding="utf-8")
+        if semantic_server_path.exists()
+        else ""
+    )
+    for contract in (
+        "content_hash",
+        "sqlite3",
+        "MAX_QUERY_CHARACTERS",
+        "allowed_origins",
+        "RateLimiter",
+    ):
+        if contract not in semantic_server_text:
+            errors.append(
+                f"magic-search/server.py: semantic retrieval contract {contract!r} missing"
+            )
+    for forbidden_provider in ("api.deepseek.com", "api.openai.com"):
+        if forbidden_provider in semantic_server_text.lower():
+            errors.append(
+                "magic-search/server.py: retrieval-only service must not call "
+                f"{forbidden_provider}"
+            )
+
+    nginx_path = ROOT / "deploy" / "nginx" / "fanyuchen.com.cn.conf"
+    nginx_text = nginx_path.read_text(encoding="utf-8") if nginx_path.exists() else ""
+    for contract in (
+        "gzip on;",
+        "location ^~ /api/magic-search/",
+        "proxy_pass http://127.0.0.1:8790/;",
+    ):
+        if contract not in nginx_text:
+            errors.append(f"deploy/nginx/fanyuchen.com.cn.conf: {contract!r} missing")
 
     license_path = ROOT / "LICENSE"
     license_text = license_path.read_text(encoding="utf-8") if license_path.exists() else ""

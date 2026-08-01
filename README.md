@@ -102,3 +102,27 @@ python3 scripts/check_built_site.py _site
 The Kaggle Agent tool page reads
 `https://functionhx.github.io/kaggle-agent/data/dashboard.json` every five
 minutes and displays an unavailable state when that source is offline.
+
+## Video
+
+Set `video: true` in both language versions of a page or post, then use the
+shared include. The browser receives only the poster on first paint; the video
+file is not requested until playback, which keeps ordinary page loads light.
+
+```liquid
+{%
+  include video.liquid
+  src='/assets/video/demo.mp4'
+  webm_src='/assets/video/demo.webm'
+  poster='/assets/img/video/demo-poster.webp'
+  captions_zh='/assets/video/demo-zh.vtt'
+  captions_en='/assets/video/demo-en.vtt'
+  title='演示视频'
+  caption='视频说明'
+%}
+```
+
+Keep the same media sources on the Chinese and English records, localize the
+title/caption, and provide both caption tracks when speech is present. Large
+videos should live in object storage or a video platform rather than the
+GitHub Pages repository.

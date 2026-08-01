@@ -1,0 +1,37 @@
+[Unit]
+Description=Functionhx Magic Search semantic retrieval
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+WorkingDirectory=/opt/functionhx-magic-search
+ExecStart=/opt/functionhx-magic-search/.venv/bin/python /opt/functionhx-magic-search/server.py
+Restart=on-failure
+RestartSec=3s
+StateDirectory=functionhx-magic-search
+CacheDirectory=functionhx-magic-search
+Environment=MAGIC_SEARCH_INDEX_DIR=/var/www/functionhx/current/assets/search
+Environment=MAGIC_SEARCH_DB=/var/lib/functionhx-magic-search/embeddings.sqlite3
+Environment=MAGIC_SEARCH_MODEL_CACHE=/var/cache/functionhx-magic-search
+Environment=MAGIC_SEARCH_HOST=127.0.0.1
+Environment=MAGIC_SEARCH_PORT=8790
+Environment=MAGIC_SEARCH_ALLOWED_ORIGINS=https://functionhx.github.io,https://fanyuchen.com.cn,https://www.fanyuchen.com.cn,http://localhost:4000
+# The Tencent node cannot reach huggingface.co directly; this mirror is used
+# only for the one-time public model download. Search traffic never leaves it.
+Environment=HF_ENDPOINT=https://hf-mirror.com
+Environment=HF_HUB_DISABLE_XET=1
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=yes
+MemoryDenyWriteExecute=no
+
+[Install]
+WantedBy=multi-user.target

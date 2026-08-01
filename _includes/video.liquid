@@ -1,0 +1,67 @@
+{% assign video_title = include.title | default: page.title | default: 'Video' %}
+{% assign video_width = include.width | default: 1280 %}
+{% assign video_height = include.height | default: 720 %}
+{% if include.src contains '://' %}
+  {% assign video_src = include.src %}
+{% else %}
+  {% assign video_src = include.src | relative_url %}
+{% endif %}
+{% if include.webm_src contains '://' %}
+  {% assign video_webm_src = include.webm_src %}
+{% elsif include.webm_src %}
+  {% assign video_webm_src = include.webm_src | relative_url %}
+{% endif %}
+{% if include.poster contains '://' %}
+  {% assign video_poster = include.poster %}
+{% elsif include.poster %}
+  {% assign video_poster = include.poster | relative_url %}
+{% endif %}
+
+<figure class="site-video">
+  <video
+    controls
+    playsinline
+    preload="none"
+    width="{{ video_width }}"
+    height="{{ video_height }}"
+    aria-label="{{ video_title | escape }}"
+    {% if video_poster %}
+      poster="{{ video_poster }}"
+    {% endif %}
+    {% if include.autoplay %}
+      autoplay muted
+    {% endif %}
+    {% if include.loop %}
+      loop
+    {% endif %}
+  >
+    {% if video_webm_src %}<source src="{{ video_webm_src }}" type="video/webm">{% endif %}
+    <source src="{{ video_src }}" type="{{ include.type | default: 'video/mp4' }}">
+    {% if include.captions_zh %}
+      <track
+        kind="captions"
+        srclang="zh"
+        label="中文"
+        src="{{ include.captions_zh | relative_url }}"
+        {% if page.lang != 'en' %}
+          default
+        {% endif %}
+      >
+    {% endif %}
+    {% if include.captions_en %}
+      <track
+        kind="captions"
+        srclang="en"
+        label="English"
+        src="{{ include.captions_en | relative_url }}"
+        {% if page.lang == 'en' %}
+          default
+        {% endif %}
+      >
+    {% endif %}
+    <a href="{{ video_src }}">{{ video_title }}</a>
+  </video>
+  {% if include.caption %}
+    <figcaption>{{ include.caption }}</figcaption>
+  {% endif %}
+</figure>

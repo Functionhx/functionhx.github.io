@@ -89,6 +89,11 @@ search_enabled: true
 socials_in_search: true
 posts_in_search: true
 bib_search: true
+magic_search:
+  # The public JSON index is built locally by Jekyll. Private Spark drafts live in
+  # the separate encrypted vault and are deliberately never part of this index.
+  enabled: true
+  semantic_endpoint: https://fanyuchen.com.cn/api/magic-search/search
 
 # Dimensions
 max_width: 930px

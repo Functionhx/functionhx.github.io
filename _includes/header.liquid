@@ -1,5 +1,6 @@
 {% assign current_lang = page.lang | default: 'zh' %}
 {% assign home_page = site.pages | where: 'home', true | where: 'lang', current_lang | first %}
+{% assign search_page = site.pages | where: 'translation_key', 'search' | where: 'lang', current_lang | first %}
 {% assign translation_pool = site.pages
   | concat: site.projects
   | concat: site.posts
@@ -359,9 +360,16 @@
           {% if site.search_enabled %}
             <!-- Search -->
             <li class="nav-item">
-              <button id="search-toggle" type="button" title="{{ search_title }}" aria-label="{{ search_label }}">
+              <a
+                id="search-toggle"
+                href="{{ search_page.url | default: '/search/' | relative_url }}"
+                title="{{ search_title }}"
+                aria-label="{{ search_label }}"
+                aria-haspopup="dialog"
+                aria-controls="magic-search-dialog"
+              >
                 <span class="nav-link">ctrl k <i class="fa-solid fa-magnifying-glass"></i></span>
-              </button>
+              </a>
             </li>
           {% endif %}
           {% if site.enable_darkmode %}

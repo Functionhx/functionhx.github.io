@@ -124,8 +124,18 @@
   </script>
 {% endif %}
 
-{% if site.search_enabled and site.plugins contains 'al_search' %}
-  {% include plugins/al_search_assets.liquid %}
+{% if site.search_enabled and site.magic_search.enabled %}
+  {% assign search_page = site.pages | where: 'translation_key', 'search' | where: 'lang', page.lang | first %}
+  {% assign search_language = page.lang | default: 'zh' %}
+  <script
+    defer
+    src="{{ '/assets/js/magic-search-loader.js' | relative_url | bust_file_cache }}"
+    data-language="{{ search_language }}"
+    data-index-url="{{ '/assets/search/index-' | append: search_language | append: '.json' | relative_url }}"
+    data-module-url="{{ '/assets/js/magic-search.js' | relative_url | bust_file_cache }}"
+    data-stylesheet-url="{{ '/assets/css/magic-search.css' | relative_url | bust_file_cache }}"
+    data-fallback-url="{{ search_page.url | default: '/search/' | relative_url }}"
+  ></script>
 {% endif %}
 
 {% if site.newsletter.enabled and site.plugins contains 'al_newsletter' %}

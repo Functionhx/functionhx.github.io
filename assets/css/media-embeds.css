@@ -1,0 +1,21 @@
+.site-video {
+  margin: 1.5rem 0;
+}
+
+.site-video video {
+  aspect-ratio: var(--site-video-aspect, 16 / 9);
+  background: color-mix(in srgb, var(--global-text-color) 8%, var(--global-bg-color));
+  border-radius: 0.35rem;
+  display: block;
+  height: auto;
+  max-height: min(78vh, 50rem);
+  object-fit: contain;
+  width: 100%;
+}
+
+.site-video figcaption {
+  color: var(--global-text-color-light);
+  font-size: 0.82rem;
+  margin-top: 0.55rem;
+  text-align: center;
+}

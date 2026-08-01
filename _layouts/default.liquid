@@ -35,6 +35,9 @@
     {% if spark_writer_enabled %}
       <link rel="stylesheet" href="{{ '/assets/css/spark-writer.css' | relative_url }}">
     {% endif %}
+    {% if page.video %}
+      <link rel="stylesheet" href="{{ '/assets/css/media-embeds.css' | relative_url | bust_file_cache }}">
+    {% endif %}
     <style>
       @view-transition {
         navigation: auto;
