@@ -135,8 +135,13 @@ jobs:
         run: |
           release="$DEPLOY_ROOT/releases/$GITHUB_SHA"
           ssh -i "$HOME/.ssh/tencent_site_deploy" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "mkdir -p '$release'"
-          rsync -rlptDz --delete --chmod=D755,F644 \
+            "if [ ! -d '$release' ]; then \
+               mkdir -p '$release'; \
+               if [ -d '$DEPLOY_ROOT/current' ]; then \
+                 cp -al '$DEPLOY_ROOT/current/.' '$release/'; \
+               fi; \
+             fi"
+          rsync -rlptDz --checksum --delete --chmod=D755,F644 \
             -e "ssh -i $HOME/.ssh/tencent_site_deploy" \
             _site/ "$DEPLOY_USER@$DEPLOY_HOST:$release/"
           ssh -i "$HOME/.ssh/tencent_site_deploy" "$DEPLOY_USER@$DEPLOY_HOST" \
