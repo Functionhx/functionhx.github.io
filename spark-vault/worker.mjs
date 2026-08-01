@@ -62,9 +62,25 @@ function allowedSiteOrigin(value, env) {
   return origin;
 }
 
+function allowedApiOrigin(value, request, env) {
+  let origin;
+  try {
+    origin = new URL(String(value || "")).origin;
+  } catch (_error) {
+    throw new HttpError(403, "This origin is not allowed to use Spark Vault.", "origin_denied");
+  }
+  if (origin === workerOrigin(request, env) || siteOrigins(env).includes(origin)) return origin;
+  throw new HttpError(403, "This origin is not allowed to use Spark Vault.", "origin_denied");
+}
+
 function responseSiteOrigin(request, env) {
   const origin = request?.headers?.get("Origin") || "";
-  return siteOrigins(env).includes(origin) ? origin : siteOrigin(env);
+  if (!origin) return siteOrigin(env);
+  try {
+    return allowedApiOrigin(origin, request, env);
+  } catch (_error) {
+    return siteOrigin(env);
+  }
 }
 
 function workerOrigin(request, env) {
@@ -239,7 +255,7 @@ function emptyResponse(status, env, request) {
 
 function assertAllowedOrigin(request, env) {
   const origin = request.headers.get("Origin");
-  if (origin) allowedSiteOrigin(origin, env);
+  if (origin) allowedApiOrigin(origin, request, env);
   if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method) && !origin) {
     throw new HttpError(403, "A verified site origin is required.", "origin_required");
   }

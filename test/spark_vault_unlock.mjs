@@ -5,11 +5,16 @@ import { chromium } from "playwright";
 
 import { createUnlockPage } from "../spark-vault/unlock-page.mjs";
 
-let origin = "";
+let siteOrigin = "";
+let vaultOrigin = "";
 let keyring = null;
 let keyringSha = "";
 let keyringGets = 0;
 let keyringPuts = 0;
+const keyringGetOrigins = [];
+const keyringGetFetchSites = [];
+const keyringGetHosts = [];
+const keyringPutOrigins = [];
 let lastKeyringWrite = null;
 let lastNoteWrite = null;
 let noteWrites = 0;
@@ -42,7 +47,7 @@ function openerPage() {
   <script src="/assets/js/github-auth-vault.js"></script>
   <script src="/assets/js/spark-vault-client.js"></script>
   <script>
-    const endpoint = location.origin;
+    const endpoint = ${JSON.stringify(vaultOrigin)};
     const status = document.getElementById("status");
     let popupEvents = 0;
     window.addEventListener("message", () => { popupEvents += 1; });
@@ -87,7 +92,17 @@ function openerPage() {
 }
 
 const server = createServer(async (request, response) => {
-  const url = new URL(request.url || "/", origin || "http://127.0.0.1");
+  const url = new URL(request.url || "/", vaultOrigin || "http://127.0.0.1");
+  if (request.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
+    response.writeHead(204, {
+      "Access-Control-Allow-Headers": "Authorization, Content-Type",
+      "Access-Control-Allow-Methods": "GET, PUT, POST, OPTIONS",
+      "Access-Control-Allow-Origin": siteOrigin,
+      Vary: "Origin",
+    });
+    response.end();
+    return;
+  }
   if (url.pathname === "/opener") {
     response.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "text/html; charset=utf-8" });
     response.end(openerPage());
@@ -106,11 +121,11 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/auth/login") {
     oauthLogins += 1;
     assert.equal(url.searchParams.get("continuation"), "strong-unlock");
-    assert.equal(url.searchParams.get("site_origin"), origin);
+    assert.equal(url.searchParams.get("site_origin"), siteOrigin);
     const parameters = new URLSearchParams({
       intent: "strong",
       session: "opaque-oauth-session",
-      site_origin: origin,
+      site_origin: siteOrigin,
       user_id: "251018234",
       user_login: "Functionhx",
     });
@@ -119,23 +134,37 @@ const server = createServer(async (request, response) => {
     return;
   }
   if (url.pathname === "/unlock") {
-    await sendResponse(createUnlockPage([origin]), response);
+    await sendResponse(createUnlockPage([siteOrigin]), response);
     return;
   }
   if (url.pathname === "/api/keyring" && request.method === "GET") {
     keyringGets += 1;
+    keyringGetOrigins.push(request.headers.origin || "");
+    keyringGetFetchSites.push(request.headers["sec-fetch-site"] || "");
+    keyringGetHosts.push(request.headers.host || "");
     assert.equal(request.headers.authorization, "Bearer opaque-oauth-session");
-    response.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    response.writeHead(200, {
+      "Access-Control-Allow-Origin": siteOrigin,
+      "Cache-Control": "no-store",
+      "Content-Type": "application/json",
+      Vary: "Origin",
+    });
     response.end(JSON.stringify({ keyring, sha: keyringSha }));
     return;
   }
   if (url.pathname === "/api/keyring" && request.method === "PUT") {
     keyringPuts += 1;
+    keyringPutOrigins.push(request.headers.origin || "");
     assert.equal(request.headers.authorization, "Bearer opaque-oauth-session");
     lastKeyringWrite = await requestBody(request);
     keyring = lastKeyringWrite.keyring;
     keyringSha = "a".repeat(40);
-    response.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    response.writeHead(200, {
+      "Access-Control-Allow-Origin": siteOrigin,
+      "Cache-Control": "no-store",
+      "Content-Type": "application/json",
+      Vary: "Origin",
+    });
     response.end(JSON.stringify({ keyring, sha: keyringSha }));
     return;
   }
@@ -143,7 +172,12 @@ const server = createServer(async (request, response) => {
     noteWrites += 1;
     assert.equal(request.headers.authorization, "Bearer opaque-oauth-session");
     lastNoteWrite = await requestBody(request);
-    response.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    response.writeHead(200, {
+      "Access-Control-Allow-Origin": siteOrigin,
+      "Cache-Control": "no-store",
+      "Content-Type": "application/json",
+      Vary: "Origin",
+    });
     response.end(JSON.stringify({ note: { id: "integration" } }));
     return;
   }
@@ -152,7 +186,8 @@ const server = createServer(async (request, response) => {
 });
 
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-origin = `http://127.0.0.1:${server.address().port}`;
+vaultOrigin = `http://127.0.0.1:${server.address().port}`;
+siteOrigin = `http://localhost:${server.address().port}`;
 
 const browserCandidates = [
   process.env.PLAYWRIGHT_CHROME_PATH,
@@ -203,7 +238,7 @@ async function expectPopupClosed(popup) {
 }
 
 try {
-  await page.goto(`${origin}/opener`);
+  await page.goto(`${siteOrigin}/opener`);
 
   const setupPopup = await clickForPopup("#strong-save");
   await setupPopup.waitForURL(/\/unlock$/);
@@ -218,6 +253,11 @@ try {
 
   assert.equal(keyringGets, 1);
   assert.equal(keyringPuts, 1);
+  assert.notEqual(siteOrigin, vaultOrigin, "the opener site and Vault must use distinct browser origins in this integration test");
+  assert.deepEqual(keyringGetOrigins, [""], "Chrome omits Origin on a same-origin GET by design");
+  assert.deepEqual(keyringGetFetchSites, ["same-origin"], "the browser keyring GET must be issued by the Vault's same-origin unlock UI");
+  assert.deepEqual(keyringGetHosts, [new URL(vaultOrigin).host], "the keyring GET must target the Vault origin rather than the opener site");
+  assert.deepEqual(keyringPutOrigins, [vaultOrigin], "the browser keyring PUT must originate from the Vault unlock UI, not the opener site");
   assert.equal(noteWrites, 1, "the real popup result must continue into the private-note save");
   assert.equal(JSON.stringify(lastKeyringWrite).includes("correct horse battery staple"), false, "the passphrase must never enter the API payload");
   assert.equal(lastKeyringWrite.keyring.version, 2);

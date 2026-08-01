@@ -268,6 +268,16 @@ try {
   );
   assert.equal(deniedLogin.status, 403, "OAuth must reject a return origin outside the allowlist");
 
+  const deniedWorkerOriginLogin = await worker.fetch(
+    new Request(`${workerOrigin}/auth/login?site_origin=${encodeURIComponent(workerOrigin)}`),
+    env
+  );
+  assert.equal(
+    deniedWorkerOriginLogin.status,
+    403,
+    "the API-only Vault self-origin allowance must never become an OAuth or postMessage target"
+  );
+
   const session = await apiRequest("/api/session", "GET", sessionToken);
   assert.equal(session.status, 200);
   assert.deepEqual((await session.json()).user, { id: 172989722, login: "Functionhx" });
@@ -281,7 +291,9 @@ try {
   assert.match(unlockPage.headers.get("content-security-policy") || "", /default-src 'none'/);
   assert.match(await unlockPage.text(), /通行密钥/);
 
-  const emptyKeyring = await apiRequest("/api/keyring", "GET", sessionToken);
+  const emptyKeyring = await apiRequest("/api/keyring", "GET", sessionToken, undefined, workerOrigin);
+  assert.equal(emptyKeyring.status, 200, "the Vault unlock UI must be allowed to read its same-origin keyring");
+  assert.equal(emptyKeyring.headers.get("access-control-allow-origin"), workerOrigin);
   assert.deepEqual(await emptyKeyring.json(), { keyring: null, sha: "" });
   const encoded = (value) => Buffer.from(value).toString("base64url");
   const keyring = {
@@ -298,8 +310,9 @@ try {
     wrap_iv: encoded("wrapping-iv!"),
     wrapped_root: encoded("wrapped-root-ciphertext-for-test"),
   };
-  const keyringSave = await apiRequest("/api/keyring", "PUT", sessionToken, { keyring });
-  assert.equal(keyringSave.status, 200);
+  const keyringSave = await apiRequest("/api/keyring", "PUT", sessionToken, { keyring }, workerOrigin);
+  assert.equal(keyringSave.status, 200, "the Vault unlock UI must be allowed to initialize its same-origin keyring");
+  assert.equal(keyringSave.headers.get("access-control-allow-origin"), workerOrigin);
   const savedKeyring = await keyringSave.json();
   assert.deepEqual(savedKeyring.keyring, keyring);
   assert.match(savedKeyring.sha, /^[0-9a-f]{40}$/);
@@ -307,8 +320,36 @@ try {
   assert.equal(storedKeyring.includes("passphrase"), true, "the keyring may store only passphrase salt, never the passphrase itself");
   assert.equal(storedKeyring.includes("credential-id-for-test"), false, "binary keyring fields remain encoded");
 
+  const canonicalizedWorkerRequest = await worker.fetch(
+    new Request("https://cloudflare-internal-route.test/api/keyring", {
+      headers: { Authorization: `Bearer ${sessionToken}`, Origin: workerOrigin },
+      method: "GET",
+    }),
+    env
+  );
+  assert.equal(
+    canonicalizedWorkerRequest.status,
+    200,
+    "the configured public Vault origin must remain allowed when the platform canonicalizes request.url"
+  );
+  assert.equal(canonicalizedWorkerRequest.headers.get("access-control-allow-origin"), workerOrigin);
+
   const crossOriginSave = await apiRequest(`/api/notes/${values.slug}`, "PUT", sessionToken, { values }, "https://attacker.example");
   assert.equal(crossOriginSave.status, 403, "write requests from another origin must be denied");
+
+  const crossOriginRead = await apiRequest("/api/keyring", "GET", sessionToken, undefined, "https://attacker.example");
+  assert.equal(crossOriginRead.status, 403, "read requests from another browser origin must also be denied");
+
+  const missingOriginSave = await worker.fetch(
+    new Request(`${workerOrigin}/api/notes/${values.slug}`, {
+      body: JSON.stringify({ values }),
+      headers: { Authorization: `Bearer ${sessionToken}`, "Content-Type": "application/json" },
+      method: "PUT",
+    }),
+    env
+  );
+  assert.equal(missingOriginSave.status, 403, "write requests without an Origin must remain denied");
+  assert.equal((await missingOriginSave.json()).error.code, "origin_required");
 
   const chineseOnlyValues = {
     ...structuredClone(values),
