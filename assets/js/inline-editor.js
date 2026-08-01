@@ -11,11 +11,14 @@
   const repository = root.dataset.repository;
   const owner = root.dataset.owner;
   const branch = root.dataset.branch;
-  const sourcePath = root.dataset.sourcePath;
+  const defaultSourcePath = root.dataset.sourcePath;
   const isEnglish = root.dataset.language === "en";
-  const allowedSource = /^_(pages|posts|projects|news|teachings|books)\//.test(sourcePath);
 
-  if (!allowedSource) {
+  function isAllowedSource(path) {
+    return typeof path === "string" && /^_(pages|posts|projects|news|teachings|books)\//.test(path) && !path.includes("..") && !path.includes("\\");
+  }
+
+  if (!isAllowedSource(defaultSourcePath)) {
     toggle.hidden = true;
     return;
   }
@@ -27,14 +30,15 @@
         authRememberFailed: "Connected for this page, but this browser could not remember the token securely.",
         authRemembered: "Connected as @Functionhx and remembered on this private device.",
         authSuccess: "Connected as @Functionhx for this browser session.",
-        commitConflict: "The source changed on GitHub after this editor loaded. Close and reopen the editor before committing.",
+        commitConflict:
+          "GitHub has a newer source. Your changes are preserved. To load GitHub’s version, choose “Discard local draft”; otherwise copy your work and merge it manually.",
         commitFailed: "The commit could not be created.",
         commitSuccess: "Commit created. Follow the publishing progress in the corner.",
         confirmDiscard: "Discard the browser draft and restore the current GitHub version?",
+        confirmSwitch: "This file has uncommitted changes. Save them as a browser draft and open the other file?",
         connected: "Disconnect @Functionhx",
         disconnectConfirm: "Forget the trusted GitHub token on this device?",
         disconnected: "The trusted GitHub connection was removed from this device.",
-        defaultMessage: `content: update "${sourcePath}"`,
         draftChanged: "Changes are local only and have not been committed.",
         draftFailed: "This browser could not save the local draft.",
         draftRestored: "Recovered a browser draft. Nothing has been sent to GitHub.",
@@ -53,14 +57,14 @@
         authRememberFailed: "本页已经连接，但这个浏览器无法安全地记住令牌。",
         authRemembered: "已连接为 @Functionhx，并记住这台私人电脑。",
         authSuccess: "本次浏览器会话已连接为 @Functionhx。",
-        commitConflict: "编辑期间 GitHub 源文件已经变化。请关闭并重新打开编辑器后再提交。",
+        commitConflict: "GitHub 源文件已经变化，当前修改仍保留。若要载入 GitHub 最新版，请点“丢弃本地草稿”；否则请先复制当前内容并手工合并。",
         commitFailed: "无法创建 Commit。",
         commitSuccess: "Commit 已创建，请在右下角查看发布进度。",
         confirmDiscard: "丢弃浏览器草稿，恢复到 GitHub 当前版本？",
+        confirmSwitch: "当前文件还有未提交的修改。保存为浏览器草稿并打开另一个文件？",
         connected: "退出 @Functionhx",
         disconnectConfirm: "从这台设备移除已记住的 GitHub 令牌？",
         disconnected: "已从这台设备移除 GitHub 连接。",
-        defaultMessage: `content: update "${sourcePath}"`,
         draftChanged: "修改仍只在本页和浏览器草稿中，尚未 Commit。",
         draftFailed: "这个浏览器无法保存本地草稿。",
         draftRestored: "已恢复浏览器草稿；内容尚未发送到 GitHub。",
@@ -93,6 +97,7 @@
     message: document.getElementById("site-inline-editor-message"),
     metadataPanel: document.getElementById("site-inline-editor-metadata-panel"),
     metadataTab: document.getElementById("site-inline-editor-metadata-tab"),
+    path: document.getElementById("site-inline-editor-path"),
     previewBody: document.getElementById("site-inline-editor-preview-body"),
     previewTitle: document.getElementById("site-inline-editor-preview-title"),
     published: document.getElementById("site-inline-editor-published"),
@@ -103,26 +108,47 @@
     token: document.getElementById("site-inline-editor-token"),
   };
 
-  const encodedPath = sourcePath
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/");
-  const contentEndpoint = `/repos/${repository}/contents/${encodedPath}`;
-  const draftKey = `functionhx:inline-editor:${repository}:${branch}:${sourcePath}`;
-
   let activeToken = "";
+  let activeSourcePath = defaultSourcePath;
   let baseSha = "";
   let sourceText = "";
   let sourceNewline = "\n";
   let editorLoaded = false;
   let editorBusy = false;
-  let pendingCommit = false;
   let draftTimer = 0;
   let previewTimer = 0;
   let previousScrollY = 0;
   let restorePromise = Promise.resolve(null);
   let activeTrigger = toggle;
+  let loadVersion = 0;
+  let editorSession = 0;
+  let authVersion = 0;
+  let authMutationDepth = 0;
+  let authCompletionTimer = 0;
+  let verifiedAuthClose = false;
+  let commitVersion = 0;
+  let commitInFlight = false;
+  let authorActionStates = [];
+  let commitControlStates = [];
+  let pendingCommit = null;
+  let conflictRemote = null;
   const disconnectedLabel = elements.connect.querySelector("span")?.textContent.trim() || "GitHub";
+
+  function contentEndpoint(path = activeSourcePath) {
+    const encodedPath = path
+      .split("/")
+      .map((segment) => encodeURIComponent(segment))
+      .join("/");
+    return `/repos/${repository}/contents/${encodedPath}`;
+  }
+
+  function draftKey(path = activeSourcePath) {
+    return `functionhx:inline-editor:${repository}:${branch}:${path}`;
+  }
+
+  function defaultCommitMessage(path = activeSourcePath) {
+    return `content: update "${path}"`;
+  }
 
   function setStatus(message, state = "") {
     elements.status.removeAttribute("data-loading-placeholder");
@@ -138,11 +164,71 @@
   }
 
   function setBusy(busy) {
-    editorBusy = busy;
-    elements.commit.disabled = busy || !isDirty();
-    elements.save.disabled = busy;
-    elements.discard.disabled = busy;
-    elements.authConnect.disabled = busy;
+    editorBusy = Boolean(busy || commitInFlight);
+    elements.commit.disabled = editorBusy || !isDirty();
+    elements.save.disabled = editorBusy;
+    elements.discard.disabled = editorBusy;
+    elements.authConnect.disabled = editorBusy;
+  }
+
+  function setAuthorActionsDisabled(disabled) {
+    if (disabled) {
+      if (authorActionStates.length) return;
+      const controls = new Set([toggle, ...document.querySelectorAll("[data-author-action]")]);
+      authorActionStates = [...controls].map((control) => ({
+        ariaDisabled: control.getAttribute("aria-disabled"),
+        control,
+        disabled: "disabled" in control ? control.disabled : null,
+      }));
+      authorActionStates.forEach(({ control }) => {
+        if ("disabled" in control) control.disabled = true;
+        control.setAttribute("aria-disabled", "true");
+      });
+      return;
+    }
+
+    authorActionStates.forEach(({ ariaDisabled, control, disabled: wasDisabled }) => {
+      if (wasDisabled !== null) control.disabled = wasDisabled;
+      if (ariaDisabled === null) control.removeAttribute("aria-disabled");
+      else control.setAttribute("aria-disabled", ariaDisabled);
+    });
+    authorActionStates = [];
+  }
+
+  function setCommitControlsDisabled(disabled) {
+    const controls = [
+      elements.title,
+      elements.description,
+      elements.published,
+      elements.comments,
+      elements.body,
+      elements.frontMatter,
+      elements.message,
+      elements.bodyTab,
+      elements.metadataTab,
+      elements.close,
+      elements.connect,
+    ];
+    if (disabled) {
+      if (commitControlStates.length) return;
+      commitControlStates = controls.map((control) => ({ control, disabled: control.disabled }));
+      commitControlStates.forEach(({ control }) => {
+        control.disabled = true;
+      });
+      return;
+    }
+    commitControlStates.forEach(({ control, disabled: wasDisabled }) => {
+      control.disabled = wasDisabled;
+    });
+    commitControlStates = [];
+  }
+
+  function setCommitLock(locked) {
+    commitInFlight = locked;
+    root.setAttribute("aria-busy", String(locked));
+    setAuthorActionsDisabled(locked);
+    setCommitControlsDisabled(locked);
+    setBusy(locked);
   }
 
   function splitSource(source) {
@@ -211,7 +297,7 @@
     elements.frontMatter.value = parsed.frontMatter;
     elements.body.value = parsed.body;
     syncMetadataFromFrontMatter();
-    elements.message.value = strings.defaultMessage;
+    elements.message.value = defaultCommitMessage();
     schedulePreview();
     updateDirtyState();
   }
@@ -340,15 +426,19 @@
 
   function schedulePreview() {
     window.clearTimeout(previewTimer);
-    previewTimer = window.setTimeout(updatePreview, 120);
+    const session = editorSession;
+    previewTimer = window.setTimeout(() => {
+      if (session === editorSession) updatePreview();
+    }, 120);
   }
 
   function saveDraft(showStatus = false) {
     if (!sourceText) return;
+    const storageKey = draftKey();
     try {
       if (isDirty()) {
         window.localStorage.setItem(
-          draftKey,
+          storageKey,
           JSON.stringify({
             baseSha,
             source: composeSource(),
@@ -357,7 +447,7 @@
         );
         if (showStatus) setStatus(strings.draftSaved, "success");
       } else {
-        window.localStorage.removeItem(draftKey);
+        window.localStorage.removeItem(storageKey);
         if (showStatus) setStatus(strings.noChanges);
       }
     } catch (_error) {
@@ -367,7 +457,10 @@
 
   function scheduleDraftSave() {
     window.clearTimeout(draftTimer);
-    draftTimer = window.setTimeout(() => saveDraft(false), 350);
+    const session = editorSession;
+    draftTimer = window.setTimeout(() => {
+      if (session === editorSession) saveDraft(false);
+    }, 350);
   }
 
   function handleEditorChange() {
@@ -419,20 +512,39 @@
   }
 
   async function loadSource() {
+    const requestedPath = activeSourcePath;
+    const endpoint = contentEndpoint(requestedPath);
+    const storageKey = draftKey(requestedPath);
+    const requestVersion = ++loadVersion;
+    const session = editorSession;
     setStatus(window.functionhxSitePreferences?.getLoadingText?.() || strings.loading);
     setBusy(true);
     elements.form.hidden = true;
     try {
-      const remote = await githubRequest(`${contentEndpoint}?ref=${encodeURIComponent(branch)}`, {
-        token: activeToken,
-      });
+      await waitForTokenRestore();
+      if (requestVersion !== loadVersion || session !== editorSession || requestedPath !== activeSourcePath) return;
+
+      const requestToken = activeToken;
+      let remote;
+      try {
+        remote = await githubRequest(`${endpoint}?ref=${encodeURIComponent(branch)}`, {
+          token: requestToken,
+        });
+      } catch (error) {
+        if ((error.status !== 401 && error.status !== 403) || !requestToken) throw error;
+        await clearExpiredGitHubSession(requestToken);
+        if (requestVersion !== loadVersion || session !== editorSession || requestedPath !== activeSourcePath) return;
+        remote = await githubRequest(`${endpoint}?ref=${encodeURIComponent(branch)}`);
+      }
+      if (requestVersion !== loadVersion || session !== editorSession || requestedPath !== activeSourcePath) return;
       if (remote.type !== "file" || !remote.content || !remote.sha) throw new Error("Unsupported source");
       sourceText = decodeBase64Utf8(remote.content);
       baseSha = remote.sha;
+      conflictRemote = null;
 
       let draft = null;
       try {
-        draft = JSON.parse(window.localStorage.getItem(draftKey) || "null");
+        draft = JSON.parse(window.localStorage.getItem(storageKey) || "null");
       } catch (_error) {
         draft = null;
       }
@@ -447,32 +559,78 @@
       }
       editorLoaded = true;
       elements.form.hidden = false;
+      window.requestAnimationFrame(() => {
+        if (session === editorSession && requestedPath === activeSourcePath && !root.hidden) elements.title.focus();
+      });
     } catch (error) {
+      if (requestVersion !== loadVersion || session !== editorSession) return;
       setStatus(`${strings.loadingFailed} ${error.message || ""}`.trim(), "error");
     } finally {
-      setBusy(false);
+      if (requestVersion === loadVersion && session === editorSession) setBusy(false);
     }
   }
 
+  function activateSource(path) {
+    const requestedPath = path || defaultSourcePath;
+    if (!isAllowedSource(requestedPath)) return false;
+    if (requestedPath === activeSourcePath) return true;
+    if (commitInFlight) return false;
+
+    if (editorLoaded && isDirty()) {
+      if (!window.confirm(strings.confirmSwitch)) return false;
+      saveDraft(false);
+    }
+    window.clearTimeout(draftTimer);
+    window.clearTimeout(previewTimer);
+    loadVersion += 1;
+    editorSession += 1;
+    activeSourcePath = requestedPath;
+    root.dataset.sourcePath = requestedPath;
+    elements.path.textContent = requestedPath;
+    baseSha = "";
+    sourceText = "";
+    sourceNewline = "\n";
+    conflictRemote = null;
+    editorLoaded = false;
+    elements.form.hidden = true;
+    elements.result.hidden = true;
+    elements.body.value = "";
+    elements.frontMatter.value = "";
+    elements.previewBody.replaceChildren();
+    elements.previewTitle.textContent = "";
+    return true;
+  }
+
   function openEditor(trigger = toggle) {
+    if (commitInFlight) return;
+    if (!activateSource(trigger.dataset.sourcePath || defaultSourcePath)) return;
     activeTrigger = trigger;
-    previousScrollY = window.scrollY;
+    if (root.hidden) {
+      previousScrollY = window.scrollY;
+      editorSession += 1;
+    }
     root.hidden = false;
     document.body.classList.add("site-inline-editor-active");
     root.scrollIntoView({ block: "start" });
     if (!editorLoaded) loadSource();
+    else window.requestAnimationFrame(() => elements.title.focus());
   }
 
   function closeEditor() {
+    if (commitInFlight) return;
     saveDraft(false);
+    window.clearTimeout(draftTimer);
+    window.clearTimeout(previewTimer);
+    loadVersion += 1;
+    editorSession += 1;
     root.hidden = true;
     document.body.classList.remove("site-inline-editor-active");
     window.requestAnimationFrame(() => window.scrollTo({ top: previousScrollY }));
     if (activeTrigger && typeof activeTrigger.focus === "function") activeTrigger.focus();
   }
 
-  function openAuthDialog(shouldCommit = false) {
-    pendingCommit = shouldCommit;
+  function openAuthDialog(commitSnapshot = null) {
+    pendingCommit = commitSnapshot;
     setAuthStatus("");
     elements.token.value = "";
     if (typeof authDialog.showModal === "function") authDialog.showModal();
@@ -480,10 +638,26 @@
     window.requestAnimationFrame(() => elements.token.focus());
   }
 
-  function closeAuthDialog() {
+  function finalizeAuthDialogClose() {
+    const keepVerifiedSession = verifiedAuthClose;
+    verifiedAuthClose = false;
+    window.clearTimeout(authCompletionTimer);
+    authCompletionTimer = 0;
+    pendingCommit = null;
+    elements.token.value = "";
+    if (!keepVerifiedSession) authVersion += 1;
+    setBusy(false);
+  }
+
+  function closeAuthDialog({ verified = false } = {}) {
+    verifiedAuthClose = verified;
+    if (!verified) pendingCommit = null;
     elements.token.value = "";
     if (typeof authDialog.close === "function") authDialog.close();
-    else authDialog.removeAttribute("open");
+    else {
+      authDialog.removeAttribute("open");
+      finalizeAuthDialogClose();
+    }
   }
 
   function setConnection(session) {
@@ -491,39 +665,75 @@
     const connectLabel = elements.connect.querySelector("span");
     if (connectLabel) connectLabel.textContent = activeToken ? strings.connected : disconnectedLabel;
     elements.connect.dataset.connected = String(Boolean(activeToken));
+    window.functionhxOwnerUi?.setVerified?.(Boolean(activeToken), session?.remembered === true);
+  }
+
+  async function withSuppressedAuthEvents(action) {
+    authMutationDepth += 1;
+    try {
+      return await action();
+    } finally {
+      authMutationDepth -= 1;
+    }
   }
 
   async function restoreGitHubSession() {
+    const operation = ++authVersion;
     const session = await window.functionhxGitHubAuth?.restore({ owner, repository }).catch(() => null);
+    if (operation !== authVersion) return null;
     setConnection(session);
     return session;
+  }
+
+  async function waitForTokenRestore() {
+    let awaited;
+    do {
+      awaited = restorePromise;
+      await awaited;
+    } while (awaited !== restorePromise);
   }
 
   async function saveGitHubSession(token) {
     const remember = elements.authRemember.checked;
     if (!window.functionhxGitHubAuth) return { failed: remember, remembered: false };
-    try {
-      return await window.functionhxGitHubAuth.save({ owner, remember, repository, token });
-    } catch (_error) {
-      await window.functionhxGitHubAuth.save({ owner, remember: false, repository, token }).catch(() => undefined);
-      return { failed: true, remembered: false };
-    }
+    return withSuppressedAuthEvents(async () => {
+      try {
+        return await window.functionhxGitHubAuth.save({ owner, remember, repository, token });
+      } catch (_error) {
+        await window.functionhxGitHubAuth.save({ owner, remember: false, repository, token }).catch(() => undefined);
+        return { failed: true, remembered: false };
+      }
+    });
   }
 
   async function disconnectGitHub(ask = true) {
     if (ask && !window.confirm(strings.disconnectConfirm)) return;
-    await window.functionhxGitHubAuth?.forget({ repository }).catch(() => undefined);
+    const operation = ++authVersion;
+    setConnection(null);
+    restorePromise = Promise.resolve(null);
+    await withSuppressedAuthEvents(() => window.functionhxGitHubAuth?.forget({ repository }).catch(() => undefined));
+    if (operation !== authVersion) return;
     setConnection(null);
     setStatus(strings.disconnected);
   }
 
+  async function clearExpiredGitHubSession(token) {
+    if (!token || token !== activeToken) return;
+    const operation = ++authVersion;
+    setConnection(null);
+    restorePromise = Promise.resolve(null);
+    await withSuppressedAuthEvents(() => window.functionhxGitHubAuth?.forget({ repository }).catch(() => undefined));
+    if (operation === authVersion) setConnection(null);
+  }
+
   async function handleConnectButton() {
-    await restorePromise;
+    await waitForTokenRestore();
+    if (authDialog.open) return;
     if (activeToken) {
       await disconnectGitHub(true);
       return;
     }
-    openAuthDialog(false);
+    openAuthDialog(null);
   }
 
   async function connectGitHub() {
@@ -533,6 +743,7 @@
       return;
     }
 
+    const operation = ++authVersion;
     setBusy(true);
     setAuthStatus(strings.verify);
     try {
@@ -540,65 +751,114 @@
         githubRequest("/user", { token: candidate }),
         githubRequest(`/repos/${repository}`, { token: candidate }),
       ]);
+      if (operation !== authVersion || !authDialog.open) return;
       if (String(user.login).toLowerCase() !== owner.toLowerCase() || !repo.permissions?.push) {
         throw new Error("This token is not @Functionhx with repository write access.");
       }
       const saved = await saveGitHubSession(candidate);
-      setConnection({ token: candidate });
+      if (operation !== authVersion || !authDialog.open) {
+        if (!activeToken || activeToken === candidate) {
+          await withSuppressedAuthEvents(() => window.functionhxGitHubAuth?.forget({ repository }).catch(() => undefined));
+        }
+        return;
+      }
+      const session = { remembered: saved.remembered === true, token: candidate };
+      setConnection(session);
+      restorePromise = Promise.resolve(session);
       setAuthStatus(saved.failed ? strings.authRememberFailed : saved.remembered ? strings.authRemembered : strings.authSuccess, "success");
-      const continueCommit = pendingCommit;
-      pendingCommit = false;
-      window.setTimeout(
+      window.clearTimeout(authCompletionTimer);
+      authCompletionTimer = window.setTimeout(
         () => {
-          closeAuthDialog();
-          if (continueCommit) commitChanges();
+          if (operation !== authVersion || !authDialog.open) return;
+          const continueCommit = pendingCommit;
+          pendingCommit = null;
+          closeAuthDialog({ verified: true });
+          if (continueCommit) commitChanges(continueCommit);
         },
         saved.failed ? 900 : 350
       );
     } catch (error) {
+      if (operation !== authVersion) return;
       setConnection(null);
       setAuthStatus(`${strings.authFailed} ${error.message || ""}`.trim(), "error");
     } finally {
       elements.token.value = "";
-      setBusy(false);
+      if (operation === authVersion) setBusy(false);
     }
   }
 
-  async function commitChanges() {
-    await restorePromise;
-    if (!isDirty()) {
+  function createCommitSnapshot() {
+    if (!editorLoaded || !isDirty()) return null;
+    const path = activeSourcePath;
+    return Object.freeze({
+      baseSha,
+      endpoint: contentEndpoint(path),
+      message: elements.message.value.trim() || defaultCommitMessage(path),
+      path,
+      session: editorSession,
+      source: composeSource(),
+      storageKey: draftKey(path),
+    });
+  }
+
+  function isCurrentCommit(operation, snapshot) {
+    return operation === commitVersion && snapshot.session === editorSession && snapshot.path === activeSourcePath;
+  }
+
+  async function commitChanges(requestedSnapshot = null) {
+    const snapshot = requestedSnapshot || createCommitSnapshot();
+    if (!snapshot) {
       setStatus(strings.noChanges);
       return;
     }
-    if (!activeToken) {
-      openAuthDialog(true);
-      return;
-    }
+    if (commitInFlight || snapshot.session !== editorSession || snapshot.path !== activeSourcePath) return;
 
-    setBusy(true);
+    const operation = ++commitVersion;
+    let requestAuth = false;
+    setCommitLock(true);
     setStatus(strings.saving);
     elements.result.hidden = true;
     try {
-      const remote = await githubRequest(`${contentEndpoint}?ref=${encodeURIComponent(branch)}`, {
-        token: activeToken,
-      });
-      if (remote.sha !== baseSha) throw new Error(strings.commitConflict);
+      await waitForTokenRestore();
+      if (!isCurrentCommit(operation, snapshot)) return;
+      if (!activeToken) {
+        requestAuth = true;
+        return;
+      }
 
-      const updatedSource = composeSource();
-      const result = await githubRequest(contentEndpoint, {
+      const commitToken = activeToken;
+      const authorizationVersion = authVersion;
+      const remote = await githubRequest(`${snapshot.endpoint}?ref=${encodeURIComponent(branch)}`, {
+        token: commitToken,
+      });
+      if (!isCurrentCommit(operation, snapshot) || authorizationVersion !== authVersion || commitToken !== activeToken) return;
+      if (remote.sha !== snapshot.baseSha) {
+        conflictRemote = Object.freeze({
+          path: snapshot.path,
+          session: snapshot.session,
+          sha: remote.sha,
+          source: decodeBase64Utf8(remote.content || ""),
+        });
+        saveDraft(false);
+        throw new Error(strings.commitConflict);
+      }
+
+      const result = await githubRequest(snapshot.endpoint, {
         method: "PUT",
-        token: activeToken,
+        token: commitToken,
         body: {
-          message: elements.message.value.trim() || strings.defaultMessage,
-          content: encodeBase64Utf8(updatedSource),
+          message: snapshot.message,
+          content: encodeBase64Utf8(snapshot.source),
           sha: remote.sha,
           branch,
         },
       });
+      if (!isCurrentCommit(operation, snapshot) || authorizationVersion !== authVersion || commitToken !== activeToken) return;
 
-      sourceText = updatedSource;
-      baseSha = result.content?.sha || baseSha;
-      window.localStorage.removeItem(draftKey);
+      sourceText = snapshot.source;
+      baseSha = result.content?.sha || snapshot.baseSha;
+      conflictRemote = null;
+      window.localStorage.removeItem(snapshot.storageKey);
       updateDirtyState();
       setStatus(strings.commitSuccess, "success");
       if (result.commit?.html_url) {
@@ -608,13 +868,27 @@
       }
       window.functionhxDeployment?.watch(result.commit);
     } catch (error) {
-      if (error.status === 401 || error.status === 403) await disconnectGitHub(false);
-      const message = error.message === strings.commitConflict ? error.message : `${strings.commitFailed} ${error.message || ""}`.trim();
-      setStatus(message, "error");
+      if (!isCurrentCommit(operation, snapshot)) return;
+      if ((error.status === 401 || error.status === 403) && activeToken) {
+        await clearExpiredGitHubSession(activeToken);
+        if (isCurrentCommit(operation, snapshot)) requestAuth = true;
+      } else {
+        const message = error.message === strings.commitConflict ? error.message : `${strings.commitFailed} ${error.message || ""}`.trim();
+        setStatus(message, "error");
+      }
     } finally {
-      setBusy(false);
+      if (operation === commitVersion) {
+        setCommitLock(false);
+        if (requestAuth && snapshot.session === editorSession && snapshot.path === activeSourcePath) openAuthDialog(snapshot);
+      }
     }
   }
+
+  /*
+   * Commit state is deliberately captured before the first await above. Do not
+   * move path/source/SHA/message reads into the network section: a delayed
+   * token restore or Contents API response must never retarget a commit.
+   */
 
   function selectPanel(panel) {
     const showBody = panel === "body";
@@ -627,24 +901,29 @@
 
   document.addEventListener("click", (event) => {
     const trigger = event.target.closest('[data-author-action="source-edit"]');
-    if (trigger) openEditor(trigger);
+    if (!trigger) return;
+    if (commitInFlight || trigger.getAttribute("aria-disabled") === "true") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
+    openEditor(trigger);
   });
   if (toggle.dataset.editorAction === "source-edit") toggle.addEventListener("click", () => openEditor(toggle));
   elements.close.addEventListener("click", closeEditor);
   elements.connect.addEventListener("click", handleConnectButton);
   elements.authCancel.addEventListener("click", () => {
-    pendingCommit = false;
     closeAuthDialog();
   });
   elements.authConnect.addEventListener("click", connectGitHub);
   authDialog.addEventListener("close", () => {
-    elements.token.value = "";
+    finalizeAuthDialogClose();
   });
   elements.token.addEventListener("keydown", (event) => {
     if (event.key === "Enter") connectGitHub();
   });
   elements.save.addEventListener("click", () => saveDraft(true));
-  elements.commit.addEventListener("click", commitChanges);
+  elements.commit.addEventListener("click", () => commitChanges());
   elements.bodyTab.addEventListener("click", () => selectPanel("body"));
   elements.metadataTab.addEventListener("click", () => selectPanel("metadata"));
 
@@ -672,7 +951,12 @@
 
   elements.discard.addEventListener("click", () => {
     if (!isDirty() || !window.confirm(strings.confirmDiscard)) return;
-    window.localStorage.removeItem(draftKey);
+    window.localStorage.removeItem(draftKey());
+    if (conflictRemote && conflictRemote.path === activeSourcePath && conflictRemote.session === editorSession) {
+      sourceText = conflictRemote.source;
+      baseSha = conflictRemote.sha;
+      conflictRemote = null;
+    }
     hydrateEditor(sourceText);
     setStatus(strings.noChanges);
   });
@@ -685,6 +969,7 @@
 
   window.addEventListener("functionhx:github-auth-changed", (event) => {
     if (event.detail?.repository !== repository) return;
+    if (authMutationDepth > 0) return;
     restorePromise = restoreGitHubSession();
   });
   restorePromise = restoreGitHubSession();

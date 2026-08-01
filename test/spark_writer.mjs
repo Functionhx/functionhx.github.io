@@ -176,7 +176,6 @@ await page.addInitScript(
   ({ endpoint, rootKey, token }) => {
     window.functionhxDeploymentConfig = { maxWait: 2000, pollInterval: 25 };
     window.functionhxSparkVaultConfig = { endpoint };
-    window.localStorage.setItem("functionhx:owner-ui:remembered", "true");
     window.__sparkPopupCount = 0;
     window.open = (url) => {
       window.__sparkPopupCount += 1;
@@ -203,6 +202,16 @@ await page.addInitScript(
   },
   { endpoint: vaultOrigin, rootKey: vaultRootKey, token: vaultToken }
 );
+
+await page.route("**/healthz.json?**", async (route) => {
+  const commit = new URL(route.request().url()).searchParams.get("commit") || "";
+  await route.fulfill({
+    body: JSON.stringify({ commit }),
+    contentType: "application/json",
+    headers: { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" },
+    status: 200,
+  });
+});
 
 await page.route("https://api.deepseek.com/**", async (route) => {
   const request = route.request();
@@ -460,6 +469,7 @@ async function encryptedDeviceRecords() {
 
 try {
   await page.goto(`${baseUrl}spark/`, { waitUntil: "networkidle" });
+  await page.evaluate(() => window.functionhxOwnerUi?.setVerified?.(true, false));
   assert.equal(await page.locator('footer[role="contentinfo"]').count(), 0, "the removed global footer must not render");
 
   await page.locator("#site-spark-create").click();
@@ -617,6 +627,7 @@ try {
 
   await page.evaluate(() => window.localStorage.setItem("theme", "dark"));
   await page.reload({ waitUntil: "networkidle" });
+  await page.evaluate(() => window.functionhxOwnerUi?.setVerified?.(true, false));
   await page.locator("#site-spark-create").click();
   await page.waitForFunction(() => document.querySelector("#site-spark-writer-connect").dataset.connected === "false");
   assert.equal(await page.evaluate(() => window.__sparkPopupCount), 0, "the encrypted device session must survive reload without another login");

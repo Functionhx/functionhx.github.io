@@ -105,6 +105,7 @@
   }
 
   let activeToken = "";
+  let authCompletionTimer = 0;
   let busy = false;
   let pendingCommit = false;
   let slugIsAutomatic = true;
@@ -505,6 +506,7 @@
   }
 
   function closeAuth() {
+    pendingCommit = false;
     elements.token.value = "";
     closeDialog(authDialog);
   }
@@ -570,7 +572,8 @@
       setAuthStatus(saved.failed ? strings.authRememberFailed : saved.remembered ? strings.authRemembered : strings.authSuccess, "success");
       const continueCommit = pendingCommit;
       pendingCommit = false;
-      window.setTimeout(
+      window.clearTimeout(authCompletionTimer);
+      authCompletionTimer = window.setTimeout(
         () => {
           closeAuth();
           if (continueCommit) commitSettings();
@@ -693,6 +696,9 @@
     if (event.key === "Enter") connectGitHub();
   });
   authDialog.addEventListener("close", () => {
+    window.clearTimeout(authCompletionTimer);
+    authCompletionTimer = 0;
+    pendingCommit = false;
     elements.token.value = "";
   });
   window.addEventListener("functionhx:github-auth-changed", (event) => {

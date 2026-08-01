@@ -18,7 +18,7 @@ profile:
   image_circular: false
   more_info: >
     <p>北京 · 北京理工大学</p>
-    <p>机器人工程 / Robotics Engineering</p>
+    <p>Robotics Engineering</p>
 social: true
 announcements:
   enabled: true
@@ -27,7 +27,7 @@ announcements:
 labels:
   news: 动态
 news_path: /news/
-contact_note: 如果想交流机器人、AI 工程或写作，邮件与 GitHub 都可以找到我。
+contact_note: 如果想交流机器人、AI 工程或写作，Gmail、QQ 邮箱与 GitHub 都可以找到我。
 ---
 
 我是樊宇琛，一名机器人工程本科生。这里是持续生长的个人主页，收纳我的[项目](/projects/)、[工具](/tools/)、[写作](/blog/)，以及汇集思考与工作日志的 [Spark](/spark/)。

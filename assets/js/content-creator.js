@@ -41,6 +41,7 @@
     message: document.getElementById("site-content-creator-message"),
     result: document.getElementById("site-content-creator-result"),
     settings: document.getElementById("site-content-creator-settings"),
+    settingsLabel: document.getElementById("site-content-creator-settings-label"),
     slug: document.getElementById("site-content-creator-slug"),
     status: document.getElementById("site-content-creator-status"),
     tags: document.getElementById("site-content-creator-tags"),
@@ -107,6 +108,7 @@
 
   function setBusy(nextBusy) {
     busy = nextBusy;
+    root.setAttribute("aria-busy", String(nextBusy));
     for (const element of [elements.close, elements.commit, elements.connect, elements.draft, elements.translate]) element.disabled = nextBusy;
   }
 
@@ -133,6 +135,31 @@
       type: currentType,
       url: elements.url.value,
     };
+  }
+
+  function formValues(values) {
+    return {
+      announce: values.announce,
+      bodyEn: values.bodyEn,
+      bodyZh: values.bodyZh,
+      category: values.category,
+      comments: values.comments,
+      date: values.date,
+      descriptionEn: values.descriptionEn,
+      descriptionZh: values.descriptionZh,
+      github: values.github,
+      message: values.message,
+      slug: values.slug,
+      tags: values.tags,
+      titleEn: values.titleEn,
+      titleZh: values.titleZh,
+      type: values.type,
+      url: values.url,
+    };
+  }
+
+  function serializeFormValues(values) {
+    return JSON.stringify(formValues(values));
   }
 
   function writeValues(values) {
@@ -184,8 +211,8 @@
     }
   }
 
-  async function forgetDraft() {
-    await window.functionhxGitHubAuth?.forgetOpaque?.({ id: draftStorageId() }).catch(() => undefined);
+  async function forgetDraft(type = currentType) {
+    await window.functionhxGitHubAuth?.forgetOpaque?.({ id: draftStorageId(type) }).catch(() => undefined);
   }
 
   function configureType(type) {
@@ -203,12 +230,13 @@
     elements.coverField.hidden = !isCard;
     elements.commentsField.hidden = !isArticle;
     elements.announceField.hidden = isActivity;
+    elements.settingsLabel.textContent = type === "tool" ? "封面与链接 · 发布设置" : "发布设置";
     elements.bodyZh.placeholder = isActivity ? "写下这条动态，可使用 Markdown 链接……" : "从这里开始写……";
     elements.descriptionZh.placeholder = isActivity ? "动态摘要" : "一句话说明这是什么";
   }
 
   async function openCreator(type, trigger) {
-    if (!typeLabels[type]) return;
+    if (!typeLabels[type] || busy) return;
     activeTrigger = trigger;
     previousScrollY = window.scrollY;
     configureType(type);
@@ -224,19 +252,20 @@
       type,
     });
     elements.english.open = false;
-    elements.settings.open = false;
+    elements.settings.open = type === "tool";
     elements.result.hidden = true;
     root.hidden = false;
     document.body.classList.add("site-content-creator-active");
     root.scrollIntoView({ block: "start" });
     const restored = await restoreDraft();
-    baselineSnapshot = restored ? "" : JSON.stringify(readValues());
+    baselineSnapshot = restored ? "" : serializeFormValues(readValues());
     setStatus(restored ? "已恢复这台设备上的加密草稿。" : "中文写完即可创建；英文镜像可以留空，稍后再翻译。", restored ? "success" : "");
     window.requestAnimationFrame(() => elements.titleZh.focus());
   }
 
   function closeCreator() {
-    if (JSON.stringify(readValues()) === baselineSnapshot) forgetDraft();
+    if (busy) return;
+    if (serializeFormValues(readValues()) === baselineSnapshot) forgetDraft();
     else saveDraft(false);
     root.hidden = true;
     document.body.classList.remove("site-content-creator-active");
@@ -277,13 +306,13 @@
     return parsed.href;
   }
 
-  function validate(values) {
+  function validate(values, type, selectedCover) {
     if (!values.titleZh.trim() || !values.descriptionZh.trim()) {
       setStatus("请先填写中文标题和摘要。", "error");
       (values.titleZh.trim() ? elements.descriptionZh : elements.titleZh).focus();
       return false;
     }
-    if (["article", "activity"].includes(currentType) && !values.bodyZh.trim()) {
+    if (["article", "activity"].includes(type) && !values.bodyZh.trim()) {
       setStatus("请先填写中文正文。", "error");
       elements.bodyZh.focus();
       return false;
@@ -308,7 +337,7 @@
       setStatus(error.message, "error");
       return false;
     }
-    if (coverFile && (!allowedCoverTypes.has(coverFile.type) || coverFile.size > maxCoverBytes)) {
+    if (selectedCover && (!allowedCoverTypes.has(selectedCover.type) || selectedCover.size > maxCoverBytes)) {
       elements.settings.open = true;
       setStatus("封面必须是 WebP、PNG 或 JPEG，且不超过 5 MB。", "error");
       return false;
@@ -372,8 +401,8 @@
     );
   }
 
-  function composeCard(language, values, coverPath) {
-    const isTool = currentType === "tool";
+  function composeCard(language, values, coverPath, type) {
+    const isTool = type === "tool";
     const zhPath = `/${isTool ? "tools" : "projects"}/${values.slug}/`;
     const localized =
       language === "zh"
@@ -389,14 +418,14 @@
       `description: ${JSON.stringify(localized.description)}`,
       `permalink: ${language === "zh" ? zhPath : `/en${zhPath}`}`,
     ];
-    const url = normalizedUrl(values.url, "公开网址");
+    const url = normalizedUrl(values.url, "产品网址");
     const github = normalizedUrl(values.github, "GitHub 网址");
     if (url) frontMatter.push(`redirect: ${url}`);
     if (github) frontMatter.push(`github: ${github}`);
     frontMatter.push(
       `lang: ${language}`,
       `translation_key: ${values.slug}`,
-      `kind: ${currentType}`,
+      `kind: ${type}`,
       "importance: 99",
       `category: ${JSON.stringify(values.category.trim() || (isTool ? "fun" : "work"))}`
     );
@@ -431,16 +460,16 @@
     );
   }
 
-  function sourceEntries(values, coverPath) {
+  function sourceEntries(type, values, coverPath) {
     const parts = dateParts(values.date);
-    if (currentType === "article") {
+    if (type === "article") {
       const prefix = `_posts/${parts.date}-${values.slug}`;
       return [
         { content: composeArticle("zh", values), path: `${prefix}-zh.md` },
         { content: composeArticle("en", values), path: `${prefix}-en.md` },
       ];
     }
-    if (currentType === "activity") {
+    if (type === "activity") {
       const prefix = `_news/${parts.date}-${values.slug}`;
       return [
         { content: composeActivity("zh", values), path: `${prefix}-zh.md` },
@@ -449,14 +478,14 @@
     }
 
     const entries = [
-      { content: composeCard("zh", values, coverPath), path: `_projects/${values.slug}-zh.md` },
-      { content: composeCard("en", values, coverPath), path: `_projects/${values.slug}-en.md` },
+      { content: composeCard("zh", values, coverPath, type), path: `_projects/${values.slug}-zh.md` },
+      { content: composeCard("en", values, coverPath, type), path: `_projects/${values.slug}-en.md` },
     ];
     if (values.announce) {
-      const destination = `/${currentType === "tool" ? "tools" : "projects"}/${values.slug}/`;
+      const destination = `/${type === "tool" ? "tools" : "projects"}/${values.slug}/`;
       const key = `${values.slug}-launched`;
-      const zhLabel = currentType === "tool" ? "工具" : "项目";
-      const enLabel = currentType === "tool" ? "tool" : "project";
+      const zhLabel = type === "tool" ? "工具" : "项目";
+      const enLabel = type === "tool" ? "tool" : "project";
       const newsPrefix = `_news/${parts.date}-${key}`;
       entries.push(
         {
@@ -536,90 +565,114 @@
     return window.btoa(binary);
   }
 
-  async function createCoverBlob(file) {
+  function createCommitIntent(type, values, selectedCover) {
+    const frozenValues = Object.freeze(formValues({ ...values, type }));
+    let cover = null;
+    if (selectedCover) {
+      const extension = allowedCoverTypes.get(selectedCover.type);
+      const directory = type === "tool" ? "tools" : "projects";
+      cover = Object.freeze({
+        file: selectedCover,
+        path: `assets/img/${directory}/${frozenValues.slug}-cover.${extension}`,
+      });
+    }
+    const sources = Object.freeze(
+      sourceEntries(type, frozenValues, cover?.path || "").map((entry) => Object.freeze({ content: entry.content, path: entry.path }))
+    );
+    return Object.freeze({
+      branch,
+      cover,
+      message: frozenValues.message.trim() || `content: add ${type} "${frozenValues.slug}"`,
+      repository,
+      sources,
+      type,
+      values: frozenValues,
+    });
+  }
+
+  async function createCoverBlob(file, snapshot) {
     const content = bytesToBase64(new Uint8Array(await file.arrayBuffer()));
-    const blob = await githubRequest(`/repos/${repository}/git/blobs`, {
+    const blob = await githubRequest(`/repos/${snapshot.repository}/git/blobs`, {
       body: { content, encoding: "base64" },
       method: "POST",
-      token: activeToken,
+      token: snapshot.token,
     });
     if (!blob.sha) throw new Error("GitHub 未返回封面文件标识。");
     return blob.sha;
   }
 
-  async function ensurePathsAvailable(entries, headSha) {
+  async function ensurePathsAvailable(entries, headSha, snapshot) {
     const collisions = await Promise.all(
       entries.map((entry) =>
-        githubRequest(`/repos/${repository}/contents/${encodePath(entry.path)}?ref=${encodeURIComponent(headSha)}`, {
+        githubRequest(`/repos/${snapshot.repository}/contents/${encodePath(entry.path)}?ref=${encodeURIComponent(headSha)}`, {
           allowNotFound: true,
-          token: activeToken,
+          token: snapshot.token,
         })
       )
     );
     if (collisions.some(Boolean)) throw new Error("同名内容已经存在，请修改网址短名。 ");
   }
 
-  async function createCommit(values) {
-    const head = await githubRequest(`/repos/${repository}/git/ref/heads/${encodeURIComponent(branch)}`, { token: activeToken });
+  async function createCommit(snapshot) {
+    const head = await githubRequest(`/repos/${snapshot.repository}/git/ref/heads/${encodeURIComponent(snapshot.branch)}`, {
+      token: snapshot.token,
+    });
     const headSha = head.object?.sha;
     if (!headSha) throw new Error("无法读取 main 分支。");
-    const parent = await githubRequest(`/repos/${repository}/git/commits/${headSha}`, { token: activeToken });
+    const parent = await githubRequest(`/repos/${snapshot.repository}/git/commits/${headSha}`, { token: snapshot.token });
     const baseTree = parent.tree?.sha;
     if (!baseTree) throw new Error("无法读取 main 分支文件树。");
 
-    let coverPath = "";
-    let coverEntry = null;
-    if (coverFile) {
-      const extension = allowedCoverTypes.get(coverFile.type);
-      coverPath = `assets/img/${currentType === "tool" ? "tools" : "projects"}/${values.slug}-cover.${extension}`;
-      coverEntry = { mode: "100644", path: coverPath, type: "blob" };
-    }
+    const coverEntry = snapshot.cover ? { mode: "100644", path: snapshot.cover.path, type: "blob" } : null;
+    await ensurePathsAvailable([...snapshot.sources, ...(coverEntry ? [coverEntry] : [])], headSha, snapshot);
+    if (coverEntry) coverEntry.sha = await createCoverBlob(snapshot.cover.file, snapshot);
 
-    const sources = sourceEntries(values, coverPath);
-    await ensurePathsAvailable([...sources, ...(coverEntry ? [coverEntry] : [])], headSha);
-    if (coverEntry) coverEntry.sha = await createCoverBlob(coverFile);
-
-    const treeEntries = sources.map((entry) => ({ content: entry.content, mode: "100644", path: entry.path, type: "blob" }));
+    const treeEntries = snapshot.sources.map((entry) => ({ content: entry.content, mode: "100644", path: entry.path, type: "blob" }));
     if (coverEntry) treeEntries.push(coverEntry);
-    const tree = await githubRequest(`/repos/${repository}/git/trees`, {
+    const tree = await githubRequest(`/repos/${snapshot.repository}/git/trees`, {
       body: { base_tree: baseTree, tree: treeEntries },
       method: "POST",
-      token: activeToken,
+      token: snapshot.token,
     });
-    const commit = await githubRequest(`/repos/${repository}/git/commits`, {
+    const commit = await githubRequest(`/repos/${snapshot.repository}/git/commits`, {
       body: {
-        message: values.message.trim() || `content: add ${currentType} "${values.slug}"`,
+        message: snapshot.message,
         parents: [headSha],
         tree: tree.sha,
       },
       method: "POST",
-      token: activeToken,
+      token: snapshot.token,
     });
-    await githubRequest(`/repos/${repository}/git/refs/heads/${encodeURIComponent(branch)}`, {
+    await githubRequest(`/repos/${snapshot.repository}/git/refs/heads/${encodeURIComponent(snapshot.branch)}`, {
       body: { force: false, sha: commit.sha },
       method: "PATCH",
-      token: activeToken,
+      token: snapshot.token,
     });
     return commit;
   }
 
   async function commitContent() {
     if (busy) return;
-    const values = readValues();
-    if (!validate(values)) return;
-    await restorePromise;
-    if (!activeToken) {
-      openConnection();
-      return;
-    }
-
     setBusy(true);
-    setStatus("正在创建双语内容与 Commit…");
-    elements.result.hidden = true;
+    const type = currentType;
+    const values = Object.freeze(formValues({ ...readValues(), type }));
+    const selectedCover = coverFile;
     try {
-      const commit = await createCommit(values);
-      await forgetDraft();
-      baselineSnapshot = JSON.stringify(readValues());
+      if (!validate(values, type, selectedCover)) return;
+      const intent = createCommitIntent(type, values, selectedCover);
+      await restorePromise;
+      const token = activeToken;
+      if (!token) {
+        openConnection();
+        return;
+      }
+      const snapshot = Object.freeze({ ...intent, token });
+
+      setStatus("正在创建双语内容与 Commit…");
+      elements.result.hidden = true;
+      const commit = await createCommit(snapshot);
+      await forgetDraft(snapshot.type);
+      baselineSnapshot = serializeFormValues(snapshot.values);
       setStatus("已创建 Commit；发布进度会显示在页面右下角。", "success");
       if (commit.html_url) {
         elements.result.href = commit.html_url;
@@ -680,11 +733,22 @@
     }
   }
 
-  document.addEventListener("click", (event) => {
-    const trigger = event.target.closest("[data-author-action]");
-    const type = actionTypes.get(trigger?.dataset.authorAction || "");
-    if (type) openCreator(type, trigger);
-  });
+  document.addEventListener(
+    "click",
+    (event) => {
+      const trigger = event.target.closest("[data-author-action]");
+      const type = actionTypes.get(trigger?.dataset.authorAction || "");
+      if (!type) return;
+      if (busy) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        setStatus("当前 Commit 完成前不能切换创作类型。");
+        return;
+      }
+      openCreator(type, trigger);
+    },
+    true
+  );
 
   elements.close.addEventListener("click", closeCreator);
   elements.commit.addEventListener("click", commitContent);
@@ -718,10 +782,25 @@
     if (generated) elements.slug.value = generated;
   });
 
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !root.hidden) closeCreator();
-    if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !root.hidden) commitContent();
-  });
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key === "Escape" && !root.hidden) {
+        if (busy) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          setStatus("Commit 进行中，完成后才能关闭创作区。");
+          return;
+        }
+        closeCreator();
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !root.hidden) {
+        event.preventDefault();
+        commitContent();
+      }
+    },
+    true
+  );
 
   window.addEventListener("functionhx:github-auth-changed", (event) => {
     if (String(event.detail?.repository || "").toLowerCase() !== repository.toLowerCase()) return;

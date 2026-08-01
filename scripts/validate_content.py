@@ -166,7 +166,9 @@ def main() -> int:
         socials = {}
     expected_social_logos = {
         "email": "/assets/img/social/gmail.svg",
+        "qq_email": "/assets/img/social/qqmail.png",
         "huggingface": "/assets/img/social/huggingface.svg",
+        "wechat": "fa-brands fa-weixin",
     }
     for social, expected_logo in expected_social_logos.items():
         if not isinstance(socials.get(social), dict) or socials[social].get("logo") != expected_logo:
@@ -174,12 +176,21 @@ def main() -> int:
     expected_brand_hashes = {
         "assets/img/social/gmail.svg": "f3723647e2708fb69ca0506982e963919f7f6676f22488773898851dbb864b7f",
         "assets/img/social/huggingface.svg": "942cad1ccda905ac5a659dfd2d78b344fccfb84a8a3ac3721e08f488205638a0",
+        "assets/img/social/qqmail.png": "ea5718ce82f326c827ac6de52bc2e759864650956062faa61fcaf61694d0ab6e",
+        "assets/img/social/wechat-qr.png": "0949206a8b3e9b8c0a137113a8b85df47445d3f0995bab54f4a3a95267caa884",
     }
     for relative_path, expected_hash in expected_brand_hashes.items():
         asset_path = ROOT / relative_path
         actual_hash = hashlib.sha256(asset_path.read_bytes()).hexdigest() if asset_path.is_file() else "missing"
         if actual_hash != expected_hash:
             errors.append(f"{relative_path}: official brand asset hash mismatch")
+    for removed_social in ("website", "rss_icon"):
+        if removed_social in socials:
+            errors.append(f"_data/socials.yml: redundant {removed_social} entry must stay removed")
+    if socials.get("qq_email", {}).get("url") != "mailto:2994114386@qq.com":
+        errors.append("_data/socials.yml: QQ Mail address is missing")
+    if socials.get("wechat", {}).get("url") != "/assets/img/social/wechat-qr.png":
+        errors.append("_data/socials.yml: WeChat QR link is missing")
 
     workflow_path = ROOT / ".github" / "workflows" / "deploy.yml"
     workflow_text = (

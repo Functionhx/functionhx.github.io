@@ -1,10 +1,10 @@
-website:
-  logo: fa-solid fa-globe
-  title: Website
-  url: https://functionhx.github.io/
 email:
   value: functionhx@gmail.com
   logo: /assets/img/social/gmail.svg
+qq_email:
+  logo: /assets/img/social/qqmail.png
+  title: QQ Mail
+  url: mailto:2994114386@qq.com
 github_username: Functionhx
 kaggle_id: funcnano
 linkedin_username: zaizai-fan-152611414
@@ -12,4 +12,7 @@ huggingface:
   logo: /assets/img/social/huggingface.svg
   title: Hugging Face
   url: https://huggingface.co/Func-nano
-rss_icon: true
+wechat:
+  logo: fa-brands fa-weixin
+  title: WeChat
+  url: /assets/img/social/wechat-qr.png

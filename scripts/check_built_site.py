@@ -190,14 +190,16 @@ def main() -> int:
             errors.append(f"{route}: page-specific brand shifts the navigation layout")
         title = " ".join(" ".join(parser.title_text).split())
         if route in {"/", "/en/"}:
-            if title != "Magic ✨":
+            if title != "Magic · In Progress":
                 errors.append(
-                    f"{route}: expected browser title 'Magic ✨', found {title!r}"
+                    f"{route}: expected browser title 'Magic · In Progress', found {title!r}"
                 )
-        elif not title.endswith("· Magic ✨"):
+        elif not title.endswith("· Magic"):
             errors.append(
                 f"{route}: browser title does not use the Magic identity: {title!r}"
             )
+        if "樊宇琛" in title or "Yuchen Fan" in title or "✨" in title:
+            errors.append(f"{route}: browser title must stay brand-only: {title!r}")
         if "🤖" in rendered_html:
             errors.append(f"{route}: generic robot favicon still renders")
         for required_id in (
@@ -211,6 +213,8 @@ def main() -> int:
         if expected_language == "zh-CN":
             if "site-inline-editor-toggle" not in parser.ids:
                 errors.append(f"{route}: Chinese source editor control missing")
+            if 'site-author-nav owner-only-control' not in rendered_html:
+                errors.append(f"{route}: author navigation must stay hidden until verified")
         elif "site-inline-editor-toggle" in parser.ids:
             errors.append(f"{route}: English reading mirror must not expose source editing")
         for settings_id in (
@@ -457,12 +461,13 @@ def main() -> int:
                 )
 
     required_social_links = {
-        "https://functionhx.github.io/",
         "mailto:functionhx@gmail.com",
+        "mailto:2994114386@qq.com",
         "https://github.com/Functionhx",
         "https://www.kaggle.com/funcnano",
         "https://www.linkedin.com/in/zaizai-fan-152611414",
         "https://huggingface.co/Func-nano",
+        "/assets/img/social/wechat-qr.png",
     }
     for route in ("/", "/en/"):
         parser = parsed_pages.get(route)
@@ -472,15 +477,27 @@ def main() -> int:
         for official_brand_asset in (
             "/assets/img/social/gmail.svg",
             "/assets/img/social/huggingface.svg",
+            "/assets/img/social/qqmail.png",
+            "/assets/img/social/wechat-qr.png",
         ):
             if official_brand_asset not in html:
                 errors.append(f"{route}: official social brand asset missing: {official_brand_asset}")
-        for approximate_icon in ("fa-envelope", "fa-face-smile"):
+        for approximate_icon in ("fa-envelope", "fa-face-smile", "fa-globe", "fa-square-rss"):
             if approximate_icon in html:
                 errors.append(f"{route}: approximate social icon still renders: {approximate_icon}")
+        for contact_contract in (
+            'title="QQ Mail"',
+            'title="WeChat"',
+            'id="wechat-qr-dialog"',
+            "/assets/js/home-contact.js",
+        ):
+            if contact_contract not in html:
+                errors.append(f"{route}: contact UI contract missing: {contact_contract}")
         if "data-settings-theme" in html:
             errors.append(f"{route}: appearance controls must stay in the navigation, not settings")
         if route == "/":
+            if "编辑首页介绍" not in html:
+                errors.append(f"{route}: homepage editor action must identify the introduction scope")
             missing_editor_ids = {
                 "site-author-menu",
                 "site-inline-editor-toggle",
@@ -506,6 +523,13 @@ def main() -> int:
         missing_links = required_social_links.difference(parser.links)
         if missing_links:
             errors.append(f"{route}: missing social links {sorted(missing_links)}")
+
+    for route in ("/", "/news/"):
+        html = route_file(site, route).read_text(encoding="utf-8")
+        if 'class="activity-feed__edit owner-only-control"' not in html:
+            errors.append(f"{route}: existing activity rows must expose verified-owner editing")
+        if 'data-source-path="_news/' not in html:
+            errors.append(f"{route}: activity editor is not bound to its _news source")
 
     for asset in (
         "assets/css/inline-editor.css",

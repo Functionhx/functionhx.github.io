@@ -2,9 +2,15 @@
   "use strict";
 
   const scriptElement = document.currentScript;
-  const assetRoot = scriptElement?.src.replace(/\/assets\/js\/admin-loader\.js(?:\?.*)?$/, "") || window.location.origin;
+  const loaderUrl = new URL(scriptElement?.src || "/assets/js/admin-loader.js", window.location.href);
+  const assetRoot = loaderUrl.href.replace(/\/assets\/js\/admin-loader\.js(?:\?.*)?$/, "") || window.location.origin;
+  const assetVersion = loaderUrl.search;
   const loadedFeatures = new Set();
   const featurePromises = new Map();
+  const loadedAssets = new Set();
+  const resourcePromises = new Map();
+  const pendingTriggers = new WeakSet();
+  const pendingFeatures = new Set();
 
   const features = {
     creator: {
@@ -30,49 +36,102 @@
   };
 
   function assetUrl(kind, filename) {
-    return `${assetRoot}/assets/${kind}/${filename}`;
+    return `${assetRoot}/assets/${kind}/${filename}${assetVersion}`;
+  }
+
+  function statusRegion() {
+    let region = document.getElementById("site-admin-load-status");
+    if (region) return region;
+    region = document.createElement("div");
+    region.id = "site-admin-load-status";
+    region.className = "site-admin-load-status";
+    region.hidden = true;
+    region.setAttribute("aria-atomic", "true");
+    region.setAttribute("aria-live", "polite");
+    region.setAttribute("role", "status");
+    document.body.append(region);
+    return region;
+  }
+
+  function setLoadStatus(message = "", state = "") {
+    const region = statusRegion();
+    region.textContent = message;
+    region.dataset.state = state;
+    region.hidden = !message;
+  }
+
+  function stylesheetIsLoaded(source) {
+    return [...document.styleSheets].some((sheet) => sheet.href === source);
   }
 
   function loadStyle(filename) {
     const source = assetUrl("css", filename);
-    const existing = [...document.styleSheets].some((sheet) => sheet.href === source);
-    if (existing) return Promise.resolve();
+    if (loadedAssets.has(source) || stylesheetIsLoaded(source)) {
+      loadedAssets.add(source);
+      return Promise.resolve();
+    }
+    if (resourcePromises.has(source)) return resourcePromises.get(source);
 
-    return new Promise((resolve, reject) => {
+    const promise = new Promise((resolve, reject) => {
       const link = document.createElement("link");
       link.rel = "stylesheet";
       link.href = source;
-      link.addEventListener("load", resolve, { once: true });
-      link.addEventListener("error", () => reject(new Error(`Could not load ${filename}.`)), { once: true });
-      document.head.append(link);
-    });
-  }
-
-  function loadScript(filename) {
-    const source = assetUrl("js", filename);
-    const existing = document.querySelector(`script[src="${source}"]`);
-    if (existing?.dataset.loaded === "true") return Promise.resolve();
-    if (existing) {
-      return new Promise((resolve, reject) => {
-        existing.addEventListener("load", resolve, { once: true });
-        existing.addEventListener("error", reject, { once: true });
-      });
-    }
-
-    return new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = source;
-      script.addEventListener(
+      link.dataset.adminAsset = filename;
+      link.addEventListener(
         "load",
         () => {
-          script.dataset.loaded = "true";
+          link.dataset.loaded = "true";
+          loadedAssets.add(source);
           resolve();
         },
         { once: true }
       );
-      script.addEventListener("error", () => reject(new Error(`Could not load ${filename}.`)), { once: true });
+      link.addEventListener(
+        "error",
+        () => {
+          link.remove();
+          resourcePromises.delete(source);
+          reject(new Error(`Could not load ${filename}.`));
+        },
+        { once: true }
+      );
+      document.head.append(link);
+    });
+    resourcePromises.set(source, promise);
+    return promise;
+  }
+
+  function loadScript(filename) {
+    const source = assetUrl("js", filename);
+    if (loadedAssets.has(source)) return Promise.resolve();
+    if (resourcePromises.has(source)) return resourcePromises.get(source);
+
+    const promise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = source;
+      script.dataset.adminAsset = filename;
+      script.addEventListener(
+        "load",
+        () => {
+          script.dataset.loaded = "true";
+          loadedAssets.add(source);
+          resolve();
+        },
+        { once: true }
+      );
+      script.addEventListener(
+        "error",
+        () => {
+          script.remove();
+          resourcePromises.delete(source);
+          reject(new Error(`Could not load ${filename}.`));
+        },
+        { once: true }
+      );
       document.body.append(script);
     });
+    resourcePromises.set(source, promise);
+    return promise;
   }
 
   function loadFeature(feature) {
@@ -91,6 +150,45 @@
       });
     featurePromises.set(feature, promise);
     return promise;
+  }
+
+  async function restoreVerifiedOwner() {
+    if (document.documentElement.dataset.ownerRestore !== "true") return;
+    try {
+      await loadScript("github-auth-vault.js");
+      const session = await window.functionhxGitHubAuth?.restore({ owner: "Functionhx", repository: "Functionhx/functionhx.github.io" });
+      if (!session?.token) {
+        window.functionhxOwnerUi?.setVerified?.(false);
+        return;
+      }
+
+      const response = await window.fetch("https://api.github.com/user", {
+        cache: "no-store",
+        credentials: "omit",
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${session.token}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
+      if (response.status === 401 || response.status === 403) {
+        await window.functionhxGitHubAuth?.forget({ repository: "Functionhx/functionhx.github.io" });
+        window.functionhxOwnerUi?.setVerified?.(false);
+        return;
+      }
+      if (!response.ok) throw new Error(`Could not verify the saved GitHub session (${response.status}).`);
+      const user = await response.json();
+      if (String(user.login || "").toLowerCase() !== "functionhx") {
+        await window.functionhxGitHubAuth?.forget({ repository: "Functionhx/functionhx.github.io" });
+        window.functionhxOwnerUi?.setVerified?.(false);
+        return;
+      }
+      window.functionhxOwnerUi?.setVerified?.(true, true);
+    } catch (error) {
+      // A transient network or asset failure must not erase a valid encrypted
+      // credential. The hint remains so a later navigation can retry quietly.
+      console.warn("Could not restore the owner controls.", error);
+    }
   }
 
   function adminTrigger(target) {
@@ -134,22 +232,34 @@
 
       event.preventDefault();
       event.stopImmediatePropagation();
+      if (pendingTriggers.has(trigger) || pendingFeatures.has(feature)) return;
+      pendingTriggers.add(trigger);
+      pendingFeatures.add(feature);
       trigger.setAttribute("aria-busy", "true");
+      setLoadStatus();
       window.functionhxSitePreferences?.showLoading?.();
       loadFeature(feature)
         .then(() => {
           window.functionhxSitePreferences?.hideLoading?.();
           trigger.removeAttribute("aria-busy");
+          pendingTriggers.delete(trigger);
+          pendingFeatures.delete(feature);
+          setLoadStatus();
           if (trigger.isConnected) trigger.click();
         })
         .catch((error) => {
           window.functionhxSitePreferences?.hideLoading?.();
           trigger.removeAttribute("aria-busy");
+          pendingTriggers.delete(trigger);
+          pendingFeatures.delete(feature);
+          setLoadStatus("创作工具暂时没有载入。请再次点按原按钮重试。", "error");
           console.error(error);
         });
     },
     true
   );
+
+  restoreVerifiedOwner();
 
   try {
     const hasActiveDeployment = Object.keys(window.localStorage).some((key) => key.startsWith("functionhx:deployment:"));

@@ -34,6 +34,8 @@
   {% else %}
     {% assign author_context = 'project-entry' %}
   {% endif %}
+{% elsif page.path contains '_news/' %}
+  {% assign author_context = 'news-entry' %}
 {% endif %}
 {% if current_lang == 'en' %}
   {% assign target_lang = 'zh' %}
@@ -307,7 +309,7 @@
             </noscript>
           </li>
           {% if editor_source_path and current_lang != 'en' %}
-            <li class="nav-item site-author-nav">
+            <li class="nav-item site-author-nav owner-only-control">
               <button
                 id="site-inline-editor-toggle"
                 type="button"
@@ -356,7 +358,7 @@
                   <button type="button" role="menuitem" data-author-action="spark-drafts">
                     <i class="fa-solid fa-lock" aria-hidden="true"></i><span>私密草稿</span>
                   </button>
-                {% elsif author_context == 'news' %}
+                {% elsif author_context == 'news' or author_context == 'news-entry' %}
                   <button type="button" role="menuitem" data-author-action="activity-create">
                     <i class="fa-regular fa-bell" aria-hidden="true"></i><span>新增动态</span>
                   </button>
@@ -374,7 +376,7 @@
                   >
                     <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i><span>编辑当前 Spark</span>
                   </button>
-                {% else %}
+                {% elsif author_context != 'news' %}
                   <button type="button" role="menuitem" data-author-action="source-edit">
                     <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
                     <span>
@@ -384,6 +386,10 @@
                         编辑当前工具
                       {% elsif author_context == 'project-entry' %}
                         编辑当前项目
+                      {% elsif author_context == 'news-entry' %}
+                        编辑当前动态
+                      {% elsif author_context == 'home' %}
+                        编辑首页介绍
                       {% else %}
                         编辑当前页面
                       {% endif %}

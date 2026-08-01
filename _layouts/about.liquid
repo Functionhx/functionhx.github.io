@@ -78,6 +78,39 @@ layout: default
         <div class="contact-icons">{% social_links %}</div>
         <div class="contact-note">{{ page.contact_note | default: site.contact_note }}</div>
       </div>
+
+      <dialog
+        id="wechat-qr-dialog"
+        class="wechat-qr-dialog"
+        aria-labelledby="wechat-qr-heading"
+        aria-describedby="wechat-qr-description"
+      >
+        <form method="dialog">
+          <button
+            class="wechat-qr-dialog__close"
+            value="close"
+            aria-label="{% if page.lang == 'en' %}Close WeChat QR code{% else %}关闭微信二维码{% endif %}"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </form>
+        <div class="wechat-qr-dialog__body">
+          <h2 id="wechat-qr-heading">
+            {% if page.lang == 'en' %}WeChat{% else %}微信{% endif %}
+          </h2>
+          <img
+            src="{{ '/assets/img/social/wechat-qr.png' | relative_url | bust_file_cache }}"
+            width="660"
+            height="660"
+            loading="lazy"
+            decoding="async"
+            alt="{% if page.lang == 'en' %}Yuchen Fan's WeChat QR code{% else %}樊宇琛的微信二维码{% endif %}"
+          >
+          <p id="wechat-qr-description">
+            {% if page.lang == 'en' %}Scan to add me on WeChat.{% else %}扫码添加我为好友。{% endif %}
+          </p>
+        </div>
+      </dialog>
     {% endif %}
 
     {% if site.newsletter and site.newsletter.enabled and site.footer_fixed %}

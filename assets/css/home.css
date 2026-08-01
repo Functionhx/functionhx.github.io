@@ -39,11 +39,60 @@
   font-size: 0.9rem;
 }
 
+.social {
+  margin-top: 2.25rem;
+}
+
+.social .contact-icons {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0;
+  gap: clamp(0.7rem, 2vw, 1.05rem);
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
 .social .contact-icons a {
-  display: inline-block;
+  align-items: center;
+  border-radius: 0.7rem;
+  display: inline-flex;
+  flex: 0 0 3.5rem;
+  height: 3.5rem;
+  justify-content: center;
+  line-height: 1;
   transition:
     opacity 140ms ease-out,
     transform 140ms ease-out;
+  width: 3.5rem;
+}
+
+.social .contact-icons a > i {
+  align-items: center;
+  display: inline-flex;
+  font-size: 3.05rem;
+  height: 3.05rem;
+  justify-content: center;
+  line-height: 1;
+  width: 3.05rem;
+}
+
+.social .contact-icons a > i::before {
+  line-height: 1;
+}
+
+.social .contact-icons a > img,
+.social .contact-icons a > svg {
+  display: block;
+  height: 3.05rem;
+  margin: 0;
+  object-fit: contain;
+  width: 3.05rem;
+}
+
+.social .contact-icons a > svg image {
+  height: 3.05rem;
+  width: 3.05rem;
 }
 
 .social .contact-icons a:hover,
@@ -55,10 +104,6 @@
 .social .contact-icons a:hover i::before,
 .social .contact-icons a:focus-visible i::before {
   color: inherit;
-}
-
-.social .contact-icons .fa-globe::before {
-  color: #c218d4 !important;
 }
 
 .social .contact-icons .fa-github::before {
@@ -73,12 +118,85 @@
   color: #0a66c2 !important;
 }
 
-.social .contact-icons .fa-square-rss::before {
-  color: #f26522 !important;
+.social .contact-icons .fa-weixin::before {
+  color: #07c160 !important;
 }
 
 html[data-theme="dark"] .social .contact-icons .fa-github::before {
   color: #f0f6fc !important;
+}
+
+.social .contact-note {
+  color: var(--global-text-color-light);
+  line-height: 1.5;
+  margin: 0 auto;
+  max-width: 42rem;
+}
+
+.wechat-qr-dialog {
+  background: var(--global-bg-color);
+  border: 1px solid var(--global-divider-color);
+  border-radius: 1rem;
+  box-shadow: 0 1.25rem 4rem rgba(0, 0, 0, 0.18);
+  color: var(--global-text-color);
+  max-width: calc(100vw - 2rem);
+  padding: 1.15rem;
+  width: 23rem;
+}
+
+.wechat-qr-dialog::backdrop {
+  backdrop-filter: blur(0.35rem);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.wechat-qr-dialog__close {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: var(--global-text-color-light);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.45rem;
+  height: 2rem;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  position: absolute;
+  right: 0.85rem;
+  top: 0.75rem;
+  width: 2rem;
+}
+
+.wechat-qr-dialog__close:hover,
+.wechat-qr-dialog__close:focus-visible {
+  background: var(--global-code-bg-color);
+  color: var(--global-text-color);
+}
+
+.wechat-qr-dialog__body {
+  text-align: center;
+}
+
+.wechat-qr-dialog__body h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 2rem 0.85rem;
+}
+
+.wechat-qr-dialog__body img {
+  aspect-ratio: 1;
+  display: block;
+  height: auto;
+  margin: 0 auto;
+  max-width: 100%;
+  width: 20rem;
+}
+
+.wechat-qr-dialog__body p {
+  color: var(--global-text-color-light);
+  font-size: 0.86rem;
+  margin: 0.8rem 0 0;
 }
 
 @media (max-width: 575.98px) {
@@ -89,6 +207,32 @@ html[data-theme="dark"] .social .contact-icons .fa-github::before {
   .home-now dl > div {
     gap: 0.6rem;
     grid-template-columns: 2.7rem minmax(0, 1fr);
+  }
+
+  .social .contact-icons {
+    gap: 0.55rem;
+  }
+
+  .social .contact-icons a {
+    flex-basis: 2.85rem;
+    height: 2.85rem;
+    width: 2.85rem;
+  }
+
+  .social .contact-icons a > i,
+  .social .contact-icons a > img,
+  .social .contact-icons a > svg,
+  .social .contact-icons a > svg image {
+    height: 2.55rem;
+    width: 2.55rem;
+  }
+
+  .social .contact-icons a > i {
+    font-size: 2.55rem;
+  }
+
+  .wechat-qr-dialog {
+    padding: 1rem;
   }
 }
 

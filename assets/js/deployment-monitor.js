@@ -18,6 +18,7 @@
         queued: "The commit is queued for GitHub Pages.",
         retrying: "The publishing status is temporarily unavailable; retrying…",
         ready: "The new version is live. Refresh when you are ready.",
+        syncing: "The build passed. Waiting for this domain to serve the new version…",
         timedOut: "Publishing is taking longer than expected. Check the build details.",
         waiting: "Waiting for GitHub Actions to pick up this commit…",
       }
@@ -27,6 +28,7 @@
         queued: "这次提交已进入 GitHub Pages 队列。",
         retrying: "暂时无法读取发布状态，正在重试…",
         ready: "新版本已经上线，可以刷新查看。",
+        syncing: "构建已经通过，正在等待当前域名同步到新版本…",
         timedOut: "发布耗时超出预期，请打开构建详情查看。",
         waiting: "正在等待 GitHub Actions 接收这次提交…",
       };
@@ -47,6 +49,8 @@
   let pollTimer = 0;
   let elapsedTimer = 0;
   let pollErrors = 0;
+  let pollGeneration = 0;
+  let pollController = null;
 
   function readStored() {
     try {
@@ -69,8 +73,10 @@
   function clearTimers() {
     window.clearTimeout(pollTimer);
     window.clearInterval(elapsedTimer);
+    pollController?.abort();
     pollTimer = 0;
     elapsedTimer = 0;
+    pollController = null;
   }
 
   function formatElapsed() {
@@ -104,7 +110,7 @@
     updateElapsed();
   }
 
-  async function githubRuns(sha) {
+  async function githubRuns(sha, signal) {
     const url = new URL(`https://api.github.com/repos/${repository}/actions/runs`);
     url.searchParams.set("event", "push");
     url.searchParams.set("head_sha", sha);
@@ -118,35 +124,65 @@
     let response = await window.fetch(url, {
       cache: "no-store",
       headers,
+      signal,
     });
     if ((response.status === 401 || response.status === 403) && headers.Authorization) {
       delete headers.Authorization;
-      response = await window.fetch(url, { cache: "no-store", headers });
+      response = await window.fetch(url, { cache: "no-store", headers, signal });
     }
     if (!response.ok) throw new Error(`GitHub Actions API ${response.status}`);
     const payload = await response.json();
     return (payload.workflow_runs || []).find((run) => run.head_sha === sha) || null;
   }
 
-  function schedulePoll() {
-    window.clearTimeout(pollTimer);
-    pollTimer = window.setTimeout(poll, pollInterval);
+  async function visibleCommit(sha, signal) {
+    const url = new URL("/healthz.json", window.location.origin);
+    url.searchParams.set("commit", sha);
+    url.searchParams.set("_", String(Date.now()));
+    try {
+      const response = await window.fetch(url, {
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+        signal,
+      });
+      if (!response.ok) return false;
+      const payload = await response.json().catch(() => null);
+      return payload?.commit === sha;
+    } catch (error) {
+      if (error?.name === "AbortError") throw error;
+      return false;
+    }
   }
 
-  async function poll() {
+  function isCurrentPoll(generation, sha) {
+    return generation === pollGeneration && current?.sha === sha;
+  }
+
+  function schedulePoll(generation) {
+    window.clearTimeout(pollTimer);
+    pollTimer = window.setTimeout(() => poll(generation), pollInterval);
+  }
+
+  async function poll(generation = pollGeneration) {
     if (!current) return;
+    const sha = current.sha;
+    if (!isCurrentPoll(generation, sha)) return;
     if (Date.now() - current.startedAt > maxWait) {
       render({ message: strings.timedOut, progress: 85, stage: "build", state: "failure" });
       clearTimers();
       return;
     }
 
+    const controller = new AbortController();
+    pollController?.abort();
+    pollController = controller;
     try {
-      const run = await githubRuns(current.sha);
+      const run = await githubRuns(sha, controller.signal);
+      if (!isCurrentPoll(generation, sha)) return;
       pollErrors = 0;
       if (!run) {
         render({ message: strings.waiting, progress: 22, stage: "queue" });
-        schedulePoll();
+        schedulePoll(generation);
         return;
       }
       if (run.html_url) {
@@ -157,6 +193,15 @@
       }
       if (run.status === "completed") {
         if (run.conclusion === "success") {
+          const isVisible = await visibleCommit(sha, controller.signal);
+          if (!isCurrentPoll(generation, sha)) return;
+          if (!isVisible) {
+            current.state = "syncing";
+            saveStored(current);
+            render({ message: strings.syncing, progress: 92, stage: "build" });
+            schedulePoll(generation);
+            return;
+          }
           current.state = "success";
           saveStored(current);
           render({ message: strings.ready, progress: 100, stage: "ready", state: "success" });
@@ -174,22 +219,26 @@
       } else {
         render({ message: strings.building, progress: 68, stage: "build" });
       }
-      schedulePoll();
-    } catch (_error) {
+      schedulePoll(generation);
+    } catch (error) {
+      if (error?.name === "AbortError" || !isCurrentPoll(generation, sha)) return;
       pollErrors += 1;
       if (pollErrors < 3) {
         render({ message: strings.retrying, progress: 68, stage: "build" });
-        schedulePoll();
+        schedulePoll(generation);
       } else {
         render({ message: strings.timedOut, progress: 68, stage: "build", state: "failure" });
         clearTimers();
       }
+    } finally {
+      if (pollController === controller) pollController = null;
     }
   }
 
   function watch(commit) {
     const sha = String(commit?.sha || "").trim();
     if (!sha) return;
+    pollGeneration += 1;
     clearTimers();
     pollErrors = 0;
     saveStored({
@@ -203,12 +252,13 @@
     elements.refresh.hidden = true;
     render({ message: strings.waiting, progress: 15, stage: "commit" });
     elapsedTimer = window.setInterval(updateElapsed, 1000);
-    poll();
+    poll(pollGeneration);
   }
 
   function resume() {
     const stored = readStored();
     if (!stored) return;
+    pollGeneration += 1;
     current = stored;
     elements.commit.href = current.commitUrl || `https://github.com/${repository}/commit/${current.sha}`;
     if (current.runUrl) {
@@ -216,8 +266,10 @@
       elements.run.hidden = false;
     }
     if (current.state === "success") {
-      render({ message: strings.ready, progress: 100, stage: "ready", state: "success" });
-      elements.refresh.hidden = false;
+      current.state = "syncing";
+      render({ message: strings.syncing, progress: 92, stage: "build" });
+      elapsedTimer = window.setInterval(updateElapsed, 1000);
+      poll(pollGeneration);
       return;
     }
     if (current.state === "failure") {
@@ -226,10 +278,11 @@
     }
     render({ message: strings.waiting, progress: 22, stage: "queue" });
     elapsedTimer = window.setInterval(updateElapsed, 1000);
-    poll();
+    poll(pollGeneration);
   }
 
   elements.close.addEventListener("click", () => {
+    pollGeneration += 1;
     clearTimers();
     root.hidden = true;
     try {

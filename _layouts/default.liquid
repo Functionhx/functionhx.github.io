@@ -157,6 +157,9 @@
     <script src="{{ '/assets/js/site-preferences.js' | relative_url | bust_file_cache }}"></script>
     <script src="{{ '/assets/js/owner-ui.js' | relative_url | bust_file_cache }}"></script>
     {% include scripts.liquid %}
+    {% if page.home %}
+      <script src="{{ '/assets/js/home-contact.js' | relative_url | bust_file_cache }}"></script>
+    {% endif %}
     <script src="{{ '/assets/js/navigation-performance.js' | relative_url | bust_file_cache }}"></script>
     <script src="{{ '/assets/js/admin-loader.js' | relative_url | bust_file_cache }}"></script>
   </body>

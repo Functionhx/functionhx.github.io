@@ -2,11 +2,17 @@
 <script>
   (() => {
     try {
-      const remembered = window.localStorage.getItem('functionhx:owner-ui:remembered') === 'true';
-      const session = window.sessionStorage.getItem('functionhx:owner-ui:session') === 'true';
-      if (remembered || session) document.documentElement.dataset.ownerVerified = 'true';
+      const hintKey = 'functionhx:owner-ui:vault-hint';
+      const legacyRemembered = window.localStorage.getItem('functionhx:owner-ui:remembered') === 'true';
+      const hasVaultHint = window.localStorage.getItem(hintKey) === 'true';
+      if (legacyRemembered || hasVaultHint) {
+        window.localStorage.setItem(hintKey, 'true');
+        document.documentElement.dataset.ownerRestore = 'true';
+      }
+      window.localStorage.removeItem('functionhx:owner-ui:remembered');
+      window.sessionStorage.removeItem('functionhx:owner-ui:session');
     } catch (_error) {
-      // Browsing still works when storage is unavailable; owner controls remain hidden.
+      // Browsing still works when storage is unavailable; owner controls stay hidden.
     }
   })();
 </script>

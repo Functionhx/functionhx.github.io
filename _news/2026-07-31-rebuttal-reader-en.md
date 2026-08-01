@@ -8,4 +8,4 @@ translation_key: news-rebuttal-reader
 permalink: /en/news/rebuttal-reader/
 ---
 
-[Rebuttal Reader](https://rebuttal-reader-functionhx.functionhx.chatgpt.site/) is publicly available for tracing reviewer conversations and score changes across the rebuttal process.
+[Rebuttal Reader](https://rebuttal-reader-functionhx.functionhx.chatgpt.site/) is publicly available for tracing reviewer conversations and score changes across the rebuttal process. You are welcome to [open a GitHub Issue and share your rebuttal](https://github.com/Functionhx/rebuttal-reader/issues/new?template=submit-rebuttal.yml).

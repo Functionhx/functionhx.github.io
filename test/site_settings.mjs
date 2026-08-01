@@ -65,6 +65,15 @@ await page.addInitScript(() => {
   window.functionhxDeploymentConfig = { maxWait: 2000, pollInterval: 25 };
 });
 
+await page.route("**/healthz.json?**", async (route) => {
+  await route.fulfill({
+    body: JSON.stringify({ commit: "settings-commit" }),
+    contentType: "application/json",
+    headers: { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" },
+    status: 200,
+  });
+});
+
 await page.route("https://api.deepseek.com/**", async (route) => {
   const request = route.request();
   const corsHeaders = {
@@ -325,6 +334,13 @@ try {
   assert.equal(treeRequest, null, "a translator who is not the owner must not write");
   await page.locator("#site-settings-auth-cancel").click();
   await page.locator("#site-settings-auth").waitFor({ state: "hidden" });
+
+  await page.locator("#site-settings-commit").click();
+  await page.locator("#site-settings-auth").waitFor({ state: "visible" });
+  await page.keyboard.press("Escape");
+  await page.locator("#site-settings-auth").waitFor({ state: "hidden" });
+  await page.waitForTimeout(450);
+  assert.equal(treeRequest, null, "closing owner authentication with Escape must cancel the pending settings commit");
 
   await page.locator("#site-settings-commit").click();
   await page.locator("#site-settings-auth").waitFor({ state: "visible" });

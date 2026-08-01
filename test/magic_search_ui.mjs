@@ -71,6 +71,54 @@ try {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => !document.documentElement.hasAttribute("data-page-loading"));
 
+  const contactLinks = page.locator(".contact-icons a");
+  assert.equal(await contactLinks.count(), 7, "the home contact row should expose seven useful destinations");
+  assert.equal(await page.locator(".fa-globe, .fa-square-rss").count(), 0, "redundant website and RSS icons must stay hidden");
+  const contactMetrics = await contactLinks.evaluateAll((links) =>
+    links.map((link) => {
+      const linkRect = link.getBoundingClientRect();
+      const iconRect = link.querySelector("i, img, svg").getBoundingClientRect();
+      return {
+        height: linkRect.height,
+        iconCenterY: iconRect.top + iconRect.height / 2,
+        linkCenterY: linkRect.top + linkRect.height / 2,
+        width: linkRect.width,
+      };
+    })
+  );
+  assert.ok(
+    Math.max(...contactMetrics.map(({ width }) => width)) - Math.min(...contactMetrics.map(({ width }) => width)) < 0.5,
+    "contact targets should share one width"
+  );
+  assert.ok(
+    Math.max(...contactMetrics.map(({ height }) => height)) - Math.min(...contactMetrics.map(({ height }) => height)) < 0.5,
+    "contact targets should share one height"
+  );
+  assert.ok(
+    contactMetrics.every(({ iconCenterY, linkCenterY }) => Math.abs(iconCenterY - linkCenterY) < 1),
+    "contact marks should be vertically centered"
+  );
+
+  const wechatTrigger = page.locator('.contact-icons a[title="WeChat"]');
+  assert.equal(await wechatTrigger.getAttribute("data-no-page-loader"), "", "opening the WeChat dialog must not trigger page navigation loading");
+  await wechatTrigger.click();
+  const wechatDialog = page.locator("#wechat-qr-dialog");
+  assert.equal(await wechatDialog.evaluate((dialog) => dialog.open), true, "WeChat should open an in-page QR dialog");
+  await page.waitForFunction(() => {
+    const image = document.querySelector("#wechat-qr-dialog img");
+    return image?.complete && image.naturalWidth === 660 && image.naturalHeight === 660;
+  });
+  await wechatDialog.locator(".wechat-qr-dialog__close").click();
+  assert.equal(await wechatDialog.evaluate((dialog) => dialog.open), false, "the QR dialog should close without navigation");
+
+  await page.setViewportSize({ height: 844, width: 390 });
+  assert.equal(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    true,
+    "the contact row must not create mobile horizontal overflow"
+  );
+  await page.setViewportSize({ height: 900, width: 1280 });
+
   const fastLoadingState = await page.evaluate(async () => {
     window.functionhxSitePreferences.showLoading();
     await new Promise((resolve) => window.setTimeout(resolve, 70));

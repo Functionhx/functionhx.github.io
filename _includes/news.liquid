@@ -25,6 +25,18 @@
               {% else %}
                 <a class="news-title" href="{{ item.url | relative_url }}">{{ item.title }}</a>
               {% endif %}
+              {% if current_lang != 'en' %}
+                <button
+                  type="button"
+                  class="activity-feed__edit owner-only-control"
+                  data-author-action="source-edit"
+                  data-source-path="{{ item.path | escape }}"
+                  title="编辑动态：{{ item.title | escape }}"
+                  aria-label="编辑动态：{{ item.title | escape }}"
+                >
+                  <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
+                </button>
+              {% endif %}
             </td>
           </tr>
         {% endfor %}

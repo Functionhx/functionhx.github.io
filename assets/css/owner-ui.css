@@ -2,6 +2,12 @@ html:not([data-owner-verified="true"]) .owner-only-control {
   display: none !important;
 }
 
+html[data-owner-restore="true"]:not([data-owner-verified="true"]) .site-author-nav.owner-only-control {
+  display: block !important;
+  pointer-events: none;
+  visibility: hidden;
+}
+
 .site-author-nav {
   position: relative;
 }
@@ -75,6 +81,62 @@ html:not([data-owner-verified="true"]) .owner-only-control {
 .site-author-menu > a:hover i,
 .site-author-menu > a:focus-visible i {
   color: var(--global-theme-color);
+}
+
+.activity-feed__edit {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: var(--global-text-color-light);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.72rem;
+  height: 2.25rem;
+  justify-content: center;
+  margin-left: 0.35rem;
+  opacity: 0.72;
+  padding: 0;
+  transition:
+    background 120ms ease-out,
+    color 120ms ease-out,
+    opacity 120ms ease-out;
+  vertical-align: middle;
+  width: 2.25rem;
+}
+
+.activity-feed__edit:hover,
+.activity-feed__edit:focus-visible {
+  background: color-mix(in srgb, var(--global-theme-color) 8%, transparent);
+  color: var(--global-theme-color);
+  opacity: 1;
+  outline: 0;
+}
+
+.site-admin-load-status {
+  background: color-mix(in srgb, var(--global-bg-color) 96%, transparent);
+  border: 1px solid var(--global-divider-color);
+  border-radius: 0.65rem;
+  bottom: 1rem;
+  box-shadow: 0 0.65rem 2rem color-mix(in srgb, #000 15%, transparent);
+  color: var(--global-text-color);
+  font-size: 0.78rem;
+  left: 50%;
+  max-width: min(24rem, calc(100vw - 2rem));
+  padding: 0.7rem 0.9rem;
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 1200;
+}
+
+.site-admin-load-status[hidden] {
+  display: none;
+}
+
+.site-admin-load-status[data-state="error"] {
+  border-color: color-mix(in srgb, #c62828 45%, var(--global-divider-color));
+  color: color-mix(in srgb, #c62828 78%, var(--global-text-color));
 }
 
 @media (max-width: 991.98px) {
