@@ -139,7 +139,8 @@
     const endpoint = normalizeEndpoint(endpointValue);
     if (!endpoint) throw new Error("Spark Vault is not configured.");
     const returnTo = String(options.returnTo || `${window.location.pathname}${window.location.search}`);
-    const loginUrl = `${endpoint}/auth/login?return_to=${encodeURIComponent(returnTo)}`;
+    const parameters = new URLSearchParams({ return_to: returnTo, site_origin: window.location.origin });
+    const loginUrl = `${endpoint}/auth/login?${parameters}`;
     const popup = window.open(loginUrl, "functionhx-spark-vault-login", "popup=yes,width=600,height=760");
     if (!popup) {
       window.location.assign(loginUrl);

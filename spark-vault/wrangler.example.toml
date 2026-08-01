@@ -4,7 +4,7 @@ compatibility_date = "2026-07-31"
 workers_dev = true
 
 [vars]
-SITE_ORIGIN = "https://functionhx.github.io"
+SITE_ORIGINS = "https://functionhx.github.io,https://fanyuchen.com.cn"
 WORKER_ORIGIN = "https://REPLACE_WITH_WORKER_HOST"
 ALLOWED_GITHUB_USER_ID = "172989722"
 PRIVATE_REPO = "Functionhx/functionhx-spark-private"

@@ -19,7 +19,10 @@ a Cloudflare Worker; the Node deployment is the production default.
 - `SESSION_KEY_B64` seals the browser's opaque 30-day session. GitHub user
   access and refresh tokens remain encrypted inside that session and are never
   exposed to site JavaScript.
-- The API accepts browser writes only from `https://functionhx.github.io`.
+- The API accepts browser writes only from the exact allowlist
+  `https://functionhx.github.io` and `https://fanyuchen.com.cn`. OAuth state
+  seals the requesting site origin so the callback can return only to the
+  approved tab that started the login.
 - Publishing writes one atomic Git commit containing the Chinese and English
   Markdown files. Making an entry private removes both public files in one
   recoverable Git commit.

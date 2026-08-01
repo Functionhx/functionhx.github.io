@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createSparkVaultServer } from "../spark-vault/server.mjs";
 
 const siteOrigin = "https://functionhx.github.io";
+const mirrorOrigin = "https://fanyuchen.com.cn";
 const env = {
   ALLOWED_GITHUB_USER_ID: "172989722",
   GITHUB_CLIENT_ID: "Iv1.spark-vault-test",
@@ -11,7 +12,7 @@ const env = {
   PRIVATE_REPO: "Functionhx/functionhx-spark-private",
   PUBLIC_REPO: "Functionhx/functionhx.github.io",
   SESSION_KEY_B64: Buffer.alloc(32, 17).toString("base64url"),
-  SITE_ORIGIN: siteOrigin,
+  SITE_ORIGINS: `${siteOrigin},${mirrorOrigin}`,
   WORKER_ORIGIN: "https://vault.fanyuchen.com.cn",
 };
 
@@ -37,6 +38,13 @@ try {
   });
   assert.equal(preflight.status, 204);
   assert.equal(preflight.headers.get("access-control-allow-origin"), siteOrigin);
+
+  const mirrorPreflight = await fetch(`${origin}/api/notes`, {
+    headers: { Origin: mirrorOrigin },
+    method: "OPTIONS",
+  });
+  assert.equal(mirrorPreflight.status, 204);
+  assert.equal(mirrorPreflight.headers.get("access-control-allow-origin"), mirrorOrigin);
 
   const oversized = await fetch(`${origin}/api/notes/too-large`, {
     body: JSON.stringify({ content: "x".repeat(101) }),

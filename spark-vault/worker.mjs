@@ -29,9 +29,38 @@ function required(env, name) {
   return value;
 }
 
+function siteOrigins(env) {
+  const configured = String(env.SITE_ORIGINS || env.SITE_ORIGIN || "").trim();
+  if (!configured) throw new HttpError(503, "Spark Vault is missing SITE_ORIGINS.", "vault_not_configured");
+  const origins = configured
+    .split(/[\s,]+/)
+    .filter(Boolean)
+    .map((value) => new URL(value).origin);
+  const unique = [...new Set(origins)];
+  if (!unique.length) throw new HttpError(503, "Spark Vault is missing SITE_ORIGINS.", "vault_not_configured");
+  return unique;
+}
+
 function siteOrigin(env) {
-  const value = new URL(required(env, "SITE_ORIGIN"));
-  return value.origin;
+  return siteOrigins(env)[0];
+}
+
+function allowedSiteOrigin(value, env) {
+  let origin;
+  try {
+    origin = new URL(String(value || "")).origin;
+  } catch (_error) {
+    throw new HttpError(403, "This origin is not allowed to use Spark Vault.", "origin_denied");
+  }
+  if (!siteOrigins(env).includes(origin)) {
+    throw new HttpError(403, "This origin is not allowed to use Spark Vault.", "origin_denied");
+  }
+  return origin;
+}
+
+function responseSiteOrigin(request, env) {
+  const origin = request?.headers?.get("Origin") || "";
+  return siteOrigins(env).includes(origin) ? origin : siteOrigin(env);
 }
 
 function workerOrigin(request, env) {
@@ -180,36 +209,34 @@ async function decryptRecord(envelope, env) {
   }
 }
 
-function corsHeaders(env) {
+function corsHeaders(request, env) {
   return {
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
     "Access-Control-Allow-Methods": "GET, PUT, POST, OPTIONS",
-    "Access-Control-Allow-Origin": siteOrigin(env),
+    "Access-Control-Allow-Origin": responseSiteOrigin(request, env),
     "Access-Control-Expose-Headers": "X-Spark-Session",
     Vary: "Origin",
   };
 }
 
-function jsonResponse(payload, status, env, sessionToken = "") {
+function jsonResponse(payload, status, env, sessionToken = "", request = null) {
   const headers = {
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8",
-    ...corsHeaders(env),
+    ...corsHeaders(request, env),
   };
   if (sessionToken) headers["X-Spark-Session"] = sessionToken;
   return new Response(JSON.stringify(payload), { headers, status });
 }
 
-function emptyResponse(status, env) {
-  return new Response(null, { headers: corsHeaders(env), status });
+function emptyResponse(status, env, request) {
+  return new Response(null, { headers: corsHeaders(request, env), status });
 }
 
 function assertAllowedOrigin(request, env) {
   const origin = request.headers.get("Origin");
-  if (origin && origin !== siteOrigin(env)) {
-    throw new HttpError(403, "This origin is not allowed to use Spark Vault.", "origin_denied");
-  }
-  if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method) && origin !== siteOrigin(env)) {
+  if (origin) allowedSiteOrigin(origin, env);
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method) && !origin) {
     throw new HttpError(403, "A verified site origin is required.", "origin_required");
   }
 }
@@ -386,10 +413,13 @@ function safeReturnPath(value) {
 
 async function handleLogin(request, env) {
   const url = new URL(request.url);
+  const requestedOrigin = url.searchParams.get("site_origin");
+  const origin = requestedOrigin ? allowedSiteOrigin(requestedOrigin, env) : siteOrigin(env);
   const state = await sealJson(
     {
       expiresAt: nowSeconds() + 10 * 60,
       nonce: base64UrlEncode(randomBytes(24)),
+      origin,
       returnPath: safeReturnPath(url.searchParams.get("return_to")),
       version: 1,
     },
@@ -405,8 +435,7 @@ async function handleLogin(request, env) {
   return Response.redirect(authorize.toString(), 302);
 }
 
-function callbackPage(env, sessionToken, user, returnPath) {
-  const origin = siteOrigin(env);
+function callbackPage(origin, sessionToken, user, returnPath) {
   const fallback = new URL(returnPath, origin);
   fallback.hash = new URLSearchParams({ "spark-session": sessionToken }).toString();
   const nonce = base64UrlEncode(randomBytes(18));
@@ -439,7 +468,8 @@ async function handleCallback(request, env) {
   const user = await validateAuthorizedUser(env, oauth.access_token);
   const session = sessionFromOAuth(oauth, user);
   const sealed = await sealJson(session, env, "functionhx:spark-session:v1");
-  return callbackPage(env, sealed, session.user, safeReturnPath(state.returnPath));
+  const origin = state.origin ? allowedSiteOrigin(state.origin, env) : siteOrigin(env);
+  return callbackPage(origin, sealed, session.user, safeReturnPath(state.returnPath));
 }
 
 function normalizeId(value) {
@@ -816,14 +846,14 @@ async function handleApi(request, env) {
   } else {
     throw new HttpError(404, "Spark Vault endpoint not found.", "not_found");
   }
-  return jsonResponse(payload, status, env, auth.rotatedToken);
+  return jsonResponse(payload, status, env, auth.rotatedToken, request);
 }
 
 async function routeRequest(request, env) {
   const url = new URL(request.url);
-  if (request.method === "OPTIONS" && url.pathname.startsWith("/api/")) return emptyResponse(204, env);
+  if (request.method === "OPTIONS" && url.pathname.startsWith("/api/")) return emptyResponse(204, env, request);
   if (request.method === "GET" && url.pathname === "/health") {
-    required(env, "SITE_ORIGIN");
+    siteOrigins(env);
     required(env, "ALLOWED_GITHUB_USER_ID");
     required(env, "PRIVATE_REPO");
     required(env, "PUBLIC_REPO");
@@ -831,7 +861,7 @@ async function routeRequest(request, env) {
     required(env, "GITHUB_CLIENT_SECRET");
     decodeSecret(required(env, "SESSION_KEY_B64"), "SESSION_KEY_B64");
     decodeSecret(required(env, "MASTER_KEY_B64"), "MASTER_KEY_B64");
-    return jsonResponse({ ok: true, service: "functionhx-spark-vault", version: 1 }, 200, env);
+    return jsonResponse({ ok: true, service: "functionhx-spark-vault", version: 1 }, 200, env, "", request);
   }
   if (request.method === "GET" && url.pathname === "/auth/login") return handleLogin(request, env);
   if (request.method === "GET" && url.pathname === "/auth/callback") return handleCallback(request, env);
@@ -849,7 +879,7 @@ const worker = {
       const code = error.code || "internal_error";
       if (status >= 500) console.error("Spark Vault request failed", error);
       try {
-        return jsonResponse({ error: { code, message } }, status, env);
+        return jsonResponse({ error: { code, message } }, status, env, "", request);
       } catch (_configurationError) {
         return new Response(JSON.stringify({ error: { code, message } }), {
           headers: { "Cache-Control": "no-store", "Content-Type": "application/json; charset=utf-8" },

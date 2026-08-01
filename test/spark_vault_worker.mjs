@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import worker, { testing } from "../spark-vault/worker.mjs";
 
 const siteOrigin = "https://functionhx.github.io";
+const mirrorOrigin = "https://fanyuchen.com.cn";
 const workerOrigin = "https://spark-vault.test";
 const privateRepo = "Functionhx/functionhx-spark-private";
 const publicRepo = "Functionhx/functionhx.github.io";
@@ -22,7 +23,7 @@ const env = {
   PUBLIC_BRANCH: "main",
   PUBLIC_REPO: publicRepo,
   SESSION_KEY_B64: sessionSecret,
-  SITE_ORIGIN: siteOrigin,
+  SITE_ORIGINS: `${siteOrigin},${mirrorOrigin}`,
   WORKER_ORIGIN: workerOrigin,
 };
 
@@ -152,6 +153,12 @@ function extractCallbackPayload(html) {
   return JSON.parse(match[1]);
 }
 
+function extractCallbackTarget(html) {
+  const match = html.match(/const target=(".*?");if\(window\.opener/);
+  assert.ok(match, "the OAuth callback should contain a postMessage target");
+  return JSON.parse(match[1]);
+}
+
 const values = {
   comments: true,
   date: "2026-07-31T21:30",
@@ -190,15 +197,41 @@ try {
 
   const callback = await worker.fetch(new Request(`${workerOrigin}/auth/callback?code=test-code&state=${encodeURIComponent(state)}`), env);
   assert.equal(callback.status, 200);
-  const callbackPayload = extractCallbackPayload(await callback.text());
+  const callbackHtml = await callback.text();
+  const callbackPayload = extractCallbackPayload(callbackHtml);
+  assert.equal(extractCallbackTarget(callbackHtml), siteOrigin);
   assert.equal(callbackPayload.type, "functionhx:spark-vault-session");
   assert.equal(callbackPayload.user.id, 172989722);
   assert.equal(callbackPayload.token.includes("ghu_not-a-real-user-token"), false, "the browser session must conceal the GitHub token");
   let sessionToken = callbackPayload.token;
 
+  const mirrorLogin = await worker.fetch(
+    new Request(`${workerOrigin}/auth/login?return_to=/spark/&site_origin=${encodeURIComponent(mirrorOrigin)}`),
+    env
+  );
+  assert.equal(mirrorLogin.status, 302);
+  const mirrorState = new URL(mirrorLogin.headers.get("Location")).searchParams.get("state");
+  const mirrorCallback = await worker.fetch(
+    new Request(`${workerOrigin}/auth/callback?code=mirror-code&state=${encodeURIComponent(mirrorState)}`),
+    env
+  );
+  assert.equal(mirrorCallback.status, 200);
+  const mirrorCallbackHtml = await mirrorCallback.text();
+  assert.equal(extractCallbackTarget(mirrorCallbackHtml), mirrorOrigin);
+
+  const deniedLogin = await worker.fetch(
+    new Request(`${workerOrigin}/auth/login?site_origin=${encodeURIComponent("https://attacker.example")}`),
+    env
+  );
+  assert.equal(deniedLogin.status, 403, "OAuth must reject a return origin outside the allowlist");
+
   const session = await apiRequest("/api/session", "GET", sessionToken);
   assert.equal(session.status, 200);
   assert.deepEqual((await session.json()).user, { id: 172989722, login: "Functionhx" });
+
+  const mirrorSession = await apiRequest("/api/session", "GET", sessionToken, undefined, mirrorOrigin);
+  assert.equal(mirrorSession.status, 200);
+  assert.equal(mirrorSession.headers.get("access-control-allow-origin"), mirrorOrigin);
 
   const crossOriginSave = await apiRequest(`/api/notes/${values.slug}`, "PUT", sessionToken, { values }, "https://attacker.example");
   assert.equal(crossOriginSave.status, 403, "write requests from another origin must be denied");
