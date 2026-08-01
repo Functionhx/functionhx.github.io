@@ -39,11 +39,15 @@ a Cloudflare Worker; the Node deployment is the production default.
 - A Chinese title and body are enough for both a private save and publication.
   When English is absent, publication creates the required English route as an
   explicit translation-pending mirror.
-- The three-digit quick gate is a decoy, not an authentication factor. Entering
-  its configured decoy value renders local fake notes and makes no keyring or
-  notes API request. The real path still requires GitHub owner authorization,
-  the independent passphrase, and the passkey. Because browser source is
-  inspectable, the decoy must never be counted as security.
+- The three-digit quick gate is a decoy, not an authentication factor. It is
+  available only from the private-drafts browsing entry: entering its configured
+  decoy value renders local fake notes and makes no keyring or notes API request.
+  Saving or editing a real private Spark bypasses that gate and opens the strong
+  unlock flow directly. The first GitHub authorization and strong unlock continue
+  in one popup so browser popup blocking cannot interrupt the save. The real path
+  still requires GitHub owner authorization, the independent passphrase, and the
+  passkey. Because browser source is inspectable, the decoy must never be counted
+  as security.
 
 An authorized page can read plaintext while the vault is unlocked. A malicious
 change to the public JavaScript could therefore steal data after unlock. Protect
@@ -125,8 +129,9 @@ npm run test:spark-vault-server
 npm run test:spark-vault-unlock
 ```
 
-The test uses fake repositories and fake credentials. It verifies OAuth owner
+The tests use fake repositories and fake credentials. They verify OAuth owner
 checks, origin checks, Chinese-only private drafts, ciphertext-only storage,
 bilingual publication, unpublication, optimistic conflict protection, the
-passphrase/passkey keyring, offline recovery wrapping, and the no-network decoy
-path.
+passphrase/passkey keyring, offline recovery wrapping, the single-popup OAuth to
+strong-unlock continuation, acknowledged popup messaging, encrypted private-note
+saving, and the no-network decoy path.

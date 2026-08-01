@@ -230,19 +230,32 @@
     if (endpoint) rootKeys.delete(endpoint);
   }
 
-  async function unlock(endpointValue) {
+  async function unlock(endpointValue, options = {}) {
     const endpoint = normalizeEndpoint(endpointValue);
     if (!endpoint) throw new Error("Spark Vault is not configured.");
     if (rootKeys.has(endpoint)) return { decoy: false, unlocked: true };
     const token = await storedToken(endpoint);
-    if (!token) {
+    const intent = options.intent === "strong" ? "strong" : options.intent === "decoy" ? "decoy" : "";
+    let popupUrl = "";
+    if (token) {
+      const parameters = new URLSearchParams({ session: token, site_origin: window.location.origin });
+      if (intent === "strong") parameters.set("intent", intent);
+      popupUrl = `${endpoint}/unlock#${parameters}`;
+    } else if (intent) {
+      const returnTo = String(options.returnTo || `${window.location.pathname}${window.location.search}`);
+      const parameters = new URLSearchParams({
+        continuation: intent === "strong" ? "strong-unlock" : "decoy-unlock",
+        return_to: returnTo,
+        site_origin: window.location.origin,
+      });
+      popupUrl = `${endpoint}/auth/login?${parameters}`;
+    } else {
       const error = new Error("Sign in with GitHub before unlocking Spark Vault.");
       error.code = "authentication_required";
       error.status = 401;
       throw error;
     }
-    const parameters = new URLSearchParams({ session: token, site_origin: window.location.origin });
-    const popup = window.open(`${endpoint}/unlock#${parameters}`, "functionhx-spark-vault-unlock", "popup=yes,width=520,height=720");
+    const popup = window.open(popupUrl, "functionhx-spark-vault-unlock", "popup=yes,width=520,height=720");
     if (!popup) throw new Error("Allow the Spark Vault unlock popup and try again.");
     const expectedOrigin = new URL(endpoint).origin;
     return new Promise((resolve, reject) => {
@@ -259,35 +272,60 @@
       }
 
       async function finish(error, payload = null) {
-        if (settled) return;
+        if (settled) return false;
         settled = true;
         cleanup();
         if (error) {
           reject(error);
-          return;
+          return false;
         }
         if (payload?.decoy) {
           resolve({ decoy: true, unlocked: false });
-          return;
+          return true;
         }
         try {
           const raw = base64UrlToBytes(payload.root);
           if (raw.length !== 32) throw new Error("Spark Vault returned an invalid root key.");
           rootKeys.set(endpoint, await importRootKey(raw, ["encrypt", "decrypt"]));
-          resolve({ decoy: false, unlocked: true });
+          let session = null;
+          if (typeof payload.session === "string" && payload.session) {
+            const remembered = await remember(endpoint, payload.session);
+            session = { endpoint, remembered, user: payload.user || null };
+            announce(endpoint, true, session.user);
+          }
+          resolve({ decoy: false, session, unlocked: true });
+          return true;
         } catch (keyError) {
           reject(keyError);
+          return false;
         }
       }
 
-      function onMessage(event) {
+      function acknowledge(event) {
+        if (typeof event.data?.requestId !== "string" || !event.data.requestId) return;
+        try {
+          event.source?.postMessage({ requestId: event.data.requestId, type: "functionhx:spark-vault-ack" }, expectedOrigin);
+        } catch (_error) {
+          // The popup also has a short close fallback when acknowledgement is unavailable.
+        }
+      }
+
+      async function onMessage(event) {
         if (event.origin !== expectedOrigin || event.source !== popup) return;
         if (event.data?.type === "functionhx:spark-vault-decoy") {
-          finish(null, { decoy: true });
+          if (await finish(null, { decoy: true })) acknowledge(event);
           return;
         }
         if (event.data?.type !== "functionhx:spark-vault-unlocked" || typeof event.data.root !== "string") return;
-        finish(null, { root: event.data.root });
+        if (
+          await finish(null, {
+            root: event.data.root,
+            session: event.data.session,
+            user: event.data.user,
+          })
+        ) {
+          acknowledge(event);
+        }
       }
 
       window.addEventListener("message", onMessage);

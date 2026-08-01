@@ -159,6 +159,12 @@ function extractCallbackTarget(html) {
   return JSON.parse(match[1]);
 }
 
+function extractContinuationDestination(html) {
+  const match = html.match(/const destination=(".*?");const fallback=/);
+  assert.ok(match, "the OAuth callback should contain a continuation destination");
+  return JSON.parse(match[1]);
+}
+
 const values = {
   comments: true,
   date: "2026-07-31T21:30",
@@ -204,6 +210,43 @@ try {
   assert.equal(callbackPayload.user.id, 172989722);
   assert.equal(callbackPayload.token.includes("ghu_not-a-real-user-token"), false, "the browser session must conceal the GitHub token");
   let sessionToken = callbackPayload.token;
+
+  const continuationLogin = await worker.fetch(
+    new Request(`${workerOrigin}/auth/login?return_to=/spark/&site_origin=${encodeURIComponent(siteOrigin)}&continuation=strong-unlock`),
+    env
+  );
+  const continuationState = new URL(continuationLogin.headers.get("Location")).searchParams.get("state");
+  const continuationCallback = await worker.fetch(
+    new Request(`${workerOrigin}/auth/callback?code=continuation-code&state=${encodeURIComponent(continuationState)}`),
+    env
+  );
+  const continuationDestination = new URL(extractContinuationDestination(await continuationCallback.text()));
+  const continuationParameters = new URLSearchParams(continuationDestination.hash.slice(1));
+  assert.equal(continuationDestination.origin, workerOrigin);
+  assert.equal(continuationDestination.pathname, "/unlock");
+  assert.equal(continuationParameters.get("intent"), "strong");
+  assert.equal(continuationParameters.get("site_origin"), siteOrigin);
+  assert.ok(continuationParameters.get("session"));
+  assert.equal(
+    continuationParameters.get("session").includes("ghu_not-a-real-user-token"),
+    false,
+    "the same-popup continuation must carry only the sealed Spark session"
+  );
+
+  const rejectedContinuationLogin = await worker.fetch(
+    new Request(`${workerOrigin}/auth/login?return_to=/spark/&continuation=${encodeURIComponent("https://attacker.example/")}`),
+    env
+  );
+  const rejectedContinuationState = new URL(rejectedContinuationLogin.headers.get("Location")).searchParams.get("state");
+  const rejectedContinuationCallback = await worker.fetch(
+    new Request(`${workerOrigin}/auth/callback?code=rejected-continuation&state=${encodeURIComponent(rejectedContinuationState)}`),
+    env
+  );
+  assert.equal(
+    extractCallbackPayload(await rejectedContinuationCallback.text()).type,
+    "functionhx:spark-vault-session",
+    "unknown OAuth continuations must fall back to the ordinary session callback"
+  );
 
   const mirrorLogin = await worker.fetch(
     new Request(`${workerOrigin}/auth/login?return_to=/spark/&site_origin=${encodeURIComponent(mirrorOrigin)}`),

@@ -415,6 +415,10 @@ function safeReturnPath(value) {
   return candidate;
 }
 
+function safeContinuation(value) {
+  return value === "strong-unlock" || value === "decoy-unlock" ? value : "";
+}
+
 async function handleLogin(request, env) {
   const url = new URL(request.url);
   const requestedOrigin = url.searchParams.get("site_origin");
@@ -422,6 +426,7 @@ async function handleLogin(request, env) {
   const state = await sealJson(
     {
       expiresAt: nowSeconds() + 10 * 60,
+      continuation: safeContinuation(url.searchParams.get("continuation")),
       nonce: base64UrlEncode(randomBytes(24)),
       origin,
       returnPath: safeReturnPath(url.searchParams.get("return_to")),
@@ -439,13 +444,35 @@ async function handleLogin(request, env) {
   return Response.redirect(authorize.toString(), 302);
 }
 
-function callbackPage(origin, sessionToken, user, returnPath) {
+function callbackPage(origin, sessionToken, user, returnPath, continuation = "", vaultOrigin = "") {
   const fallback = new URL(returnPath, origin);
   fallback.hash = new URLSearchParams({ "spark-session": sessionToken }).toString();
   const nonce = base64UrlEncode(randomBytes(18));
-  const payload = JSON.stringify({ token: sessionToken, type: "functionhx:spark-vault-session", user });
-  const script = `const payload=${payload};const target=${JSON.stringify(origin)};if(window.opener&&!window.opener.closed){window.opener.postMessage(payload,target);window.close()}else{window.location.replace(${JSON.stringify(fallback.toString())})}`;
-  const html = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Spark 已解锁</title><style>body{font:16px/1.6 -apple-system,BlinkMacSystemFont,sans-serif;display:grid;min-height:100vh;place-items:center;margin:0;background:#fff;color:#222}main{max-width:28rem;padding:2rem;text-align:center}p{color:#666}</style><main><h1>Spark 已解锁</h1><p>正在返回个人主页，可以关闭这个窗口。</p></main><script nonce="${nonce}">${script}</script></html>`;
+  let heading = "Spark 已连接";
+  let copy = "正在返回个人主页，可以关闭这个窗口。";
+  let script;
+  const safeContinuationValue = safeContinuation(continuation);
+  if (safeContinuationValue) {
+    const unlock = new URL("/unlock", vaultOrigin);
+    const unlockParameters = new URLSearchParams({
+      session: sessionToken,
+      site_origin: origin,
+      user_id: String(user.id || ""),
+      user_login: String(user.login || ""),
+    });
+    if (safeContinuationValue === "strong-unlock") unlockParameters.set("intent", "strong");
+    unlock.hash = unlockParameters.toString();
+    heading = safeContinuationValue === "strong-unlock" ? "继续解锁 Spark" : "打开 Spark 私密空间";
+    copy =
+      safeContinuationValue === "strong-unlock" ? "GitHub 身份已验证，正在继续完成私密库的多重解锁。" : "GitHub 身份已验证，正在继续打开私密空间。";
+    script = `const destination=${JSON.stringify(unlock.toString())};const fallback=${JSON.stringify(
+      fallback.toString()
+    )};if(window.opener&&!window.opener.closed){window.location.replace(destination)}else{window.location.replace(fallback)}`;
+  } else {
+    const payload = JSON.stringify({ token: sessionToken, type: "functionhx:spark-vault-session", user });
+    script = `const payload=${payload};const target=${JSON.stringify(origin)};if(window.opener&&!window.opener.closed){window.opener.postMessage(payload,target);window.close()}else{window.location.replace(${JSON.stringify(fallback.toString())})}`;
+  }
+  const html = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${heading}</title><style>body{font:16px/1.6 -apple-system,BlinkMacSystemFont,sans-serif;display:grid;min-height:100vh;place-items:center;margin:0;background:#fff;color:#222}main{max-width:28rem;padding:2rem;text-align:center}p{color:#666}</style><main><h1>${heading}</h1><p>${copy}</p></main><script nonce="${nonce}">${script}</script></html>`;
   return new Response(html, {
     headers: {
       "Cache-Control": "no-store",
@@ -473,7 +500,14 @@ async function handleCallback(request, env) {
   const session = sessionFromOAuth(oauth, user);
   const sealed = await sealJson(session, env, "functionhx:spark-session:v1");
   const origin = state.origin ? allowedSiteOrigin(state.origin, env) : siteOrigin(env);
-  return callbackPage(origin, sealed, session.user, safeReturnPath(state.returnPath));
+  return callbackPage(
+    origin,
+    sealed,
+    session.user,
+    safeReturnPath(state.returnPath),
+    safeContinuation(state.continuation),
+    workerOrigin(request, env)
+  );
 }
 
 function normalizeId(value) {

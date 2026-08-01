@@ -177,21 +177,24 @@ await page.addInitScript(
     window.functionhxDeploymentConfig = { maxWait: 2000, pollInterval: 25 };
     window.functionhxSparkVaultConfig = { endpoint };
     window.__sparkPopupCount = 0;
+    window.__sparkPopupUrls = [];
     window.open = (url) => {
       window.__sparkPopupCount += 1;
+      window.__sparkPopupUrls.push(String(url || ""));
       window.setTimeout(() => {
-        const unlock = String(url || "").includes("/unlock#");
+        const popupUrl = String(url || "");
+        const decoyCapable = (popupUrl.includes("/unlock#") && !popupUrl.includes("intent=strong")) || popupUrl.includes("continuation=decoy-unlock");
         window.dispatchEvent(
           new MessageEvent("message", {
-            data: unlock
-              ? window.__sparkNextUnlockDecoy
+            data:
+              decoyCapable && window.__sparkNextUnlockDecoy
                 ? { type: "functionhx:spark-vault-decoy" }
-                : { root: rootKey, type: "functionhx:spark-vault-unlocked" }
-              : {
-                  token,
-                  type: "functionhx:spark-vault-session",
-                  user: { id: 172989722, login: "Functionhx" },
-                },
+                : {
+                    root: rootKey,
+                    session: token,
+                    type: "functionhx:spark-vault-unlocked",
+                    user: { id: 172989722, login: "Functionhx" },
+                  },
             origin: endpoint,
             source: window,
           })
@@ -513,17 +516,25 @@ try {
   assert.equal(JSON.stringify(vaultWrites[0]).includes("只写中文的草稿"), false, "the private request must not contain the title");
   assert.equal(JSON.stringify(vaultWrites[0]).includes("这是只写了中文"), false, "the private request must not contain the body");
   assert.equal(publicChanges.length, 0, "a private save must not touch the public repository");
-  assert.equal(await page.evaluate(() => window.__sparkPopupCount), 2, "the first private save should use GitHub login plus a separate vault unlock");
+  assert.equal(await page.evaluate(() => window.__sparkPopupCount), 1, "the first private save must continue OAuth and unlock in one popup");
+  assert.match(
+    await page.evaluate(() => window.__sparkPopupUrls[0]),
+    /continuation=strong-unlock/,
+    "a first-time private save must request the allowlisted strong-unlock continuation"
+  );
 
   await page.locator("#site-spark-writer-close").click();
   await page.evaluate((endpoint) => {
     window.functionhxSparkVault.lock(endpoint);
     window.__sparkNextUnlockDecoy = true;
   }, vaultOrigin);
+  const popupCountBeforeDrafts = await page.evaluate(() => window.__sparkPopupCount);
   const notesBeforeDecoy = noteListRequests;
   await page.locator("#site-spark-drafts").click();
   await page.locator("#site-spark-drafts-panel").waitFor({ state: "visible" });
   await page.waitForFunction(() => document.querySelectorAll("#site-spark-drafts-list li").length === 2);
+  assert.equal(await page.evaluate(() => window.__sparkPopupCount), popupCountBeforeDrafts + 1);
+  assert.doesNotMatch(await page.evaluate(() => window.__sparkPopupUrls.at(-1)), /intent=strong/);
   assert.equal(noteListRequests, notesBeforeDecoy, "the 608 decoy path must never request the real notes endpoint");
   assert.match(await page.locator("#site-spark-drafts-list").textContent(), /阶段记录：下一步/);
   await page.locator("#site-spark-drafts-close").click();

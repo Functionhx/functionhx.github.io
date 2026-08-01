@@ -584,21 +584,29 @@
     }
   }
 
-  async function ensureVaultUnlocked() {
-    const session = await ensureVaultSession();
-    if (!session) return null;
-    if (vaultClient.isUnlocked?.(vaultEndpoint)) return { decoy: false, unlocked: true };
+  async function ensureVaultUnlocked(intent = "strong") {
+    await restorePromise;
+    if (!vaultReady()) {
+      setStatus(`${strings.vaultNotConfigured}${vaultConfigurationError ? ` ${vaultConfigurationError}` : ""}`, "error");
+      return null;
+    }
+    if (vaultClient.isUnlocked?.(vaultEndpoint)) return { decoy: false, session: vaultSession, unlocked: true };
     setStatus(strings.unlocking);
     try {
-      const result = await vaultClient.unlock(vaultEndpoint);
+      const result = await vaultClient.unlock(vaultEndpoint, {
+        intent,
+        returnTo: `${window.location.pathname}${window.location.search}`,
+      });
       if (result?.decoy) {
         decoyMode = true;
         setStatus(strings.decoyLoaded, "success");
-        setConnection(session);
+        setConnection(vaultSession);
         return result;
       }
       decoyMode = false;
-      setConnection(session);
+      if (result?.session) vaultSession = result.session;
+      if (!vaultSession) vaultSession = await vaultClient.restore(vaultEndpoint).catch(() => null);
+      setConnection(vaultSession);
       setStatus(strings.vaultUnlocked, "success");
       return result;
     } catch (error) {
@@ -616,12 +624,18 @@
   }
 
   async function handleConnectButton() {
-    await restorePromise;
-    if (vaultSession && vaultClient.isUnlocked?.(vaultEndpoint)) {
-      await disconnectVault(true);
-      return;
+    if (busy) return;
+    setBusy(true);
+    try {
+      await restorePromise;
+      if (vaultSession && vaultClient.isUnlocked?.(vaultEndpoint)) {
+        await disconnectVault(true);
+        return;
+      }
+      await ensureVaultUnlocked();
+    } finally {
+      setBusy(false);
     }
-    await ensureVaultUnlocked();
   }
 
   async function vaultRequest(path, options = {}) {
@@ -706,19 +720,19 @@
   }
 
   async function loadPrivateDrafts() {
-    if (!elements.draftsPanel) return;
-    const access = await ensureVaultUnlocked();
-    if (!access) return;
-    if (!root.hidden) closeWriter();
-    elements.draftsPanel.hidden = false;
-    elements.draftsList.replaceChildren();
-    if (access.decoy) {
-      renderPrivateDrafts(decoyNotes);
-      return;
-    }
-    setDraftsStatus(window.functionhxSitePreferences?.getLoadingText?.() || strings.privateDraftsLoading);
+    if (!elements.draftsPanel || busy) return;
     setBusy(true);
     try {
+      const access = await ensureVaultUnlocked("decoy");
+      if (!access) return;
+      if (!root.hidden) closeWriter();
+      elements.draftsPanel.hidden = false;
+      elements.draftsList.replaceChildren();
+      if (access.decoy) {
+        renderPrivateDrafts(decoyNotes);
+        return;
+      }
+      setDraftsStatus(window.functionhxSitePreferences?.getLoadingText?.() || strings.privateDraftsLoading);
       const payload = await vaultRequest("/api/notes");
       renderPrivateDrafts(await hydrateVaultNotes(Array.isArray(payload.notes) ? payload.notes : []));
     } catch (error) {
@@ -928,14 +942,13 @@
     }
     const values = readValues();
     const desiredPublished = values.published === true;
-    const access = desiredPublished ? await ensureVaultSession() : await ensureVaultUnlocked();
-    if (!access || access.decoy) return;
-
     setBusy(true);
-    setStatus(strings.saving);
-    elements.result.hidden = true;
     const draftKeyBeforeSave = currentDraftKey;
     try {
+      const access = desiredPublished ? await ensureVaultSession() : await ensureVaultUnlocked();
+      if (!access || access.decoy) return;
+      setStatus(strings.saving);
+      elements.result.hidden = true;
       const payload = {
         expectedSha: currentVaultSha,
         message: values.message.trim(),
