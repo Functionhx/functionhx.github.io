@@ -200,6 +200,7 @@ try {
   assert.equal(await page.locator("#site-deployment-monitor-progress").getAttribute("aria-valuenow"), "100");
   assert.equal(await page.locator("#site-deployment-monitor-refresh").isVisible(), true);
   assert.ok(deploymentPolls >= 3, "deployment progress should follow the workflow through success");
+  await page.locator("#site-settings-toggle").hover();
   await page.waitForFunction(() => document.querySelector("#site-settings-connect span")?.textContent.includes("退出"));
 
   const browserStorage = await page.evaluate(() => JSON.stringify({ ...window.localStorage, ...window.sessionStorage }));
@@ -242,6 +243,7 @@ try {
   await page.evaluate(() => window.localStorage.setItem("theme", "dark"));
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.reload({ waitUntil: "networkidle" });
+  await page.locator("#site-inline-editor-toggle").hover();
   await page.waitForFunction(() => document.querySelector("#site-inline-editor-connect span")?.textContent.includes("退出"));
   assert.equal(identityChecks, 1, "a trusted device should reconnect without repeating identity verification");
   await page.locator("#site-inline-editor-toggle").click();

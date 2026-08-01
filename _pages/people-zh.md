@@ -9,7 +9,7 @@ nav: false
 nav_order: 7
 profiles:
   - align: right
-    image: prof_pic.jpg
+    image: prof_pic-800.jpg
     content: profile-yuchen-zh.liquid
     image_circular: false
     more_info: >
@@ -17,7 +17,7 @@ profiles:
       <p>123 your address street</p>
       <p>Your City, State 12345</p>
   - align: left
-    image: prof_pic.jpg
+    image: prof_pic-800.jpg
     content: profile-placeholder-zh.liquid
     image_circular: false
     more_info: >

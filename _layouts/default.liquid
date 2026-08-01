@@ -32,13 +32,37 @@
       <meta http-equiv="refresh" content="3; url={{ redirect }}">
     {% endif %}
     {% include head.liquid %}
-    <link rel="stylesheet" href="{{ '/assets/css/deepseek-translator.css' | relative_url }}">
-    <link rel="stylesheet" href="{{ '/assets/css/deployment-monitor.css' | relative_url }}">
-    <link rel="stylesheet" href="{{ '/assets/css/inline-editor.css' | relative_url }}">
-    <link rel="stylesheet" href="{{ '/assets/css/site-settings.css' | relative_url }}">
     {% if spark_writer_enabled %}
       <link rel="stylesheet" href="{{ '/assets/css/spark-writer.css' | relative_url }}">
     {% endif %}
+    <style>
+      @view-transition {
+        navigation: auto;
+      }
+
+      #navbar {
+        view-transition-name: site-navbar;
+      }
+
+      #site-rendered-content {
+        view-transition-name: site-content;
+      }
+
+      ::view-transition-group(root),
+      ::view-transition-group(site-navbar),
+      ::view-transition-group(site-content) {
+        animation-duration: 160ms;
+        animation-timing-function: ease-out;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        ::view-transition-group(root),
+        ::view-transition-group(site-navbar),
+        ::view-transition-group(site-content) {
+          animation-duration: 0.01ms;
+        }
+      }
+    </style>
 
     {% assign translation_pool = site.pages
       | concat: site.projects
@@ -116,14 +140,7 @@
 
     <!-- JavaScripts -->
     {% include scripts.liquid %}
-    <script src="{{ '/assets/js/github-auth-vault.js' | relative_url }}"></script>
-    <script src="{{ '/assets/js/deployment-monitor.js' | relative_url }}"></script>
-    <script src="{{ '/assets/js/deepseek-translator.js' | relative_url }}"></script>
-    <script src="{{ '/assets/js/inline-editor.js' | relative_url }}"></script>
-    <script src="{{ '/assets/js/site-settings.js' | relative_url }}"></script>
-    {% if spark_writer_enabled %}
-      <script src="{{ '/assets/js/spark-vault-client.js' | relative_url }}"></script>
-      <script src="{{ '/assets/js/spark-writer.js' | relative_url }}"></script>
-    {% endif %}
+    <script src="{{ '/assets/js/navigation-performance.js' | relative_url | bust_file_cache }}"></script>
+    <script src="{{ '/assets/js/admin-loader.js' | relative_url | bust_file_cache }}"></script>
   </body>
 </html>

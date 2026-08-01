@@ -300,6 +300,42 @@ def main() -> int:
             errors.append(f"{route}: Kaggle monitor must not render on the homepage")
         if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" in html:
             errors.append(f"{route}: Kaggle monitor script must not load on the homepage")
+        for required_asset in (
+            "/assets/img/prof_pic-480.webp",
+            "/assets/img/prof_pic-800.webp",
+            "/assets/js/admin-loader.js",
+            "/assets/js/lazy-publication-badges.js",
+            "/assets/js/navigation-performance.js",
+        ):
+            if required_asset not in html:
+                errors.append(f"{route}: missing optimized asset {required_asset}")
+        for eager_asset in (
+            "/assets/img/prof_pic.jpg",
+            "mathjax@",
+            "masonry.pkgd",
+            "imagesloaded.pkgd",
+            "medium-zoom",
+            "https://badge.dimensions.ai/badge.js",
+            "https://d1bxh8uas1mnw7.cloudfront.net/assets/embed.js",
+            "/assets/js/github-auth-vault.js",
+            "/assets/js/inline-editor.js",
+            "/assets/js/site-settings.js",
+        ):
+            if eager_asset in html:
+                errors.append(f"{route}: performance-sensitive asset loads eagerly: {eager_asset}")
+
+    for route in ("/blog/2026/batch-lio/", "/en/blog/2026/batch-lio/"):
+        html = route_file(site, route).read_text(encoding="utf-8")
+        if 'id="MathJax-script"' not in html:
+            errors.append(f"{route}: math article is missing MathJax")
+
+    for route in (
+        "/blog/2026/embodied-ai-control-story/",
+        "/en/blog/2026/embodied-ai-control-story/",
+    ):
+        html = route_file(site, route).read_text(encoding="utf-8")
+        if 'id="MathJax-script"' in html:
+            errors.append(f"{route}: non-math article loads MathJax")
 
     for route in ("/tools/kaggle-agent/", "/en/tools/kaggle-agent/"):
         parser = parsed_pages.get(route)

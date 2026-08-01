@@ -13,6 +13,7 @@ kind: writing
 tags: [LIO, robotics, open-source]
 categories: [engineering]
 related_posts: false
+math: true
 giscus_comments: true
 ---
 

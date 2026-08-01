@@ -594,10 +594,10 @@ try {
 
   await page.evaluate(() => window.localStorage.setItem("theme", "dark"));
   await page.reload({ waitUntil: "networkidle" });
+  await page.locator("#site-spark-create").click();
   await page.waitForFunction(() => document.querySelector("#site-spark-writer-connect").dataset.connected === "true");
   assert.equal(await page.evaluate(() => window.__sparkPopupCount), 0, "the encrypted device session must survive reload without another login");
   assert.ok(sessionChecks >= 1, "reload must verify the remembered opaque session with the backend");
-  await page.locator("#site-spark-create").click();
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
   const writerColor = await page.locator("#site-spark-writer").evaluate((element) => window.getComputedStyle(element).color);
   assert.notEqual(writerColor, "rgb(0, 0, 0)");

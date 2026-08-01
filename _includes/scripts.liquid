@@ -1,0 +1,133 @@
+<script>
+  window.alFolio = {
+    compatBootstrap: {{ site.al_folio.compat.bootstrap.enabled | default: false | jsonify }}
+  };
+</script>
+
+<!-- Core navigation/runtime scripts -->
+<script src="{{ '/assets/js/nav-toggle.js' | relative_url | bust_file_cache }}"></script>
+{% if site.al_folio.compat.bootstrap.enabled %}
+  <script src="{{ '/assets/js/bootstrap-compat.js' | relative_url | bust_file_cache }}"></script>
+{% endif %}
+
+{% if site.enable_masonry and page.masonry %}
+  <!-- Masonry & imagesLoaded -->
+  <script
+    defer
+    src="{{ site.third_party_libraries.masonry.url.js }}"
+    integrity="{{ site.third_party_libraries.masonry.integrity.js }}"
+    crossorigin="anonymous"
+  ></script>
+  <script
+    defer
+    src="{{ site.third_party_libraries.imagesloaded.url.js }}"
+    integrity="{{ site.third_party_libraries.imagesloaded.integrity.js }}"
+    crossorigin="anonymous"
+  ></script>
+  <script defer src="{{ '/assets/js/masonry.js' | relative_url | bust_file_cache }}" type="text/javascript"></script>
+{% endif %}
+
+{% if site.plugins contains 'al_charts' %}
+  <!-- Charts and Diagrams -->
+  {% include plugins/al_charts_scripts.liquid %}
+{% endif %}
+
+{% if page.calendar %}
+  <!-- Calendar setup -->
+  <script defer src="{{ '/assets/js/calendar-setup.js' | relative_url | bust_file_cache }}" type="text/javascript"></script>
+{% endif %}
+
+{% if page.math and site.plugins contains 'al_math' %}
+  <!-- Math and Tikzjax -->
+  {% include plugins/al_math_scripts.liquid %}
+{% endif %}
+
+{% if page.typograms %}
+  <!-- Typograms -->
+  <script src="{{ '/assets/js/typograms.js' | relative_url | bust_file_cache }}"></script>
+{% endif %}
+
+{% if site.enable_tooltips %}
+  <!-- Tooltips & popovers runtime -->
+  <script src="{{ '/assets/js/tooltips-setup.js' | relative_url | bust_file_cache }}"></script>
+{% endif %}
+
+{% if page.pretty_table and site.al_folio.compat.bootstrap.enabled %}
+  <!-- Bootstrap Table -->
+  <script
+    defer
+    src="{{ site.third_party_libraries.bootstrap-table.url.js }}"
+    integrity="{{ site.third_party_libraries.bootstrap-table.integrity.js }}"
+    crossorigin="anonymous"
+  ></script>
+{% endif %}
+{% if page.pretty_table and site.al_folio.compat.bootstrap.enabled != true %}
+  <script defer src="{{ '/assets/js/table-engine.js' | relative_url | bust_file_cache }}" type="text/javascript"></script>
+{% endif %}
+
+{% if page.toc and page.toc.sidebar %}
+  <!-- Tocbot -->
+  <script
+    defer
+    src="{{ site.third_party_libraries.tocbot.url.js }}"
+    integrity="{{ site.third_party_libraries.tocbot.integrity.js }}"
+    crossorigin="anonymous"
+  ></script>
+{% endif %}
+
+<!-- Load Common JS -->
+<script src="{{ '/assets/js/no_defer.js' | relative_url | bust_file_cache }}"></script>
+<script defer src="{{ '/assets/js/common.js' | relative_url | bust_file_cache }}"></script>
+<script defer src="{{ '/assets/js/copy_code.js' | relative_url | bust_file_cache }}" type="text/javascript"></script>
+<script defer src="{{ '/assets/js/jupyter_new_tab.js' | relative_url | bust_file_cache }}"></script>
+
+{% assign publication_badges_needed = false %}
+{% if page.selected_papers or page.publication_badges or page.related_publications %}
+  {% assign publication_badges_needed = true %}
+{% endif %}
+{% if publication_badges_needed %}
+  <script defer src="{{ '/assets/js/lazy-publication-badges.js' | relative_url | bust_file_cache }}"></script>
+{% endif %}
+
+{% if site.enable_cookie_consent and site.plugins contains 'al_cookie' %}
+  {% include plugins/al_cookie_scripts.liquid %}
+{% endif %}
+{% if site.plugins contains 'al_analytics' %}
+  {% include plugins/al_analytics_scripts.liquid %}
+{% endif %}
+
+{% if page.image_zoom and site.plugins contains 'al_img_tools' %}
+  <!-- Image Features -->
+  {% include plugins/al_img_tools_scripts.liquid %}
+{% endif %}
+
+{% if site.enable_progressbar %}
+  <script defer src="{{ '/assets/js/progress-bar.js' | relative_url | bust_file_cache }}" type="text/javascript"></script>
+{% endif %}
+
+{% if page.tabs %}
+  <script src="{{ '/assets/js/tabs.js' | relative_url | bust_file_cache }}"></script>
+{% endif %}
+
+{% if site.back_to_top %}
+  {% assign back_to_top_js = site.third_party_libraries['vanilla-back-to-top'].url.js
+    | default: 'https://cdn.jsdelivr.net/npm/vanilla-back-to-top@7.2.1/dist/vanilla-back-to-top.min.js'
+  %}
+  {% assign back_to_top_integrity = site.third_party_libraries['vanilla-back-to-top'].integrity.js %}
+  {% if back_to_top_integrity %}
+    <script src="{{ back_to_top_js }}" integrity="{{ back_to_top_integrity }}" crossorigin="anonymous"></script>
+  {% else %}
+    <script src="{{ back_to_top_js }}"></script>
+  {% endif %}
+  <script>
+    addBackToTop();
+  </script>
+{% endif %}
+
+{% if site.search_enabled and site.plugins contains 'al_search' %}
+  {% include plugins/al_search_assets.liquid %}
+{% endif %}
+
+{% if site.newsletter.enabled and site.plugins contains 'al_newsletter' %}
+  {% include plugins/al_newsletter_scripts.liquid %}
+{% endif %}
