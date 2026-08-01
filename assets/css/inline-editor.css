@@ -1,18 +1,3 @@
-#site-inline-editor-toggle {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  margin: 0;
-  padding: 0;
-}
-
-#site-inline-editor-toggle .nav-link {
-  display: block;
-}
-
 body.site-inline-editor-active #site-rendered-content,
 body.site-inline-editor-active footer {
   display: none;

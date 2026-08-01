@@ -122,6 +122,10 @@
   color: #07c160 !important;
 }
 
+.social .contact-icons .fa-qq::before {
+  color: #12b7f5 !important;
+}
+
 html[data-theme="dark"] .social .contact-icons .fa-github::before {
   color: #f0f6fc !important;
 }
@@ -131,6 +135,35 @@ html[data-theme="dark"] .social .contact-icons .fa-github::before {
   line-height: 1.5;
   margin: 0 auto;
   max-width: 42rem;
+}
+
+.contact-copy-status {
+  background: var(--global-code-bg-color);
+  border: 1px solid var(--global-divider-color);
+  border-radius: 999px;
+  bottom: 1rem;
+  color: var(--global-text-color);
+  font-size: 0.8rem;
+  left: 50%;
+  margin: 0;
+  max-width: calc(100vw - 2rem);
+  opacity: 0;
+  padding: 0.45rem 0.8rem;
+  pointer-events: none;
+  position: fixed;
+  transform: translate(-50%, 0.35rem);
+  transition:
+    opacity 140ms ease-out,
+    transform 140ms ease-out;
+  visibility: hidden;
+  text-align: center;
+  z-index: 1100;
+}
+
+.contact-copy-status[data-visible="true"] {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  visibility: visible;
 }
 
 .wechat-qr-dialog {
@@ -237,7 +270,8 @@ html[data-theme="dark"] .social .contact-icons .fa-github::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .social .contact-icons a {
+  .social .contact-icons a,
+  .contact-copy-status {
     transition: none;
   }
 }

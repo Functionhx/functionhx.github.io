@@ -167,6 +167,7 @@ def main() -> int:
     expected_social_logos = {
         "email": "/assets/img/social/gmail.svg",
         "qq_email": "/assets/img/social/qqmail.png",
+        "qq": "fa-brands fa-qq",
         "huggingface": "/assets/img/social/huggingface.svg",
         "wechat": "fa-brands fa-weixin",
     }
@@ -189,8 +190,23 @@ def main() -> int:
             errors.append(f"_data/socials.yml: redundant {removed_social} entry must stay removed")
     if socials.get("qq_email", {}).get("url") != "mailto:2994114386@qq.com":
         errors.append("_data/socials.yml: QQ Mail address is missing")
+    if socials.get("qq", {}).get("url") != "tencent://message/?uin=2994114386&Site=Magic&Menu=yes":
+        errors.append("_data/socials.yml: QQ contact link is missing")
+    if socials.get("qq", {}).get("title") != "QQ · 2994114386":
+        errors.append("_data/socials.yml: QQ contact must expose the account number")
     if socials.get("wechat", {}).get("url") != "/assets/img/social/wechat-qr.png":
         errors.append("_data/socials.yml: WeChat QR link is missing")
+
+    home_contact_path = ROOT / "assets" / "js" / "home-contact.js"
+    home_contact_text = home_contact_path.read_text(encoding="utf-8") if home_contact_path.is_file() else ""
+    for contact_contract in (
+        "navigator.clipboard?.writeText",
+        'document.execCommand("copy")',
+        "functionhx:contact-launch",
+        "data-no-page-loader",
+    ):
+        if contact_contract not in home_contact_text:
+            errors.append(f"assets/js/home-contact.js: contact contract {contact_contract!r} is missing")
 
     workflow_path = ROOT / ".github" / "workflows" / "deploy.yml"
     workflow_text = (

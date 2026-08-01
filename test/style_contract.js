@@ -12,7 +12,7 @@ const contracts = {
   "content-creator.css": ["max-width: 58rem", "@media (max-width: 767px)", "@media (prefers-reduced-motion: reduce)"],
   "home.css": ["max-width: 42rem", "@media (max-width: 575.98px)", "@media (prefers-reduced-motion: reduce)"],
   "magic-search.css": [".magic-search::backdrop", "max-width: 42rem", "@media (prefers-reduced-motion: reduce)"],
-  "owner-ui.css": ['html:not([data-owner-verified="true"]) .owner-only-control', ".site-author-menu[hidden]", "@media (max-width: 991.98px)"],
+  "owner-ui.css": ['html:not([data-owner-verified="true"]) .owner-only-control', ".site-author-menu[hidden]", "@media (max-width: 575.98px)"],
   "site-preferences.css": ["@media (prefers-color-scheme: dark)", "@media (prefers-reduced-motion: reduce)"],
   "site-settings.css": ["max-width: min(50rem, calc(100vw - 2rem))", ".site-settings-dialog::backdrop", "@media (max-width: 575px)"],
   "spark-writer.css": [".site-spark-writer[hidden]", "@media (max-width: 767px)", "@media (max-width: 420px)"],

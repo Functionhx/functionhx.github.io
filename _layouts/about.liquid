@@ -77,6 +77,7 @@ layout: default
       <div class="social">
         <div class="contact-icons">{% social_links %}</div>
         <div class="contact-note">{{ page.contact_note | default: site.contact_note }}</div>
+        <p id="contact-copy-status" class="contact-copy-status" role="status" aria-live="polite" aria-atomic="true"></p>
       </div>
 
       <dialog

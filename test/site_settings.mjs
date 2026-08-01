@@ -398,6 +398,11 @@ try {
   await page.locator('[data-nav-toggle="navbarNav"]').click();
   await page.locator("#site-settings-toggle").click();
   await page.waitForFunction(() => document.querySelector("#site-settings-connect span")?.textContent.includes("退出"));
+  assert.equal(
+    await page.locator("#navbarNav").evaluate((element) => element.classList.contains("show")),
+    false,
+    "opening settings should close the mobile navigation behind the modal"
+  );
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
   assert.equal(await page.locator("html").getAttribute("data-site-font"), "dyslexic", "the font preference should survive reloads");
   assert.equal(await page.locator("html").getAttribute("data-loading-copy"), "loading-zh", "the loading copy should survive reloads");

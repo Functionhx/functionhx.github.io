@@ -214,7 +214,9 @@ def main() -> int:
             if "site-inline-editor-toggle" not in parser.ids:
                 errors.append(f"{route}: Chinese source editor control missing")
             if 'site-author-nav owner-only-control' not in rendered_html:
-                errors.append(f"{route}: author navigation must stay hidden until verified")
+                errors.append(f"{route}: author launcher must stay hidden until verified")
+            if 'nav-item site-author-nav' in rendered_html:
+                errors.append(f"{route}: author launcher must not consume a navigation item")
         elif "site-inline-editor-toggle" in parser.ids:
             errors.append(f"{route}: English reading mirror must not expose source editing")
         for settings_id in (
@@ -463,6 +465,7 @@ def main() -> int:
     required_social_links = {
         "mailto:functionhx@gmail.com",
         "mailto:2994114386@qq.com",
+        "tencent://message/?uin=2994114386&Site=Magic&Menu=yes",
         "https://github.com/Functionhx",
         "https://www.kaggle.com/funcnano",
         "https://www.linkedin.com/in/zaizai-fan-152611414",
@@ -487,8 +490,11 @@ def main() -> int:
                 errors.append(f"{route}: approximate social icon still renders: {approximate_icon}")
         for contact_contract in (
             'title="QQ Mail"',
+            'title="QQ · 2994114386"',
+            "fa-brands fa-qq",
             'title="WeChat"',
             'id="wechat-qr-dialog"',
+            'id="contact-copy-status"',
             "/assets/js/home-contact.js",
         ):
             if contact_contract not in html:

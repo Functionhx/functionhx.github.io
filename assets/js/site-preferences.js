@@ -114,6 +114,17 @@
     return destination.href !== window.location.href;
   }
 
+  function submitsThisPage(form, event) {
+    if (!(form instanceof HTMLFormElement) || event.defaultPrevented) return false;
+
+    const submitter = event.submitter instanceof HTMLElement ? event.submitter : null;
+    const method = (submitter?.getAttribute("formmethod") || form.getAttribute("method") || "get").toLowerCase();
+    const target = submitter?.getAttribute("formtarget") || form.getAttribute("target") || "_self";
+    if (method === "dialog" || (target && target !== "_self")) return false;
+    if (form.hasAttribute("data-no-page-loader") || submitter?.hasAttribute("data-no-page-loader")) return false;
+    return true;
+  }
+
   document.addEventListener(
     "click",
     (event) => {
@@ -126,7 +137,11 @@
     "submit",
     (event) => {
       const form = event.target;
-      if (form instanceof HTMLFormElement && (!form.target || form.target === "_self")) showLoading();
+      // Wait until submit propagation has finished so application handlers still
+      // have an opportunity to cancel an in-page form before we show a loader.
+      window.queueMicrotask(() => {
+        if (submitsThisPage(form, event)) showLoading();
+      });
     },
     true
   );

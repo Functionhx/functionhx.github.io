@@ -41,12 +41,13 @@ const page = await mainContext.newPage();
 const dynamicAssetRequests = [];
 let creatorScriptAttempts = 0;
 
-async function seedEncryptedOwnerVault(targetPage, token, { legacy = false } = {}) {
+async function seedEncryptedOwnerVault(targetPage, token, { hint = true, legacy = false } = {}) {
   await targetPage.evaluate(
-    async ({ legacy, token }) => {
+    async ({ hint, legacy, token }) => {
       const repository = "Functionhx/functionhx.github.io";
       const hintKey = legacy ? "functionhx:owner-ui:remembered" : "functionhx:owner-ui:vault-hint";
-      window.localStorage.setItem(hintKey, "true");
+      if (hint) window.localStorage.setItem(hintKey, "true");
+      else window.localStorage.removeItem(hintKey);
       const database = await new Promise((resolve, reject) => {
         const request = window.indexedDB.open("functionhx-site-auth", 1);
         request.onupgradeneeded = () => request.result.createObjectStore("vault", { keyPath: "id" });
@@ -66,7 +67,7 @@ async function seedEncryptedOwnerVault(targetPage, token, { legacy = false } = {
         transaction.onerror = () => reject(transaction.error);
       });
     },
-    { legacy, token }
+    { hint, legacy, token }
   );
 }
 
@@ -107,33 +108,70 @@ try {
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.documentElement.dataset.ownerRestore === "true");
   const restoringLayout = await page.evaluate(() => {
-    const author = document.querySelector(".site-author-nav").getBoundingClientRect();
+    const authorElement = document.querySelector(".site-author-nav");
+    const author = authorElement.getBoundingClientRect();
+    const navbar = document.getElementById("navbar").getBoundingClientRect();
     const search = document.getElementById("search-toggle").getBoundingClientRect();
     return {
       authorWidth: author.width,
+      belowNavbar: author.top >= navbar.bottom,
+      insideNavbar: Boolean(authorElement.closest("#navbar")),
       searchLeft: search.left,
-      visibility: getComputedStyle(document.querySelector(".site-author-nav")).visibility,
+      visibility: getComputedStyle(authorElement).visibility,
     };
   });
-  assert.ok(restoringLayout.authorWidth > 0, "a remembered owner slot should stay reserved while identity is checked");
+  assert.ok(restoringLayout.authorWidth > 0, "the remembered owner launcher should keep its stable geometry while identity is checked");
   assert.equal(restoringLayout.visibility, "hidden");
+  assert.equal(restoringLayout.insideNavbar, false, "the author launcher must not consume a navigation item");
+  assert.equal(restoringLayout.belowNavbar, true, "the author launcher should sit below the fixed navigation");
   releaseOwnerVerification();
   await page.waitForFunction(() => document.documentElement.dataset.ownerVerified === "true");
-  const verifiedLayout = await page.evaluate(() => ({
-    authorWidth: document.querySelector(".site-author-nav").getBoundingClientRect().width,
-    searchLeft: document.getElementById("search-toggle").getBoundingClientRect().left,
-  }));
+  const verifiedLayout = await page.evaluate(() => {
+    const author = document.querySelector(".site-author-nav").getBoundingClientRect();
+    const navbar = document.getElementById("navbar").getBoundingClientRect();
+    return {
+      authorWidth: author.width,
+      belowNavbar: author.top >= navbar.bottom,
+      insideViewport: author.right <= window.innerWidth && author.left >= 0,
+      searchLeft: document.getElementById("search-toggle").getBoundingClientRect().left,
+    };
+  });
   assert.equal(verifiedLayout.authorWidth, restoringLayout.authorWidth);
-  assert.equal(verifiedLayout.searchLeft, restoringLayout.searchLeft, "owner restore must not make the navigation jump");
+  assert.equal(verifiedLayout.belowNavbar, true);
+  assert.equal(verifiedLayout.insideViewport, true);
+  assert.equal(verifiedLayout.searchLeft, restoringLayout.searchLeft, "owner verification must not make the navigation jump");
   assert.equal(await page.evaluate(() => window.localStorage.getItem("functionhx:owner-ui:remembered")), null);
   assert.equal(await page.evaluate(() => window.localStorage.getItem("functionhx:owner-ui:vault-hint")), "true");
 
   const authorToggle = page.locator("#site-inline-editor-toggle");
   await page.setViewportSize({ width: 390, height: 844 });
+  const mobileLauncher = await page.evaluate(() => {
+    const launcher = document.querySelector(".site-author-nav").getBoundingClientRect();
+    const navbar = document.getElementById("navbar").getBoundingClientRect();
+    return {
+      belowNavbar: launcher.top >= navbar.bottom,
+      insideViewport: launcher.left >= 0 && launcher.right <= window.innerWidth,
+    };
+  });
+  assert.equal(mobileLauncher.belowNavbar, true);
+  assert.equal(mobileLauncher.insideViewport, true);
   const navToggle = page.locator('[data-nav-toggle="navbarNav"]');
   await navToggle.click();
   assert.equal(await page.locator("#navbarNav").evaluate((element) => element.classList.contains("show")), true);
   await authorToggle.click();
+  const mobileAuthorUi = await page.evaluate(() => {
+    const toggle = document.getElementById("site-inline-editor-toggle").getBoundingClientRect();
+    const menu = document.getElementById("site-author-menu").getBoundingClientRect();
+    return {
+      menuInsideViewport: menu.left >= 0 && menu.right <= window.innerWidth && menu.top >= 0 && menu.bottom <= window.innerHeight,
+      position: getComputedStyle(document.querySelector(".site-author-nav")).position,
+      toggleHeight: toggle.height,
+      toggleWidth: toggle.width,
+    };
+  });
+  assert.equal(mobileAuthorUi.position, "fixed", "the author launcher should remain a page-level floating control");
+  assert.ok(mobileAuthorUi.toggleWidth >= 40 && mobileAuthorUi.toggleHeight >= 40, "the floating pencil needs a mobile-friendly target");
+  assert.equal(mobileAuthorUi.menuInsideViewport, true, "the author menu must remain fully visible on a phone viewport");
   const createActivity = page.locator('#site-author-menu [data-author-action="activity-create"]');
   await createActivity.evaluate((element) => element.click());
 
@@ -203,6 +241,28 @@ try {
   });
   assert.ok(editTarget.width >= 36 && editTarget.height >= 36, "dynamic edit controls must expose at least a 36px target");
   assert.ok(editTarget.opacity >= 0.7, "dynamic edit controls should be visible without hover");
+
+  const settingsRestoreContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const settingsRestorePage = await settingsRestoreContext.newPage();
+  let settingsRestoreChecks = 0;
+  await settingsRestorePage.route("https://api.github.com/user", async (route) => {
+    settingsRestoreChecks += 1;
+    assert.equal(route.request().headers().authorization, "Bearer settings-owner-token");
+    await route.fulfill({ body: JSON.stringify({ login: "Functionhx" }), contentType: "application/json", status: 200 });
+  });
+  await settingsRestorePage.goto(baseUrl, { waitUntil: "networkidle" });
+  await seedEncryptedOwnerVault(settingsRestorePage, "settings-owner-token", { hint: false });
+  await settingsRestorePage.reload({ waitUntil: "networkidle" });
+  assert.equal(settingsRestoreChecks, 0, "a vault without a restore hint must not create a visitor-time identity request");
+  assert.equal(await settingsRestorePage.locator("#site-inline-editor-toggle").isVisible(), false);
+  await settingsRestorePage.locator("#site-settings-toggle").click();
+  await settingsRestorePage.locator("#site-settings-dialog").waitFor({ state: "visible" });
+  await settingsRestorePage.waitForFunction(() => document.documentElement.dataset.ownerVerified === "true");
+  assert.equal(settingsRestoreChecks, 1, "opening settings should verify a recovered encrypted owner session once");
+  assert.equal(await settingsRestorePage.locator("#site-inline-editor-toggle").isVisible(), true);
+  assert.equal(await settingsRestorePage.locator("#site-settings-connect span").textContent(), "退出 @Functionhx");
+  assert.equal(await settingsRestorePage.evaluate(() => window.localStorage.getItem("functionhx:owner-ui:vault-hint")), "true");
+  await settingsRestoreContext.close();
 
   const expiredContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const expiredPage = await expiredContext.newPage();

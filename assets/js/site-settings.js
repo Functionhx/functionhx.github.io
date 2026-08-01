@@ -151,6 +151,7 @@
   }
 
   function openSettings() {
+    window.functionhxOwnerUi?.closePrimaryNavigation?.();
     syncPersonalization();
     openDialog(dialog);
     toggle.setAttribute("aria-expanded", "true");
@@ -518,10 +519,49 @@
     elements.connect.dataset.connected = String(Boolean(activeToken));
   }
 
+  async function verifyRestoredOwner(session) {
+    if (!session?.token) {
+      setConnection(null);
+      return null;
+    }
+
+    // The eager owner bootstrap or another authoring surface may already have
+    // verified this browser session. Reuse that page-level trust decision
+    // instead of issuing a duplicate identity request when settings load lazily.
+    if (document.documentElement.dataset.ownerVerified === "true") {
+      setConnection(session);
+      return session;
+    }
+
+    try {
+      const user = await githubRequest("/user", { token: session.token });
+      if (String(user.login || "").toLowerCase() !== owner.toLowerCase()) {
+        const error = new Error("The remembered token does not belong to @Functionhx.");
+        error.status = 403;
+        throw error;
+      }
+      setConnection(session);
+      window.functionhxOwnerUi?.setVerified?.(true, session.remembered === true);
+      return session;
+    } catch (error) {
+      if (error.status === 401 || error.status === 403) {
+        await window.functionhxGitHubAuth?.forget({ repository }).catch(() => undefined);
+        setConnection(null);
+        window.functionhxOwnerUi?.setVerified?.(false);
+        return null;
+      }
+
+      // Keep a valid encrypted session available for a later retry when GitHub
+      // is temporarily unreachable, but never reveal author controls before
+      // the account identity has been confirmed on this page.
+      setConnection(session);
+      return session;
+    }
+  }
+
   async function restoreGitHubSession() {
     const session = await window.functionhxGitHubAuth?.restore({ owner, repository }).catch(() => null);
-    setConnection(session);
-    return session;
+    return verifyRestoredOwner(session);
   }
 
   async function saveGitHubSession(token) {

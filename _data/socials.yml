@@ -5,6 +5,10 @@ qq_email:
   logo: /assets/img/social/qqmail.png
   title: QQ Mail
   url: mailto:2994114386@qq.com
+qq:
+  logo: fa-brands fa-qq
+  title: QQ · 2994114386
+  url: tencent://message/?uin=2994114386&Site=Magic&Menu=yes
 github_username: Functionhx
 kaggle_id: funcnano
 linkedin_username: zaizai-fan-152611414
