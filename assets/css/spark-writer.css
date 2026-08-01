@@ -419,21 +419,28 @@
   width: auto;
 }
 
-.site-spark-writer__visibility {
+.site-spark-writer__announce {
   grid-column: span 2;
 }
 
+.site-spark-writer__visibility {
+  grid-column: 1 / -1;
+}
+
+.site-spark-writer__announce > span,
 .site-spark-writer__visibility > span {
   display: grid;
   gap: 0.12rem;
 }
 
+.site-spark-writer__announce strong,
 .site-spark-writer__visibility strong {
   color: var(--global-text-color);
   font-size: 0.78rem;
   font-weight: 500;
 }
 
+.site-spark-writer__announce small,
 .site-spark-writer__visibility small {
   color: var(--global-text-color-light);
   font-size: 0.68rem;
@@ -537,6 +544,7 @@ body.site-spark-entry-writing .post > :not(#site-spark-writer) {
     grid-column: auto;
   }
 
+  .site-spark-writer__announce,
   .site-spark-writer__visibility {
     grid-column: auto;
   }

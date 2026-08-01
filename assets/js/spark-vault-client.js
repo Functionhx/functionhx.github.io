@@ -2,7 +2,35 @@
   "use strict";
 
   const memorySessions = new Map();
+  const rootKeys = new Map();
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  const sealedPrefix = "functionhx:zk2:";
   let redirectSession = "";
+
+  function bytesToBase64Url(bytes) {
+    let binary = "";
+    for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+      const chunk = bytes.subarray(offset, Math.min(offset + 0x8000, bytes.length));
+      binary += String.fromCharCode(...chunk);
+    }
+    return window.btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  }
+
+  function base64UrlToBytes(value) {
+    const normalized = String(value).replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4 || 4)) % 4);
+    const binary = window.atob(padded);
+    return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  }
+
+  function randomBytes(length) {
+    return window.crypto.getRandomValues(new Uint8Array(length));
+  }
+
+  async function importRootKey(raw, usages) {
+    return window.crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, usages);
+  }
 
   function normalizeEndpoint(value) {
     const candidate = String(value || "")
@@ -113,6 +141,7 @@
       return await parseResponse(response);
     } catch (error) {
       if (error.status === 401) {
+        rootKeys.delete(endpoint);
         await forget(endpoint);
         announce(endpoint, false);
       }
@@ -186,17 +215,180 @@
     if (!endpoint) return;
     const token = await storedToken(endpoint);
     if (token) await request(endpoint, "/api/logout", { body: {}, method: "POST" }).catch(() => undefined);
+    rootKeys.delete(endpoint);
     await forget(endpoint);
     announce(endpoint, false);
+  }
+
+  function isUnlocked(endpointValue) {
+    const endpoint = normalizeEndpoint(endpointValue);
+    return Boolean(endpoint && rootKeys.has(endpoint));
+  }
+
+  function lock(endpointValue) {
+    const endpoint = normalizeEndpoint(endpointValue);
+    if (endpoint) rootKeys.delete(endpoint);
+  }
+
+  async function unlock(endpointValue) {
+    const endpoint = normalizeEndpoint(endpointValue);
+    if (!endpoint) throw new Error("Spark Vault is not configured.");
+    if (rootKeys.has(endpoint)) return { decoy: false, unlocked: true };
+    const token = await storedToken(endpoint);
+    if (!token) {
+      const error = new Error("Sign in with GitHub before unlocking Spark Vault.");
+      error.code = "authentication_required";
+      error.status = 401;
+      throw error;
+    }
+    const parameters = new URLSearchParams({ session: token, site_origin: window.location.origin });
+    const popup = window.open(`${endpoint}/unlock#${parameters}`, "functionhx-spark-vault-unlock", "popup=yes,width=520,height=720");
+    if (!popup) throw new Error("Allow the Spark Vault unlock popup and try again.");
+    const expectedOrigin = new URL(endpoint).origin;
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const timeout = window.setTimeout(() => finish(new Error("Spark Vault unlock timed out.")), 3 * 60 * 1000);
+      const closed = window.setInterval(() => {
+        if (popup.closed) finish(new Error("Spark Vault unlock was canceled."));
+      }, 400);
+
+      function cleanup() {
+        window.clearTimeout(timeout);
+        window.clearInterval(closed);
+        window.removeEventListener("message", onMessage);
+      }
+
+      async function finish(error, payload = null) {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (error) {
+          reject(error);
+          return;
+        }
+        if (payload?.decoy) {
+          resolve({ decoy: true, unlocked: false });
+          return;
+        }
+        try {
+          const raw = base64UrlToBytes(payload.root);
+          if (raw.length !== 32) throw new Error("Spark Vault returned an invalid root key.");
+          rootKeys.set(endpoint, await importRootKey(raw, ["encrypt", "decrypt"]));
+          resolve({ decoy: false, unlocked: true });
+        } catch (keyError) {
+          reject(keyError);
+        }
+      }
+
+      function onMessage(event) {
+        if (event.origin !== expectedOrigin || event.source !== popup) return;
+        if (event.data?.type === "functionhx:spark-vault-decoy") {
+          finish(null, { decoy: true });
+          return;
+        }
+        if (event.data?.type !== "functionhx:spark-vault-unlocked" || typeof event.data.root !== "string") return;
+        finish(null, { root: event.data.root });
+      }
+
+      window.addEventListener("message", onMessage);
+      popup.focus();
+    });
+  }
+
+  function isSealed(value) {
+    return String(value || "").startsWith(sealedPrefix);
+  }
+
+  async function sealValues(endpointValue, idValue, values) {
+    const endpoint = normalizeEndpoint(endpointValue);
+    const id = String(idValue || "");
+    const rootKey = rootKeys.get(endpoint);
+    if (!rootKey) {
+      const error = new Error("Spark Vault must be unlocked before encrypting private content.");
+      error.code = "vault_locked";
+      throw error;
+    }
+    const dataKeyBytes = randomBytes(32);
+    const dataKey = await window.crypto.subtle.importKey("raw", dataKeyBytes, { name: "AES-GCM" }, false, ["encrypt"]);
+    const contentIv = randomBytes(12);
+    const keyIv = randomBytes(12);
+    const ciphertext = await window.crypto.subtle.encrypt(
+      { name: "AES-GCM", iv: contentIv, additionalData: encoder.encode(`functionhx:spark-values:${id}:v2`) },
+      dataKey,
+      encoder.encode(JSON.stringify(values))
+    );
+    const wrappedKey = await window.crypto.subtle.encrypt(
+      { name: "AES-GCM", iv: keyIv, additionalData: encoder.encode(`functionhx:spark-data-key:${id}:v2`) },
+      rootKey,
+      dataKeyBytes
+    );
+    const envelope = {
+      algorithm: "A256GCM",
+      ciphertext: bytesToBase64Url(new Uint8Array(ciphertext)),
+      content_iv: bytesToBase64Url(contentIv),
+      id,
+      key_iv: bytesToBase64Url(keyIv),
+      version: 2,
+      wrapped_key: bytesToBase64Url(new Uint8Array(wrappedKey)),
+    };
+    return sealedPrefix + bytesToBase64Url(encoder.encode(JSON.stringify(envelope)));
+  }
+
+  async function openValues(endpointValue, idValue, sealedValue) {
+    const endpoint = normalizeEndpoint(endpointValue);
+    const id = String(idValue || "");
+    const rootKey = rootKeys.get(endpoint);
+    if (!rootKey) {
+      const error = new Error("Spark Vault must be unlocked before decrypting private content.");
+      error.code = "vault_locked";
+      throw error;
+    }
+    try {
+      const value = String(sealedValue || "");
+      if (!isSealed(value)) throw new Error("not sealed");
+      const envelope = JSON.parse(decoder.decode(base64UrlToBytes(value.slice(sealedPrefix.length))));
+      if (envelope.version !== 2 || envelope.algorithm !== "A256GCM" || envelope.id !== id) throw new Error("invalid envelope");
+      const dataKeyBytes = await window.crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv: base64UrlToBytes(envelope.key_iv),
+          additionalData: encoder.encode(`functionhx:spark-data-key:${id}:v2`),
+        },
+        rootKey,
+        base64UrlToBytes(envelope.wrapped_key)
+      );
+      const dataKey = await window.crypto.subtle.importKey("raw", dataKeyBytes, { name: "AES-GCM" }, false, ["decrypt"]);
+      const plaintext = await window.crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv: base64UrlToBytes(envelope.content_iv),
+          additionalData: encoder.encode(`functionhx:spark-values:${id}:v2`),
+        },
+        dataKey,
+        base64UrlToBytes(envelope.ciphertext)
+      );
+      return JSON.parse(decoder.decode(plaintext));
+    } catch (error) {
+      if (error.code === "vault_locked") throw error;
+      const failure = new Error("This private Spark could not be decrypted with the current vault key.");
+      failure.code = "decrypt_failed";
+      throw failure;
+    }
   }
 
   consumeRedirectSession();
 
   window.functionhxSparkVault = Object.freeze({
+    isSealed,
+    isUnlocked,
     login,
+    lock,
     logout,
     normalizeEndpoint,
+    openValues,
     request,
     restore,
+    sealValues,
+    unlock,
   });
 })();

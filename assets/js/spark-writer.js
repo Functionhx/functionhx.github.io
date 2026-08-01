@@ -6,7 +6,6 @@
   const authDialog = document.getElementById("site-inline-editor-auth");
 
   if (!root || !toggle) return;
-  if (!(toggle.dataset.editorAction || "").startsWith("spark-")) return;
 
   const repository = root.dataset.repository;
   const branch = root.dataset.branch;
@@ -27,12 +26,12 @@
   const strings = isEnglish
     ? {
         authFailed: "GitHub sign-in failed.",
-        authSuccess: "Spark Vault is unlocked for @Functionhx on this device.",
+        authSuccess: "GitHub owner verified.",
         collision: "That URL slug already exists. Change it in Publishing settings.",
         commitConflict: "This Spark changed after you opened it. Reopen it before saving again.",
         commitFailed: "The Spark entry could not be saved.",
         commitPrivateSuccess: "Encrypted and saved privately. No Markdown was written to the public site repository.",
-        commitPublicSuccess: "Encrypted backup saved and both public languages committed. Follow deployment progress in the corner.",
+        commitPublicSuccess: "Chinese source published. The English mirror displays a pending notice until a translation is added.",
         confirmDiscard: "Discard this encrypted browser draft?",
         connected: "Lock Spark Vault",
         connecting: "Opening GitHub sign-in…",
@@ -42,10 +41,9 @@
         draftFailed: "This browser could not encrypt the local draft.",
         draftRestored: "Recovered the encrypted draft saved on this device.",
         draftSaved: "Encrypted on this device. Nothing has been sent to GitHub.",
-        editing: "Loading the bilingual Spark…",
-        editingFailed: "The complete bilingual Spark could not be loaded.",
+        editing: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
+        editingFailed: "This Spark could not be loaded.",
         idle: "Start writing. Changes will be encrypted on this device automatically.",
-        incompleteEn: "Add an English title and body before saving.",
         incompleteZh: "Add a Chinese title and body before saving.",
         invalidDate: "Choose a valid date and time in Publishing settings.",
         invalidSlug: "The URL slug may contain only lowercase letters, numbers, and hyphens.",
@@ -53,9 +51,12 @@
         privateDraftsEmpty: "No private Spark drafts were found in the encrypted vault.",
         privateDraftsFailed: "Private drafts could not be loaded.",
         privateDraftsFound: (count) => String(count) + (count === 1 ? " encrypted private draft found." : " encrypted private drafts found."),
-        privateDraftsLoading: "Decrypting private drafts for @Functionhx…",
+        privateDraftsLoading: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
         privateDraftOpen: "Continue editing",
         saving: "Encrypting the private record…",
+        decoyLoaded: "Private space opened.",
+        decoySaved: "Saved in this private space.",
+        unlocking: "Waiting for the independent passphrase and passkey…",
         translationCanceled: "Translation canceled; the Chinese draft is unchanged.",
         translationFailed: "The English draft could not be translated.",
         translationReady: "English translation is ready for review and remains an encrypted device draft.",
@@ -63,46 +64,50 @@
         translateMissing: "Add a Chinese title and body before translating.",
         overwriteTranslation: "Replace the current English draft with a new DeepSeek translation?",
         vaultNotConfigured: "Spark Vault is not configured yet. This draft remains encrypted on this device only.",
+        vaultUnlocked: "Spark Vault unlocked for this tab only.",
         viewCommit: "View the public commit on GitHub →",
       }
     : {
         authFailed: "GitHub 登录失败。",
-        authSuccess: "已为 @Functionhx 解锁闪耀私密库，并记住这台设备。",
+        authSuccess: "已验证 GitHub 站长身份。",
         collision: "这个网址短名已经存在，请在“发布设置”里换一个。",
-        commitConflict: "这条闪耀在打开后已经发生变化，请重新打开再保存。",
-        commitFailed: "无法保存这条闪耀。",
+        commitConflict: "这条 Spark 在打开后已经发生变化，请重新打开再保存。",
+        commitFailed: "无法保存这条 Spark。",
         commitPrivateSuccess: "已加密保存为私密稿；公开网站仓库中没有写入 Markdown。",
-        commitPublicSuccess: "加密备份与中英公开版本均已保存，请在右下角查看部署进度。",
+        commitPublicSuccess: "中文公开版本已保存；英文未完成时会显示待翻译提示，请在右下角查看部署进度。",
         confirmDiscard: "丢弃这份加密浏览器草稿？",
-        connected: "锁定闪耀私密库",
+        connected: "锁定 Spark 私密库",
         connecting: "正在打开 GitHub 登录…",
-        disconnectConfirm: "锁定闪耀私密库，并从这台设备移除登录状态？",
-        disconnected: "闪耀私密库已锁定，并移除了这台设备的登录状态。",
+        disconnectConfirm: "锁定 Spark 私密库，并从这台设备移除登录状态？",
+        disconnected: "Spark 私密库已锁定，并移除了这台设备的登录状态。",
         draftChanged: "正在为这台设备加密随写随存；内容尚未发送到 GitHub。",
         draftFailed: "这个浏览器无法加密保存本地草稿。",
         draftRestored: "已恢复这台设备上的加密草稿。",
         draftSaved: "已加密保存在这台设备中，尚未发送到 GitHub。",
-        editing: "正在载入这条闪耀的中英文内容…",
-        editingFailed: "无法载入完整的中英文内容。",
+        editing: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
+        editingFailed: "无法载入这条 Spark。",
         idle: "直接开始写，修改会自动加密保存在这台设备中。",
-        incompleteEn: "保存前还需要补齐英文标题和正文。",
         incompleteZh: "保存前还需要补齐中文标题和正文。",
         invalidDate: "请在“发布设置”里填写有效的日期与时间。",
         invalidSlug: "网址短名只能包含小写字母、数字和连字符。",
         noChanges: "当前没有尚未保存的修改。",
-        privateDraftsEmpty: "加密私密库中没有闪耀草稿。",
+        privateDraftsEmpty: "加密私密库中没有 Spark 草稿。",
         privateDraftsFailed: "无法载入私密草稿。",
         privateDraftsFound: (count) => "已解密载入 " + String(count) + " 条私密草稿。",
-        privateDraftsLoading: "正在为 @Functionhx 解密私密草稿…",
+        privateDraftsLoading: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
         privateDraftOpen: "继续编辑",
         saving: "正在加密私密记录…",
+        decoyLoaded: "已打开私密空间。",
+        decoySaved: "已保存到当前私密空间。",
+        unlocking: "正在等待独立口令与通行密钥…",
         translationCanceled: "已取消翻译，中文稿保持不变。",
         translationFailed: "无法生成英文译稿。",
         translationReady: "英文译稿已经生成，请检查；内容仍是设备加密草稿。",
         translating: "正在等待 DeepSeek 翻译中文稿…",
         translateMissing: "请先填写中文标题和正文。",
         overwriteTranslation: "用新的 DeepSeek 翻译覆盖当前英文稿？",
-        vaultNotConfigured: "闪耀私密库尚未配置；当前草稿只会加密保存在这台设备中。",
+        vaultNotConfigured: "Spark 私密库尚未配置；当前草稿只会加密保存在这台设备中。",
+        vaultUnlocked: "Spark 私密库已解锁；根密钥只保留在当前标签页内存中。",
         viewCommit: "在 GitHub 查看公开 Commit →",
       };
 
@@ -126,6 +131,7 @@
   };
 
   const elements = {
+    announce: document.getElementById("site-spark-writer-announce"),
     close: document.getElementById("site-spark-writer-close"),
     comments: document.getElementById("site-spark-writer-comments"),
     connect: document.getElementById("site-spark-writer-connect"),
@@ -172,7 +178,56 @@
   let slugIsAutomatic = true;
   let sourcePaths = { zh: "", en: "" };
   let vaultSession = null;
+  let decoyMode = false;
   const disconnectedLabel = elements.connect.querySelector("span")?.textContent.trim() || "GitHub";
+  const decoyNotes = [
+    {
+      date: "2026-08-01T21:10",
+      decoy: true,
+      id: "next-stage",
+      kind: "note",
+      published: false,
+      title: { en: "", zh: "阶段记录：下一步" },
+      values: {
+        announce: false,
+        comments: false,
+        date: "2026-08-01T21:10",
+        en: { body: "", summary: "", title: "" },
+        kind: "note",
+        message: "",
+        published: false,
+        slug: "next-stage",
+        zh: {
+          body: "最近想把手头的事情重新排一下优先级。先完成正在推进的原型，再决定哪些想法值得继续投入。",
+          summary: "重新整理近期优先级。",
+          title: "阶段记录：下一步",
+        },
+      },
+    },
+    {
+      date: "2026-07-28T23:40",
+      decoy: true,
+      id: "site-notes",
+      kind: "note",
+      published: false,
+      title: { en: "", zh: "暂不公开的主页想法" },
+      values: {
+        announce: false,
+        comments: false,
+        date: "2026-07-28T23:40",
+        en: { body: "", summary: "", title: "" },
+        kind: "note",
+        message: "",
+        published: false,
+        slug: "site-notes",
+        zh: {
+          body: "主页还是应该保持安静，只在需要时出现工具。动画可以有，但不能抢走内容本身的注意力。",
+          summary: "关于主页节奏的备忘。",
+          title: "暂不公开的主页想法",
+        },
+      },
+    },
+  ];
 
   function pad(value) {
     return String(value).padStart(2, "0");
@@ -240,6 +295,7 @@
 
   function readValues() {
     return {
+      announce: elements.announce.checked,
       comments: elements.comments.checked,
       date: elements.date.value,
       en: {
@@ -268,6 +324,7 @@
       autoSize(fields[language].body);
     }
     elements.kind.value = values.kind === "log" ? "log" : "note";
+    elements.announce.checked = values.announce === true;
     elements.date.value = values.date || localDateTime();
     elements.slug.value = values.slug || defaultSlug();
     elements.comments.checked = values.comments !== false;
@@ -410,12 +467,6 @@
       fields.zh.title.focus();
       return false;
     }
-    if (elements.published.checked && !languageComplete("en")) {
-      selectLanguage("en");
-      setStatus(strings.incompleteEn, "error");
-      fields.en.title.focus();
-      return false;
-    }
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(elements.slug.value)) {
       setStatus(strings.invalidSlug, "error");
       root.querySelector(".site-spark-writer__settings").open = true;
@@ -469,6 +520,7 @@
     const zhFrontMatter = zhSource.frontMatter;
     const enFrontMatter = enSource.frontMatter;
     return {
+      announce: extractYamlBoolean(zhFrontMatter, "announce"),
       comments: extractYamlBoolean(zhFrontMatter, "giscus_comments"),
       date: toInputDate(extractYamlScalar(zhFrontMatter, "date")),
       en: {
@@ -491,8 +543,9 @@
   function setConnection(session) {
     vaultSession = session || null;
     const connectLabel = elements.connect.querySelector("span");
-    if (connectLabel) connectLabel.textContent = vaultSession ? strings.connected : disconnectedLabel;
-    elements.connect.dataset.connected = String(Boolean(vaultSession));
+    const unlocked = Boolean(vaultSession && vaultClient?.isUnlocked?.(vaultEndpoint));
+    if (connectLabel) connectLabel.textContent = unlocked ? strings.connected : disconnectedLabel;
+    elements.connect.dataset.connected = String(unlocked);
   }
 
   function vaultReady() {
@@ -531,20 +584,44 @@
     }
   }
 
+  async function ensureVaultUnlocked() {
+    const session = await ensureVaultSession();
+    if (!session) return null;
+    if (vaultClient.isUnlocked?.(vaultEndpoint)) return { decoy: false, unlocked: true };
+    setStatus(strings.unlocking);
+    try {
+      const result = await vaultClient.unlock(vaultEndpoint);
+      if (result?.decoy) {
+        decoyMode = true;
+        setStatus(strings.decoyLoaded, "success");
+        setConnection(session);
+        return result;
+      }
+      decoyMode = false;
+      setConnection(session);
+      setStatus(strings.vaultUnlocked, "success");
+      return result;
+    } catch (error) {
+      setStatus(`${strings.authFailed} ${error.message || ""}`.trim(), "error");
+      return null;
+    }
+  }
+
   async function disconnectVault(ask = true) {
     if (ask && !window.confirm(strings.disconnectConfirm)) return;
     if (vaultReady()) await vaultClient.logout(vaultEndpoint).catch(() => undefined);
+    decoyMode = false;
     setConnection(null);
     setStatus(strings.disconnected);
   }
 
   async function handleConnectButton() {
     await restorePromise;
-    if (vaultSession) {
+    if (vaultSession && vaultClient.isUnlocked?.(vaultEndpoint)) {
       await disconnectVault(true);
       return;
     }
-    await ensureVaultSession();
+    await ensureVaultUnlocked();
   }
 
   async function vaultRequest(path, options = {}) {
@@ -554,6 +631,48 @@
       if (error.status === 401) setConnection(null);
       throw error;
     }
+  }
+
+  function privateTransportValues(values, sealed) {
+    return {
+      announce: false,
+      comments: false,
+      date: values.date,
+      en: { body: "", summary: "", title: "" },
+      kind: values.kind,
+      message: "",
+      published: false,
+      slug: values.slug,
+      zh: { body: sealed, summary: "", title: "Private Spark" },
+    };
+  }
+
+  async function hydrateVaultNote(note) {
+    if (!note) return note;
+    const sealed = note.sealed || note.values?.zh?.body || "";
+    if (!vaultClient.isSealed?.(sealed)) return note;
+    const values = await vaultClient.openValues(vaultEndpoint, note.id, sealed);
+    values.published = note.published === true;
+    return {
+      ...note,
+      date: values.date,
+      kind: values.kind,
+      published: note.published === true,
+      title: { en: values.en?.title || "", zh: values.zh?.title || "" },
+      values,
+      zeroKnowledge: true,
+    };
+  }
+
+  async function hydrateVaultNotes(notes) {
+    const hydrated = [];
+    for (const note of notes) hydrated.push(await hydrateVaultNote(note));
+    return hydrated;
+  }
+
+  async function privatePayloadValues(values) {
+    const sealed = await vaultClient.sealValues(vaultEndpoint, values.slug, values);
+    return privateTransportValues(values, sealed);
   }
 
   function renderPrivateDrafts(notes) {
@@ -578,7 +697,8 @@
       open.textContent = strings.privateDraftOpen;
       open.addEventListener("click", () => {
         elements.draftsPanel.hidden = true;
-        openEdit({ translationKey: `spark-${note.id}`, vaultId: note.id }, open);
+        if (note.decoy) openDecoyNote(note, open);
+        else openEdit({ translationKey: `spark-${note.id}`, vaultId: note.id }, open);
       });
       item.append(meta, open);
       elements.draftsList.append(item);
@@ -587,15 +707,20 @@
 
   async function loadPrivateDrafts() {
     if (!elements.draftsPanel) return;
-    if (!(await ensureVaultSession())) return;
+    const access = await ensureVaultUnlocked();
+    if (!access) return;
     if (!root.hidden) closeWriter();
     elements.draftsPanel.hidden = false;
     elements.draftsList.replaceChildren();
-    setDraftsStatus(strings.privateDraftsLoading);
+    if (access.decoy) {
+      renderPrivateDrafts(decoyNotes);
+      return;
+    }
+    setDraftsStatus(window.functionhxSitePreferences?.getLoadingText?.() || strings.privateDraftsLoading);
     setBusy(true);
     try {
       const payload = await vaultRequest("/api/notes");
-      renderPrivateDrafts(Array.isArray(payload.notes) ? payload.notes : []);
+      renderPrivateDrafts(await hydrateVaultNotes(Array.isArray(payload.notes) ? payload.notes : []));
     } catch (error) {
       setDraftsStatus(`${strings.privateDraftsFailed} ${error.message || ""}`.trim(), "error");
     } finally {
@@ -613,6 +738,7 @@
 
   async function prepareCreate() {
     currentMode = "create";
+    decoyMode = false;
     currentTranslationKey = "";
     currentDraftKey = createDraftKey;
     sourcePaths = { zh: "", en: "" };
@@ -620,6 +746,7 @@
     slugIsAutomatic = true;
     const now = new Date();
     writeValues({
+      announce: false,
       comments: true,
       date: localDateTime(now),
       en: { body: "", summary: "", title: "" },
@@ -646,7 +773,7 @@
     if (!id || !vaultSession) return null;
     try {
       const payload = await vaultRequest(`/api/notes/${encodeURIComponent(id)}`);
-      return payload.note || null;
+      return hydrateVaultNote(payload.note || null);
     } catch (error) {
       if (error.status === 404 && !requiredNote) return null;
       throw error;
@@ -665,6 +792,7 @@
 
   async function prepareEdit(config) {
     currentMode = "edit";
+    decoyMode = false;
     currentTranslationKey = config.translationKey;
     currentDraftKey = `functionhx:spark-writer:${repository}:${branch}:${currentTranslationKey}`;
     sourcePaths = { en: config.enPath || "", zh: config.zhPath || "" };
@@ -672,11 +800,11 @@
     elements.slug.readOnly = true;
     elements.heading.textContent = elements.heading.dataset.editHeading;
     elements.result.hidden = true;
-    setStatus(strings.editing);
+    setStatus(window.functionhxSitePreferences?.getLoadingText?.() || strings.editing);
     setBusy(true);
     try {
       await restorePromise;
-      if (config.vaultId && !vaultSession && !(await ensureVaultSession())) return;
+      if (config.vaultId && !(await ensureVaultUnlocked())) return;
       const id = noteIdFromConfig(config);
       const note = await loadVaultNote(id, Boolean(config.vaultId));
       if (note) {
@@ -708,7 +836,6 @@
 
   function revealWriter() {
     root.hidden = false;
-    toggle.setAttribute("aria-expanded", "true");
     if (isEntryPage) document.body.classList.add("site-spark-entry-writing");
     root.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -727,6 +854,26 @@
     window.requestAnimationFrame(() => fields[currentLanguage].title.focus());
   }
 
+  function openDecoyNote(note, trigger = toggle) {
+    currentMode = "decoy";
+    decoyMode = true;
+    currentTranslationKey = `spark-${note.id}`;
+    currentDraftKey = `functionhx:spark-decoy:${note.id}`;
+    sourcePaths = { en: "", zh: "" };
+    resetVaultState();
+    activeTrigger = trigger;
+    elements.slug.readOnly = true;
+    elements.heading.textContent = elements.heading.dataset.editHeading;
+    elements.result.hidden = true;
+    writeValues(structuredClone(note.values));
+    initialSnapshot = snapshot();
+    originalValues = structuredClone(note.values);
+    revealWriter();
+    selectLanguage("zh", true);
+    setStatus(strings.decoyLoaded, "success");
+    window.requestAnimationFrame(() => fields.zh.body.focus());
+  }
+
   async function openEdit(config, trigger = toggle) {
     if (elements.draftsPanel) elements.draftsPanel.hidden = true;
     if (!root.hidden) await saveDraft(false);
@@ -740,7 +887,6 @@
     saveDraft(false);
     root.hidden = true;
     document.body.classList.remove("site-spark-entry-writing");
-    toggle.setAttribute("aria-expanded", "false");
     if (activeTrigger && typeof activeTrigger.focus === "function") activeTrigger.focus();
   }
 
@@ -774,26 +920,33 @@
       setStatus(strings.noChanges);
       return;
     }
-    if (!(await ensureVaultSession())) return;
+    if (currentMode === "decoy" || decoyMode) {
+      await saveDraft(false);
+      initialSnapshot = snapshot();
+      setStatus(strings.decoySaved, "success");
+      return;
+    }
+    const values = readValues();
+    const desiredPublished = values.published === true;
+    const access = desiredPublished ? await ensureVaultSession() : await ensureVaultUnlocked();
+    if (!access || access.decoy) return;
 
     setBusy(true);
     setStatus(strings.saving);
     elements.result.hidden = true;
     const draftKeyBeforeSave = currentDraftKey;
     try {
-      const values = readValues();
-      const desiredPublished = values.published === true;
       const payload = {
         expectedSha: currentVaultSha,
         message: values.message.trim(),
         public: publicStateForMigration(),
-        values,
+        values: desiredPublished ? values : await privatePayloadValues(values),
       };
       const saved = await vaultRequest(`/api/notes/${encodeURIComponent(values.slug)}`, {
         body: payload,
         method: "PUT",
       });
-      let note = saved.note;
+      let note = await hydrateVaultNote(saved.note);
       currentVaultSha = note.sha || "";
       currentVaultPublished = note.published === true;
       currentVaultPublic = note.public || null;
@@ -803,14 +956,14 @@
           body: { expectedSha: note.sha, message: values.message.trim() },
           method: "POST",
         });
-        note = published.note;
+        note = await hydrateVaultNote(published.note);
         commit = published.commit;
       } else if (note.published) {
         const unpublished = await vaultRequest(`/api/notes/${encodeURIComponent(values.slug)}/unpublish`, {
           body: { expectedSha: note.sha, message: values.message.trim() },
           method: "POST",
         });
-        note = unpublished.note;
+        note = await hydrateVaultNote(unpublished.note);
         commit = unpublished.commit;
       }
 
@@ -898,22 +1051,22 @@
     }
   }
 
-  toggle.addEventListener("click", () => {
-    if (toggle.dataset.editorAction === "spark-create") {
-      openCreate(toggle);
-      return;
-    }
-    openEdit(
-      {
-        enPath: root.dataset.sourcePathEn,
-        translationKey: root.dataset.translationKey,
-        zhPath: root.dataset.sourcePathZh,
-      },
-      toggle
-    );
-  });
-
   if (elements.create) elements.create.addEventListener("click", () => openCreate(elements.create));
+  if ((toggle.dataset.editorAction || "").startsWith("spark-")) {
+    toggle.addEventListener("click", () => {
+      if (toggle.dataset.editorAction === "spark-create") openCreate(toggle);
+      else {
+        openEdit(
+          {
+            enPath: root.dataset.sourcePathEn,
+            translationKey: root.dataset.translationKey,
+            zhPath: root.dataset.sourcePathZh,
+          },
+          toggle
+        );
+      }
+    });
+  }
   if (elements.drafts) elements.drafts.addEventListener("click", loadPrivateDrafts);
   if (elements.draftsClose) {
     elements.draftsClose.addEventListener("click", () => {
@@ -930,6 +1083,26 @@
   fields.en.tab.addEventListener("click", () => selectLanguage("en", true));
 
   document.addEventListener("click", (event) => {
+    const authorTrigger = event.target.closest("[data-author-action]");
+    if (authorTrigger?.dataset.authorAction === "spark-create") {
+      openCreate(authorTrigger);
+      return;
+    }
+    if (authorTrigger?.dataset.authorAction === "spark-drafts") {
+      loadPrivateDrafts();
+      return;
+    }
+    if (authorTrigger?.dataset.authorAction === "spark-edit") {
+      openEdit(
+        {
+          enPath: authorTrigger.dataset.sourcePathEn,
+          translationKey: authorTrigger.dataset.translationKey,
+          zhPath: authorTrigger.dataset.sourcePathZh,
+        },
+        authorTrigger
+      );
+      return;
+    }
     const editTrigger = event.target.closest("[data-spark-edit]");
     if (!editTrigger) return;
     openEdit(
@@ -955,7 +1128,7 @@
     }
   }
 
-  for (const field of [elements.comments, elements.date, elements.kind, elements.message, elements.published]) {
+  for (const field of [elements.announce, elements.comments, elements.date, elements.kind, elements.message, elements.published]) {
     field.addEventListener("input", handleChange);
     field.addEventListener("change", handleChange);
   }
@@ -977,4 +1150,5 @@
 
   restorePromise = restoreVaultSession();
   selectLanguage(currentLanguage);
+  if (new URLSearchParams(window.location.search).get("compose") === "1") openCreate(toggle);
 })();

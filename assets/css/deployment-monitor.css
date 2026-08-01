@@ -11,6 +11,7 @@
   color: var(--global-text-color);
   max-width: min(26rem, calc(100vw - 2rem));
   padding: 1rem;
+  pointer-events: none;
   position: fixed;
   right: 1rem;
   width: 100%;
@@ -20,6 +21,7 @@
 .site-deployment-monitor button,
 .site-deployment-monitor a {
   font: inherit;
+  pointer-events: auto;
 }
 
 .site-deployment-monitor header {

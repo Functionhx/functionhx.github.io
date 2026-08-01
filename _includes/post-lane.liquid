@@ -1,25 +1,19 @@
 {% assign current_lang = page.lang | default: 'zh' %}
 {% assign localized_posts = site.posts | where: 'lang', current_lang %}
 {% assign visible_post_count = 0 %}
-{% if page.translation_key == 'spark' %}
-  <div class="site-spark-toolbar">
+{% if page.translation_key == 'spark' and current_lang != 'en' %}
+  <div class="site-spark-toolbar owner-only-control">
     <div class="site-spark-toolbar__actions">
       <button id="site-spark-create" type="button" class="site-spark-create">
         <i class="fa-solid fa-plus" aria-hidden="true"></i>
-        {% if current_lang == 'en' %}New Spark{% else %}新建闪耀{% endif %}
+        {% if current_lang == 'en' %}New Spark{% else %}新建 Spark{% endif %}
       </button>
       <button id="site-spark-drafts" type="button" class="site-spark-drafts-toggle">
         <i class="fa-solid fa-lock" aria-hidden="true"></i>
         {% if current_lang == 'en' %}Private drafts{% else %}私密草稿{% endif %}
       </button>
     </div>
-    <span>
-      {% if current_lang == 'en' -%}
-        Chinese-only drafts can be saved privately; English is required only when publishing.
-      {%- else -%}
-        中文稿可先加密私存；只有公开时才要求补齐英文。
-      {%- endif %}
-    </span>
+    <span>只写中文即可保存并发布；英文译稿可以稍后补充。</span>
   </div>
   <section id="site-spark-drafts-panel" class="site-spark-drafts-panel" hidden aria-labelledby="site-spark-drafts-heading">
     <header>
@@ -96,12 +90,12 @@
               <a class="post-title" href="{{ post.redirect | relative_url }}">{{ post.title }}</a>
             {% endif %}
           </h3>
-          {% if page.translation_key == 'spark' %}
+          {% if page.translation_key == 'spark' and current_lang != 'en' %}
             {% assign spark_translations = site.posts | where: 'translation_key', post.translation_key %}
             {% assign spark_zh_post = spark_translations | where: 'lang', 'zh' | first %}
             {% assign spark_en_post = spark_translations | where: 'lang', 'en' | first %}
             <button
-              class="site-spark-edit-trigger"
+              class="site-spark-edit-trigger owner-only-control"
               type="button"
               title="{% if current_lang == 'en' %}Edit in place{% else %}原位编辑{% endif %}"
               aria-label="{% if current_lang == 'en' %}Edit {{ post.title }} in place{% else %}原位编辑《{{ post.title }}》{% endif %}"

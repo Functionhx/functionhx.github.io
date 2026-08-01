@@ -15,7 +15,7 @@ module Functionhx
     SECTION_NAMES = {
       "zh" => {
         "posts" => "博客",
-        "spark" => "闪耀",
+        "spark" => "Spark",
         "projects" => "项目",
         "tools" => "工具",
         "news" => "动态",
@@ -37,9 +37,9 @@ module Functionhx
       "about" => { "zh" => "关于", "en" => "About" },
       "home" => { "zh" => "关于", "en" => "About" },
       "blog" => { "zh" => "博客", "en" => "Blog" },
-      "spark" => { "zh" => "闪耀", "en" => "Spark" },
-      "notes" => { "zh" => "闪耀", "en" => "Spark" },
-      "logs" => { "zh" => "闪耀", "en" => "Spark" },
+      "spark" => { "zh" => "Spark", "en" => "Spark" },
+      "notes" => { "zh" => "Spark", "en" => "Spark" },
+      "logs" => { "zh" => "Spark", "en" => "Spark" },
       "tools" => { "zh" => "工具", "en" => "Tools" },
       "projects" => { "zh" => "项目", "en" => "Projects" },
       "news" => { "zh" => "动态", "en" => "News" }

@@ -171,9 +171,9 @@ const values = {
   published: false,
   slug: "encrypted-spark",
   zh: {
-    body: "这是一条只应由樊宇琛读取的加密闪耀。",
-    summary: "一条加密闪耀。",
-    title: "加密闪耀",
+    body: "这是一条只应由樊宇琛读取的加密 Spark。",
+    summary: "一条加密 Spark。",
+    title: "加密 Spark",
   },
 };
 
@@ -185,7 +185,7 @@ try {
 
   const health = await worker.fetch(new Request(`${workerOrigin}/health`), env);
   assert.equal(health.status, 200);
-  assert.deepEqual(await health.json(), { ok: true, service: "functionhx-spark-vault", version: 1 });
+  assert.deepEqual(await health.json(), { ok: true, service: "functionhx-spark-vault", version: 2 });
 
   const login = await worker.fetch(new Request(`${workerOrigin}/auth/login?return_to=/spark/`), env);
   assert.equal(login.status, 302);
@@ -233,6 +233,37 @@ try {
   assert.equal(mirrorSession.status, 200);
   assert.equal(mirrorSession.headers.get("access-control-allow-origin"), mirrorOrigin);
 
+  const unlockPage = await worker.fetch(new Request(`${workerOrigin}/unlock`), env);
+  assert.equal(unlockPage.status, 200);
+  assert.match(unlockPage.headers.get("content-security-policy") || "", /default-src 'none'/);
+  assert.match(await unlockPage.text(), /通行密钥/);
+
+  const emptyKeyring = await apiRequest("/api/keyring", "GET", sessionToken);
+  assert.deepEqual(await emptyKeyring.json(), { keyring: null, sha: "" });
+  const encoded = (value) => Buffer.from(value).toString("base64url");
+  const keyring = {
+    algorithm: "A256GCM+PBKDF2+WebAuthn-PRF",
+    combine_salt: encoded("combine-salt-for-test"),
+    created_at: "2026-08-01T18:00:00.000Z",
+    credential_id: encoded("credential-id-for-test"),
+    iterations: 600000,
+    passphrase_salt: encoded("passphrase-salt-for-test"),
+    prf_salt: encoded("prf-salt-for-test-value"),
+    recovery_iv: encoded("recovery-iv!"),
+    recovery_wrapped_root: encoded("recovery-wrapped-root-ciphertext"),
+    version: 2,
+    wrap_iv: encoded("wrapping-iv!"),
+    wrapped_root: encoded("wrapped-root-ciphertext-for-test"),
+  };
+  const keyringSave = await apiRequest("/api/keyring", "PUT", sessionToken, { keyring });
+  assert.equal(keyringSave.status, 200);
+  const savedKeyring = await keyringSave.json();
+  assert.deepEqual(savedKeyring.keyring, keyring);
+  assert.match(savedKeyring.sha, /^[0-9a-f]{40}$/);
+  const storedKeyring = files.get(fileKey(privateRepo, "vault/keyring.v2.json")).content;
+  assert.equal(storedKeyring.includes("passphrase"), true, "the keyring may store only passphrase salt, never the passphrase itself");
+  assert.equal(storedKeyring.includes("credential-id-for-test"), false, "binary keyring fields remain encoded");
+
   const crossOriginSave = await apiRequest(`/api/notes/${values.slug}`, "PUT", sessionToken, { values }, "https://attacker.example");
   assert.equal(crossOriginSave.status, 403, "write requests from another origin must be denied");
 
@@ -247,15 +278,16 @@ try {
   assert.equal(chineseOnlySave.status, 200, "a Chinese source draft must save without an English version");
   const chineseOnlyNote = (await chineseOnlySave.json()).note;
   assert.equal(chineseOnlyNote.published, false);
-  const prematurePublish = await apiRequest(`/api/notes/${chineseOnlyValues.slug}/publish`, "POST", sessionToken, {
+  const chineseOnlyPublish = await apiRequest(`/api/notes/${chineseOnlyValues.slug}/publish`, "POST", sessionToken, {
     expectedSha: chineseOnlyNote.sha,
   });
-  assert.equal(prematurePublish.status, 422, "publishing must still require a complete bilingual pair");
-  assert.equal(
-    files.has(fileKey(publicRepo, `_posts/2026-07-31-${chineseOnlyValues.slug}-zh.md`)),
-    false,
-    "an incomplete private draft must never leak into the public repository"
-  );
+  assert.equal(chineseOnlyPublish.status, 200, "English must never block publishing the Chinese source");
+  const chineseOnlyPublicZh = files.get(fileKey(publicRepo, `_posts/2026-07-31-${chineseOnlyValues.slug}-zh.md`));
+  const chineseOnlyPublicEn = files.get(fileKey(publicRepo, `_posts/2026-07-31-${chineseOnlyValues.slug}-en.md`));
+  assert.ok(chineseOnlyPublicZh && chineseOnlyPublicEn, "publishing keeps a bilingual route pair");
+  assert.match(chineseOnlyPublicZh.content, new RegExp(chineseOnlyValues.zh.body));
+  assert.match(chineseOnlyPublicEn.content, /English translation pending/);
+  assert.match(chineseOnlyPublicEn.content, new RegExp(`/spark/${chineseOnlyValues.slug}/`));
 
   const saved = await apiRequest(`/api/notes/${values.slug}`, "PUT", sessionToken, {
     message: "spark: save encrypted test note",

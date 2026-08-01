@@ -27,10 +27,13 @@
   };
 
   const openSearch = async (initialQuery = "") => {
+    window.functionhxSitePreferences?.showLoading?.();
     try {
       const search = await loadSearch();
+      window.functionhxSitePreferences?.hideLoading?.();
       await search.open(config, initialQuery);
     } catch (_error) {
+      window.functionhxSitePreferences?.showLoading?.();
       window.location.assign(config.fallbackUrl);
     }
   };

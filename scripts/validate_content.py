@@ -186,6 +186,27 @@ def main() -> int:
                 f"assets/js/inline-editor.js: integration contract {contract!r} missing"
             )
 
+    content_creator_path = ROOT / "assets" / "js" / "content-creator.js"
+    content_creator_text = (
+        content_creator_path.read_text(encoding="utf-8")
+        if content_creator_path.exists()
+        else ""
+    )
+    for contract in (
+        "window.functionhxGitHubAuth",
+        "window.functionhxDeployment",
+        "saveOpaque",
+        "/git/blobs",
+        "/git/trees",
+        'method: "PATCH"',
+        'announce: ${values.announce ? "true" : "false"}',
+        "English translation pending",
+    ):
+        if contract not in content_creator_text:
+            errors.append(
+                f"assets/js/content-creator.js: integration contract {contract!r} missing"
+            )
+
     spark_writer_path = ROOT / "assets" / "js" / "spark-writer.js"
     spark_writer_text = (
         spark_writer_path.read_text(encoding="utf-8")
@@ -204,6 +225,10 @@ def main() -> int:
         "/publish",
         "/unpublish",
         "loadPrivateDrafts",
+        "announce",
+        "ensureVaultUnlocked",
+        "privatePayloadValues",
+        "hydrateVaultNote",
     ):
         if contract not in spark_writer_text:
             errors.append(
@@ -233,6 +258,12 @@ def main() -> int:
         "saveOpaque",
         "restoreOpaque",
         "functionhx:spark-vault-session",
+        "functionhx:spark-vault-unlocked",
+        "functionhx:spark-vault-decoy",
+        "functionhx:zk2:",
+        "rootKeys",
+        "sealValues",
+        "openValues",
         "event.origin !== expectedOrigin",
     ):
         if contract not in spark_client_text:
@@ -257,11 +288,36 @@ def main() -> int:
         "assertAllowedOrigin",
         "commitPublicPair",
         "encryptRecord",
+        "KEYRING_PATH",
+        "loadKeyring",
+        "saveKeyring",
+        "createUnlockPage",
         '"published: true"',
     ):
         if contract not in spark_worker_text:
             errors.append(
                 f"spark-vault/worker.mjs: security contract {contract!r} missing"
+            )
+
+    unlock_page_path = ROOT / "spark-vault" / "unlock-page.mjs"
+    unlock_page_text = (
+        unlock_page_path.read_text(encoding="utf-8")
+        if unlock_page_path.exists()
+        else ""
+    )
+    for contract in (
+        "WebAuthn-PRF",
+        'iterations:600000',
+        'pin==="608"',
+        "functionhx:spark-vault-decoy",
+        "functionhx:spark-vault-unlocked",
+        "magic-spark-vault-recovery.json",
+        "Content-Security-Policy",
+    ):
+        if contract not in unlock_page_text:
+            errors.append(
+                f"spark-vault/unlock-page.mjs: zero-knowledge contract "
+                f"{contract!r} missing"
             )
 
     site_settings_path = ROOT / "assets" / "js" / "site-settings.js"
@@ -281,12 +337,54 @@ def main() -> int:
         "setNavigationVisibility",
         "setNavigationDensity",
         "createPageSource",
+        "syncPersonalization",
+        "selectLoadingCopy",
     ):
         if contract not in site_settings_text:
             errors.append(
                 f"assets/js/site-settings.js: integration contract "
                 f"{contract!r} missing"
             )
+
+    preferences_path = ROOT / "assets" / "js" / "site-preferences.js"
+    preferences_text = (
+        preferences_path.read_text(encoding="utf-8")
+        if preferences_path.exists()
+        else ""
+    )
+    for contract in (
+        "functionhx:site-font",
+        "functionhx:loading-copy",
+        "anthropic-serif",
+        "anthropic-sans",
+        "dyslexic",
+        "getLoadingText",
+        "showLoading",
+        "hideLoading",
+    ):
+        if contract not in preferences_text:
+            errors.append(
+                f"assets/js/site-preferences.js: personalization contract "
+                f"{contract!r} missing"
+            )
+
+    public_copy_paths = (
+        ROOT / "_pages",
+        ROOT / "_includes",
+        ROOT / "_layouts",
+        ROOT / "_plugins",
+        ROOT / "assets" / "js",
+        ROOT / "spark-vault" / "worker.mjs",
+    )
+    for source in public_copy_paths:
+        candidates = [source] if source.is_file() else source.rglob("*")
+        for candidate in candidates:
+            if not candidate.is_file() or candidate.suffix not in {".js", ".liquid", ".md", ".mjs", ".rb"}:
+                continue
+            if "闪耀" in candidate.read_text(encoding="utf-8"):
+                errors.append(
+                    f"{candidate.relative_to(ROOT)}: user-facing Spark name must not use 闪耀"
+                )
 
     auth_vault_path = ROOT / "assets" / "js" / "github-auth-vault.js"
     auth_vault_text = (
@@ -431,6 +529,34 @@ def main() -> int:
             errors.append(
                 "magic-search/server.py: retrieval-only service must not call "
                 f"{forbidden_provider}"
+            )
+
+    search_frontend_path = ROOT / "assets" / "js" / "magic-search.js"
+    search_frontend_text = (
+        search_frontend_path.read_text(encoding="utf-8")
+        if search_frontend_path.exists()
+        else ""
+    )
+    for contract in (
+        'element("button", "magic-search__escape", "esc")',
+        "if (visible.length === 6)",
+        'if (!query) return [];',
+    ):
+        if contract not in search_frontend_text:
+            errors.append(
+                f"assets/js/magic-search.js: compact search contract {contract!r} missing"
+            )
+    for cluttered_control in (
+        "magic-search__scopes",
+        "magic-search__header",
+        "magic-search__footer",
+        "magic-search__excerpt",
+        "recentResults",
+    ):
+        if cluttered_control in search_frontend_text:
+            errors.append(
+                "assets/js/magic-search.js: compact search must not render "
+                f"{cluttered_control!r}"
             )
 
     nginx_path = ROOT / "deploy" / "nginx" / "fanyuchen.com.cn.conf"

@@ -28,10 +28,10 @@
         disconnectConfirm: "Forget the trusted GitHub token on this device?",
         disconnected: "The trusted GitHub connection was removed from this device.",
         defaultMessage: "site: update site settings",
-        incompleteNew: "Add both titles and a URL slug for the new section.",
+        incompleteNew: "Add a Chinese title and URL slug. English can be translated later.",
         invalidOrder: "Navigation order must be a number from 1 to 999.",
         invalidSlug: "The URL slug may contain only lowercase letters, numbers, and hyphens.",
-        loading: "Preparing all changed site settings…",
+        loading: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
         missingChinese: "Add a Chinese title or description before translating.",
         noChanges: "There are no site settings changes to commit.",
         pending: "Changes are ready in this panel but have not been committed.",
@@ -56,10 +56,10 @@
         disconnectConfirm: "从这台设备移除已记住的 GitHub 令牌？",
         disconnected: "已从这台设备移除 GitHub 连接。",
         defaultMessage: "site: update site settings",
-        incompleteNew: "新栏目需要同时填写中英文名称和网址短名。",
+        incompleteNew: "新栏目只需填写中文名称和网址短名；英文可以稍后补充。",
         invalidOrder: "导航顺序必须是 1 到 999 之间的数字。",
         invalidSlug: "网址短名只能包含小写字母、数字和连字符。",
-        loading: "正在准备所有发生变化的站点设置…",
+        loading: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
         missingChinese: "请先填写中文名称或中文简介。",
         noChanges: "当前没有需要提交的站点设置。",
         pending: "修改已保留在这个面板中，但尚未提交。",
@@ -84,6 +84,8 @@
     descriptionEn: document.getElementById("site-settings-description-en"),
     descriptionZh: document.getElementById("site-settings-description-zh"),
     format: document.getElementById("site-settings-format"),
+    font: document.getElementById("site-settings-font"),
+    loadingCopy: document.getElementById("site-settings-loading-copy"),
     newDetails: document.getElementById("site-settings-new"),
     newVisible: document.getElementById("site-settings-new-visible"),
     order: document.getElementById("site-settings-order"),
@@ -97,8 +99,15 @@
   };
   const sectionToggles = [...document.querySelectorAll("[data-section-toggle]")];
   const navigationDensityInputs = [...document.querySelectorAll("[data-navigation-density]")];
+  const themeButtons = [...document.querySelectorAll("[data-settings-theme]")];
 
-  if (Object.values(elements).some((element) => !element) || !sectionToggles.length || !navigationDensityInputs.length || !uiSettingsPath) {
+  if (
+    Object.values(elements).some((element) => !element) ||
+    !sectionToggles.length ||
+    !navigationDensityInputs.length ||
+    !themeButtons.length ||
+    !uiSettingsPath
+  ) {
     return;
   }
 
@@ -148,6 +157,8 @@
   }
 
   function openSettings() {
+    syncThemeButtons();
+    syncPersonalization();
     openDialog(dialog);
     toggle.setAttribute("aria-expanded", "true");
   }
@@ -188,6 +199,51 @@
     document.documentElement.dataset.navDensity = selectedNavigationDensity();
   }
 
+  function currentThemeSetting() {
+    const setting = document.documentElement.dataset.themeSetting || window.localStorage.getItem("theme") || "system";
+    return ["system", "light", "dark"].includes(setting) ? setting : "system";
+  }
+
+  function syncThemeButtons() {
+    const selected = currentThemeSetting();
+    themeButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.settingsTheme === selected)));
+  }
+
+  function selectTheme(setting) {
+    if (!["system", "light", "dark"].includes(setting)) return;
+    if (typeof setThemeSetting === "function") setThemeSetting(setting);
+    else {
+      window.localStorage.setItem("theme", setting);
+      document.documentElement.dataset.themeSetting = setting;
+    }
+    syncThemeButtons();
+  }
+
+  function currentFontSetting() {
+    return window.functionhxSitePreferences?.getFont?.() || document.documentElement.dataset.siteFont || "system";
+  }
+
+  function currentLoadingCopySetting() {
+    return window.functionhxSitePreferences?.getLoadingCopy?.() || document.documentElement.dataset.loadingCopy || "thinking";
+  }
+
+  function syncPersonalization() {
+    elements.font.value = currentFontSetting();
+    elements.loadingCopy.value = currentLoadingCopySetting();
+  }
+
+  function selectFont(setting) {
+    window.functionhxSitePreferences?.setFont?.(setting);
+    syncPersonalization();
+  }
+
+  function selectLoadingCopy(setting) {
+    window.functionhxSitePreferences?.setLoadingCopy?.(setting);
+    syncPersonalization();
+    window.functionhxSitePreferences?.showLoading?.();
+    window.setTimeout(() => window.functionhxSitePreferences?.hideLoading?.(), 620);
+  }
+
   function readNewSection() {
     return {
       descriptionEn: elements.descriptionEn.value.trim(),
@@ -207,10 +263,10 @@
 
   function validateNewSection(values) {
     if (!hasNewSection(values)) return true;
-    if (!values.titleZh || !values.titleEn || !values.slug) {
+    if (!values.titleZh || !values.slug) {
       elements.newDetails.open = true;
       setStatus(strings.incompleteNew, "error");
-      (values.titleZh ? (values.titleEn ? elements.slug : elements.titleEn) : elements.titleZh).focus();
+      (values.titleZh ? elements.slug : elements.titleZh).focus();
       return false;
     }
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(values.slug)) {
@@ -347,8 +403,9 @@
 
   function createPageSource(language, values) {
     const isEn = language === "en";
-    const title = isEn ? values.titleEn : values.titleZh;
-    const description = isEn ? values.descriptionEn : values.descriptionZh;
+    const translationPending = isEn && !values.titleEn;
+    const title = isEn ? values.titleEn || values.titleZh : values.titleZh;
+    const description = isEn ? values.descriptionEn || "English translation pending. Read the Chinese source." : values.descriptionZh;
     const permalink = isEn ? `/en/${values.slug}/` : `/${values.slug}/`;
     const layout = values.format === "profiles" ? "profiles" : "page";
     const frontMatter = [
@@ -363,6 +420,7 @@
       `nav: ${values.visible ? "true" : "false"}`,
       `nav_order: ${values.order}`,
     ];
+    if (translationPending) frontMatter.push("translation_pending: true");
 
     let body = "";
     if (values.format === "posts") {
@@ -375,6 +433,8 @@
       frontMatter.push("profiles: []");
     } else if (values.format === "repositories") {
       body = "{% include repositories-index.liquid %}\n";
+    } else if (translationPending) {
+      body = `> English translation pending. [Read the Chinese page](/${values.slug}/).\n`;
     }
 
     frontMatter.push("---", "");
@@ -571,7 +631,7 @@
     }
 
     setBusy(true);
-    setStatus(strings.loading);
+    setStatus(window.functionhxSitePreferences?.getLoadingText?.() || strings.loading);
     elements.result.hidden = true;
     try {
       const head = await githubRequest(`/repos/${repository}/git/ref/heads/${encodeURIComponent(branch)}`, {
@@ -626,6 +686,11 @@
       elements.result.hidden = true;
     });
   });
+  themeButtons.forEach((button) => {
+    button.addEventListener("click", () => selectTheme(button.dataset.settingsTheme));
+  });
+  elements.font.addEventListener("change", () => selectFont(elements.font.value));
+  elements.loadingCopy.addEventListener("change", () => selectLoadingCopy(elements.loadingCopy.value));
   for (const input of [
     elements.titleZh,
     elements.titleEn,
@@ -666,4 +731,6 @@
     restorePromise = restoreGitHubSession();
   });
   restorePromise = restoreGitHubSession();
+  syncThemeButtons();
+  syncPersonalization();
 })();

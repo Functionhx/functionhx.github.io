@@ -12,6 +12,6 @@ children:
     permalink: /news/
   - title: 工具
     permalink: /tools/
-  - title: 闪耀
+  - title: Spark
     permalink: /spark/
 ---

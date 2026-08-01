@@ -7,6 +7,10 @@
   const featurePromises = new Map();
 
   const features = {
+    creator: {
+      styles: ["deployment-monitor.css", "deepseek-translator.css", "content-creator.css"],
+      scripts: ["github-auth-vault.js", "deployment-monitor.js", "deepseek-translator.js", "content-creator.js"],
+    },
     editor: {
       styles: ["deployment-monitor.css", "deepseek-translator.css", "inline-editor.css"],
       scripts: ["github-auth-vault.js", "deployment-monitor.js", "deepseek-translator.js", "inline-editor.js"],
@@ -91,14 +95,16 @@
 
   function adminTrigger(target) {
     if (!(target instanceof Element)) return null;
-    return target.closest(
-      "#site-settings-toggle, #site-inline-editor-toggle, .site-spark-create, .site-spark-drafts-toggle, .site-spark-edit-trigger"
-    );
+    return target.closest("#site-settings-toggle, [data-author-action], .site-spark-create, .site-spark-drafts-toggle, .site-spark-edit-trigger");
   }
 
   function featureFor(trigger) {
     if (trigger.id === "site-settings-toggle") return "settings";
+    const authorAction = trigger.dataset.authorAction || "";
+    if (authorAction === "source-edit") return "editor";
+    if (["article-create", "tool-create", "project-create", "activity-create"].includes(authorAction)) return "creator";
     if (
+      authorAction.startsWith("spark-") ||
       trigger.classList.contains("site-spark-create") ||
       trigger.classList.contains("site-spark-drafts-toggle") ||
       trigger.classList.contains("site-spark-edit-trigger") ||
@@ -129,12 +135,15 @@
       event.preventDefault();
       event.stopImmediatePropagation();
       trigger.setAttribute("aria-busy", "true");
+      window.functionhxSitePreferences?.showLoading?.();
       loadFeature(feature)
         .then(() => {
+          window.functionhxSitePreferences?.hideLoading?.();
           trigger.removeAttribute("aria-busy");
           if (trigger.isConnected) trigger.click();
         })
         .catch((error) => {
+          window.functionhxSitePreferences?.hideLoading?.();
           trigger.removeAttribute("aria-busy");
           console.error(error);
         });
@@ -147,5 +156,9 @@
     if (hasActiveDeployment) loadFeature("monitor").catch(() => undefined);
   } catch (_error) {
     // Private browsing modes may disable localStorage; editing still loads on demand.
+  }
+
+  if (new URLSearchParams(window.location.search).get("compose") === "1" && document.getElementById("site-spark-writer")) {
+    loadFeature("spark").catch(() => undefined);
   }
 })();

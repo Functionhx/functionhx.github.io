@@ -1,0 +1,12 @@
+<link rel="stylesheet" href="{{ '/assets/css/owner-ui.css' | relative_url | bust_file_cache }}">
+<script>
+  (() => {
+    try {
+      const remembered = window.localStorage.getItem('functionhx:owner-ui:remembered') === 'true';
+      const session = window.sessionStorage.getItem('functionhx:owner-ui:session') === 'true';
+      if (remembered || session) document.documentElement.dataset.ownerVerified = 'true';
+    } catch (_error) {
+      // Browsing still works when storage is unavailable; owner controls remain hidden.
+    }
+  })();
+</script>

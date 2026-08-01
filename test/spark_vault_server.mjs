@@ -30,7 +30,7 @@ try {
   const health = await fetch(`${origin}/health`);
   assert.equal(health.status, 200);
   assert.equal(health.headers.get("access-control-allow-origin"), siteOrigin);
-  assert.deepEqual(await health.json(), { ok: true, service: "functionhx-spark-vault", version: 1 });
+  assert.deepEqual(await health.json(), { ok: true, service: "functionhx-spark-vault", version: 2 });
 
   const preflight = await fetch(`${origin}/api/notes`, {
     headers: { Origin: siteOrigin },

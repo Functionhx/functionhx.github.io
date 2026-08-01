@@ -1,0 +1,96 @@
+:root {
+  --site-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+html[data-site-font="anthropic-serif"] {
+  --site-font-family: "Roboto Slab", "Iowan Old Style", "Palatino Linotype", "Songti SC", STSong, serif;
+}
+
+html[data-site-font="anthropic-sans"] {
+  --site-font-family: Roboto, "Avenir Next", Avenir, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+html[data-site-font="system"] {
+  --site-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+html[data-site-font="dyslexic"] {
+  --site-font-family: "Atkinson Hyperlegible", OpenDyslexic, Verdana, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+html[data-site-font] body,
+html[data-site-font] button,
+html[data-site-font] input,
+html[data-site-font] select,
+html[data-site-font] textarea {
+  font-family: var(--site-font-family);
+}
+
+html[data-site-font="dyslexic"] body {
+  letter-spacing: 0.012em;
+  word-spacing: 0.025em;
+}
+
+.site-page-loader {
+  align-items: center;
+  background: var(--global-bg-color, #fff);
+  color: var(--global-text-color, #111);
+  display: none;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 100000;
+}
+
+html.js[data-page-loading="true"] .site-page-loader {
+  display: flex;
+}
+
+.site-page-loader__text {
+  animation: site-thinking-pulse 1.15s ease-in-out infinite;
+  color: inherit;
+  font-family: var(--site-font-family);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-weight: 500;
+  letter-spacing: 0.015em;
+}
+
+.site-page-loader__text::before {
+  content: "Thinking...";
+}
+
+html[data-loading-copy="loading"] .site-page-loader__text::before {
+  content: "Loading...";
+}
+
+html[data-loading-copy="thinking-zh"] .site-page-loader__text::before {
+  content: "正在思考...";
+}
+
+html[data-loading-copy="loading-zh"] .site-page-loader__text::before {
+  content: "正在载入...";
+}
+
+@keyframes site-thinking-pulse {
+  0%,
+  100% {
+    opacity: 0.42;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .site-page-loader {
+    background: var(--global-bg-color, #111);
+    color: var(--global-text-color, #f3f3f3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-page-loader__text {
+    animation: none;
+  }
+}

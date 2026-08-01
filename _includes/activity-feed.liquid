@@ -1,0 +1,45 @@
+{% assign activity_lang = page.lang | default: 'zh' %}
+{% assign activity_items = site.news | concat: site.posts | sort: 'date' | reverse %}
+{% assign activity_limit = page.announcements.limit | default: 6 %}
+{% assign activity_count = 0 %}
+<div class="news activity-feed">
+  <div class="table-responsive">
+    <table class="table table-sm table-borderless">
+      {% for item in activity_items %}
+        {% assign activity_show = false %}
+        {% if item.lang == activity_lang %}
+          {% if item.path contains '_news/' or item.announce == true %}
+            {% assign activity_show = true %}
+          {% endif %}
+        {% endif %}
+        {% if activity_show and activity_count < activity_limit %}
+          {% assign activity_count = activity_count | plus: 1 %}
+          <tr>
+            <th scope="row" style="width: 20%">{{ item.date | date: '%Y-%m-%d' }}</th>
+            <td>
+              {% if item.path contains '_news/' %}
+                {% if item.inline %}
+                  {{ item.content | remove: '<p>' | remove: '</p>' | emojify }}
+                {% else %}
+                  <a class="news-title" href="{{ item.url | relative_url }}">{{ item.title }}</a>
+                {% endif %}
+              {% else %}
+                {% if item.kind == 'note' or item.kind == 'log' %}
+                  {% if activity_lang == 'en' %}Published to Spark{% else %}发布到 Spark{% endif %}
+                {% else %}
+                  {% if activity_lang == 'en' %}Published an article{% else %}发布文章{% endif %}
+                {% endif %}
+                · <a class="news-title" href="{{ item.url | relative_url }}">{{ item.title }}</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+    </table>
+  </div>
+  {% if activity_count == 0 %}
+    <p>
+      {% if activity_lang == 'en' %}No updates yet.{% else %}暂无动态。{% endif %}
+    </p>
+  {% endif %}
+</div>

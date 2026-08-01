@@ -1,0 +1,128 @@
+<section
+  id="site-content-creator"
+  class="site-content-creator"
+  data-repository="Functionhx/functionhx.github.io"
+  data-owner="Functionhx"
+  data-branch="main"
+  hidden
+  aria-labelledby="site-content-creator-heading"
+>
+  <header class="site-content-creator__header">
+    <div>
+      <p>MAGIC · 中文优先</p>
+      <h1
+        id="site-content-creator-heading"
+        data-heading-article="新建文章"
+        data-heading-tool="新建工具"
+        data-heading-project="新建项目"
+        data-heading-activity="新增动态"
+      >
+        新建内容
+      </h1>
+      <span id="site-content-creator-kind">内容</span>
+    </div>
+    <button id="site-content-creator-close" type="button" aria-label="关闭创作区" title="关闭创作区">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </header>
+
+  <p id="site-content-creator-status" class="site-content-creator__status" role="status" aria-live="polite">
+    中文写完即可创建；英文镜像可以留空，稍后再翻译。
+  </p>
+
+  <div class="site-content-creator__paper">
+    <label class="sr-only" for="site-content-creator-title-zh">中文标题</label>
+    <input id="site-content-creator-title-zh" class="site-content-creator__title" type="text" placeholder="写下标题" autocomplete="off">
+    <label class="sr-only" for="site-content-creator-description-zh">中文摘要</label>
+    <input
+      id="site-content-creator-description-zh"
+      class="site-content-creator__description"
+      type="text"
+      placeholder="一句话说明这是什么"
+      autocomplete="off"
+    >
+    <label class="sr-only" for="site-content-creator-body-zh">中文正文</label>
+    <textarea id="site-content-creator-body-zh" rows="14" placeholder="从这里开始写……" spellcheck="true"></textarea>
+  </div>
+
+  <details id="site-content-creator-english" class="site-content-creator__english">
+    <summary>
+      <span>English · 可选</span>
+      <small>不填写也不会阻塞中文发布</small>
+    </summary>
+    <div class="site-content-creator__translation">
+      <button id="site-content-creator-translate" type="button"><i class="fa-solid fa-language" aria-hidden="true"></i> DeepSeek 翻译英文</button>
+      <span>翻译结果只会先进入本页，检查后再提交。</span>
+    </div>
+    <div class="site-content-creator__paper site-content-creator__paper--english" lang="en">
+      <label class="sr-only" for="site-content-creator-title-en">English title</label>
+      <input id="site-content-creator-title-en" class="site-content-creator__title" type="text" placeholder="English title" autocomplete="off">
+      <label class="sr-only" for="site-content-creator-description-en">English summary</label>
+      <input
+        id="site-content-creator-description-en"
+        class="site-content-creator__description"
+        type="text"
+        placeholder="English summary"
+        autocomplete="off"
+      >
+      <label class="sr-only" for="site-content-creator-body-en">English body</label>
+      <textarea id="site-content-creator-body-en" rows="10" placeholder="English body" spellcheck="true"></textarea>
+    </div>
+  </details>
+
+  <details id="site-content-creator-settings" class="site-content-creator__settings">
+    <summary>发布设置</summary>
+    <div class="site-content-creator__settings-grid">
+      <label>
+        <span>网址短名</span>
+        <input id="site-content-creator-slug" type="text" inputmode="url" autocomplete="off" spellcheck="false">
+      </label>
+      <label>
+        <span>日期与时间</span>
+        <input id="site-content-creator-date" type="datetime-local">
+      </label>
+      <label id="site-content-creator-tags-field">
+        <span>标签（逗号分隔）</span>
+        <input id="site-content-creator-tags" type="text" autocomplete="off">
+      </label>
+      <label id="site-content-creator-category-field">
+        <span>分类</span>
+        <input id="site-content-creator-category" type="text" autocomplete="off">
+      </label>
+      <label id="site-content-creator-url-field" hidden>
+        <span>公开网址（可选）</span>
+        <input id="site-content-creator-url" type="url" inputmode="url" autocomplete="off" placeholder="https://…">
+      </label>
+      <label id="site-content-creator-github-field" hidden>
+        <span>GitHub（可选）</span>
+        <input id="site-content-creator-github" type="url" inputmode="url" autocomplete="off" placeholder="https://github.com/…">
+      </label>
+      <label id="site-content-creator-cover-field" class="site-content-creator__cover-field" hidden>
+        <span>封面（WebP / PNG / JPEG，最大 5 MB）</span>
+        <input id="site-content-creator-cover" type="file" accept="image/webp,image/png,image/jpeg">
+        <span id="site-content-creator-cover-name">未选择封面</span>
+      </label>
+      <label id="site-content-creator-comments-field" class="site-content-creator__check">
+        <input id="site-content-creator-comments" type="checkbox" checked>
+        <span>开启 GitHub 评论</span>
+      </label>
+      <label id="site-content-creator-announce-field" class="site-content-creator__check">
+        <input id="site-content-creator-announce" type="checkbox" checked>
+        <span>同时显示在首页动态</span>
+      </label>
+      <label class="site-content-creator__message">
+        <span>提交说明</span>
+        <input id="site-content-creator-message" type="text" autocomplete="off">
+      </label>
+    </div>
+  </details>
+
+  <footer class="site-content-creator__footer">
+    <div>
+      <button id="site-content-creator-draft" type="button">保存加密草稿</button>
+      <button id="site-content-creator-connect" type="button"><i class="fa-solid fa-gear" aria-hidden="true"></i> 站长连接</button>
+    </div>
+    <button id="site-content-creator-commit" class="site-content-creator__commit" type="button">创建并 Commit</button>
+  </footer>
+  <a id="site-content-creator-result" class="site-content-creator__result" hidden target="_blank" rel="external noopener"></a>
+</section>

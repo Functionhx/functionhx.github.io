@@ -70,25 +70,7 @@ layout: default
           {{- page.labels.news | default: 'news' -}}
         </a>
       </h2>
-      {% include news.liquid limit=true %}
-    {% endif %}
-
-    {% if page.latest_posts and page.latest_posts.enabled %}
-      <h2>
-        <a href="{{ page.writing_path | default: '/writing/' | relative_url }}" style="color: inherit">
-          {{- page.labels.latest_posts | default: 'latest posts' -}}
-        </a>
-      </h2>
-      {% include latest_posts.liquid %}
-    {% endif %}
-
-    {% if page.selected_papers %}
-      <h2>
-        <a href="{{ page.research_path | default: '/research/' | relative_url }}" style="color: inherit">
-          {{- page.labels.selected_publications | default: 'selected publications' -}}
-        </a>
-      </h2>
-      {% include selected_papers.liquid %}
+      {% include activity-feed.liquid %}
     {% endif %}
 
     {% if page.social %}

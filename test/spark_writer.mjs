@@ -8,6 +8,7 @@ import { chromium } from "playwright";
 const siteRoot = new URL("../_site/", import.meta.url);
 const vaultOrigin = "https://spark-vault.test";
 const vaultToken = "opaque-not-a-real-spark-session";
+const vaultRootKey = Buffer.alloc(32, 61).toString("base64url");
 const testDeepSeekKey = "not-a-real-deepseek-spark-key";
 const sha = (value) => createHash("sha1").update(String(value)).digest("hex");
 const editPaths = {
@@ -37,7 +38,7 @@ Existing English body.
 `,
   zh: `---
 layout: post
-title: "已有闪耀"
+title: "已有 Spark"
 slug: existing-spark
 date: 2026-07-30 12:30:00 +0800
 published: true
@@ -70,7 +71,7 @@ const privateValues = {
   zh: {
     body: "私密中文正文。",
     summary: "一条私密笔记。",
-    title: "私密闪耀",
+    title: "私密 Spark",
   },
 };
 
@@ -111,13 +112,14 @@ const vaultNotes = new Map();
 let vaultCounter = 0;
 let publicCounter = 0;
 let sessionChecks = 0;
+let noteListRequests = 0;
 
 function clone(value) {
   return structuredClone(value);
 }
 
 function noteSummary(note) {
-  return {
+  const summary = {
     date: note.values.date,
     id: note.id,
     kind: note.values.kind,
@@ -126,6 +128,8 @@ function noteSummary(note) {
     title: { en: note.values.en.title, zh: note.values.zh.title },
     updatedAt: note.updatedAt,
   };
+  if (String(note.values.zh.body || "").startsWith("functionhx:zk2:")) summary.sealed = note.values.zh.body;
+  return summary;
 }
 
 function responseNote(note) {
@@ -169,20 +173,26 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 
 await page.addInitScript(
-  ({ endpoint, token }) => {
+  ({ endpoint, rootKey, token }) => {
     window.functionhxDeploymentConfig = { maxWait: 2000, pollInterval: 25 };
     window.functionhxSparkVaultConfig = { endpoint };
+    window.localStorage.setItem("functionhx:owner-ui:remembered", "true");
     window.__sparkPopupCount = 0;
-    window.open = () => {
+    window.open = (url) => {
       window.__sparkPopupCount += 1;
       window.setTimeout(() => {
+        const unlock = String(url || "").includes("/unlock#");
         window.dispatchEvent(
           new MessageEvent("message", {
-            data: {
-              token,
-              type: "functionhx:spark-vault-session",
-              user: { id: 172989722, login: "Functionhx" },
-            },
+            data: unlock
+              ? window.__sparkNextUnlockDecoy
+                ? { type: "functionhx:spark-vault-decoy" }
+                : { root: rootKey, type: "functionhx:spark-vault-unlocked" }
+              : {
+                  token,
+                  type: "functionhx:spark-vault-session",
+                  user: { id: 172989722, login: "Functionhx" },
+                },
             origin: endpoint,
             source: window,
           })
@@ -191,7 +201,7 @@ await page.addInitScript(
       return window;
     };
   },
-  { endpoint: vaultOrigin, token: vaultToken }
+  { endpoint: vaultOrigin, rootKey: vaultRootKey, token: vaultToken }
 );
 
 await page.route("https://api.deepseek.com/**", async (route) => {
@@ -266,6 +276,7 @@ await page.route(`${vaultOrigin}/**`, async (route) => {
     return;
   }
   if (url.pathname === "/api/notes" && request.method() === "GET") {
+    noteListRequests += 1;
     await route.fulfill({
       body: JSON.stringify({ notes: Array.from(vaultNotes.values(), noteSummary) }),
       contentType: "application/json",
@@ -329,16 +340,6 @@ await page.route(`${vaultOrigin}/**`, async (route) => {
       });
       return;
     }
-    if (action === "publish" && (!existing.values.en.title.trim() || !existing.values.en.body.trim())) {
-      await route.fulfill({
-        body: JSON.stringify({ error: { code: "bilingual_required", message: "English is required." } }),
-        contentType: "application/json",
-        headers: corsHeaders,
-        status: 422,
-      });
-      return;
-    }
-
     publicCounter += 1;
     const next = clone(existing);
     next.published = action === "publish";
@@ -496,14 +497,31 @@ try {
   assert.equal(await page.locator("#site-spark-writer-result").isVisible(), false);
   assert.equal(vaultWrites.length, 1);
   assert.equal(vaultWrites[0].id, "chinese-first");
-  assert.equal(vaultWrites[0].values.en.title, "", "English must be optional for private saves");
+  assert.equal(vaultWrites[0].values.en.title, "", "the transport mirror must stay empty");
+  assert.equal(vaultWrites[0].values.zh.title, "Private Spark", "the server receives only a generic private label");
+  assert.match(vaultWrites[0].values.zh.body, /^functionhx:zk2:/);
+  assert.equal(JSON.stringify(vaultWrites[0]).includes("只写中文的草稿"), false, "the private request must not contain the title");
+  assert.equal(JSON.stringify(vaultWrites[0]).includes("这是只写了中文"), false, "the private request must not contain the body");
   assert.equal(publicChanges.length, 0, "a private save must not touch the public repository");
-  assert.equal(await page.evaluate(() => window.__sparkPopupCount), 1, "the first private save should use one GitHub login");
+  assert.equal(await page.evaluate(() => window.__sparkPopupCount), 2, "the first private save should use GitHub login plus a separate vault unlock");
 
   await page.locator("#site-spark-writer-close").click();
+  await page.evaluate((endpoint) => {
+    window.functionhxSparkVault.lock(endpoint);
+    window.__sparkNextUnlockDecoy = true;
+  }, vaultOrigin);
+  const notesBeforeDecoy = noteListRequests;
   await page.locator("#site-spark-drafts").click();
   await page.locator("#site-spark-drafts-panel").waitFor({ state: "visible" });
   await page.waitForFunction(() => document.querySelectorAll("#site-spark-drafts-list li").length === 2);
+  assert.equal(noteListRequests, notesBeforeDecoy, "the 608 decoy path must never request the real notes endpoint");
+  assert.match(await page.locator("#site-spark-drafts-list").textContent(), /阶段记录：下一步/);
+  await page.locator("#site-spark-drafts-close").click();
+  await page.evaluate(() => {
+    window.__sparkNextUnlockDecoy = false;
+  });
+  await page.locator("#site-spark-drafts").click();
+  await page.waitForFunction(() => document.querySelector("#site-spark-drafts-list").textContent.includes("只写中文的草稿"));
   assert.equal(await page.locator("#site-spark-drafts-list li").count(), 2);
   const chineseDraft = page.locator("#site-spark-drafts-list li").filter({ hasText: "只写中文的草稿" });
   await chineseDraft.locator(".site-spark-draft-open").click();
@@ -511,8 +529,13 @@ try {
 
   await page.locator("#site-spark-writer-published").check();
   await page.locator("#site-spark-writer-publish").click();
-  assert.match(await page.locator("#site-spark-writer-status").textContent(), /英文标题和正文/);
-  assert.equal(vaultWrites.length, 1, "failed public validation must happen before a vault write");
+  await page.locator("#site-spark-writer-result").waitFor({ state: "visible" });
+  await page.locator('#site-deployment-monitor[data-state="success"]').waitFor({ state: "visible" });
+  assert.match(await page.locator("#site-spark-writer-status").textContent(), /中文公开版本已保存/);
+  assert.equal(vaultWrites.length, 2, "the Chinese source should publish without an English draft");
+  assert.equal(publicChanges.length, 1);
+  assert.equal(publicChanges[0].action, "publish");
+  assert.equal(publicChanges[0].values.en.title, "");
 
   await page.locator("#site-spark-writer-translate").click();
   await page.locator("#deepseek-translator-dialog").waitFor({ state: "visible" });
@@ -525,9 +548,9 @@ try {
   await page.locator("#site-spark-writer-publish").click();
   await page.locator("#site-spark-writer-result").waitFor({ state: "visible" });
   await page.locator('#site-deployment-monitor[data-state="success"]').waitFor({ state: "visible" });
-  assert.equal(publicChanges.length, 1);
-  assert.equal(publicChanges[0].action, "publish");
-  assert.equal(publicChanges[0].values.en.title, "Chinese First Draft");
+  assert.equal(publicChanges.length, 2);
+  assert.equal(publicChanges[1].action, "publish");
+  assert.equal(publicChanges[1].values.en.title, "Chinese First Draft");
   assert.equal(translationRequests.length, 1);
   assert.equal(translationAuthorizations[0], `Bearer ${testDeepSeekKey}`);
   assert.equal(translationRequests[0].model, "deepseek-v4-pro");
@@ -550,7 +573,7 @@ try {
     { editPaths }
   );
   await page.locator("#spark-edit-fixture").click();
-  await page.waitForFunction(() => document.querySelector("#site-spark-writer-title-zh").value === "已有闪耀");
+  await page.waitForFunction(() => document.querySelector("#site-spark-writer-title-zh").value === "已有 Spark");
   assert.equal(await page.locator("#site-spark-writer-title-en").inputValue(), "Existing Spark");
   assert.equal(await page.locator("#site-spark-writer-slug").isEditable(), false, "an existing entry keeps its stable URL");
 
@@ -559,7 +582,7 @@ try {
   await page.locator("#site-spark-writer-body-en").fill("English body edited in place.");
   await page.locator("#site-spark-writer-publish").click();
   await page.locator("#site-spark-writer-result").waitFor({ state: "visible" });
-  await page.waitForFunction(() => document.querySelector("#site-spark-writer-status").textContent.includes("公开版本均已保存"));
+  await page.waitForFunction(() => document.querySelector("#site-spark-writer-status").textContent.includes("中文公开版本已保存"));
   const migrationWrite = vaultWrites.find((write) => write.id === "existing-spark");
   assert.ok(migrationWrite?.public, "the first edit of a public Spark must adopt its paths and SHAs into the vault");
   assert.deepEqual(migrationWrite.public.paths, editPaths);
@@ -595,7 +618,7 @@ try {
   await page.evaluate(() => window.localStorage.setItem("theme", "dark"));
   await page.reload({ waitUntil: "networkidle" });
   await page.locator("#site-spark-create").click();
-  await page.waitForFunction(() => document.querySelector("#site-spark-writer-connect").dataset.connected === "true");
+  await page.waitForFunction(() => document.querySelector("#site-spark-writer-connect").dataset.connected === "false");
   assert.equal(await page.evaluate(() => window.__sparkPopupCount), 0, "the encrypted device session must survive reload without another login");
   assert.ok(sessionChecks >= 1, "reload must verify the remembered opaque session with the backend");
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");

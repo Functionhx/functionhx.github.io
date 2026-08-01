@@ -243,8 +243,24 @@ await page.route("https://api.github.com/**", async (route) => {
 
 try {
   await page.goto(baseUrl, { waitUntil: "networkidle" });
+  await page.waitForFunction(() => !document.documentElement.hasAttribute("data-page-loading"));
+  assert.equal(await page.locator("#site-page-loader").isVisible(), false, "the page loader must leave when the page is ready");
   await page.locator("#site-settings-toggle").click();
   await page.locator("#site-settings-dialog").waitFor({ state: "visible" });
+
+  assert.equal(await page.locator("#site-settings-font").inputValue(), "system");
+  assert.equal(await page.locator("#site-settings-loading-copy").inputValue(), "thinking");
+  await page.locator("#site-settings-font").selectOption("dyslexic");
+  assert.equal(await page.locator("html").getAttribute("data-site-font"), "dyslexic");
+  await page.locator("#site-settings-loading-copy").selectOption("loading-zh");
+  assert.equal(await page.locator("html").getAttribute("data-loading-copy"), "loading-zh");
+  await page.waitForFunction(() => !document.documentElement.hasAttribute("data-page-loading"));
+  assert.equal(
+    await page.evaluate(() => window.functionhxSitePreferences.getLoadingText()),
+    "正在载入...",
+    "the selected loading copy should become the global loading message"
+  );
+  await page.locator("#site-settings-owner > summary").click();
 
   const sectionKeys = await page.locator("[data-section-toggle]").evaluateAll((inputs) => inputs.map((input) => input.dataset.translationKey));
   assert.equal(new Set(sectionKeys).size, sectionKeys.length, "each section should appear only once");
@@ -362,10 +378,13 @@ try {
   await page.evaluate(() => window.localStorage.setItem("theme", "dark"));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: "networkidle" });
+  await page.waitForFunction(() => !document.documentElement.hasAttribute("data-page-loading"));
   await page.locator('[data-nav-toggle="navbarNav"]').click();
   await page.locator("#site-settings-toggle").click();
   await page.waitForFunction(() => document.querySelector("#site-settings-connect span")?.textContent.includes("退出"));
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
+  assert.equal(await page.locator("html").getAttribute("data-site-font"), "dyslexic", "the font preference should survive reloads");
+  assert.equal(await page.locator("html").getAttribute("data-loading-copy"), "loading-zh", "the loading copy should survive reloads");
   const dialogBounds = await page.locator("#site-settings-dialog").evaluate((element) => {
     const rect = element.getBoundingClientRect();
     return { height: rect.height, width: rect.width };

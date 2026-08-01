@@ -1,6 +1,6 @@
 ---
 layout: page
-title: 闪耀
+title: Spark
 permalink: /spark/
 description: 思考、研究札记，以及实验、开发与学习现场。
 lang: zh

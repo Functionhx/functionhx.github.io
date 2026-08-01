@@ -204,10 +204,15 @@ def main() -> int:
             "navbar",
             "search-toggle",
             "light-toggle",
-            "site-inline-editor-toggle",
+            "site-page-loader",
         ):
             if required_id not in parser.ids:
                 errors.append(f"{route}: missing required control #{required_id}")
+        if expected_language == "zh-CN":
+            if "site-inline-editor-toggle" not in parser.ids:
+                errors.append(f"{route}: Chinese source editor control missing")
+        elif "site-inline-editor-toggle" in parser.ids:
+            errors.append(f"{route}: English reading mirror must not expose source editing")
         for settings_id in (
             "site-settings-toggle",
             "site-settings-dialog",
@@ -218,6 +223,8 @@ def main() -> int:
             "site-settings-density-auto",
             "site-settings-density-compact",
             "site-settings-density-relaxed",
+            "site-settings-font",
+            "site-settings-loading-copy",
         ):
             if settings_id not in parser.ids:
                 errors.append(f"{route}: missing settings control #{settings_id}")
@@ -274,10 +281,7 @@ def main() -> int:
                 f"{route}: expected only {expected_active_key!r} to be active, "
                 f"found {parser.active_nav_translation_keys}"
             )
-        expected_blog_source = {
-            "/blog/": "_pages/blog-zh.md",
-            "/en/blog/": "_pages/blog-en.md",
-        }.get(route)
+        expected_blog_source = {"/blog/": "_pages/blog-zh.md"}.get(route)
         if expected_blog_source and parser.inline_editor_source_path != expected_blog_source:
             errors.append(
                 f"{route}: expected inline editor source {expected_blog_source!r}, "
@@ -303,12 +307,18 @@ def main() -> int:
             errors.append(f"{route}: Kaggle monitor must not render on the homepage")
         if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" in html:
             errors.append(f"{route}: Kaggle monitor script must not load on the homepage")
+        if "https://github.com/Functionhx/magic-site-blueprint" not in html:
+            errors.append(f"{route}: public Magic site architecture link missing")
         for required_asset in (
             "/assets/img/prof_pic-480.webp",
             "/assets/img/prof_pic-800.webp",
+            "/assets/css/home.css",
             "/assets/js/admin-loader.js",
-            "/assets/js/lazy-publication-badges.js",
             "/assets/js/navigation-performance.js",
+            "/assets/css/site-preferences.css",
+            "/assets/js/site-preferences.js",
+            "/assets/css/owner-ui.css",
+            "/assets/js/owner-ui.js",
         ):
             if required_asset not in html:
                 errors.append(f"{route}: missing optimized asset {required_asset}")
@@ -326,6 +336,9 @@ def main() -> int:
         ):
             if eager_asset in html:
                 errors.append(f"{route}: performance-sensitive asset loads eagerly: {eager_asset}")
+        for removed_home_content in ("精选论文", "selected publications", "555 your office number"):
+            if removed_home_content in html:
+                errors.append(f"{route}: removed homepage content still renders: {removed_home_content!r}")
 
     for route in ("/blog/2026/batch-lio/", "/en/blog/2026/batch-lio/"):
         html = route_file(site, route).read_text(encoding="utf-8")
@@ -369,7 +382,7 @@ def main() -> int:
         if arc_agi_2_remote_cover in html:
             errors.append(f"{route}: Kaggle Agent cover must be served locally")
 
-    for route in ("/spark/", "/en/spark/"):
+    for route in ("/spark/",):
         parser = parsed_pages.get(route)
         if not parser:
             continue
@@ -383,6 +396,7 @@ def main() -> int:
             "site-spark-writer-body-zh",
             "site-spark-writer-body-en",
             "site-spark-writer-translate",
+            "site-spark-writer-announce",
             "site-spark-writer-published",
             "site-spark-writer-publish",
         }.difference(parser.ids)
@@ -391,6 +405,13 @@ def main() -> int:
                 f"{route}: direct Spark writer controls missing "
                 f"{sorted(missing_writer_ids)}"
             )
+    english_spark = parsed_pages.get("/en/spark/")
+    if english_spark and {
+        "site-spark-create",
+        "site-spark-drafts",
+        "site-spark-writer",
+    }.intersection(english_spark.ids):
+        errors.append("/en/spark/: English reading mirror must not expose Spark authoring")
 
     article_sources = {
         "/blog/2026/embodied-ai-control-story/": (
@@ -447,15 +468,23 @@ def main() -> int:
         parser = parsed_pages.get(route)
         if not parser:
             continue
-        missing_editor_ids = {
-            "site-inline-editor-toggle",
-            "site-inline-editor",
-            "site-inline-editor-body",
-            "site-inline-editor-commit",
-            "site-inline-editor-auth-remember",
-        }.difference(parser.ids)
-        if missing_editor_ids:
-            errors.append(f"{route}: inline editor controls missing {sorted(missing_editor_ids)}")
+        if route == "/":
+            missing_editor_ids = {
+                "site-author-menu",
+                "site-inline-editor-toggle",
+                "site-inline-editor",
+                "site-inline-editor-body",
+                "site-inline-editor-commit",
+                "site-inline-editor-auth-remember",
+                "site-content-creator",
+                "site-content-creator-title-zh",
+                "site-content-creator-cover",
+                "site-content-creator-commit",
+            }.difference(parser.ids)
+            if missing_editor_ids:
+                errors.append(f"{route}: inline editor controls missing {sorted(missing_editor_ids)}")
+        elif {"site-inline-editor", "site-content-creator", "site-author-menu"}.intersection(parser.ids):
+            errors.append(f"{route}: English reading mirror must not render authoring controls")
         external_editors = {
             "https://app.pagescms.org/",
             "https://github.dev/Functionhx/functionhx.github.io",
@@ -483,6 +512,12 @@ def main() -> int:
         "assets/js/magic-search-loader.js",
         "assets/js/magic-search.js",
         "assets/css/media-embeds.css",
+        "assets/css/site-preferences.css",
+        "assets/js/site-preferences.js",
+        "assets/css/owner-ui.css",
+        "assets/js/owner-ui.js",
+        "assets/css/content-creator.css",
+        "assets/js/content-creator.js",
     ):
         if not (site / asset).is_file():
             errors.append(f"/{asset}: authoring asset missing")
@@ -556,12 +591,14 @@ def main() -> int:
 
     chinese_nav = " ".join(parsed_pages.get("/", PageParser()).nav_text)
     english_nav = " ".join(parsed_pages.get("/en/", PageParser()).nav_text)
-    for label in ("关于", "EN"):
+    for label in ("关于",):
         if label not in chinese_nav:
             errors.append(f"/: navigation label {label!r} missing")
-    for label in ("about", "中"):
+    for label in ("about",):
         if label not in english_nav:
             errors.append(f"/en/: navigation label {label!r} missing")
+    if "ctrl k" in chinese_nav.lower() or "ctrl k" in english_nav.lower():
+        errors.append("navigation must show only the compact search icon")
     if "更多" in chinese_nav:
         errors.append("/: collapsed more navigation must not render")
     if "more" in english_nav:

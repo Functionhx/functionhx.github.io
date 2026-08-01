@@ -19,7 +19,7 @@
   {% assign writer_eyebrow = 'SPARK · DIRECT WRITING' %}
   {% assign writer_new_heading = 'A new Spark' %}
   {% assign writer_edit_heading = 'Edit this Spark' %}
-  {% assign writer_subtitle = 'Write first. Your browser keeps an encrypted autosave; GitHub sign-in is only needed to open the private vault.' %}
+  {% assign writer_subtitle = 'Write first. Private saves use GitHub owner verification, an independent passphrase, and a passkey.' %}
   {% assign writer_zh_tab = '中文' %}
   {% assign writer_en_tab = 'English' %}
   {% assign writer_title_zh = 'Chinese title' %}
@@ -41,10 +41,12 @@
   {% assign writer_date = 'Date and time' %}
   {% assign writer_slug = 'URL slug' %}
   {% assign writer_comments = 'Enable GitHub comments' %}
+  {% assign writer_announce = 'Also show in homepage activity' %}
+  {% assign writer_announce_note = 'Optional for Spark. Regular notes stay out of the homepage by default.' %}
   {% assign writer_public = 'Public on website' %}
-  {% assign writer_public_note = 'Off by default. Private entries are encrypted in the owner-only vault and never enter the public site repository.' %}
+  {% assign writer_public_note = 'Off by default. Private entries are encrypted in this browser before the server receives them.' %}
   {% assign writer_message = 'Commit message' %}
-  {% assign writer_connect = 'Sign in with GitHub' %}
+  {% assign writer_connect = 'Unlock private vault' %}
   {% assign writer_publish = 'Save Spark' %}
   {% assign writer_discard = 'Discard draft' %}
   {% assign writer_translate = 'Translate Chinese with DeepSeek' %}
@@ -52,14 +54,14 @@
   {% assign writer_close = 'Close writer' %}
   {% assign writer_idle = 'Start writing. Changes will be encrypted and saved on this device automatically.' %}
 {% else %}
-  {% assign writer_eyebrow = '闪耀 · 原位写作' %}
-  {% assign writer_new_heading = '写一条新的闪耀' %}
-  {% assign writer_edit_heading = '编辑这条闪耀' %}
-  {% assign writer_subtitle = '先直接写。浏览器会加密随写随存；打开私密库时才需要登录 GitHub。' %}
+  {% assign writer_eyebrow = 'SPARK · 原位写作' %}
+  {% assign writer_new_heading = '写一条新的 Spark' %}
+  {% assign writer_edit_heading = '编辑这条 Spark' %}
+  {% assign writer_subtitle = '中文写完即可保存；私密稿会经过站长身份、独立口令与通行密钥三重保护。' %}
   {% assign writer_zh_tab = '中文' %}
-  {% assign writer_en_tab = 'English' %}
+  {% assign writer_en_tab = 'English · 可选' %}
   {% assign writer_title_zh = '中文标题' %}
-  {% assign writer_title_en = '英文标题' %}
+  {% assign writer_title_en = '英文标题（可选）' %}
   {% assign writer_title_zh_placeholder = '写下标题' %}
   {% assign writer_title_en_placeholder = 'Write the English title' %}
   {% assign writer_summary_zh = '中文摘要（可选）' %}
@@ -67,7 +69,7 @@
   {% assign writer_summary_zh_placeholder = '留空时自动取正文开头' %}
   {% assign writer_summary_en_placeholder = 'Uses the opening of the body when left blank' %}
   {% assign writer_body_zh = '中文正文' %}
-  {% assign writer_body_en = '英文正文' %}
+  {% assign writer_body_en = '英文正文（可选）' %}
   {% assign writer_body_zh_placeholder = '从这里开始写……' %}
   {% assign writer_body_en_placeholder = 'Start writing here…' %}
   {% assign writer_settings = '发布设置' %}
@@ -77,14 +79,16 @@
   {% assign writer_date = '日期与时间' %}
   {% assign writer_slug = '网址短名' %}
   {% assign writer_comments = '开启 GitHub 评论' %}
+  {% assign writer_announce = '同时显示在首页动态' %}
+  {% assign writer_announce_note = 'Spark 默认不打扰首页；只有值得公开记录时再勾选。' %}
   {% assign writer_public = '公开到网站' %}
-  {% assign writer_public_note = '默认关闭。私密内容只以密文进入站长专属私密库，不会写入公开网站仓库。' %}
+  {% assign writer_public_note = '默认关闭。私密内容先在浏览器加密，服务器和私有仓库只接收密文。' %}
   {% assign writer_message = '提交说明' %}
-  {% assign writer_connect = 'GitHub 登录' %}
-  {% assign writer_publish = '保存闪耀' %}
+  {% assign writer_connect = '解锁私密库' %}
+  {% assign writer_publish = '保存 Spark' %}
   {% assign writer_discard = '丢弃草稿' %}
   {% assign writer_translate = 'DeepSeek 翻译英文' %}
-  {% assign writer_translate_note = '使用翻译者自己的 API Key；只有 @Functionhx 可以发布。' %}
+  {% assign writer_translate_note = '可稍后使用自己的 API Key 生成英文阅读镜像；不会阻塞中文发布。' %}
   {% assign writer_close = '关闭写作区' %}
   {% assign writer_idle = '直接开始写，修改会加密保存在这台设备中。' %}
 {% endif %}
@@ -266,6 +270,13 @@
         <input id="site-spark-writer-comments" type="checkbox" checked>
         <span>{{ writer_comments }}</span>
       </label>
+      <label class="site-spark-writer__check site-spark-writer__announce">
+        <input id="site-spark-writer-announce" type="checkbox">
+        <span>
+          <strong>{{ writer_announce }}</strong>
+          <small>{{ writer_announce_note }}</small>
+        </span>
+      </label>
       <label class="site-spark-writer__check site-spark-writer__visibility">
         <input id="site-spark-writer-published" type="checkbox">
         <span>
@@ -287,7 +298,7 @@
         {{ writer_discard }}
       </button>
       <button id="site-spark-writer-connect" class="site-spark-writer__button site-spark-writer__button--quiet" type="button">
-        <i class="fa-brands fa-github" aria-hidden="true"></i>
+        <i class="fa-solid fa-key" aria-hidden="true"></i>
         <span>{{ writer_connect }}</span>
       </button>
       <button id="site-spark-writer-publish" class="site-spark-writer__button site-spark-writer__button--primary" type="button">

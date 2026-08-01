@@ -1,11 +1,13 @@
 <!doctype html>
 {% assign page_lang = page.lang | default: 'zh' %}
 {% assign spark_writer_enabled = false %}
-{% if page.translation_key == 'spark' %}
+{% if page_lang != 'en' and page.translation_key == 'spark' %}
   {% assign spark_writer_enabled = true %}
 {% elsif page.path contains '_posts/' %}
-  {% if page.kind == 'note' or page.kind == 'log' %}
-    {% assign spark_writer_enabled = true %}
+  {% if page_lang != 'en' %}
+    {% if page.kind == 'note' or page.kind == 'log' %}
+      {% assign spark_writer_enabled = true %}
+    {% endif %}
   {% endif %}
 {% endif %}
 {% assign editor_source_path = page.path %}
@@ -32,6 +34,11 @@
       <meta http-equiv="refresh" content="3; url={{ redirect }}">
     {% endif %}
     {% include head.liquid %}
+    {% include site-preferences.liquid %}
+    {% include owner-ui.liquid %}
+    {% if page.home %}
+      <link rel="stylesheet" href="{{ '/assets/css/home.css' | relative_url | bust_file_cache }}">
+    {% endif %}
     {% if spark_writer_enabled %}
       <link rel="stylesheet" href="{{ '/assets/css/spark-writer.css' | relative_url }}">
     {% endif %}
@@ -93,6 +100,10 @@
     class="{% if site.navbar_fixed %}fixed-top-nav{% endif %}"
     data-page-language="{{ page_lang }}"
   >
+    <div id="site-page-loader" class="site-page-loader" role="status" aria-live="polite">
+      <span class="site-page-loader__text" aria-hidden="true"></span>
+      <span class="sr-only">Thinking...</span>
+    </div>
     <!-- Header -->
     {% include header.liquid %}
     {% include site-settings.liquid %}
@@ -101,8 +112,9 @@
 
     <!-- Content -->
     <div class="container mt-5" role="main">
-      {% if editor_source_path %}
+      {% if editor_source_path and page_lang != 'en' %}
         {% include inline-editor.liquid source_path=editor_source_path %}
+        {% include content-creator.liquid %}
       {% endif %}
       <div id="site-rendered-content">
         {% if page.toc and page.toc.sidebar %}
@@ -142,6 +154,8 @@
     </div>
 
     <!-- JavaScripts -->
+    <script src="{{ '/assets/js/site-preferences.js' | relative_url | bust_file_cache }}"></script>
+    <script src="{{ '/assets/js/owner-ui.js' | relative_url | bust_file_cache }}"></script>
     {% include scripts.liquid %}
     <script src="{{ '/assets/js/navigation-performance.js' | relative_url | bust_file_cache }}"></script>
     <script src="{{ '/assets/js/admin-loader.js' | relative_url | bust_file_cache }}"></script>

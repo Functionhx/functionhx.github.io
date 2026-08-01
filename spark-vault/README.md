@@ -1,8 +1,9 @@
 # Functionhx Spark Vault
 
 Spark Vault is the owner-only service behind private Spark entries. The public
-Jekyll site contains only the browser client. Private content is encrypted
-before it is committed to the dedicated private repository. The service can
+Jekyll site contains only the browser client. Private content is encrypted in
+the browser and then encrypted again by the service before it is committed to
+the dedicated private repository. The service can
 run either as a small Node 20 process on the owner's Tencent Cloud server or as
 a Cloudflare Worker; the Node deployment is the production default.
 
@@ -14,8 +15,17 @@ a Cloudflare Worker; the Node deployment is the production default.
   `Functionhx/functionhx-spark-private` and
   `Functionhx/functionhx.github.io`, with repository Contents read/write and no
   unrelated permissions.
-- `MASTER_KEY_B64` wraps a separate random AES-256-GCM key for every Spark
-  record. Only ciphertext is written to the private repository.
+- The browser creates a random vault root key. An independent passphrase and a
+  WebAuthn PRF-capable passkey are combined to wrap it; neither factor is sent
+  to the service. The non-secret keyring contains only salts, a credential id,
+  and wrapped ciphertext.
+- Every private Spark receives a separate random AES-256-GCM data key. The
+  browser encrypts the complete bilingual value object and wraps that data key
+  with the in-memory vault root key. The root key is never persisted in browser
+  storage and disappears when the tab is reloaded or the vault is locked.
+- `MASTER_KEY_B64` supplies a second, server-side AES-256-GCM envelope. It is
+  defense in depth and supports migration from legacy version-1 records; it is
+  not sufficient to decrypt new zero-knowledge private content.
 - `SESSION_KEY_B64` seals the browser's opaque 30-day session. GitHub user
   access and refresh tokens remain encrypted inside that session and are never
   exposed to site JavaScript.
@@ -26,12 +36,21 @@ a Cloudflare Worker; the Node deployment is the production default.
 - Publishing writes one atomic Git commit containing the Chinese and English
   Markdown files. Making an entry private removes both public files in one
   recoverable Git commit.
-- A Chinese title and body are enough for a private save. The service refuses
-  publication until both Chinese and English titles and bodies are complete.
+- A Chinese title and body are enough for both a private save and publication.
+  When English is absent, publication creates the required English route as an
+  explicit translation-pending mirror.
+- The three-digit quick gate is a decoy, not an authentication factor. Entering
+  its configured decoy value renders local fake notes and makes no keyring or
+  notes API request. The real path still requires GitHub owner authorization,
+  the independent passphrase, and the passkey. Because browser source is
+  inspectable, the decoy must never be counted as security.
 
-An authorized browser can read the plaintext it requested. Protect the public
-site repository from unauthorized JavaScript changes and keep GitHub two-factor
-authentication enabled.
+An authorized page can read plaintext while the vault is unlocked. A malicious
+change to the public JavaScript could therefore steal data after unlock. Protect
+the public repository and deployment accounts with hardware-backed two-factor
+authentication, review every site deployment, and keep a strict Content
+Security Policy. No design is "unhackable"; this design removes plaintext from
+the server and repository while keeping a recoverable owner workflow.
 
 ## One-time setup
 
@@ -51,12 +70,26 @@ authentication enabled.
 3. Store `GITHUB_CLIENT_SECRET`, `SESSION_KEY_B64`, and `MASTER_KEY_B64` as
    encrypted runtime secrets. Generate each encryption key from 32 bytes of
    cryptographically secure randomness. Keep one offline backup of the master
-   key; losing it makes every private Spark unrecoverable.
-4. Deploy, verify `/health`, then put the resulting endpoint in
+   key while legacy records still exist.
+4. On the first real unlock, choose a unique passphrase of at least 16
+   characters and create the passkey. The browser downloads
+   `magic-spark-vault-recovery.json`. Move it to encrypted offline storage and
+   do not keep it in Downloads or a synced public folder. Anyone holding that
+   file can recover the vault root key.
+5. Deploy, verify `/health`, then put the resulting endpoint in
    `_config.yml` under `spark_vault.endpoint` and rebuild the public site.
 
-Never commit a GitHub client secret, session key, master key, OAuth token,
-decrypted Spark, or real local deployment configuration.
+Never reuse a GitHub SSH key as a Spark encryption key. Never commit a GitHub
+client secret, session key, master key, recovery package, OAuth token, decrypted
+Spark, or real local deployment configuration.
+
+## Legacy migration
+
+Version-1 records can still be opened with `MASTER_KEY_B64`. The browser wraps
+them in the zero-knowledge inner envelope the next time they are saved as
+private. Keep the old master key until every private record has been opened,
+re-saved, reopened after a fresh unlock, and recovered once from the offline
+package. Only then may the legacy decrypt path be retired.
 
 ## Tencent Cloud deployment
 
@@ -67,8 +100,9 @@ The production layout keeps the existing `fanyuchen.com.cn` Nginx site and its
 
 1. Add an A record for `vault.fanyuchen.com.cn` pointing to `82.157.7.183`, and
    allow inbound TCP 443 in the Tencent Cloud security group.
-2. Copy `worker.mjs` and `server.mjs` to `/opt/functionhx-spark-vault`, create a
-   locked system user named `spark-vault`, and install the example systemd unit.
+2. Copy `worker.mjs`, `unlock-page.mjs`, and `server.mjs` to
+   `/opt/functionhx-spark-vault`, create a locked system user named
+   `spark-vault`, and install the example systemd unit.
 3. Copy `deploy/functionhx-spark-vault.env.example` to
    `/etc/functionhx-spark-vault.env`, replace every placeholder on the server,
    and set the file mode to `0600` owned by root.
@@ -88,8 +122,11 @@ Run from the repository root:
 ```bash
 npm run test:spark-vault
 npm run test:spark-vault-server
+npm run test:spark-vault-unlock
 ```
 
 The test uses fake repositories and fake credentials. It verifies OAuth owner
 checks, origin checks, Chinese-only private drafts, ciphertext-only storage,
-bilingual publication, unpublication, and optimistic conflict protection.
+bilingual publication, unpublication, optimistic conflict protection, the
+passphrase/passkey keyring, offline recovery wrapping, and the no-network decoy
+path.

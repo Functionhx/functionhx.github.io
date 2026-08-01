@@ -7,7 +7,6 @@
   const authDialog = document.getElementById("site-inline-editor-auth");
 
   if (!root || !toggle || !renderedContent || !authDialog) return;
-  if ((toggle.dataset.editorAction || "").startsWith("spark-")) return;
 
   const repository = root.dataset.repository;
   const owner = root.dataset.owner;
@@ -40,7 +39,7 @@
         draftFailed: "This browser could not save the local draft.",
         draftRestored: "Recovered a browser draft. Nothing has been sent to GitHub.",
         draftSaved: "Draft saved in this browser. Nothing has been sent to GitHub.",
-        loading: "Loading the Markdown source from GitHub…",
+        loading: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
         loadingFailed: "The Markdown source could not be loaded from GitHub.",
         noChanges: "No uncommitted changes.",
         saving: "Creating a commit on GitHub…",
@@ -66,7 +65,7 @@
         draftFailed: "这个浏览器无法保存本地草稿。",
         draftRestored: "已恢复浏览器草稿；内容尚未发送到 GitHub。",
         draftSaved: "草稿已保存在这个浏览器中；内容尚未发送到 GitHub。",
-        loading: "正在从 GitHub 载入 Markdown 源文件…",
+        loading: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
         loadingFailed: "无法从 GitHub 载入 Markdown 源文件。",
         noChanges: "当前没有尚未提交的修改。",
         saving: "正在 GitHub 上创建 Commit…",
@@ -122,9 +121,11 @@
   let previewTimer = 0;
   let previousScrollY = 0;
   let restorePromise = Promise.resolve(null);
+  let activeTrigger = toggle;
   const disconnectedLabel = elements.connect.querySelector("span")?.textContent.trim() || "GitHub";
 
   function setStatus(message, state = "") {
+    elements.status.removeAttribute("data-loading-placeholder");
     elements.status.textContent = message;
     if (state) elements.status.dataset.state = state;
     else delete elements.status.dataset.state;
@@ -418,7 +419,7 @@
   }
 
   async function loadSource() {
-    setStatus(strings.loading);
+    setStatus(window.functionhxSitePreferences?.getLoadingText?.() || strings.loading);
     setBusy(true);
     elements.form.hidden = true;
     try {
@@ -453,11 +454,11 @@
     }
   }
 
-  function openEditor() {
+  function openEditor(trigger = toggle) {
+    activeTrigger = trigger;
     previousScrollY = window.scrollY;
     root.hidden = false;
     document.body.classList.add("site-inline-editor-active");
-    toggle.setAttribute("aria-expanded", "true");
     root.scrollIntoView({ block: "start" });
     if (!editorLoaded) loadSource();
   }
@@ -466,9 +467,8 @@
     saveDraft(false);
     root.hidden = true;
     document.body.classList.remove("site-inline-editor-active");
-    toggle.setAttribute("aria-expanded", "false");
     window.requestAnimationFrame(() => window.scrollTo({ top: previousScrollY }));
-    toggle.focus();
+    if (activeTrigger && typeof activeTrigger.focus === "function") activeTrigger.focus();
   }
 
   function openAuthDialog(shouldCommit = false) {
@@ -625,7 +625,11 @@
     (showBody ? elements.body : elements.frontMatter).focus();
   }
 
-  toggle.addEventListener("click", openEditor);
+  document.addEventListener("click", (event) => {
+    const trigger = event.target.closest('[data-author-action="source-edit"]');
+    if (trigger) openEditor(trigger);
+  });
+  if (toggle.dataset.editorAction === "source-edit") toggle.addEventListener("click", () => openEditor(toggle));
   elements.close.addEventListener("click", closeEditor);
   elements.connect.addEventListener("click", handleConnectButton);
   elements.authCancel.addEventListener("click", () => {

@@ -20,9 +20,7 @@
       <tbody>
         <tr>
           <th scope="row" id="kmc-title">Kaggle</th>
-          <td class="text-right" id="kmc-time">
-            {% if current_lang == 'en' %}Loading…{% else %}载入中…{% endif %}
-          </td>
+          <td class="text-right" id="kmc-time" data-loading-placeholder>Thinking...</td>
         </tr>
         <tr>
           <th scope="row">CV Score</th>
@@ -84,6 +82,7 @@
     };
 
     const setUnavailable = () => {
+      element('kmc-time').removeAttribute('data-loading-placeholder');
       element('kmc-time').textContent = labels.unavailable;
       ['kmc-cv', 'kmc-lb', 'kmc-gap', 'kmc-quota'].forEach((id) => {
         element(id).textContent = '--';
@@ -96,6 +95,7 @@
         const response = await fetch(endpoint, { cache: 'no-cache' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
+        element('kmc-time').removeAttribute('data-loading-placeholder');
         element('kmc-title').textContent = data.competition_name || 'Kaggle';
 
         const updated = data.updated ? new Date(data.updated) : null;

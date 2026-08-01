@@ -9,15 +9,30 @@
   | concat: site.books
 %}
 {% assign translated_pages = translation_pool | where: 'translation_key', page.translation_key %}
-{% assign editor_action = 'source-edit' %}
-{% assign editor_controls = 'site-inline-editor' %}
-{% if page.translation_key == 'spark' %}
-  {% assign editor_action = 'spark-create' %}
-  {% assign editor_controls = 'site-spark-writer' %}
+{% assign author_context = 'page' %}
+{% if page.home %}
+  {% assign author_context = 'home' %}
+{% elsif page.translation_key == 'blog' %}
+  {% assign author_context = 'blog' %}
+{% elsif page.translation_key == 'tools' %}
+  {% assign author_context = 'tools' %}
+{% elsif page.translation_key == 'projects' %}
+  {% assign author_context = 'projects' %}
+{% elsif page.translation_key == 'spark' %}
+  {% assign author_context = 'spark' %}
+{% elsif page.translation_key == 'news' %}
+  {% assign author_context = 'news' %}
 {% elsif page.path contains '_posts/' %}
   {% if page.kind == 'note' or page.kind == 'log' %}
-    {% assign editor_action = 'spark-edit' %}
-    {% assign editor_controls = 'site-spark-writer' %}
+    {% assign author_context = 'spark-entry' %}
+  {% else %}
+    {% assign author_context = 'article-entry' %}
+  {% endif %}
+{% elsif page.path contains '_projects/' %}
+  {% if page.kind == 'tool' %}
+    {% assign author_context = 'tool-entry' %}
+  {% else %}
+    {% assign author_context = 'project-entry' %}
   {% endif %}
 {% endif %}
 {% if current_lang == 'en' %}
@@ -28,8 +43,8 @@
   {% assign search_label = 'Open search' %}
   {% assign settings_title = 'Site settings' %}
   {% assign settings_label = 'Manage navigation and create sections' %}
-  {% assign editor_title = 'Edit this page' %}
-  {% assign editor_label = 'Edit this page without leaving the site' %}
+  {% assign editor_title = 'Create and edit' %}
+  {% assign editor_label = 'Open the owner writing menu' %}
   {% assign theme_title = 'Change theme' %}
   {% assign theme_label = 'Change color theme' %}
 {% else %}
@@ -40,27 +55,10 @@
   {% assign search_label = '打开搜索' %}
   {% assign settings_title = '站点设置' %}
   {% assign settings_label = '管理栏目并新建栏目' %}
-  {% assign editor_title = '即时编辑' %}
-  {% assign editor_label = '不离开本站，直接编辑当前页面' %}
+  {% assign editor_title = '创作与编辑' %}
+  {% assign editor_label = '打开站长创作菜单' %}
   {% assign theme_title = '切换主题' %}
   {% assign theme_label = '切换日间或夜间主题' %}
-{% endif %}
-{% if editor_action == 'spark-create' %}
-  {% if current_lang == 'en' %}
-    {% assign editor_title = 'New Spark' %}
-    {% assign editor_label = 'Write a new Spark entry here' %}
-  {% else %}
-    {% assign editor_title = '新建闪耀' %}
-    {% assign editor_label = '直接在这里写一条新的闪耀' %}
-  {% endif %}
-{% elsif editor_action == 'spark-edit' %}
-  {% if current_lang == 'en' %}
-    {% assign editor_title = 'Edit this Spark' %}
-    {% assign editor_label = 'Edit this Spark entry in place' %}
-  {% else %}
-    {% assign editor_title = '编辑这条闪耀' %}
-    {% assign editor_label = '在原处直接编辑这条闪耀' %}
-  {% endif %}
 {% endif %}
 {% assign language_page = translated_pages | where: 'lang', target_lang | first %}
 {% unless language_page %}
@@ -287,11 +285,6 @@
             {% endif %}
           {% endfor %}
           <li class="nav-item">
-            <a class="nav-link" href="{{ language_page.url | relative_url }}" lang="{% if target_lang == 'en' %}en{% else %}zh-CN{% endif %}">
-              {{- language_label -}}
-            </a>
-          </li>
-          <li class="nav-item">
             <button
               id="site-settings-toggle"
               type="button"
@@ -313,47 +306,97 @@
               </style>
             </noscript>
           </li>
-          {% if editor_source_path %}
-            <li class="nav-item">
+          {% if editor_source_path and current_lang != 'en' %}
+            <li class="nav-item site-author-nav owner-only-control">
               <button
                 id="site-inline-editor-toggle"
                 type="button"
                 title="{{ editor_title }}"
                 aria-label="{{ editor_label }}"
-                aria-controls="{{ editor_controls }}"
+                aria-controls="site-author-menu"
                 aria-expanded="false"
-                data-editor-action="{{ editor_action }}"
+                data-author-context="{{ author_context }}"
               >
                 <span class="nav-link">
                   <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                   <span class="sr-only">{{ editor_title }}</span>
                 </span>
               </button>
+              <div id="site-author-menu" class="site-author-menu" role="menu" hidden>
+                <p>创作</p>
+                {% if author_context == 'home' %}
+                  <button type="button" role="menuitem" data-author-action="article-create">
+                    <i class="fa-regular fa-file-lines" aria-hidden="true"></i><span>新建文章</span>
+                  </button>
+                  <a href="{{ '/spark/?compose=1' | relative_url }}" role="menuitem">
+                    <i class="fa-solid fa-bolt" aria-hidden="true"></i><span>新建 Spark</span>
+                  </a>
+                  <button type="button" role="menuitem" data-author-action="tool-create">
+                    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i><span>新建工具</span>
+                  </button>
+                  <button type="button" role="menuitem" data-author-action="activity-create">
+                    <i class="fa-regular fa-bell" aria-hidden="true"></i><span>新增动态</span>
+                  </button>
+                {% elsif author_context == 'blog' or author_context == 'article-entry' %}
+                  <button type="button" role="menuitem" data-author-action="article-create">
+                    <i class="fa-regular fa-file-lines" aria-hidden="true"></i><span>新建文章</span>
+                  </button>
+                {% elsif author_context == 'tools' or author_context == 'tool-entry' %}
+                  <button type="button" role="menuitem" data-author-action="tool-create">
+                    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i><span>新建工具</span>
+                  </button>
+                {% elsif author_context == 'projects' or author_context == 'project-entry' %}
+                  <button type="button" role="menuitem" data-author-action="project-create">
+                    <i class="fa-solid fa-diagram-project" aria-hidden="true"></i><span>新建项目</span>
+                  </button>
+                {% elsif author_context == 'spark' or author_context == 'spark-entry' %}
+                  <button type="button" role="menuitem" data-author-action="spark-create">
+                    <i class="fa-solid fa-bolt" aria-hidden="true"></i><span>新建 Spark</span>
+                  </button>
+                  <button type="button" role="menuitem" data-author-action="spark-drafts">
+                    <i class="fa-solid fa-lock" aria-hidden="true"></i><span>私密草稿</span>
+                  </button>
+                {% elsif author_context == 'news' %}
+                  <button type="button" role="menuitem" data-author-action="activity-create">
+                    <i class="fa-regular fa-bell" aria-hidden="true"></i><span>新增动态</span>
+                  </button>
+                {% endif %}
+                {% if author_context == 'spark-entry' %}
+                  {% assign spark_zh_page = translated_pages | where: 'lang', 'zh' | first %}
+                  {% assign spark_en_page = translated_pages | where: 'lang', 'en' | first %}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    data-author-action="spark-edit"
+                    data-translation-key="{{ page.translation_key | escape }}"
+                    data-source-path-zh="{{ spark_zh_page.path | escape }}"
+                    data-source-path-en="{{ spark_en_page.path | escape }}"
+                  >
+                    <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i><span>编辑当前 Spark</span>
+                  </button>
+                {% else %}
+                  <button type="button" role="menuitem" data-author-action="source-edit">
+                    <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
+                    <span>
+                      {% if author_context == 'article-entry' %}
+                        编辑当前文章
+                      {% elsif author_context == 'tool-entry' %}
+                        编辑当前工具
+                      {% elsif author_context == 'project-entry' %}
+                        编辑当前项目
+                      {% else %}
+                        编辑当前页面
+                      {% endif %}
+                    </span>
+                  </button>
+                {% endif %}
+              </div>
               <noscript>
                 <style>
-                  #site-inline-editor-toggle {
-                    display: none;
+                  .site-author-nav {
+                    display: none !important;
                   }
                 </style>
-                {% if editor_action == 'spark-create' %}
-                  <a
-                    class="nav-link"
-                    href="https://github.com/Functionhx/functionhx.github.io/tree/main/_posts"
-                    title="{{ editor_title }}"
-                    aria-label="{{ editor_label }}"
-                  >
-                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-                  </a>
-                {% else %}
-                  <a
-                    class="nav-link"
-                    href="https://github.com/Functionhx/functionhx.github.io/edit/main/{{ editor_source_path }}"
-                    title="{{ editor_title }}"
-                    aria-label="{{ editor_label }}"
-                  >
-                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-                  </a>
-                {% endif %}
               </noscript>
             </li>
           {% endif %}
@@ -368,7 +411,7 @@
                 aria-haspopup="dialog"
                 aria-controls="magic-search-dialog"
               >
-                <span class="nav-link">ctrl k <i class="fa-solid fa-magnifying-glass"></i></span>
+                <span class="nav-link"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
               </a>
             </li>
           {% endif %}

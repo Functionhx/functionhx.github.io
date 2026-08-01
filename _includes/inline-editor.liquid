@@ -2,7 +2,7 @@
 {% assign editor_source_path = include.source_path | default: page.path %}
 {% if editor_lang == 'en' %}
   {% assign editor_heading = 'Edit this page' %}
-  {% assign editor_loading = 'Loading the Markdown source from GitHub…' %}
+  {% assign editor_loading = 'Thinking...' %}
   {% assign editor_title_label = 'Title' %}
   {% assign editor_description_label = 'Summary' %}
   {% assign editor_published_label = 'Published' %}
@@ -28,7 +28,7 @@
   {% assign editor_auth_verify = 'Verify and connect' %}
 {% else %}
   {% assign editor_heading = '即时编辑当前页面' %}
-  {% assign editor_loading = '正在从 GitHub 载入 Markdown 源文件…' %}
+  {% assign editor_loading = 'Thinking...' %}
   {% assign editor_title_label = '标题' %}
   {% assign editor_description_label = '摘要' %}
   {% assign editor_published_label = '公开发布' %}
@@ -94,7 +94,7 @@
     </div>
   </header>
 
-  <p id="site-inline-editor-status" class="site-inline-editor__status" role="status" aria-live="polite">
+  <p id="site-inline-editor-status" class="site-inline-editor__status" role="status" aria-live="polite" data-loading-placeholder>
     {{ editor_loading }}
   </p>
 

@@ -1,35 +1,27 @@
 let instance;
 
+const loadingText = () => window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...";
+
 const COPY = {
   zh: {
-    title: "Magic Search ✨",
     close: "关闭搜索",
-    placeholder: "搜索文章、闪耀、项目、工具与页面…",
-    all: "全部",
-    loading: "正在载入全站索引…",
-    ready: "输入关键词；结果会定位到对应小节。",
-    local: "本地全文检索",
+    placeholder: "搜索文章、Spark、项目、工具与页面…",
+    loading: "Thinking...",
+    ready: "输入关键词开始搜索。",
     semantic: "语义检索已合并",
     unavailable: "语义服务暂不可用，已保留本地全文结果。",
-    empty: "没有找到匹配内容。可以换一个关键词试试。",
-    recent: "最近内容",
+    empty: "没有找到相关内容",
     resultCount: (count) => `${count} 条结果`,
-    navigate: "打开",
   },
   en: {
-    title: "Magic Search ✨",
     close: "Close search",
     placeholder: "Search writing, Spark, projects, tools, and pages…",
-    all: "All",
-    loading: "Loading the site index…",
-    ready: "Type a query; results link to the matching section.",
-    local: "Local full-text search",
+    loading: "Thinking...",
+    ready: "Type to search.",
     semantic: "Semantic results merged",
     unavailable: "Semantic search is unavailable; local full-text results remain active.",
-    empty: "No matching content. Try another query.",
-    recent: "Recent content",
+    empty: "No results",
     resultCount: (count) => `${count} results`,
-    navigate: "Open",
   },
 };
 
@@ -69,7 +61,6 @@ class MagicSearch {
     this.copy = COPY[config.language];
     this.index = null;
     this.indexPromise = null;
-    this.scope = "all";
     this.lexicalResults = [];
     this.semanticResults = [];
     this.semanticTimer = 0;
@@ -81,24 +72,11 @@ class MagicSearch {
   buildDialog() {
     this.dialog = element("dialog", "magic-search");
     this.dialog.id = "magic-search-dialog";
-    this.dialog.setAttribute("aria-labelledby", "magic-search-title");
+    this.dialog.setAttribute("aria-label", this.copy.placeholder);
 
     const shell = element("div", "magic-search__shell");
-    const header = element("header", "magic-search__header");
-    const identity = element("div", "magic-search__identity");
-    const mark = element("span", "magic-search__mark", "ƒ");
-    mark.setAttribute("aria-hidden", "true");
-    const title = element("h2", "magic-search__title", this.copy.title);
-    title.id = "magic-search-title";
-    identity.append(mark, title);
-    const close = element("button", "magic-search__close", "×");
-    close.type = "button";
-    close.setAttribute("aria-label", this.copy.close);
-    close.addEventListener("click", () => this.dialog.close());
-    header.append(identity, close);
-
     const searchRow = element("div", "magic-search__query");
-    const searchIcon = element("span", "magic-search__query-icon", "⌕");
+    const searchIcon = element("span", "magic-search__query-icon");
     searchIcon.setAttribute("aria-hidden", "true");
     this.input = element("input", "magic-search__input");
     this.input.type = "search";
@@ -108,29 +86,18 @@ class MagicSearch {
     this.input.setAttribute("aria-label", this.copy.placeholder);
     this.input.addEventListener("input", () => this.handleInput());
     this.input.addEventListener("keydown", (event) => this.handleKeys(event));
-    searchRow.append(searchIcon, this.input);
+    const close = element("button", "magic-search__escape", "esc");
+    close.type = "button";
+    close.setAttribute("aria-label", this.copy.close);
+    close.addEventListener("click", () => this.dialog.close());
+    searchRow.append(searchIcon, this.input, close);
 
-    this.scopes = element("div", "magic-search__scopes");
-    this.scopes.setAttribute("aria-label", this.copy.all);
-    this.scopes.addEventListener("click", (event) => {
-      const button = event.target.closest("button[data-scope]");
-      if (!button) return;
-      this.scope = button.dataset.scope;
-      this.updateScopeButtons();
-      this.renderCurrent();
-    });
-
-    this.status = element("p", "magic-search__status", this.copy.loading);
+    this.status = element("p", "magic-search__status", loadingText());
     this.status.setAttribute("aria-live", "polite");
     this.results = element("ol", "magic-search__results");
     this.results.setAttribute("aria-label", this.copy.resultCount(0));
 
-    const footer = element("footer", "magic-search__footer");
-    const local = element("span", "", this.copy.local);
-    const keys = element("span", "", "↑ ↓  Enter  Esc");
-    footer.append(local, keys);
-
-    shell.append(header, searchRow, this.scopes, this.status, this.results, footer);
+    shell.append(searchRow, this.status, this.results);
     this.dialog.append(shell);
     this.dialog.addEventListener("click", (event) => {
       if (event.target === this.dialog) this.dialog.close();
@@ -154,40 +121,19 @@ class MagicSearch {
             throw new Error("incompatible search index");
           }
           this.index = index;
-          this.buildScopes();
           return index;
         });
     }
     return this.indexPromise;
   }
 
-  buildScopes() {
-    const sections = [...new Set(this.index.documents.map((document) => document.section))];
-    const labels = [this.copy.all, ...sections];
-    this.scopes.replaceChildren(
-      ...labels.map((label, index) => {
-        const button = element("button", "magic-search__scope", label);
-        button.type = "button";
-        button.dataset.scope = index === 0 ? "all" : label;
-        return button;
-      })
-    );
-    this.updateScopeButtons();
-  }
-
-  updateScopeButtons() {
-    for (const button of this.scopes.querySelectorAll("button[data-scope]")) {
-      const selected = button.dataset.scope === this.scope;
-      button.classList.toggle("is-active", selected);
-      button.setAttribute("aria-pressed", String(selected));
-    }
-  }
-
   async show(initialQuery = "") {
     if (!this.dialog.open) this.dialog.showModal();
     this.input.value = initialQuery;
     this.input.focus();
-    this.status.textContent = this.copy.loading;
+    this.results.replaceChildren();
+    this.dialog.classList.remove("has-results");
+    this.status.textContent = loadingText();
     await this.loadIndex();
     this.handleInput();
   }
@@ -207,7 +153,7 @@ class MagicSearch {
 
   searchLexically(rawQuery) {
     const query = normalize(rawQuery);
-    if (!query) return this.recentResults();
+    if (!query) return [];
 
     const tokens = tokenize(query);
     const chunkScores = new Map();
@@ -245,16 +191,6 @@ class MagicSearch {
       .map(([chunkIndex, score]) => ({ chunkIndex, score }))
       .sort((left, right) => right.score - left.score)
       .slice(0, 60);
-  }
-
-  recentResults() {
-    return this.index.documents
-      .map((document) => ({
-        chunkIndex: document.chunk_start,
-        score: Number(String(document.date || "").replaceAll("-", "")) || 0,
-      }))
-      .sort((left, right) => right.score - left.score)
-      .slice(0, 24);
   }
 
   async searchSemantically(query) {
@@ -303,11 +239,10 @@ class MagicSearch {
     for (const result of this.mergedResults()) {
       const chunk = this.index.chunks[result.chunkIndex];
       const document = this.index.documents[chunk.document];
-      if (this.scope !== "all" && document.section !== this.scope) continue;
       if (seenDocuments.has(chunk.document)) continue;
       seenDocuments.add(chunk.document);
       visible.push({ ...result, chunk, document });
-      if (visible.length === 12) break;
+      if (visible.length === 6) break;
     }
     return visible;
   }
@@ -315,12 +250,15 @@ class MagicSearch {
   renderCurrent(semanticSucceeded = false, semanticFailed = false) {
     const visible = this.visibleResults();
     const query = normalize(this.input.value);
-    this.activeResult = -1;
-    this.results.replaceChildren(...visible.map((result, index) => this.resultNode(result, index)));
+    this.activeResult = visible.length ? 0 : -1;
+    const nodes = visible.map((result, index) => this.resultNode(result, index));
+    if (query && !visible.length) nodes.push(element("li", "magic-search__empty", this.copy.empty));
+    this.results.replaceChildren(...nodes);
+    this.dialog.classList.toggle("has-results", Boolean(query));
     this.results.setAttribute("aria-label", this.copy.resultCount(visible.length));
 
-    if (!visible.length) this.status.textContent = this.copy.empty;
-    else if (!query) this.status.textContent = `${this.copy.recent} · ${this.copy.resultCount(visible.length)}`;
+    if (!query) this.status.textContent = this.copy.ready;
+    else if (!visible.length) this.status.textContent = this.copy.empty;
     else if (semanticSucceeded) this.status.textContent = `${this.copy.resultCount(visible.length)} · ${this.copy.semantic}`;
     else if (semanticFailed) this.status.textContent = `${this.copy.resultCount(visible.length)} · ${this.copy.unavailable}`;
     else this.status.textContent = this.copy.resultCount(visible.length);
@@ -331,14 +269,13 @@ class MagicSearch {
     const link = element("a", "magic-search__result-link");
     link.href = result.chunk.url;
     link.dataset.resultIndex = String(index);
+    link.classList.toggle("is-active", index === 0);
 
-    const chain = element("span", "magic-search__chain", result.chunk.chain.join(" → "));
     const title = element("strong", "magic-search__result-title", result.document.title);
-    const excerpt = element("span", "magic-search__excerpt", result.chunk.excerpt);
-    const meta = element("span", "magic-search__meta");
-    const details = [result.document.date, ...result.document.tags.slice(0, 3)].filter(Boolean).join(" · ");
-    meta.textContent = details || this.copy.navigate;
-    link.append(chain, title, excerpt, meta);
+    const path = result.chunk.chain.filter((part) => !(result.chunk.chain.length > 1 && part === result.document.title));
+    const source = [...path, result.document.date].filter(Boolean).join(" › ");
+    const chain = element("span", "magic-search__chain", source);
+    link.append(title, chain);
     item.append(link);
     return item;
   }
@@ -352,9 +289,9 @@ class MagicSearch {
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       this.activeResult = (this.activeResult - 1 + links.length) % links.length;
-    } else if (event.key === "Enter" && this.activeResult >= 0) {
+    } else if (event.key === "Enter") {
       event.preventDefault();
-      links[this.activeResult].click();
+      links[Math.max(this.activeResult, 0)].click();
       return;
     } else {
       return;

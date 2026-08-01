@@ -63,6 +63,7 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 await page.addInitScript(() => {
   window.functionhxDeploymentConfig = { maxWait: 2000, pollInterval: 25 };
+  window.localStorage.setItem("functionhx:owner-ui:remembered", "true");
 });
 
 await page.route("https://api.github.com/**", async (route) => {
@@ -164,6 +165,7 @@ await page.route("https://api.github.com/**", async (route) => {
 try {
   await page.goto(baseUrl, { waitUntil: "networkidle" });
   await page.locator("#site-inline-editor-toggle").click();
+  await page.locator('#site-author-menu [data-author-action="source-edit"]').click();
   await page.locator("#site-inline-editor-form").waitFor({ state: "visible" });
 
   assert.equal(await page.locator("body").evaluate((element) => element.classList.contains("site-inline-editor-active")), true);
@@ -243,10 +245,11 @@ try {
   await page.evaluate(() => window.localStorage.setItem("theme", "dark"));
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.reload({ waitUntil: "networkidle" });
-  await page.locator("#site-inline-editor-toggle").hover();
+  await page.locator("#site-inline-editor-toggle").click();
+  await page.locator('#site-author-menu [data-author-action="source-edit"]').hover();
   await page.waitForFunction(() => document.querySelector("#site-inline-editor-connect span")?.textContent.includes("退出"));
   assert.equal(identityChecks, 1, "a trusted device should reconnect without repeating identity verification");
-  await page.locator("#site-inline-editor-toggle").click();
+  await page.locator('#site-author-menu [data-author-action="source-edit"]').click();
   await page.locator("#site-inline-editor-form").waitFor({ state: "visible" });
   await page.locator("#site-inline-editor-preview-body p").waitFor({ state: "visible" });
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");

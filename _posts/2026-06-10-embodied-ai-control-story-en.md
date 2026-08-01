@@ -4,6 +4,7 @@ title: "Pure CS Is Turning an Embodied-AI Control Problem into a Funding Story"
 slug: embodied-ai-control-story
 date: 2026-06-10 15:19:40 +0800
 published: true
+announce: true
 description: A control-and-systems perspective on what gets lost when a pure-CS paradigm and the VLA narrative take the lead in embodied AI.
 permalink: /en/blog/2026/embodied-ai-control-story/
 lang: en

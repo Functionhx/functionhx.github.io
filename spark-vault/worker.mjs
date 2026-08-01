@@ -1,3 +1,5 @@
+import { createUnlockPage } from "./unlock-page.mjs";
+
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
@@ -6,6 +8,8 @@ const DEFAULT_GITHUB_WEB = "https://github.com";
 const DEFAULT_API_VERSION = "2026-03-10";
 const NOTE_DIRECTORY = "notes";
 const NOTE_SUFFIX = ".spark.json";
+const KEYRING_PATH = "vault/keyring.v2.json";
+const SEALED_VALUE_PREFIX = "functionhx:zk2:";
 const SESSION_LIFETIME_SECONDS = 30 * 24 * 60 * 60;
 const REFRESH_SKEW_SECONDS = 5 * 60;
 const MAX_BODY_LENGTH = 500_000;
@@ -441,7 +445,7 @@ function callbackPage(origin, sessionToken, user, returnPath) {
   const nonce = base64UrlEncode(randomBytes(18));
   const payload = JSON.stringify({ token: sessionToken, type: "functionhx:spark-vault-session", user });
   const script = `const payload=${payload};const target=${JSON.stringify(origin)};if(window.opener&&!window.opener.closed){window.opener.postMessage(payload,target);window.close()}else{window.location.replace(${JSON.stringify(fallback.toString())})}`;
-  const html = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>闪耀已解锁</title><style>body{font:16px/1.6 -apple-system,BlinkMacSystemFont,sans-serif;display:grid;min-height:100vh;place-items:center;margin:0;background:#fff;color:#222}main{max-width:28rem;padding:2rem;text-align:center}p{color:#666}</style><main><h1>闪耀已解锁</h1><p>正在返回个人主页，可以关闭这个窗口。</p></main><script nonce="${nonce}">${script}</script></html>`;
+  const html = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Spark 已解锁</title><style>body{font:16px/1.6 -apple-system,BlinkMacSystemFont,sans-serif;display:grid;min-height:100vh;place-items:center;margin:0;background:#fff;color:#222}main{max-width:28rem;padding:2rem;text-align:center}p{color:#666}</style><main><h1>Spark 已解锁</h1><p>正在返回个人主页，可以关闭这个窗口。</p></main><script nonce="${nonce}">${script}</script></html>`;
   return new Response(html, {
     headers: {
       "Cache-Control": "no-store",
@@ -499,13 +503,16 @@ function normalizeValues(input, id) {
   const localized = {};
   for (const language of ["zh", "en"]) {
     const requiredLanguage = language === "zh";
+    const candidateBody = String(values[language]?.body || "");
+    const bodyLimit = language === "zh" && candidateBody.startsWith(SEALED_VALUE_PREFIX) ? 800_000 : MAX_BODY_LENGTH;
     localized[language] = {
-      body: normalizedText(values[language]?.body, `${language} body`, MAX_BODY_LENGTH, requiredLanguage),
+      body: normalizedText(candidateBody, `${language} body`, bodyLimit, requiredLanguage),
       summary: normalizedText(values[language]?.summary, `${language} summary`, 1_000),
       title: normalizedText(values[language]?.title, `${language} title`, 200, requiredLanguage).trim(),
     };
   }
   return {
+    announce: values.announce === true,
     comments: values.comments !== false,
     date: String(values.date),
     en: localized.en,
@@ -602,7 +609,7 @@ async function saveEncryptedRecord(env, token, record, expectedSha = "", message
 }
 
 function noteSummary(record, sha) {
-  return {
+  const summary = {
     date: record.values.date,
     id: record.id,
     kind: record.values.kind,
@@ -611,6 +618,84 @@ function noteSummary(record, sha) {
     title: { en: record.values.en.title, zh: record.values.zh.title },
     updatedAt: record.updatedAt,
   };
+  const sealed = String(record.values?.zh?.body || "");
+  if (sealed.startsWith(SEALED_VALUE_PREFIX)) summary.sealed = sealed;
+  return summary;
+}
+
+function normalizeKeyring(input) {
+  if (!input || input.version !== 2 || input.algorithm !== "A256GCM+PBKDF2+WebAuthn-PRF") {
+    throw new HttpError(400, "The Spark Vault keyring format is invalid.", "invalid_keyring");
+  }
+  const requiredFields = [
+    "combine_salt",
+    "credential_id",
+    "passphrase_salt",
+    "prf_salt",
+    "recovery_iv",
+    "recovery_wrapped_root",
+    "wrap_iv",
+    "wrapped_root",
+  ];
+  const keyring = {
+    algorithm: input.algorithm,
+    combine_salt: "",
+    created_at: String(input.created_at || new Date().toISOString()).slice(0, 64),
+    credential_id: "",
+    iterations: Number(input.iterations),
+    passphrase_salt: "",
+    prf_salt: "",
+    recovery_iv: "",
+    recovery_wrapped_root: "",
+    version: 2,
+    wrap_iv: "",
+    wrapped_root: "",
+  };
+  if (!Number.isSafeInteger(keyring.iterations) || keyring.iterations < 310_000 || keyring.iterations > 2_000_000) {
+    throw new HttpError(400, "The Spark Vault key derivation cost is invalid.", "invalid_keyring");
+  }
+  for (const field of requiredFields) {
+    const value = String(input[field] || "");
+    if (!/^[A-Za-z0-9_-]{12,4096}$/.test(value)) {
+      throw new HttpError(400, "The Spark Vault keyring contains invalid key material.", "invalid_keyring");
+    }
+    keyring[field] = value;
+  }
+  return keyring;
+}
+
+async function loadKeyring(env, token) {
+  const remote = await readRepositoryFile(env, token, required(env, "PRIVATE_REPO"), branchFor(env, "private"), KEYRING_PATH, true);
+  if (!remote) return { keyring: null, sha: "" };
+  try {
+    return { keyring: normalizeKeyring(JSON.parse(remote.content)), sha: remote.sha };
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
+    throw new HttpError(422, "The Spark Vault keyring is not valid JSON.", "invalid_keyring");
+  }
+}
+
+async function saveKeyring(env, token, payload) {
+  const existing = await loadKeyring(env, token);
+  const expectedSha = normalizeSha(payload.expectedSha);
+  if (existing.sha && expectedSha !== existing.sha) {
+    throw new HttpError(409, "The Spark Vault keyring changed after it was opened.", "vault_conflict");
+  }
+  if (!existing.sha && expectedSha) {
+    throw new HttpError(409, "The Spark Vault keyring no longer exists.", "vault_conflict");
+  }
+  const keyring = normalizeKeyring(payload.keyring);
+  const result = await writeRepositoryFile(
+    env,
+    token,
+    required(env, "PRIVATE_REPO"),
+    branchFor(env, "private"),
+    KEYRING_PATH,
+    `${JSON.stringify(keyring, null, 2)}\n`,
+    existing.sha ? "vault: rotate zero-knowledge keyring" : "vault: initialize zero-knowledge keyring",
+    existing.sha
+  );
+  return { keyring, sha: result.content?.sha || "" };
 }
 
 async function listNotes(env, token) {
@@ -669,9 +754,19 @@ function jekyllDate(value) {
   return `${String(value).replace("T", " ")}:00 +0800`;
 }
 
+function publicLocalization(language, record) {
+  const localized = record.values[language];
+  if (language !== "en" || (localized.title.trim() && localized.body.trim())) return localized;
+  return {
+    body: `> English translation pending. [Read the Chinese source](/spark/${record.id}/).`,
+    summary: "English translation pending. Read the Chinese source.",
+    title: `Translation pending · ${record.values.zh.title.trim()}`,
+  };
+}
+
 function composePublicSource(language, record, path) {
   const values = record.values;
-  const localized = values[language];
+  const localized = publicLocalization(language, record);
   const description = localized.summary.trim() || plainSummary(localized.body);
   const permalink = language === "en" ? `/en/spark/${record.id}/` : `/spark/${record.id}/`;
   return {
@@ -682,6 +777,7 @@ function composePublicSource(language, record, path) {
       `slug: ${JSON.stringify(record.id)}`,
       `date: ${jekyllDate(values.date)}`,
       "published: true",
+      `announce: ${values.announce ? "true" : "false"}`,
       `description: ${JSON.stringify(description)}`,
       `permalink: ${permalink}`,
       `lang: ${language}`,
@@ -710,11 +806,9 @@ function publicPaths(record) {
   };
 }
 
-function assertBilingualComplete(record) {
-  for (const language of ["zh", "en"]) {
-    if (!record.values[language]?.title?.trim() || !record.values[language]?.body?.trim()) {
-      throw new HttpError(422, "Chinese and English titles and bodies are required before publishing.", "bilingual_required");
-    }
+function assertChineseComplete(record) {
+  if (!record.values.zh?.title?.trim() || !record.values.zh?.body?.trim()) {
+    throw new HttpError(422, "A Chinese title and body are required before publishing.", "chinese_required");
   }
 }
 
@@ -794,7 +888,7 @@ async function changeVisibility(env, token, id, payload, makePublic) {
   if (!makePublic && !loaded.record.values.published) {
     return { commit: null, note: { ...noteSummary(loaded.record, loaded.sha), public: loaded.record.public, values: loaded.record.values } };
   }
-  if (makePublic) assertBilingualComplete(loaded.record);
+  if (makePublic) assertChineseComplete(loaded.record);
   const message = normalizedText(payload.message, "commit message", 200);
   const publicResult = await commitPublicPair(env, token, loaded.record, !makePublic, message);
   loaded.record.values.published = makePublic;
@@ -826,6 +920,10 @@ async function handleApi(request, env) {
     payload = { authenticated: true, user: auth.session.user };
   } else if (parts.length === 1 && parts[0] === "logout" && request.method === "POST") {
     payload = { authenticated: false };
+  } else if (parts.length === 1 && parts[0] === "keyring" && request.method === "GET") {
+    payload = await loadKeyring(env, auth.accessToken);
+  } else if (parts.length === 1 && parts[0] === "keyring" && request.method === "PUT") {
+    payload = await saveKeyring(env, auth.accessToken, await readJson(request));
   } else if (parts.length === 1 && parts[0] === "notes" && request.method === "GET") {
     payload = { notes: await listNotes(env, auth.accessToken) };
   } else if (parts.length >= 2 && parts[0] === "notes") {
@@ -861,8 +959,9 @@ async function routeRequest(request, env) {
     required(env, "GITHUB_CLIENT_SECRET");
     decodeSecret(required(env, "SESSION_KEY_B64"), "SESSION_KEY_B64");
     decodeSecret(required(env, "MASTER_KEY_B64"), "MASTER_KEY_B64");
-    return jsonResponse({ ok: true, service: "functionhx-spark-vault", version: 1 }, 200, env, "", request);
+    return jsonResponse({ ok: true, service: "functionhx-spark-vault", version: 2 }, 200, env, "", request);
   }
+  if (request.method === "GET" && url.pathname === "/unlock") return createUnlockPage(siteOrigins(env));
   if (request.method === "GET" && url.pathname === "/auth/login") return handleLogin(request, env);
   if (request.method === "GET" && url.pathname === "/auth/callback") return handleCallback(request, env);
   if (url.pathname.startsWith("/api/")) return handleApi(request, env);
