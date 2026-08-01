@@ -162,6 +162,13 @@
         return;
       }
 
+      // Decrypting a remembered AES-GCM vault record is sufficient to restore
+      // this device's authoring UI. GitHub still validates every write, while
+      // the identity request below can revoke the local UI when the credential
+      // is explicitly invalid. A temporary GitHub/network outage must not make
+      // a trusted device lose its pencil on every page load.
+      window.functionhxOwnerUi?.setVerified?.(true, session.remembered === true);
+
       const response = await window.fetch("https://api.github.com/user", {
         cache: "no-store",
         credentials: "omit",
@@ -171,7 +178,7 @@
           "X-GitHub-Api-Version": "2022-11-28",
         },
       });
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         await window.functionhxGitHubAuth?.forget({ repository: "Functionhx/functionhx.github.io" });
         window.functionhxOwnerUi?.setVerified?.(false);
         return;
@@ -183,7 +190,7 @@
         window.functionhxOwnerUi?.setVerified?.(false);
         return;
       }
-      window.functionhxOwnerUi?.setVerified?.(true, true);
+      window.functionhxOwnerUi?.setVerified?.(true, session.remembered === true);
     } catch (error) {
       // A transient network or asset failure must not erase a valid encrypted
       // credential. The hint remains so a later navigation can retry quietly.

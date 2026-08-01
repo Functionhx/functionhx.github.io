@@ -106,7 +106,7 @@ try {
   await page.goto(baseUrl, { waitUntil: "networkidle" });
   await seedEncryptedOwnerVault(page, "valid-owner-token", { legacy: true });
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => document.documentElement.dataset.ownerRestore === "true");
+  await page.waitForFunction(() => document.documentElement.dataset.ownerVerified === "true");
   const restoringLayout = await page.evaluate(() => {
     const authorElement = document.querySelector(".site-author-nav");
     const author = authorElement.getBoundingClientRect();
@@ -121,11 +121,11 @@ try {
     };
   });
   assert.ok(restoringLayout.authorWidth > 0, "the remembered owner launcher should keep its stable geometry while identity is checked");
-  assert.equal(restoringLayout.visibility, "hidden");
+  assert.equal(restoringLayout.visibility, "visible", "a decrypted trusted-device launcher should be visible while GitHub refreshes its identity");
   assert.equal(restoringLayout.insideNavbar, false, "the author launcher must not consume a navigation item");
   assert.equal(restoringLayout.belowNavbar, true, "the author launcher should sit below the fixed navigation");
   releaseOwnerVerification();
-  await page.waitForFunction(() => document.documentElement.dataset.ownerVerified === "true");
+  await page.waitForLoadState("networkidle");
   const verifiedLayout = await page.evaluate(() => {
     const author = document.querySelector(".site-author-nav").getBoundingClientRect();
     const navbar = document.getElementById("navbar").getBoundingClientRect();
@@ -264,6 +264,63 @@ try {
   assert.equal(await settingsRestorePage.evaluate(() => window.localStorage.getItem("functionhx:owner-ui:vault-hint")), "true");
   await settingsRestoreContext.close();
 
+  for (const transientStatus of [403, 429, 503]) {
+    const transientRestoreContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const transientRestorePage = await transientRestoreContext.newPage();
+    let transientRestoreChecks = 0;
+    await transientRestorePage.route("https://api.github.com/user", async (route) => {
+      transientRestoreChecks += 1;
+      await route.fulfill({
+        body: JSON.stringify({ message: "GitHub temporarily unavailable" }),
+        contentType: "application/json",
+        status: transientStatus,
+      });
+    });
+    await transientRestorePage.goto(baseUrl, { waitUntil: "networkidle" });
+    await seedEncryptedOwnerVault(transientRestorePage, `transient-owner-token-${transientStatus}`);
+    await transientRestorePage.reload({ waitUntil: "networkidle" });
+    assert.equal(transientRestoreChecks, 1, `a remembered owner session should refresh its identity once after HTTP ${transientStatus}`);
+    assert.equal(await transientRestorePage.locator("html").getAttribute("data-owner-verified"), "true");
+    assert.equal(
+      await transientRestorePage.locator("#site-inline-editor-toggle").isVisible(),
+      true,
+      `HTTP ${transientStatus} must not hide the trusted-device pencil`
+    );
+    assert.equal(await transientRestorePage.evaluate(() => window.localStorage.getItem("functionhx:owner-ui:vault-hint")), "true");
+    await transientRestoreContext.close();
+  }
+
+  for (const transientStatus of [403, 503]) {
+    const transientSettingsContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const transientSettingsPage = await transientSettingsContext.newPage();
+    let transientSettingsChecks = 0;
+    await transientSettingsPage.route("https://api.github.com/user", async (route) => {
+      transientSettingsChecks += 1;
+      await route.fulfill({
+        body: JSON.stringify({ message: "GitHub temporarily unavailable" }),
+        contentType: "application/json",
+        status: transientStatus,
+      });
+    });
+    await transientSettingsPage.goto(baseUrl, { waitUntil: "networkidle" });
+    await seedEncryptedOwnerVault(transientSettingsPage, `transient-settings-owner-token-${transientStatus}`, { hint: false });
+    await transientSettingsPage.reload({ waitUntil: "networkidle" });
+    assert.equal(transientSettingsChecks, 0, "a vault without a hint should still avoid visitor-time GitHub requests");
+    await transientSettingsPage.locator("#site-settings-toggle").click();
+    await transientSettingsPage.locator("#site-settings-dialog").waitFor({ state: "visible" });
+    await transientSettingsPage.waitForFunction(() => document.querySelector("#site-settings-connect span")?.textContent === "退出 @Functionhx");
+    assert.equal(transientSettingsChecks, 1, `opening settings should refresh identity once after HTTP ${transientStatus}`);
+    await transientSettingsPage.locator("#site-settings-close").click();
+    await transientSettingsPage.locator("#site-settings-dialog").waitFor({ state: "hidden" });
+    assert.equal(await transientSettingsPage.locator("html").getAttribute("data-owner-verified"), "true");
+    assert.equal(
+      await transientSettingsPage.locator("#site-inline-editor-toggle").isVisible(),
+      true,
+      `closing settings after HTTP ${transientStatus} should leave the restored pencil visible`
+    );
+    await transientSettingsContext.close();
+  }
+
   const expiredContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const expiredPage = await expiredContext.newPage();
   let expiredChecks = 0;
@@ -279,6 +336,26 @@ try {
   assert.equal(await expiredPage.locator("html").getAttribute("data-owner-verified"), null);
   assert.equal(await expiredPage.locator("#site-inline-editor-toggle").isVisible(), false);
   await expiredContext.close();
+
+  const expiredSettingsContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const expiredSettingsPage = await expiredSettingsContext.newPage();
+  let expiredSettingsChecks = 0;
+  await expiredSettingsPage.route("https://api.github.com/user", async (route) => {
+    expiredSettingsChecks += 1;
+    await route.fulfill({ body: JSON.stringify({ message: "Bad credentials" }), contentType: "application/json", status: 401 });
+  });
+  await expiredSettingsPage.goto(baseUrl, { waitUntil: "networkidle" });
+  await seedEncryptedOwnerVault(expiredSettingsPage, "expired-settings-owner-token", { hint: false });
+  await expiredSettingsPage.reload({ waitUntil: "networkidle" });
+  await expiredSettingsPage.locator("#site-settings-toggle").click();
+  await expiredSettingsPage.locator("#site-settings-dialog").waitFor({ state: "visible" });
+  await expiredSettingsPage.waitForFunction(() => window.localStorage.getItem("functionhx:owner-ui:vault-hint") === null);
+  assert.equal(expiredSettingsChecks, 1, "settings should reject an explicitly invalid restored token once");
+  await expiredSettingsPage.locator("#site-settings-close").click();
+  await expiredSettingsPage.locator("#site-settings-dialog").waitFor({ state: "hidden" });
+  assert.equal(await expiredSettingsPage.locator("html").getAttribute("data-owner-verified"), null);
+  assert.equal(await expiredSettingsPage.locator("#site-inline-editor-toggle").isVisible(), false, "an explicit 401 must revoke the pencil");
+  await expiredSettingsContext.close();
 
   const visitorContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const visitorPage = await visitorContext.newPage();

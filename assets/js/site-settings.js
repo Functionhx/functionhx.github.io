@@ -533,28 +533,33 @@
       return session;
     }
 
+    // The encrypted device vault was written only after an owner/repository
+    // check. Restore the local authoring controls immediately, then refresh the
+    // identity in the background. GitHub remains the authority for every write;
+    // only an explicit authentication failure should revoke this local state.
+    setConnection(session);
+    window.functionhxOwnerUi?.setVerified?.(true, session.remembered === true);
+
     try {
       const user = await githubRequest("/user", { token: session.token });
       if (String(user.login || "").toLowerCase() !== owner.toLowerCase()) {
-        const error = new Error("The remembered token does not belong to @Functionhx.");
-        error.status = 403;
-        throw error;
+        await window.functionhxGitHubAuth?.forget({ repository }).catch(() => undefined);
+        setConnection(null);
+        window.functionhxOwnerUi?.setVerified?.(false);
+        return null;
       }
-      setConnection(session);
-      window.functionhxOwnerUi?.setVerified?.(true, session.remembered === true);
       return session;
     } catch (error) {
-      if (error.status === 401 || error.status === 403) {
+      if (error.status === 401) {
         await window.functionhxGitHubAuth?.forget({ repository }).catch(() => undefined);
         setConnection(null);
         window.functionhxOwnerUi?.setVerified?.(false);
         return null;
       }
 
-      // Keep a valid encrypted session available for a later retry when GitHub
-      // is temporarily unreachable, but never reveal author controls before
-      // the account identity has been confirmed on this page.
-      setConnection(session);
+      // Keep the locally restored author controls available for a later retry
+      // when GitHub is temporarily unreachable. Writes are still verified by
+      // their GitHub API requests.
       return session;
     }
   }
