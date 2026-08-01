@@ -3,8 +3,15 @@
 
   const repository = "Functionhx/functionhx.github.io";
   const vaultHintKey = "functionhx:owner-ui:vault-hint";
+  const launcherPositionKey = "functionhx:owner-ui:launcher-position:v1";
   const toggle = document.getElementById("site-inline-editor-toggle");
   const menu = document.getElementById("site-author-menu");
+  const launcher = toggle?.closest(".site-author-nav") || null;
+  const dragThreshold = 6;
+  let baseNavbarBottom = null;
+  let dragState = null;
+  let suppressNextPointerClick = false;
+  let resizeFrame = 0;
 
   // Legacy booleans were only visual hints and could be forged or become stale.
   // Owner-only controls now wait for the encrypted vault/auth flow to announce a
@@ -31,12 +38,191 @@
       document.documentElement.dataset.ownerVerified = "true";
       delete document.documentElement.dataset.ownerRestore;
       setVaultHint(remembered === true);
+      window.requestAnimationFrame(restoreLauncherPosition);
     } else {
       delete document.documentElement.dataset.ownerVerified;
       delete document.documentElement.dataset.ownerRestore;
       setVaultHint(false);
       closeMenu();
     }
+  }
+
+  function clamp(value, minimum, maximum) {
+    return Math.min(Math.max(value, minimum), maximum);
+  }
+
+  function readSafeAreaInsets() {
+    if (!document.body) return { bottom: 0, left: 0, right: 0, top: 0 };
+    const probe = document.createElement("div");
+    probe.setAttribute("aria-hidden", "true");
+    probe.style.cssText =
+      "position:fixed;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top,0px);padding-right:env(safe-area-inset-right,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px)";
+    document.body.append(probe);
+    const styles = window.getComputedStyle(probe);
+    const insets = {
+      bottom: Number.parseFloat(styles.paddingBottom) || 0,
+      left: Number.parseFloat(styles.paddingLeft) || 0,
+      right: Number.parseFloat(styles.paddingRight) || 0,
+      top: Number.parseFloat(styles.paddingTop) || 0,
+    };
+    probe.remove();
+    return insets;
+  }
+
+  function navbarBottom() {
+    const navbar = document.getElementById("navbar");
+    if (!navbar) return 0;
+    const navigationPanel = document.getElementById("navbarNav");
+    if (baseNavbarBottom == null || !navigationPanel?.classList.contains("show")) {
+      baseNavbarBottom = navbar.getBoundingClientRect().bottom;
+    }
+    return baseNavbarBottom;
+  }
+
+  function viewportBounds() {
+    const viewport = window.visualViewport;
+    const left = viewport?.offsetLeft || 0;
+    const top = viewport?.offsetTop || 0;
+    const width = viewport?.width || window.innerWidth;
+    const height = viewport?.height || window.innerHeight;
+    return { bottom: top + height, height, left, right: left + width, top, width };
+  }
+
+  function launcherConstraints() {
+    if (!launcher || !toggle) return null;
+    const rootFontSize = Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16;
+    const mobile = window.matchMedia("(max-width: 575.98px)").matches;
+    const edgeGap = rootFontSize * (mobile ? 0.65 : 0.75);
+    const navbarGap = rootFontSize * (mobile ? 0.4 : 0.55);
+    const safeArea = readSafeAreaInsets();
+    const viewport = viewportBounds();
+    const toggleRect = toggle.getBoundingClientRect();
+    const width = toggleRect.width || toggle.offsetWidth || rootFontSize * 2.6;
+    const height = toggleRect.height || toggle.offsetHeight || rootFontSize * 2.6;
+    const minimumX = viewport.left + Math.max(edgeGap, safeArea.left);
+    const minimumY = Math.max(navbarBottom() + navbarGap, viewport.top + safeArea.top + edgeGap);
+    const bottomInset = Math.max(edgeGap, safeArea.bottom);
+    const rightInset = Math.max(edgeGap, safeArea.right);
+    const maximumX = Math.max(minimumX, viewport.right - width - rightInset);
+    const maximumY = Math.max(minimumY, viewport.bottom - height - bottomInset);
+    return { bottomInset, height, maximumX, maximumY, minimumX, minimumY, rightInset, viewport, width };
+  }
+
+  function placeLauncher(left, top, constraints = launcherConstraints()) {
+    if (!launcher || !constraints) return;
+    const nextLeft = clamp(left, constraints.minimumX, constraints.maximumX);
+    const nextTop = clamp(top, constraints.minimumY, constraints.maximumY);
+    launcher.dataset.positioned = "true";
+    launcher.style.left = `${nextLeft.toFixed(2)}px`;
+    launcher.style.right = "auto";
+    launcher.style.top = `${nextTop.toFixed(2)}px`;
+  }
+
+  function readLauncherPosition() {
+    try {
+      const value = JSON.parse(window.localStorage.getItem(launcherPositionKey) || "null");
+      if (value?.version !== 1 || !Number.isFinite(value.x) || !Number.isFinite(value.y)) return null;
+      return { x: clamp(value.x, 0, 1), y: clamp(value.y, 0, 1) };
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function normalizedLauncherPosition(constraints = launcherConstraints()) {
+    if (!launcher || !constraints) return null;
+    const rect = launcher.getBoundingClientRect();
+    const horizontalRange = constraints.maximumX - constraints.minimumX;
+    const verticalRange = constraints.maximumY - constraints.minimumY;
+    return {
+      version: 1,
+      x: horizontalRange > 0 ? clamp((rect.left - constraints.minimumX) / horizontalRange, 0, 1) : 0,
+      y: verticalRange > 0 ? clamp((rect.top - constraints.minimumY) / verticalRange, 0, 1) : 0,
+    };
+  }
+
+  function saveLauncherPosition() {
+    const value = normalizedLauncherPosition();
+    if (!value) return;
+    try {
+      window.localStorage.setItem(launcherPositionKey, JSON.stringify(value));
+    } catch (_error) {
+      // Dragging still works when local storage is unavailable.
+    }
+  }
+
+  function restoreLauncherPosition() {
+    if (!launcher || !toggle || toggle.getBoundingClientRect().width === 0) return;
+    const saved = readLauncherPosition();
+    if (!saved) return;
+    const constraints = launcherConstraints();
+    if (!constraints) return;
+    placeLauncher(
+      constraints.minimumX + saved.x * (constraints.maximumX - constraints.minimumX),
+      constraints.minimumY + saved.y * (constraints.maximumY - constraints.minimumY),
+      constraints
+    );
+  }
+
+  function placeMenu() {
+    if (!launcher || !toggle || !menu || menu.hidden) return;
+    const constraints = launcherConstraints();
+    if (!constraints) return;
+    const toggleRect = toggle.getBoundingClientRect();
+    const rootFontSize = Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16;
+    const menuGap = rootFontSize * 0.5;
+    menu.style.maxHeight = "";
+    menu.style.maxWidth = "";
+    menu.style.minWidth = "";
+    const belowSpace = Math.max(0, constraints.viewport.bottom - constraints.bottomInset - toggleRect.bottom - menuGap);
+    const aboveSpace = Math.max(0, toggleRect.top - constraints.minimumY - menuGap);
+    const preferredHeight = Math.min(menu.scrollHeight, constraints.viewport.height * 0.7);
+    const placeAbove = belowSpace < preferredHeight && aboveSpace > belowSpace;
+    const availableHeight = placeAbove ? aboveSpace : belowSpace;
+    launcher.dataset.menuVertical = placeAbove ? "above" : "below";
+    menu.style.maxHeight = `${Math.max(0, Math.min(constraints.viewport.height * 0.7, availableHeight)).toFixed(2)}px`;
+
+    const menuWidth = menu.getBoundingClientRect().width;
+    const spaceToLeft = toggleRect.right - constraints.minimumX;
+    const spaceToRight = constraints.viewport.right - constraints.rightInset - toggleRect.left;
+    const alignRight = menuWidth <= spaceToLeft || spaceToLeft >= spaceToRight;
+    const availableWidth = Math.max(0, alignRight ? spaceToLeft : spaceToRight);
+    launcher.dataset.menuHorizontal = alignRight ? "right" : "left";
+    menu.style.maxWidth = `${availableWidth.toFixed(2)}px`;
+    menu.style.minWidth = `${Math.min(rootFontSize * 12.5, availableWidth).toFixed(2)}px`;
+  }
+
+  function moveLauncherWithKeyboard(event) {
+    if (!event.shiftKey || !["ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp", "Home"].includes(event.key)) return false;
+    event.preventDefault();
+    const constraints = launcherConstraints();
+    const rect = launcher?.getBoundingClientRect();
+    if (!constraints || !rect) return true;
+    closeMenu();
+    if (event.key === "Home") placeLauncher(constraints.maximumX, constraints.minimumY, constraints);
+    else {
+      const step = event.altKey ? 1 : 16;
+      const horizontal = event.key === "ArrowLeft" ? -step : event.key === "ArrowRight" ? step : 0;
+      const vertical = event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0;
+      placeLauncher(rect.left + horizontal, rect.top + vertical, constraints);
+    }
+    saveLauncherPosition();
+    return true;
+  }
+
+  function clampLauncherToViewport() {
+    if (!launcher || !toggle || toggle.getBoundingClientRect().width === 0) return;
+    const saved = readLauncherPosition();
+    if (saved) restoreLauncherPosition();
+    else if (launcher.dataset.positioned === "true") {
+      const rect = launcher.getBoundingClientRect();
+      placeLauncher(rect.left, rect.top);
+    }
+    placeMenu();
+  }
+
+  function scheduleViewportClamp() {
+    window.cancelAnimationFrame(resizeFrame);
+    resizeFrame = window.requestAnimationFrame(clampLauncherToViewport);
   }
 
   function menuItems() {
@@ -56,6 +242,7 @@
   function openMenu(focus = "") {
     if (!toggle || !menu) return;
     menu.hidden = false;
+    placeMenu();
     toggle.setAttribute("aria-expanded", "true");
     const items = menuItems();
     if (focus === "first") items[0]?.focus();
@@ -82,12 +269,76 @@
   }
 
   if (toggle && menu) {
+    toggle.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0 || event.isPrimary === false) return;
+      const rect = launcher?.getBoundingClientRect();
+      if (!rect) return;
+      dragState = {
+        active: false,
+        constraints: launcherConstraints(),
+        pointerId: event.pointerId,
+        startLeft: rect.left,
+        startTop: rect.top,
+        startX: event.clientX,
+        startY: event.clientY,
+      };
+      try {
+        toggle.setPointerCapture?.(event.pointerId);
+      } catch (_error) {
+        // Synthetic pointer events may not have a capturable active pointer.
+      }
+    });
+
+    toggle.addEventListener("pointermove", (event) => {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+      const deltaX = event.clientX - dragState.startX;
+      const deltaY = event.clientY - dragState.startY;
+      if (!dragState.active && Math.hypot(deltaX, deltaY) < dragThreshold) return;
+      if (!dragState.active) {
+        dragState.active = true;
+        launcher.dataset.dragging = "true";
+        closeMenu();
+      }
+      event.preventDefault();
+      placeLauncher(dragState.startLeft + deltaX, dragState.startTop + deltaY, dragState.constraints);
+    });
+
+    function finishDrag(event) {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+      const wasDragging = dragState.active;
+      dragState = null;
+      delete launcher.dataset.dragging;
+      try {
+        if (toggle.hasPointerCapture?.(event.pointerId)) toggle.releasePointerCapture(event.pointerId);
+      } catch (_error) {
+        // Pointer capture may already be gone after a cancellation.
+      }
+      if (!wasDragging) return;
+      event.preventDefault();
+      suppressNextPointerClick = event.type === "pointerup";
+      window.setTimeout(() => {
+        suppressNextPointerClick = false;
+      }, 0);
+      saveLauncherPosition();
+    }
+
+    toggle.addEventListener("pointerup", finishDrag);
+    toggle.addEventListener("pointercancel", finishDrag);
+    toggle.addEventListener("lostpointercapture", finishDrag);
+
     toggle.addEventListener("click", (event) => {
+      if (event.detail > 0 && suppressNextPointerClick) {
+        suppressNextPointerClick = false;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
       if (menu.hidden) openMenu(event.detail === 0 ? "first" : "");
       else closeMenu();
     });
 
     toggle.addEventListener("keydown", (event) => {
+      if (moveLauncherWithKeyboard(event)) return;
       if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
       event.preventDefault();
       openMenu(event.key === "ArrowUp" || event.key === "End" ? "last" : "first");
@@ -124,6 +375,11 @@
       if (event.key === "Escape" && !menu.hidden) closeMenu(true);
     });
   }
+
+  window.addEventListener("resize", scheduleViewportClamp, { passive: true });
+  window.addEventListener("orientationchange", scheduleViewportClamp, { passive: true });
+  window.visualViewport?.addEventListener("resize", scheduleViewportClamp, { passive: true });
+  window.requestAnimationFrame(restoreLauncherPosition);
 
   document.addEventListener(
     "click",

@@ -144,13 +144,130 @@ try {
   assert.equal(await page.evaluate(() => window.localStorage.getItem("functionhx:owner-ui:vault-hint")), "true");
 
   const authorToggle = page.locator("#site-inline-editor-toggle");
+  const launcherPositionKey = "functionhx:owner-ui:launcher-position:v1";
+  const beforeDrag = await authorToggle.boundingBox();
+  assert.ok(beforeDrag);
+  await page.mouse.move(beforeDrag.x + beforeDrag.width / 2, beforeDrag.y + beforeDrag.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(beforeDrag.x - 300, beforeDrag.y + 430, { steps: 8 });
+  await page.mouse.up();
+  const afterDrag = await authorToggle.boundingBox();
+  assert.ok(afterDrag);
+  assert.ok(Math.abs(afterDrag.x - beforeDrag.x) > 200, "the owner pencil should follow a pointer drag");
+  assert.ok(Math.abs(afterDrag.y - beforeDrag.y) > 300, "the owner pencil should move vertically with the pointer");
+  assert.equal(await page.locator("#site-author-menu").isHidden(), true, "dragging the pencil must not open its menu");
+  assert.equal(await authorToggle.getAttribute("aria-expanded"), "false");
+  const savedLauncherPosition = await page.evaluate((key) => JSON.parse(window.localStorage.getItem(key) || "null"), launcherPositionKey);
+  assert.equal(savedLauncherPosition.version, 1);
+  assert.ok(savedLauncherPosition.x >= 0 && savedLauncherPosition.x <= 1, "the stored horizontal position must be viewport-relative");
+  assert.ok(savedLauncherPosition.y >= 0 && savedLauncherPosition.y <= 1, "the stored vertical position must be viewport-relative");
+
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForFunction(() => document.documentElement.dataset.ownerVerified === "true");
+  const restoredLauncher = await authorToggle.boundingBox();
+  assert.ok(restoredLauncher);
+  assert.ok(Math.abs(restoredLauncher.x - afterDrag.x) < 2, "the pencil should restore its last horizontal position after a reload");
+  assert.ok(Math.abs(restoredLauncher.y - afterDrag.y) < 2, "the pencil should restore its last vertical position after a reload");
+  await authorToggle.click();
+  assert.equal(await page.locator("#site-author-menu").isVisible(), true, "a plain pointer click must still open the author menu");
+  await authorToggle.click();
+  assert.equal(await page.locator("#site-author-menu").isHidden(), true);
+  assert.equal(await authorToggle.evaluate((element) => getComputedStyle(element).touchAction), "none");
+
+  for (const [x, y] of [
+    [0, 0],
+    [1, 0],
+    [0, 1],
+    [1, 1],
+  ]) {
+    await page.evaluate(
+      ({ key, x, y }) => {
+        window.localStorage.setItem(key, JSON.stringify({ version: 1, x, y }));
+        window.dispatchEvent(new Event("resize"));
+      },
+      { key: launcherPositionKey, x, y }
+    );
+    await page.waitForTimeout(20);
+    await authorToggle.click();
+    const menuGeometry = await page.locator("#site-author-menu").evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const viewport = window.visualViewport;
+      const left = viewport?.offsetLeft || 0;
+      const top = viewport?.offsetTop || 0;
+      const right = left + (viewport?.width || window.innerWidth);
+      const bottom = top + (viewport?.height || window.innerHeight);
+      return { inside: rect.left >= left && rect.right <= right && rect.top >= top && rect.bottom <= bottom };
+    });
+    assert.equal(menuGeometry.inside, true, `the menu must stay on-screen when the pencil is at normalized position ${x},${y}`);
+    await authorToggle.click();
+  }
+
+  const beforeKeyboardMove = await authorToggle.boundingBox();
+  assert.ok(beforeKeyboardMove);
+  await authorToggle.focus();
+  await page.keyboard.press("Shift+ArrowLeft");
+  const afterKeyboardMove = await authorToggle.boundingBox();
+  assert.ok(afterKeyboardMove);
+  assert.ok(afterKeyboardMove.x < beforeKeyboardMove.x, "Shift+Arrow should let keyboard users move the pencil");
+  assert.equal(await page.locator("#site-author-menu").isHidden(), true, "keyboard movement must not open the menu");
+  await page.keyboard.press("Shift+Home");
+  const keyboardReset = await authorToggle.boundingBox();
+  assert.ok(keyboardReset);
+  assert.ok(keyboardReset.x > afterKeyboardMove.x, "Shift+Home should restore the pencil to its top-right home position");
+
+  for (const [pointerType, deltaX, deltaY] of [
+    ["pen", -48, 64],
+    ["touch", 36, 52],
+  ]) {
+    const beforeSyntheticDrag = await authorToggle.boundingBox();
+    assert.ok(beforeSyntheticDrag);
+    await authorToggle.evaluate(
+      (element, { deltaX, deltaY, pointerType }) => {
+        const rect = element.getBoundingClientRect();
+        const init = {
+          bubbles: true,
+          button: 0,
+          cancelable: true,
+          clientX: rect.left + rect.width / 2,
+          clientY: rect.top + rect.height / 2,
+          isPrimary: true,
+          pointerId: pointerType === "pen" ? 31 : 32,
+          pointerType,
+        };
+        element.dispatchEvent(new PointerEvent("pointerdown", init));
+        element.dispatchEvent(new PointerEvent("pointermove", { ...init, clientX: init.clientX + deltaX, clientY: init.clientY + deltaY }));
+        element.dispatchEvent(new PointerEvent("pointerup", { ...init, clientX: init.clientX + deltaX, clientY: init.clientY + deltaY }));
+      },
+      { deltaX, deltaY, pointerType }
+    );
+    const afterSyntheticDrag = await authorToggle.boundingBox();
+    assert.ok(afterSyntheticDrag);
+    assert.ok(
+      Math.abs(afterSyntheticDrag.x - beforeSyntheticDrag.x) > 20 || Math.abs(afterSyntheticDrag.y - beforeSyntheticDrag.y) > 20,
+      `${pointerType} Pointer Events should move the pencil`
+    );
+    assert.equal(await page.locator("#site-author-menu").isHidden(), true, `${pointerType} dragging must not open the menu`);
+  }
+
+  const beforeEdgeDrag = await authorToggle.boundingBox();
+  assert.ok(beforeEdgeDrag);
+  await page.mouse.move(beforeEdgeDrag.x + beforeEdgeDrag.width / 2, beforeEdgeDrag.y + beforeEdgeDrag.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(1278, 898, { steps: 8 });
+  await page.mouse.up();
+  const edgeLauncher = await authorToggle.boundingBox();
+  assert.ok(edgeLauncher);
+  assert.ok(edgeLauncher.x + edgeLauncher.width <= 1280, "dragging cannot place the pencil beyond the right viewport edge");
+  assert.ok(edgeLauncher.y + edgeLauncher.height <= 900, "dragging cannot place the pencil beyond the bottom viewport edge");
+
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(50);
   const mobileLauncher = await page.evaluate(() => {
     const launcher = document.querySelector(".site-author-nav").getBoundingClientRect();
     const navbar = document.getElementById("navbar").getBoundingClientRect();
     return {
       belowNavbar: launcher.top >= navbar.bottom,
-      insideViewport: launcher.left >= 0 && launcher.right <= window.innerWidth,
+      insideViewport: launcher.left >= 0 && launcher.right <= window.innerWidth && launcher.bottom <= window.innerHeight,
     };
   });
   assert.equal(mobileLauncher.belowNavbar, true);

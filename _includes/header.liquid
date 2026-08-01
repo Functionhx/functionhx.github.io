@@ -342,12 +342,16 @@
         type="button"
         title="{{ editor_title }}"
         aria-label="{{ editor_label }}"
+        aria-describedby="site-inline-editor-drag-hint"
         aria-controls="site-author-menu"
         aria-expanded="false"
         data-author-context="{{ author_context }}"
       >
         <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
         <span class="sr-only">{{ editor_title }}</span>
+        <span id="site-inline-editor-drag-hint" class="sr-only"
+          >可拖动并记住位置；也可按 Shift 加方向键移动，按 Shift 加 Home 恢复右上角；点按打开创作菜单</span
+        >
       </button>
       <div id="site-author-menu" class="site-author-menu" role="menu" hidden>
         <p>创作</p>
