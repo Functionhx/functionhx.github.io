@@ -26,6 +26,8 @@
   const strings = isEnglish
     ? {
         authFailed: "GitHub sign-in failed.",
+        unlockCanceled: "Private-vault unlock canceled; the draft remains safely encrypted on this device.",
+        unlockFailed: "Private-vault unlock failed.",
         authSuccess: "GitHub owner verified.",
         collision: "That URL slug already exists. Change it in Publishing settings.",
         commitConflict: "This Spark changed after you opened it. Reopen it before saving again.",
@@ -69,6 +71,8 @@
       }
     : {
         authFailed: "GitHub 登录失败。",
+        unlockCanceled: "已取消私密库解锁，草稿仍安全加密保存在此设备。",
+        unlockFailed: "私密库解锁失败。",
         authSuccess: "已验证 GitHub 站长身份。",
         collision: "这个网址短名已经存在，请在“发布设置”里换一个。",
         commitConflict: "这条 Spark 在打开后已经发生变化，请重新打开再保存。",
@@ -610,7 +614,8 @@
       setStatus(strings.vaultUnlocked, "success");
       return result;
     } catch (error) {
-      setStatus(`${strings.authFailed} ${error.message || ""}`.trim(), "error");
+      if (error.code === "unlock_canceled") setStatus(strings.unlockCanceled, "error");
+      else setStatus(`${strings.unlockFailed} ${error.message || ""}`.trim(), "error");
       return null;
     }
   }

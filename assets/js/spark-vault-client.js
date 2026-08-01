@@ -262,7 +262,10 @@
       let settled = false;
       const timeout = window.setTimeout(() => finish(new Error("Spark Vault unlock timed out.")), 3 * 60 * 1000);
       const closed = window.setInterval(() => {
-        if (popup.closed) finish(new Error("Spark Vault unlock was canceled."));
+        if (!popup.closed) return;
+        const error = new Error("Spark Vault unlock was canceled.");
+        error.code = "unlock_canceled";
+        finish(error);
       }, 400);
 
       function cleanup() {

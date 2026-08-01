@@ -181,6 +181,14 @@ await page.addInitScript(
     window.open = (url) => {
       window.__sparkPopupCount += 1;
       window.__sparkPopupUrls.push(String(url || ""));
+      if (window.__sparkCancelNextUnlock) {
+        window.__sparkCancelNextUnlock = false;
+        const canceledPopup = { closed: false, focus() {} };
+        window.setTimeout(() => {
+          canceledPopup.closed = true;
+        }, 20);
+        return canceledPopup;
+      }
       window.setTimeout(() => {
         const popupUrl = String(url || "");
         const decoyCapable = (popupUrl.includes("/unlock#") && !popupUrl.includes("intent=strong")) || popupUrl.includes("continuation=decoy-unlock");
@@ -505,7 +513,20 @@ try {
   await page.waitForFunction(() => document.querySelector("#site-spark-writer-title-zh").value === "只写中文的草稿");
   assert.equal(await page.locator("#site-spark-writer-title-en").inputValue(), "");
 
+  await page.evaluate(() => {
+    window.__sparkCancelNextUnlock = true;
+  });
   await page.locator("#site-spark-writer-publish").click();
+  await page.waitForFunction(
+    () => document.querySelector("#site-spark-writer-status").textContent === "已取消私密库解锁，草稿仍安全加密保存在此设备。"
+  );
+  assert.equal(vaultWrites.length, 0, "canceling strong unlock must not write a private note");
+  assert.equal(await page.locator("#site-spark-writer-publish").isEnabled(), true, "the save control must recover after cancellation");
+
+  await page.locator("#site-spark-writer-publish").evaluate((button) => {
+    button.click();
+    button.click();
+  });
   await page.waitForFunction(() => document.querySelector("#site-spark-writer-status").textContent.includes("已加密保存为私密稿"));
   assert.equal(await page.locator("#site-spark-writer-result").isVisible(), false);
   assert.equal(vaultWrites.length, 1);
@@ -516,9 +537,9 @@ try {
   assert.equal(JSON.stringify(vaultWrites[0]).includes("只写中文的草稿"), false, "the private request must not contain the title");
   assert.equal(JSON.stringify(vaultWrites[0]).includes("这是只写了中文"), false, "the private request must not contain the body");
   assert.equal(publicChanges.length, 0, "a private save must not touch the public repository");
-  assert.equal(await page.evaluate(() => window.__sparkPopupCount), 1, "the first private save must continue OAuth and unlock in one popup");
+  assert.equal(await page.evaluate(() => window.__sparkPopupCount), 2, "each save attempt must use at most one OAuth-to-unlock popup");
   assert.match(
-    await page.evaluate(() => window.__sparkPopupUrls[0]),
+    await page.evaluate(() => window.__sparkPopupUrls.at(-1)),
     /continuation=strong-unlock/,
     "a first-time private save must request the allowlisted strong-unlock continuation"
   );
