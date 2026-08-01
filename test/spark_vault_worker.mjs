@@ -268,15 +268,8 @@ try {
   );
   assert.equal(deniedLogin.status, 403, "OAuth must reject a return origin outside the allowlist");
 
-  const deniedWorkerOriginLogin = await worker.fetch(
-    new Request(`${workerOrigin}/auth/login?site_origin=${encodeURIComponent(workerOrigin)}`),
-    env
-  );
-  assert.equal(
-    deniedWorkerOriginLogin.status,
-    403,
-    "the API-only Vault self-origin allowance must never become an OAuth or postMessage target"
-  );
+  const deniedWorkerOriginLogin = await worker.fetch(new Request(`${workerOrigin}/auth/login?site_origin=${encodeURIComponent(workerOrigin)}`), env);
+  assert.equal(deniedWorkerOriginLogin.status, 403, "the API-only Vault self-origin allowance must never become an OAuth or postMessage target");
 
   const session = await apiRequest("/api/session", "GET", sessionToken);
   assert.equal(session.status, 200);
