@@ -61,10 +61,6 @@
   color: #c218d4 !important;
 }
 
-.social .contact-icons .fa-envelope::before {
-  color: #ea4335 !important;
-}
-
 .social .contact-icons .fa-github::before {
   color: #181717 !important;
 }
@@ -75,11 +71,6 @@
 
 .social .contact-icons .fa-linkedin::before {
   color: #0a66c2 !important;
-}
-
-.social .contact-icons .fa-face-smile::before {
-  color: #ffd21e !important;
-  filter: drop-shadow(0 0 0.035rem #6b5800);
 }
 
 .social .contact-icons .fa-square-rss::before {

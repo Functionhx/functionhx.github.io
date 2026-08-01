@@ -31,7 +31,7 @@
   }
 
   function openMenu() {
-    if (!toggle || !menu || document.documentElement.dataset.ownerVerified !== "true") return;
+    if (!toggle || !menu) return;
     menu.hidden = false;
     toggle.setAttribute("aria-expanded", "true");
   }

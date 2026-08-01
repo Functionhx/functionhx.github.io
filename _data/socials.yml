@@ -2,12 +2,14 @@ website:
   logo: fa-solid fa-globe
   title: Website
   url: https://functionhx.github.io/
-email: functionhx@gmail.com
+email:
+  value: functionhx@gmail.com
+  logo: /assets/img/social/gmail.svg
 github_username: Functionhx
 kaggle_id: funcnano
 linkedin_username: zaizai-fan-152611414
 huggingface:
-  logo: fa-solid fa-face-smile
+  logo: /assets/img/social/huggingface.svg
   title: Hugging Face
   url: https://huggingface.co/Func-nano
 rss_icon: true

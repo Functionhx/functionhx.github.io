@@ -99,15 +99,8 @@
   };
   const sectionToggles = [...document.querySelectorAll("[data-section-toggle]")];
   const navigationDensityInputs = [...document.querySelectorAll("[data-navigation-density]")];
-  const themeButtons = [...document.querySelectorAll("[data-settings-theme]")];
 
-  if (
-    Object.values(elements).some((element) => !element) ||
-    !sectionToggles.length ||
-    !navigationDensityInputs.length ||
-    !themeButtons.length ||
-    !uiSettingsPath
-  ) {
+  if (Object.values(elements).some((element) => !element) || !sectionToggles.length || !navigationDensityInputs.length || !uiSettingsPath) {
     return;
   }
 
@@ -157,7 +150,6 @@
   }
 
   function openSettings() {
-    syncThemeButtons();
     syncPersonalization();
     openDialog(dialog);
     toggle.setAttribute("aria-expanded", "true");
@@ -197,26 +189,6 @@
 
   function previewNavigationDensity() {
     document.documentElement.dataset.navDensity = selectedNavigationDensity();
-  }
-
-  function currentThemeSetting() {
-    const setting = document.documentElement.dataset.themeSetting || window.localStorage.getItem("theme") || "system";
-    return ["system", "light", "dark"].includes(setting) ? setting : "system";
-  }
-
-  function syncThemeButtons() {
-    const selected = currentThemeSetting();
-    themeButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.settingsTheme === selected)));
-  }
-
-  function selectTheme(setting) {
-    if (!["system", "light", "dark"].includes(setting)) return;
-    if (typeof setThemeSetting === "function") setThemeSetting(setting);
-    else {
-      window.localStorage.setItem("theme", setting);
-      document.documentElement.dataset.themeSetting = setting;
-    }
-    syncThemeButtons();
   }
 
   function currentFontSetting() {
@@ -686,9 +658,6 @@
       elements.result.hidden = true;
     });
   });
-  themeButtons.forEach((button) => {
-    button.addEventListener("click", () => selectTheme(button.dataset.settingsTheme));
-  });
   elements.font.addEventListener("change", () => selectFont(elements.font.value));
   elements.loadingCopy.addEventListener("change", () => selectLoadingCopy(elements.loadingCopy.value));
   for (const input of [
@@ -731,6 +700,5 @@
     restorePromise = restoreGitHubSession();
   });
   restorePromise = restoreGitHubSession();
-  syncThemeButtons();
   syncPersonalization();
 })();

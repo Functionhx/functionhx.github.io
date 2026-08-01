@@ -25,10 +25,6 @@
   {% assign settings_public_note = 'Available to everyone · saved only in this browser' %}
   {% assign settings_language = 'Language' %}
   {% assign settings_language_note = 'Chinese is the primary site; English is a reading mirror.' %}
-  {% assign settings_appearance = 'Appearance' %}
-  {% assign settings_theme_system = 'System' %}
-  {% assign settings_theme_light = 'Light' %}
-  {% assign settings_theme_dark = 'Dark' %}
   {% assign settings_personalization = 'Personalization' %}
   {% assign settings_personalization_note = 'Font and loading message · saved only in this browser' %}
   {% assign settings_font = 'Font' %}
@@ -83,10 +79,6 @@
   {% assign settings_public_note = '所有访客可用 · 只保存在当前浏览器' %}
   {% assign settings_language = '语言' %}
   {% assign settings_language_note = '中文是主站，英文仅作为阅读镜像。' %}
-  {% assign settings_appearance = '外观' %}
-  {% assign settings_theme_system = '跟随系统' %}
-  {% assign settings_theme_light = '浅色' %}
-  {% assign settings_theme_dark = '深色' %}
   {% assign settings_personalization = '个性化' %}
   {% assign settings_personalization_note = '字体与加载文案 · 只保存在当前浏览器' %}
   {% assign settings_font = '网站字体' %}
@@ -192,16 +184,6 @@
               {% endif %}
               >English</a
             >
-          </div>
-        </div>
-        <div class="site-settings__preference">
-          <div>
-            <strong>{{ settings_appearance }}</strong>
-          </div>
-          <div class="site-settings__segmented" role="group" aria-label="{{ settings_appearance }}">
-            <button type="button" data-settings-theme="system">{{ settings_theme_system }}</button>
-            <button type="button" data-settings-theme="light">{{ settings_theme_light }}</button>
-            <button type="button" data-settings-theme="dark">{{ settings_theme_dark }}</button>
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import hashlib
 from pathlib import Path
 import re
 import sys
@@ -156,6 +157,29 @@ def main() -> int:
         errors.append(
             "_data/site_ui.yml: navigation_density must be auto, compact, or relaxed"
         )
+
+    socials_path = ROOT / "_data" / "socials.yml"
+    try:
+        socials = yaml.safe_load(socials_path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as error:
+        errors.append(f"_data/socials.yml: {error}")
+        socials = {}
+    expected_social_logos = {
+        "email": "/assets/img/social/gmail.svg",
+        "huggingface": "/assets/img/social/huggingface.svg",
+    }
+    for social, expected_logo in expected_social_logos.items():
+        if not isinstance(socials.get(social), dict) or socials[social].get("logo") != expected_logo:
+            errors.append(f"_data/socials.yml: {social} must use {expected_logo}")
+    expected_brand_hashes = {
+        "assets/img/social/gmail.svg": "f3723647e2708fb69ca0506982e963919f7f6676f22488773898851dbb864b7f",
+        "assets/img/social/huggingface.svg": "942cad1ccda905ac5a659dfd2d78b344fccfb84a8a3ac3721e08f488205638a0",
+    }
+    for relative_path, expected_hash in expected_brand_hashes.items():
+        asset_path = ROOT / relative_path
+        actual_hash = hashlib.sha256(asset_path.read_bytes()).hexdigest() if asset_path.is_file() else "missing"
+        if actual_hash != expected_hash:
+            errors.append(f"{relative_path}: official brand asset hash mismatch")
 
     workflow_path = ROOT / ".github" / "workflows" / "deploy.yml"
     workflow_text = (
@@ -361,6 +385,8 @@ def main() -> int:
         "getLoadingText",
         "showLoading",
         "hideLoading",
+        "loaderDelay = 180",
+        "loaderMinimumVisible = 280",
     ):
         if contract not in preferences_text:
             errors.append(
@@ -541,6 +567,9 @@ def main() -> int:
         'element("button", "magic-search__escape", "esc")',
         "if (visible.length === 6)",
         'if (!query) return [];',
+        "magic-search__evidence",
+        "appendHighlighted",
+        "semanticOnly",
     ):
         if contract not in search_frontend_text:
             errors.append(

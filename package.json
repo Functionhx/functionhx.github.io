@@ -6,6 +6,7 @@
     "test:inline-editor": "node test/inline_editor.mjs",
     "test:navigation": "node test/navigation_consistency.mjs",
     "test:magic-search": "python3 test/magic_search_server.py",
+    "test:magic-search-ui": "node test/magic_search_ui.mjs",
     "test:site-settings": "node test/site_settings.mjs",
     "test:spark-writer": "node test/spark_writer.mjs",
     "test:spark-vault": "node test/spark_vault_worker.mjs",

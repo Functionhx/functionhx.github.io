@@ -12,6 +12,10 @@
     "thinking-zh": "正在思考...",
   });
   const loader = document.getElementById("site-page-loader");
+  const loaderDelay = 180;
+  const loaderMinimumVisible = 280;
+  const loaderState = window.functionhxPageLoaderState || { hideTimer: 0, showTimer: 0, visibleAt: 0 };
+  window.functionhxPageLoaderState = loaderState;
 
   function storedFont() {
     try {
@@ -59,14 +63,39 @@
     return choice;
   }
 
-  function showLoading() {
+  function revealLoading() {
+    loaderState.showTimer = 0;
+    if (root.dataset.pageLoading === "true") return;
     root.dataset.pageLoading = "true";
+    loaderState.visibleAt = window.performance.now();
+  }
+
+  function showLoading() {
+    window.clearTimeout(loaderState.hideTimer);
+    loaderState.hideTimer = 0;
     document.body?.setAttribute("aria-busy", "true");
+    if (root.dataset.pageLoading === "true" || loaderState.showTimer) return;
+    loaderState.showTimer = window.setTimeout(revealLoading, loaderDelay);
+  }
+
+  function finishHiding() {
+    loaderState.hideTimer = 0;
+    loaderState.visibleAt = 0;
+    root.removeAttribute("data-page-loading");
+    document.body?.removeAttribute("aria-busy");
   }
 
   function hideLoading() {
-    root.removeAttribute("data-page-loading");
-    document.body?.removeAttribute("aria-busy");
+    window.clearTimeout(loaderState.showTimer);
+    loaderState.showTimer = 0;
+    if (root.dataset.pageLoading !== "true") {
+      finishHiding();
+      return;
+    }
+    const elapsed = window.performance.now() - loaderState.visibleAt;
+    const remaining = Math.max(0, loaderMinimumVisible - elapsed);
+    window.clearTimeout(loaderState.hideTimer);
+    loaderState.hideTimer = window.setTimeout(finishHiding, remaining);
   }
 
   function navigatesThisPage(anchor, event) {
@@ -109,6 +138,7 @@
     getLoadingCopy: () => root.dataset.loadingCopy || storedLoadingCopy(),
     getLoadingText: () => loadingCopy[root.dataset.loadingCopy] || loadingCopy.thinking,
     hideLoading,
+    loaderTiming: Object.freeze({ delay: loaderDelay, minimumVisible: loaderMinimumVisible }),
     setFont,
     setLoadingCopy,
     showLoading,

@@ -35,15 +35,24 @@ html[data-site-font="dyslexic"] body {
   align-items: center;
   background: var(--global-bg-color, #fff);
   color: var(--global-text-color, #111);
-  display: none;
+  display: flex;
   inset: 0;
   justify-content: center;
+  opacity: 0;
+  pointer-events: none;
   position: fixed;
+  transition:
+    opacity 120ms ease-out,
+    visibility 0s linear 120ms;
+  visibility: hidden;
   z-index: 100000;
 }
 
 html.js[data-page-loading="true"] .site-page-loader {
-  display: flex;
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 0s;
+  visibility: visible;
 }
 
 .site-page-loader__text {
@@ -90,6 +99,10 @@ html[data-loading-copy="loading-zh"] .site-page-loader__text::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .site-page-loader {
+    transition: none;
+  }
+
   .site-page-loader__text {
     animation: none;
   }

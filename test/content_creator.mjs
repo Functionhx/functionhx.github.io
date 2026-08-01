@@ -44,7 +44,6 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 await page.addInitScript(() => {
   window.functionhxDeploymentConfig = { maxWait: 1000, pollInterval: 20 };
-  window.localStorage.setItem("functionhx:owner-ui:remembered", "true");
 });
 
 await page.route("https://api.github.com/**", async (route) => {
@@ -174,7 +173,14 @@ async function openCreator(action) {
 
 try {
   await page.goto(baseUrl, { waitUntil: "networkidle" });
-  assert.equal(await page.locator("#site-inline-editor-toggle").isVisible(), true, "remembered owner state should reveal the author menu");
+  assert.equal(await page.locator("#site-inline-editor-toggle").isVisible(), true, "the author entry must remain discoverable before auth restores");
+  await page.locator("#site-inline-editor-toggle").click();
+  assert.equal(
+    await page.locator("#site-author-menu").isVisible(),
+    true,
+    "the author menu should explain the available page actions before commit auth"
+  );
+  await page.locator("#site-inline-editor-toggle").click();
   await connectOwner();
 
   await openCreator("article-create");

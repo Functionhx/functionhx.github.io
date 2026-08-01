@@ -11,6 +11,9 @@ const COPY = {
     semantic: "语义检索已合并",
     unavailable: "语义服务暂不可用，已保留本地全文结果。",
     empty: "没有找到相关内容",
+    bodyMatch: "正文",
+    tagMatch: "标签",
+    semanticMatch: "语义",
     resultCount: (count) => `${count} 条结果`,
   },
   en: {
@@ -21,6 +24,9 @@ const COPY = {
     semantic: "Semantic results merged",
     unavailable: "Semantic search is unavailable; local full-text results remain active.",
     empty: "No results",
+    bodyMatch: "Body",
+    tagMatch: "Tag",
+    semanticMatch: "Semantic",
     resultCount: (count) => `${count} results`,
   },
 };
@@ -53,6 +59,64 @@ const element = (tag, className, text) => {
   if (className) node.className = className;
   if (text !== undefined) node.textContent = text;
   return node;
+};
+
+const literalTerms = (rawQuery) => {
+  const phrase = String(rawQuery || "")
+    .normalize("NFKC")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!phrase) return [];
+  const parts = phrase.split(/[\s,，、]+/u).filter(Boolean);
+  return [...new Set([phrase, ...parts])].sort((left, right) => right.length - left.length);
+};
+
+const literalRanges = (value, rawQuery) => {
+  const text = String(value || "").normalize("NFKC");
+  const ranges = [];
+  for (const term of literalTerms(rawQuery)) {
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const expression = new RegExp(escaped, "giu");
+    for (const match of text.matchAll(expression)) ranges.push({ end: match.index + match[0].length, start: match.index });
+  }
+  ranges.sort((left, right) => left.start - right.start || right.end - left.end);
+  return ranges.filter((range, index) => !ranges.slice(0, index).some((previous) => previous.start <= range.start && previous.end >= range.end));
+};
+
+const appendHighlighted = (node, value, rawQuery) => {
+  const text = String(value || "").normalize("NFKC");
+  const ranges = literalRanges(text, rawQuery);
+  if (!ranges.length) {
+    node.textContent = text;
+    return false;
+  }
+  let cursor = 0;
+  for (const range of ranges) {
+    if (range.start < cursor) continue;
+    if (range.start > cursor) node.append(document.createTextNode(text.slice(cursor, range.start)));
+    node.append(element("mark", "magic-search__match", text.slice(range.start, range.end)));
+    cursor = range.end;
+  }
+  if (cursor < text.length) node.append(document.createTextNode(text.slice(cursor)));
+  return true;
+};
+
+const evidenceText = (chunk, documentRecord) => {
+  const text = String(chunk.text || "").trim();
+  const title = String(documentRecord.title || "").trim();
+  return normalize(text).startsWith(normalize(title)) ? text.slice(title.length).trim() : text;
+};
+
+const snippet = (value, rawQuery, limit = 132) => {
+  const text = String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (text.length <= limit) return text;
+  const firstMatch = literalRanges(text, rawQuery)[0];
+  let start = firstMatch ? Math.max(0, firstMatch.start - Math.floor(limit * 0.34)) : 0;
+  let end = Math.min(text.length, start + limit);
+  if (end === text.length) start = Math.max(0, end - limit);
+  return `${start > 0 ? "…" : ""}${text.slice(start, end).trim()}${end < text.length ? "…" : ""}`;
 };
 
 class MagicSearch {
@@ -221,8 +285,12 @@ class MagicSearch {
   }
 
   mergedResults() {
-    if (!this.semanticResults.length) return this.lexicalResults;
+    if (!this.semanticResults.length) {
+      return this.lexicalResults.map((result) => ({ ...result, lexical: true, semantic: false }));
+    }
     const scores = new Map();
+    const lexicalChunks = new Set(this.lexicalResults.map((result) => result.chunkIndex));
+    const semanticChunks = new Set(this.semanticResults.map((result) => result.chunkIndex));
     const lexicalMaximum = Math.max(this.lexicalResults[0]?.score || 1, 1);
     this.lexicalResults.forEach((result, rank) => {
       scores.set(result.chunkIndex, 1 / (60 + rank) + (result.score / lexicalMaximum) * 0.035);
@@ -230,7 +298,14 @@ class MagicSearch {
     this.semanticResults.forEach((result, rank) => {
       scores.set(result.chunkIndex, (scores.get(result.chunkIndex) || 0) + 1 / (60 + rank));
     });
-    return [...scores.entries()].map(([chunkIndex, score]) => ({ chunkIndex, score })).sort((left, right) => right.score - left.score);
+    return [...scores.entries()]
+      .map(([chunkIndex, score]) => ({
+        chunkIndex,
+        lexical: lexicalChunks.has(chunkIndex),
+        score,
+        semantic: semanticChunks.has(chunkIndex),
+      }))
+      .sort((left, right) => right.score - left.score);
   }
 
   visibleResults() {
@@ -271,11 +346,40 @@ class MagicSearch {
     link.dataset.resultIndex = String(index);
     link.classList.toggle("is-active", index === 0);
 
-    const title = element("strong", "magic-search__result-title", result.document.title);
+    const rawQuery = this.input.value;
+    const title = element("strong", "magic-search__result-title");
+    const titleMatched = appendHighlighted(title, result.document.title, rawQuery);
     const path = result.chunk.chain.filter((part) => !(result.chunk.chain.length > 1 && part === result.document.title));
     const source = [...path, result.document.date].filter(Boolean).join(" › ");
-    const chain = element("span", "magic-search__chain", source);
+    const chain = element("span", "magic-search__chain");
+    const chainMatched = appendHighlighted(chain, source, rawQuery);
     link.append(title, chain);
+
+    const content = evidenceText(result.chunk, result.document);
+    const contentMatched = literalRanges(content, rawQuery).length > 0;
+    const taxonomy = [...(result.chunk.tags || []), ...(result.chunk.categories || [])].join(" · ");
+    const taxonomyMatched = literalRanges(taxonomy, rawQuery).length > 0;
+    const semanticOnly = result.semantic && !result.lexical && !titleMatched && !chainMatched && !contentMatched && !taxonomyMatched;
+    let evidence = "";
+    let evidenceLabel = "";
+    if (contentMatched || (result.lexical && !titleMatched && !chainMatched && !taxonomyMatched)) {
+      evidence = snippet(content || result.chunk.excerpt, rawQuery);
+      evidenceLabel = this.copy.bodyMatch;
+    } else if (taxonomyMatched) {
+      evidence = taxonomy;
+      evidenceLabel = this.copy.tagMatch;
+    } else if (semanticOnly) {
+      evidence = snippet(content || result.chunk.excerpt, rawQuery);
+      evidenceLabel = this.copy.semanticMatch;
+    }
+    if (evidence) {
+      const evidenceRow = element("span", "magic-search__evidence");
+      evidenceRow.append(element("span", "magic-search__evidence-label", evidenceLabel));
+      const evidenceValue = element("span", "magic-search__evidence-text");
+      appendHighlighted(evidenceValue, evidence, rawQuery);
+      evidenceRow.append(evidenceValue);
+      link.append(evidenceRow);
+    }
     item.append(link);
     return item;
   }

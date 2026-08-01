@@ -4,7 +4,13 @@
     const supportedFonts = new Set(['anthropic-serif', 'anthropic-sans', 'system', 'dyslexic']);
     const supportedLoadingCopy = new Set(['thinking', 'loading', 'thinking-zh', 'loading-zh']);
     root.classList.add('js');
-    root.dataset.pageLoading = 'true';
+    const loaderState = window.functionhxPageLoaderState || { hideTimer: 0, showTimer: 0, visibleAt: 0 };
+    window.functionhxPageLoaderState = loaderState;
+    loaderState.showTimer = window.setTimeout(() => {
+      root.dataset.pageLoading = 'true';
+      loaderState.showTimer = 0;
+      loaderState.visibleAt = performance.now();
+    }, 180);
     try {
       const savedFont = window.localStorage.getItem('functionhx:site-font');
       const savedLoadingCopy = window.localStorage.getItem('functionhx:loading-copy');

@@ -468,6 +468,18 @@ def main() -> int:
         parser = parsed_pages.get(route)
         if not parser:
             continue
+        html = route_file(site, route).read_text(encoding="utf-8")
+        for official_brand_asset in (
+            "/assets/img/social/gmail.svg",
+            "/assets/img/social/huggingface.svg",
+        ):
+            if official_brand_asset not in html:
+                errors.append(f"{route}: official social brand asset missing: {official_brand_asset}")
+        for approximate_icon in ("fa-envelope", "fa-face-smile"):
+            if approximate_icon in html:
+                errors.append(f"{route}: approximate social icon still renders: {approximate_icon}")
+        if "data-settings-theme" in html:
+            errors.append(f"{route}: appearance controls must stay in the navigation, not settings")
         if route == "/":
             missing_editor_ids = {
                 "site-author-menu",
