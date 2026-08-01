@@ -5,7 +5,7 @@ permalink: /projects/
 description: 持续收录一些有趣的项目。
 lang: zh
 translation_key: projects
-nav: false
+nav: true
 nav_order: 3
 display_categories: [work, fun]
 horizontal: false
