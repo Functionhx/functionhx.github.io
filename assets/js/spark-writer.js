@@ -55,6 +55,8 @@
         privateDraftsFound: (count) => String(count) + (count === 1 ? " encrypted private draft found." : " encrypted private drafts found."),
         privateDraftsLoading: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
         privateDraftOpen: "Continue editing",
+        privateRefreshFailed: "Saved securely. The rest of the private-draft list could not be refreshed; reopen it to retry.",
+        privateSaveComplete: "Saved securely. The private draft you just saved is highlighted below.",
         saving: "Encrypting the private record…",
         decoyLoaded: "Private space opened.",
         decoySaved: "Saved in this private space.",
@@ -100,6 +102,8 @@
         privateDraftsFound: (count) => "已解密载入 " + String(count) + " 条私密草稿。",
         privateDraftsLoading: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
         privateDraftOpen: "继续编辑",
+        privateRefreshFailed: "已经安全保存，但暂时无法刷新其余私密稿；重新打开私密草稿即可重试。",
+        privateSaveComplete: "已安全保存；刚刚保存的私密稿已在下方高亮显示。",
         saving: "正在加密私密记录…",
         decoyLoaded: "已打开私密空间。",
         decoySaved: "已保存到当前私密空间。",
@@ -166,6 +170,7 @@
 
   let activeTrigger = toggle;
   let busy = false;
+  let cachedPrivateDrafts = [];
   let currentLanguage = isEnglish ? "en" : "zh";
   let currentMode = "create";
   let currentTranslationKey = "";
@@ -178,6 +183,7 @@
   let initialSnapshot = "";
   let originalValues = null;
   let originals = { zh: null, en: null };
+  let privateDraftRefreshVersion = 0;
   let restorePromise = Promise.resolve(null);
   let slugIsAutomatic = true;
   let sourcePaths = { zh: "", en: "" };
@@ -272,6 +278,14 @@
 
   function setBusy(nextBusy) {
     busy = nextBusy;
+    for (const language of ["zh", "en"]) {
+      fields[language].title.disabled = nextBusy;
+      fields[language].summary.disabled = nextBusy;
+      fields[language].body.disabled = nextBusy;
+    }
+    for (const control of [elements.announce, elements.comments, elements.date, elements.kind, elements.message, elements.slug]) {
+      control.disabled = nextBusy;
+    }
     elements.close.disabled = nextBusy;
     elements.connect.disabled = nextBusy;
     elements.discard.disabled = nextBusy;
@@ -552,6 +566,13 @@
     elements.connect.dataset.connected = String(unlocked);
   }
 
+  function clearPrivateDraftCache() {
+    privateDraftRefreshVersion += 1;
+    cachedPrivateDrafts = [];
+    if (elements.draftsList) elements.draftsList.replaceChildren();
+    if (elements.draftsPanel) elements.draftsPanel.hidden = true;
+  }
+
   function vaultReady() {
     return Boolean(vaultClient && vaultEndpoint && !vaultConfigurationError);
   }
@@ -624,6 +645,7 @@
     if (ask && !window.confirm(strings.disconnectConfirm)) return;
     if (vaultReady()) await vaultClient.logout(vaultEndpoint).catch(() => undefined);
     decoyMode = false;
+    clearPrivateDraftCache();
     setConnection(null);
     setStatus(strings.disconnected);
   }
@@ -647,7 +669,10 @@
     try {
       return await vaultClient.request(vaultEndpoint, path, options);
     } catch (error) {
-      if (error.status === 401) setConnection(null);
+      if (error.status === 401) {
+        clearPrivateDraftCache();
+        setConnection(null);
+      }
       throw error;
     }
   }
@@ -694,12 +719,21 @@
     return privateTransportValues(values, sealed);
   }
 
-  function renderPrivateDrafts(notes) {
+  function mergeSavedPrivateDraft(savedNote, notes = cachedPrivateDrafts) {
+    return [savedNote, ...notes.filter((note) => note.id !== savedNote.id)];
+  }
+
+  function renderPrivateDrafts(notes, highlightedId = "", remember = true) {
+    const activeDraftId = activeTrigger?.dataset?.draftId || "";
     elements.draftsList.replaceChildren();
     const drafts = notes.filter((note) => note.published === false);
+    if (remember) cachedPrivateDrafts = drafts;
     setDraftsStatus(drafts.length ? strings.privateDraftsFound(drafts.length) : strings.privateDraftsEmpty);
+    let highlightedControl = null;
     for (const note of drafts) {
       const item = document.createElement("li");
+      item.dataset.draftId = note.id;
+      if (note.id === highlightedId) item.dataset.recentlySaved = "true";
       const meta = document.createElement("div");
       meta.className = "site-spark-draft-meta";
       const title = document.createElement("strong");
@@ -713,19 +747,53 @@
       const open = document.createElement("button");
       open.type = "button";
       open.className = "site-spark-draft-open";
+      open.dataset.draftId = note.id;
       open.textContent = strings.privateDraftOpen;
       open.addEventListener("click", () => {
         elements.draftsPanel.hidden = true;
         if (note.decoy) openDecoyNote(note, open);
         else openEdit({ translationKey: `spark-${note.id}`, vaultId: note.id }, open);
       });
+      if (note.id === highlightedId) highlightedControl = open;
+      if (note.id === activeDraftId) activeTrigger = open;
       item.append(meta, open);
       elements.draftsList.append(item);
     }
+    return highlightedControl;
+  }
+
+  function refreshSavedPrivateDrafts(savedNote) {
+    const refreshVersion = ++privateDraftRefreshVersion;
+    vaultRequest("/api/notes")
+      .then((payload) => hydrateVaultNotes(Array.isArray(payload.notes) ? payload.notes : []))
+      .then((notes) => {
+        if (refreshVersion !== privateDraftRefreshVersion) return;
+        renderPrivateDrafts(mergeSavedPrivateDraft(savedNote, notes), savedNote.id);
+        setDraftsStatus(strings.privateSaveComplete, "success");
+      })
+      .catch(() => {
+        if (refreshVersion !== privateDraftRefreshVersion) return;
+        setDraftsStatus(strings.privateRefreshFailed, "error");
+      });
+  }
+
+  function revealSavedPrivateDraft(savedNote) {
+    if (!elements.draftsPanel || !elements.draftsList) {
+      closeWriter({ persist: false });
+      return;
+    }
+    closeWriter({ persist: false });
+    elements.draftsPanel.hidden = false;
+    const savedControl = renderPrivateDrafts(mergeSavedPrivateDraft(savedNote), savedNote.id);
+    setDraftsStatus(strings.privateSaveComplete, "success");
+    elements.draftsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.requestAnimationFrame(() => savedControl?.focus());
+    refreshSavedPrivateDrafts(savedNote);
   }
 
   async function loadPrivateDrafts() {
     if (!elements.draftsPanel || busy) return;
+    privateDraftRefreshVersion += 1;
     setBusy(true);
     try {
       const access = await ensureVaultUnlocked("decoy");
@@ -734,7 +802,7 @@
       elements.draftsPanel.hidden = false;
       elements.draftsList.replaceChildren();
       if (access.decoy) {
-        renderPrivateDrafts(decoyNotes);
+        renderPrivateDrafts(decoyNotes, "", false);
         return;
       }
       setDraftsStatus(window.functionhxSitePreferences?.getLoadingText?.() || strings.privateDraftsLoading);
@@ -902,8 +970,8 @@
     await prepareEdit(config);
   }
 
-  function closeWriter() {
-    saveDraft(false);
+  function closeWriter({ persist = true } = {}) {
+    if (persist) saveDraft(false);
     root.hidden = true;
     document.body.classList.remove("site-spark-entry-writing");
     if (activeTrigger && typeof activeTrigger.focus === "function") activeTrigger.focus();
@@ -935,19 +1003,24 @@
   async function publishPair() {
     await restorePromise;
     if (busy || !validate()) return;
+    setBusy(true);
+    window.clearTimeout(draftTimer);
+    draftTimer = 0;
+    await saveDraft(false);
     if (!isDirty()) {
       setStatus(strings.noChanges);
+      setBusy(false);
       return;
     }
     if (currentMode === "decoy" || decoyMode) {
       await saveDraft(false);
       initialSnapshot = snapshot();
       setStatus(strings.decoySaved, "success");
+      setBusy(false);
       return;
     }
     const values = readValues();
     const desiredPublished = values.published === true;
-    setBusy(true);
     const draftKeyBeforeSave = currentDraftKey;
     try {
       const access = desiredPublished ? await ensureVaultSession() : await ensureVaultUnlocked();
@@ -995,6 +1068,7 @@
         elements.result.hidden = false;
       }
       if (commit) window.functionhxDeployment?.watch(commit);
+      if (!note.published) revealSavedPrivateDraft(note);
     } catch (error) {
       const known = {
         public_collision: strings.collision,

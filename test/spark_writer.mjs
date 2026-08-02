@@ -113,6 +113,16 @@ let vaultCounter = 0;
 let publicCounter = 0;
 let sessionChecks = 0;
 let noteListRequests = 0;
+let holdNextNoteList = false;
+let releaseHeldNoteList = null;
+let heldNoteListStartedResolve = null;
+let heldNoteListStarted = Promise.resolve();
+let holdNextNotePut = false;
+let releaseHeldNotePut = null;
+let heldNotePutStartedResolve = null;
+let heldNotePutStarted = Promise.resolve();
+let failNextNoteList = false;
+let staleSavedNoteInNextList = false;
 
 function clone(value) {
   return structuredClone(value);
@@ -297,8 +307,31 @@ await page.route(`${vaultOrigin}/**`, async (route) => {
   }
   if (url.pathname === "/api/notes" && request.method() === "GET") {
     noteListRequests += 1;
+    if (holdNextNoteList) {
+      holdNextNoteList = false;
+      heldNoteListStartedResolve();
+      await new Promise((resolve) => {
+        releaseHeldNoteList = resolve;
+      });
+    }
+    if (failNextNoteList) {
+      failNextNoteList = false;
+      await route.fulfill({
+        body: JSON.stringify({ error: "temporary_unavailable", message: "temporary list failure" }),
+        contentType: "application/json",
+        headers: corsHeaders,
+        status: 503,
+      });
+      return;
+    }
+    const notes = Array.from(vaultNotes.values(), noteSummary);
+    if (staleSavedNoteInNextList) {
+      staleSavedNoteInNextList = false;
+      const staleSaved = notes.find((note) => note.id === "chinese-first");
+      if (staleSaved) staleSaved.published = true;
+    }
     await route.fulfill({
-      body: JSON.stringify({ notes: Array.from(vaultNotes.values(), noteSummary) }),
+      body: JSON.stringify({ notes }),
       contentType: "application/json",
       headers: corsHeaders,
       status: 200,
@@ -329,6 +362,13 @@ await page.route(`${vaultOrigin}/**`, async (route) => {
     return;
   }
   if (request.method() === "PUT" && !action) {
+    if (holdNextNotePut) {
+      holdNextNotePut = false;
+      heldNotePutStartedResolve();
+      await new Promise((resolve) => {
+        releaseHeldNotePut = resolve;
+      });
+    }
     const body = request.postDataJSON();
     if (existing && body.expectedSha !== existing.sha) {
       await route.fulfill({
@@ -523,11 +563,42 @@ try {
   assert.equal(vaultWrites.length, 0, "canceling strong unlock must not write a private note");
   assert.equal(await page.locator("#site-spark-writer-publish").isEnabled(), true, "the save control must recover after cancellation");
 
+  holdNextNotePut = true;
+  heldNotePutStarted = new Promise((resolve) => {
+    heldNotePutStartedResolve = resolve;
+  });
+  holdNextNoteList = true;
+  staleSavedNoteInNextList = true;
+  heldNoteListStarted = new Promise((resolve) => {
+    heldNoteListStartedResolve = resolve;
+  });
   await page.locator("#site-spark-writer-publish").evaluate((button) => {
     button.click();
     button.click();
   });
+  await heldNotePutStarted;
+  assert.equal(
+    await page.locator("#site-spark-writer-title-zh").isEnabled(),
+    false,
+    "the submitted text must be frozen while the private write is pending"
+  );
+  releaseHeldNotePut();
+  await heldNoteListStarted;
   await page.waitForFunction(() => document.querySelector("#site-spark-writer-status").textContent.includes("已加密保存为私密稿"));
+  await page.locator("#site-spark-writer").waitFor({ state: "hidden" });
+  await page.locator("#site-spark-drafts-panel").waitFor({ state: "visible" });
+  await page.waitForFunction(() => document.querySelector("#site-spark-drafts-list").textContent.includes("只写中文的草稿"));
+  assert.match(await page.locator("#site-spark-drafts-status").textContent(), /已安全保存/);
+  const savedPrivateDraft = page.locator('#site-spark-drafts-list li[data-recently-saved="true"]');
+  assert.equal(await savedPrivateDraft.count(), 1, "the saved private draft must be visibly highlighted");
+  assert.match(await savedPrivateDraft.textContent(), /只写中文的草稿/);
+  assert.equal(
+    await page.locator("#site-spark-drafts-list li").count(),
+    1,
+    "the saved result must appear before the non-critical list refresh finishes"
+  );
+  releaseHeldNoteList();
+  await page.waitForFunction(() => document.querySelectorAll("#site-spark-drafts-list li").length === 2);
   assert.equal(await page.locator("#site-spark-writer-result").isVisible(), false);
   assert.equal(vaultWrites.length, 1);
   assert.equal(vaultWrites[0].id, "chinese-first");
@@ -544,7 +615,7 @@ try {
     "a first-time private save must request the allowlisted strong-unlock continuation"
   );
 
-  await page.locator("#site-spark-writer-close").click();
+  await page.locator("#site-spark-drafts-close").click();
   await page.evaluate((endpoint) => {
     window.functionhxSparkVault.lock(endpoint);
     window.__sparkNextUnlockDecoy = true;
@@ -633,9 +704,17 @@ try {
   assert.match(publicChanges.at(-1).values.en.body, /English body edited in place/);
 
   await page.locator("#site-spark-writer-published").uncheck();
+  failNextNoteList = true;
   await page.locator("#site-spark-writer-publish").click();
   await page.waitForFunction(() => document.querySelector("#site-spark-writer-status").textContent.includes("私密稿"));
   assert.equal(publicChanges.at(-1).action, "unpublish", "making a Spark private must remove both public files through the vault");
+  await page.locator("#site-spark-writer").waitFor({ state: "hidden" });
+  await page.waitForFunction(() => document.querySelector("#site-spark-drafts-status").textContent.includes("暂时无法刷新其余私密稿"));
+  assert.equal(
+    await page.locator("#site-spark-drafts-list li").count(),
+    3,
+    "a refresh failure must preserve the known private drafts and the newly private Spark"
+  );
 
   assert.deepEqual(githubMutationRequests, [], "browser JavaScript must never write private Sparks directly to the public GitHub API");
   assert.deepEqual(githubAuthorizations, [], "the Spark browser must never expose a GitHub access token to public-source reads");
@@ -648,7 +727,6 @@ try {
   assert.equal(JSON.stringify(finalDeviceRecords).includes(vaultToken), false, "the device vault must store only session ciphertext");
   assert.equal(JSON.stringify(finalDeviceRecords).includes(testDeepSeekKey), false);
 
-  await page.locator("#site-spark-writer-close").click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator("#site-spark-create").click();
   const mobileBounds = await page.locator("#site-spark-writer").evaluate((element) => {

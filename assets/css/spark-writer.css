@@ -97,6 +97,10 @@
   color: #d73a49;
 }
 
+#site-spark-drafts-status[data-state="success"] {
+  color: #1a7f37;
+}
+
 .site-spark-drafts-panel ul {
   list-style: none;
   margin: 0;
@@ -106,6 +110,12 @@
 .site-spark-drafts-panel li {
   border-top: 1px solid var(--global-divider-color);
   padding: 0.8rem 0;
+}
+
+.site-spark-drafts-panel li[data-recently-saved="true"] {
+  background: color-mix(in srgb, var(--global-theme-color) 8%, var(--global-bg-color));
+  box-shadow: inset 3px 0 var(--global-theme-color);
+  padding-inline: 0.75rem;
 }
 
 .site-spark-draft-meta {
