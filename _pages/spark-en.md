@@ -6,7 +6,7 @@ description: Ideas, research notes, and records from experiments, development, a
 lang: en
 translation_key: spark
 nav: true
-nav_order: 11
+nav_order: 12
 kinds:
   - note
   - log

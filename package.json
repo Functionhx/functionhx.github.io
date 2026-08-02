@@ -4,6 +4,8 @@
     "lint:style-contract": "node test/style_contract.js",
     "test:author-ui": "node test/author_ui.mjs",
     "test:content-creator": "node test/content_creator.mjs",
+    "test:feishu-documents": "node test/feishu_documents.mjs",
+    "test:feishu-worker": "node test/feishu_worker.mjs",
     "test:inline-editor": "node test/inline_editor.mjs",
     "test:navigation": "node test/navigation_consistency.mjs",
     "test:magic-search": "python3 test/magic_search_server.py",

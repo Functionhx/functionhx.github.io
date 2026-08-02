@@ -13,9 +13,17 @@ PUBLIC_REPO = "Functionhx/functionhx.github.io"
 PUBLIC_BRANCH = "main"
 GITHUB_CLIENT_ID = "REPLACE_WITH_GITHUB_APP_CLIENT_ID"
 GITHUB_API_VERSION = "2026-03-10"
+FEISHU_CLIENT_ID = "REPLACE_WITH_FEISHU_APP_ID"
+
+# Optional defense-in-depth pins. After the first successful owner OAuth, the
+# encrypted connection record also pins both values automatically.
+# ALLOWED_FEISHU_OPEN_ID = "ou_REPLACE_WITH_OWNER_OPEN_ID"
+# ALLOWED_FEISHU_TENANT_KEY = "REPLACE_WITH_OWNER_TENANT_KEY"
+# FEISHU_FOLDER_TOKEN = "fld_REPLACE_WITH_TARGET_FOLDER_TOKEN"
 
 # Set these with the hosting provider's encrypted secret store. Never put their
 # values in this file or commit them:
 # - GITHUB_CLIENT_SECRET
+# - FEISHU_CLIENT_SECRET
 # - SESSION_KEY_B64 (32 random bytes, base64 encoded)
 # - MASTER_KEY_B64  (32 random bytes, base64 encoded and backed up offline)

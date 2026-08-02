@@ -159,8 +159,9 @@
       const session = { endpoint, remembered: true, user: payload.user };
       announce(endpoint, true, session.user);
       return session;
-    } catch (_error) {
-      return null;
+    } catch (error) {
+      if (error?.status === 401 || error?.code === "authentication_required") return null;
+      throw error;
     }
   }
 

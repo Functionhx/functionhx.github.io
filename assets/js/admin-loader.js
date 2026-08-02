@@ -33,6 +33,10 @@
       styles: ["deployment-monitor.css", "deepseek-translator.css"],
       scripts: ["github-auth-vault.js", "deployment-monitor.js", "deepseek-translator.js", "spark-vault-client.js", "spark-writer.js"],
     },
+    feishuDocuments: {
+      styles: [],
+      scripts: ["github-auth-vault.js", "spark-vault-client.js", "feishu-documents.js"],
+    },
   };
 
   function assetUrl(kind, filename) {
@@ -206,6 +210,7 @@
   function featureFor(trigger) {
     if (trigger.id === "site-settings-toggle") return "settings";
     const authorAction = trigger.dataset.authorAction || "";
+    if (authorAction === "feishu-document-create") return "feishuDocuments";
     if (authorAction === "source-edit") return "editor";
     if (["article-create", "tool-create", "project-create", "activity-create"].includes(authorAction)) return "creator";
     if (

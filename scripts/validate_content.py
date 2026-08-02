@@ -34,6 +34,7 @@ REQUIRED_ROUTES = {
     "more": {"/more/", "/en/more/"},
     "books": {"/books/", "/en/books/"},
     "tools": {"/tools/", "/en/tools/"},
+    "documents": {"/documents/", "/en/documents/"},
     "notes": {"/notes/", "/en/notes/"},
     "logs": {"/logs/", "/en/logs/"},
     "spark": {"/spark/", "/en/spark/"},

@@ -82,6 +82,7 @@ try {
   for (const [route, active] of [
     ["/blog/", "blog"],
     ["/tools/", "tools"],
+    ["/documents/", "documents"],
     ["/spark/", "spark"],
   ]) {
     const state = await navigationState(route);
@@ -95,6 +96,7 @@ try {
   for (const [route, active] of [
     ["/en/blog/", "blog"],
     ["/en/tools/", "tools"],
+    ["/en/documents/", "documents"],
     ["/en/spark/", "spark"],
   ]) {
     const state = await navigationState(route);

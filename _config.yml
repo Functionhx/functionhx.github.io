@@ -172,6 +172,11 @@ external_sources: []
 spark_vault:
   endpoint: https://functionhx-spark-vault.functionhx.workers.dev
 
+# Owner-only Feishu document creation. OAuth secrets and user tokens live only
+# in the Spark Vault Worker; the public site receives no Feishu credential.
+feishu_documents:
+  endpoint: https://functionhx-spark-vault.functionhx.workers.dev
+
 # -----------------------------------------------------------------------------
 # Newsletter
 # -----------------------------------------------------------------------------

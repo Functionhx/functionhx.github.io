@@ -10,6 +10,7 @@ function css(name) {
 
 const contracts = {
   "content-creator.css": ["max-width: 58rem", "@media (max-width: 767px)", "@media (prefers-reduced-motion: reduce)"],
+  "feishu-documents.css": ["max-width: 44rem", ".feishu-document-dialog::backdrop", "@media (max-width: 575.98px)"],
   "home.css": ["max-width: 42rem", "@media (max-width: 575.98px)", "@media (prefers-reduced-motion: reduce)"],
   "magic-search.css": [".magic-search::backdrop", "max-width: 42rem", "@media (prefers-reduced-motion: reduce)"],
   "owner-ui.css": ['html:not([data-owner-verified="true"]) .owner-only-control', ".site-author-menu[hidden]", "@media (max-width: 575.98px)"],

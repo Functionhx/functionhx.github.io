@@ -87,6 +87,44 @@ Never reuse a GitHub SSH key as a Spark encryption key. Never commit a GitHub
 client secret, session key, master key, recovery package, OAuth token, decrypted
 Spark, or real local deployment configuration.
 
+## Official Feishu Documents connection
+
+The optional Documents integration uses Feishu's official user OAuth and
+OpenAPI. It remains disabled until both `FEISHU_CLIENT_ID` and the encrypted
+runtime secret `FEISHU_CLIENT_SECRET` are configured. The browser never reads a
+Feishu cookie and never receives a Feishu access token; an already signed-in
+Feishu browser session is reused only by the official authorization page.
+
+1. Create an enterprise custom app at <https://open.feishu.cn/app> and limit
+   its availability to the site owner.
+2. Add this exact redirect URL in the app security settings:
+   `https://functionhx-spark-vault.functionhx.workers.dev/auth/feishu/callback`.
+   The backend always derives this as
+   `${WORKER_ORIGIN}/auth/feishu/callback`; use
+   `https://vault.fanyuchen.com.cn/auth/feishu/callback` instead only when the
+   Tencent-hosted service is the configured public endpoint.
+3. Enable only the user scopes `docx:document:create`,
+   `drive:drive.metadata:readonly`, and `offline_access`. Enable refresh-token
+   support in security settings if the console shows that switch, then publish
+   the app so the permissions take effect.
+4. Store `FEISHU_CLIENT_SECRET` only in the host's encrypted secret store. The
+   App ID is placed in `FEISHU_CLIENT_ID`. Optionally set
+   `ALLOWED_FEISHU_OPEN_ID` and `ALLOWED_FEISHU_TENANT_KEY`; otherwise the first
+   successful owner connection is encrypted and pinned in the private content
+   repository. `FEISHU_FOLDER_TOKEN` may select a destination folder; omitting
+   it creates documents in the user's root space.
+
+The authenticated site calls `POST /api/feishu/oauth/start`, opens the returned
+official authorization URL, and receives a token-free completion message from
+the callback. OAuth uses PKCE S256 plus an encrypted, five-minute, single-use
+state record. Access and rotating refresh tokens are encrypted with
+`MASTER_KEY_B64` before persistence. Refresh obtains a private-repository
+compare-and-swap lease before using the single-use refresh token. Document
+creation reserves an encrypted idempotency record before calling
+`/open-apis/docx/v1/documents`; it then queries
+`/open-apis/drive/v1/metas/batch_query` with `with_url: true` and returns the
+official URL instead of constructing a tenant URL locally.
+
 ## Legacy migration
 
 Version-1 records can still be opened with `MASTER_KEY_B64`. The browser wraps
@@ -127,6 +165,7 @@ Run from the repository root:
 npm run test:spark-vault
 npm run test:spark-vault-server
 npm run test:spark-vault-unlock
+npm run test:feishu-worker
 ```
 
 The tests use fake repositories and fake credentials. They verify OAuth owner

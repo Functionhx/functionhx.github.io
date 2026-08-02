@@ -1,0 +1,79 @@
+{% assign documents_lang = page.lang | default: 'zh' %}
+
+<section class="feishu-documents" aria-labelledby="feishu-documents-heading">
+  <div class="feishu-documents__intro">
+    <p class="feishu-documents__eyebrow">MAGIC · FEISHU</p>
+    {% if documents_lang == 'en' %}
+      <h2 id="feishu-documents-heading">Documents live in Feishu</h2>
+      <p>
+        This English page is a read-only mirror. Document creation stays on the Chinese source page and uses Feishu's official OAuth and document
+        APIs.
+      </p>
+      <a class="feishu-documents__link" href="{{ '/documents/' | relative_url }}" lang="zh-CN">前往中文主站</a>
+    {% else %}
+      <h2 id="feishu-documents-heading">在熟悉的地方继续写</h2>
+      <p>文档由飞书官方服务托管。本站只负责发起授权与创建，不读取浏览器里的飞书凭证，也不会在前端保存飞书密钥。</p>
+      <p class="feishu-documents__owner-hint owner-only-control">
+        <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
+        点击可拖动的浮动铅笔，新建一份飞书云文档。
+      </p>
+      <noscript><p>新建云文档需要启用 JavaScript；阅读网站其他内容不受影响。</p></noscript>
+    {% endif %}
+  </div>
+</section>
+
+{% if documents_lang != 'en' %}
+  <dialog id="feishu-document-dialog" class="feishu-document-dialog" aria-labelledby="feishu-document-dialog-heading">
+    <div
+      id="feishu-document-creator"
+      class="feishu-document-creator"
+      data-endpoint="{{ site.feishu_documents.endpoint | default: site.spark_vault.endpoint | default: '' | escape }}"
+    >
+      <header class="feishu-document-creator__header">
+        <div>
+          <p>MAGIC · FEISHU</p>
+          <h2 id="feishu-document-dialog-heading">新建飞书云文档</h2>
+          <span>通过飞书官方 OAuth 与文档 API 创建</span>
+        </div>
+        <button id="feishu-document-close" class="feishu-document-creator__icon-button" type="button" aria-label="关闭" title="关闭">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </header>
+
+      <div id="feishu-document-connection" class="feishu-document-creator__connection" data-state="idle">
+        <span class="feishu-document-creator__state-icon" aria-hidden="true"><i class="fa-regular fa-file-lines"></i></span>
+        <div>
+          <strong id="feishu-document-connection-title">准备连接飞书</strong>
+          <p id="feishu-document-status" role="status" aria-live="polite">打开后会检查站长身份与飞书官方授权状态。</p>
+        </div>
+      </div>
+
+      <form id="feishu-document-form">
+        <label for="feishu-document-title">文档标题</label>
+        <input
+          id="feishu-document-title"
+          name="title"
+          type="text"
+          maxlength="180"
+          autocomplete="off"
+          placeholder="例如：新的研究札记"
+          required
+          disabled
+        >
+        <p class="feishu-document-creator__privacy">创建成功后会直接打开飞书返回的官方文档地址。正文仍在飞书内编辑，本站不会复制文档内容。</p>
+        <div class="feishu-document-creator__actions">
+          <button id="feishu-document-connect" class="feishu-document-creator__button feishu-document-creator__button--quiet" type="button">
+            连接飞书
+          </button>
+          <button id="feishu-document-submit" class="feishu-document-creator__button feishu-document-creator__button--primary" type="submit" disabled>
+            创建并打开
+          </button>
+        </div>
+      </form>
+
+      <a id="feishu-document-result" class="feishu-document-creator__result" href="#" target="_blank" rel="external noopener" hidden>
+        打开刚创建的飞书云文档
+      </a>
+    </div>
+  </dialog>
+{% endif %}

@@ -6,7 +6,7 @@ description: 思考、研究札记，以及实验、开发与学习现场。
 lang: zh
 translation_key: spark
 nav: true
-nav_order: 11
+nav_order: 12
 kinds:
   - note
   - log

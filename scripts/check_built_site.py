@@ -37,6 +37,8 @@ EXPECTED_ROUTES = (
     "/en/books/",
     "/tools/",
     "/en/tools/",
+    "/documents/",
+    "/en/documents/",
     "/tools/kaggle-agent/",
     "/en/tools/kaggle-agent/",
     "/notes/",
@@ -280,6 +282,8 @@ def main() -> int:
             expected_active_key = "blog"
         elif route_without_language.startswith("/tools/"):
             expected_active_key = "tools"
+        elif route_without_language.startswith("/documents/"):
+            expected_active_key = "documents"
         elif route_without_language.startswith("/spark/"):
             expected_active_key = "spark"
         if expected_active_key and parser.active_nav_translation_keys != [expected_active_key]:
@@ -387,6 +391,52 @@ def main() -> int:
             errors.append(f"{route}: Kaggle Agent ARC-AGI-2 cover missing")
         if arc_agi_2_remote_cover in html:
             errors.append(f"{route}: Kaggle Agent cover must be served locally")
+
+    documents_zh = route_file(site, "/documents/").read_text(encoding="utf-8")
+    documents_en = route_file(site, "/en/documents/").read_text(encoding="utf-8")
+    for required_id in (
+        "feishu-document-dialog",
+        "feishu-document-creator",
+        "feishu-document-status",
+        "feishu-document-title",
+        "feishu-document-connect",
+        "feishu-document-submit",
+        "feishu-document-result",
+    ):
+        if f'id="{required_id}"' not in documents_zh:
+            errors.append(f"/documents/: missing Feishu creation control #{required_id}")
+    if 'data-author-action="feishu-document-create"' not in documents_zh:
+        errors.append("/documents/: contextual pencil is missing Feishu creation")
+    if 'data-author-action="source-edit"' in documents_zh:
+        errors.append("/documents/: contextual pencil must not expose generic page editing")
+    if "/assets/js/feishu-documents.js" in documents_zh:
+        errors.append("/documents/: Feishu creation code must load only after owner intent")
+    if 'id="feishu-document-dialog"' in documents_en:
+        errors.append("/en/documents/: English reading mirror must not expose Feishu creation")
+    if "read-only mirror" not in documents_en:
+        errors.append("/en/documents/: English reading-mirror explanation is missing")
+
+    feishu_client_path = site.parent / "assets" / "js" / "feishu-documents.js"
+    feishu_client_text = (
+        feishu_client_path.read_text(encoding="utf-8")
+        if feishu_client_path.exists()
+        else ""
+    )
+    for contract in (
+        '"/api/feishu/session"',
+        '"/api/feishu/oauth/start"',
+        '"/api/feishu/documents"',
+        "idempotency_key",
+        "event.origin !== expectedOrigin",
+        "event.source !== popup",
+        'event.data?.type !== "functionhx:feishu-connected"',
+        'officialAuthorizeOrigin = "https://accounts.feishu.cn"',
+        "vaultClient.request",
+    ):
+        if contract not in feishu_client_text:
+            errors.append(
+                f"assets/js/feishu-documents.js: integration contract {contract!r} missing"
+            )
 
     for route in ("/spark/",):
         parser = parsed_pages.get(route)
