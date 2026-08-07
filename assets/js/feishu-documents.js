@@ -48,6 +48,7 @@
     connected: "现在可以创建空白云文档；正文会在飞书中继续编辑。",
     connectedAs: (name) => `飞书官方授权有效 · ${name}`,
     connectedTitle: "已连接飞书",
+    creating: "正在创建…",
     connectingFeishu: "请在飞书官方窗口完成授权。本站不会接触你的飞书密码。",
     connectingFeishuTitle: "正在连接飞书",
     connectFeishu: "连接飞书",
@@ -118,6 +119,8 @@
   function setBusy(active) {
     busy = active;
     root.dataset.busy = active ? "true" : "false";
+    if (active) root.setAttribute("aria-busy", "true");
+    else root.removeAttribute("aria-busy");
     updateControls();
   }
 
@@ -191,15 +194,22 @@
     for (const documentRecord of documents) {
       const item = document.createElement("li");
       const link = document.createElement("a");
+      const icon = document.createElement("span");
+      const iconGlyph = document.createElement("i");
       const title = document.createElement("span");
       const time = document.createElement("time");
       link.href = documentRecord.url;
       link.target = "_blank";
       link.rel = "external noopener noreferrer";
+      icon.className = "feishu-documents__list-icon";
+      icon.setAttribute("aria-hidden", "true");
+      iconGlyph.className = "fa-regular fa-file-lines";
+      icon.append(iconGlyph);
+      title.className = "feishu-documents__list-title";
       title.textContent = documentRecord.title;
       time.dateTime = documentRecord.createdAt;
       time.textContent = displayDocumentTime(documentRecord.createdAt);
-      link.append(title, time);
+      link.append(icon, title, time);
       item.append(link);
       documentList.append(item);
     }
@@ -425,6 +435,7 @@
 
   async function createDocument(event) {
     event.preventDefault();
+    window.functionhxSitePreferences?.hideLoading?.();
     if (busy) return;
     const title = titleInput.value.trim();
     if (!title) {
@@ -439,6 +450,7 @@
 
     if (!idempotencyKey) idempotencyKey = newIdempotencyKey();
     setBusy(true);
+    submitButton.textContent = strings.creating;
     resultLink.hidden = true;
     status.textContent = "正在通过飞书官方 API 创建云文档…";
     try {
@@ -481,7 +493,9 @@
         );
       }
     } finally {
+      submitButton.textContent = "创建文档";
       setBusy(false);
+      window.functionhxSitePreferences?.hideLoading?.();
     }
   }
 

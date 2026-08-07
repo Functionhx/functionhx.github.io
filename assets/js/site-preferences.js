@@ -14,7 +14,7 @@
   const loader = document.getElementById("site-page-loader");
   const loaderDelay = 180;
   const loaderMinimumVisible = 280;
-  const loaderState = window.functionhxPageLoaderState || { hideTimer: 0, showTimer: 0, visibleAt: 0 };
+  const loaderState = window.functionhxPageLoaderState || { failsafeTimer: 0, hideTimer: 0, showTimer: 0, visibleAt: 0 };
   window.functionhxPageLoaderState = loaderState;
 
   function storedFont() {
@@ -73,12 +73,16 @@
   function showLoading() {
     window.clearTimeout(loaderState.hideTimer);
     loaderState.hideTimer = 0;
+    window.clearTimeout(loaderState.failsafeTimer);
+    loaderState.failsafeTimer = window.setTimeout(hideLoading, 12000);
     document.body?.setAttribute("aria-busy", "true");
     if (root.dataset.pageLoading === "true" || loaderState.showTimer) return;
     loaderState.showTimer = window.setTimeout(revealLoading, loaderDelay);
   }
 
   function finishHiding() {
+    window.clearTimeout(loaderState.failsafeTimer);
+    loaderState.failsafeTimer = 0;
     loaderState.hideTimer = 0;
     loaderState.visibleAt = 0;
     root.removeAttribute("data-page-loading");

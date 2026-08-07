@@ -2,22 +2,26 @@
 
 <section class="feishu-documents" aria-labelledby="feishu-documents-heading">
   <div class="feishu-documents__intro">
-    <p class="feishu-documents__eyebrow">MAGIC · FEISHU</p>
-    {% if documents_lang == 'en' %}
-      <h2 id="feishu-documents-heading">Documents live in Feishu</h2>
-      <p>
-        This English page is a read-only mirror. Document creation stays on the Chinese source page and uses Feishu's official OAuth and document
-        APIs.
-      </p>
-      <a class="feishu-documents__link" href="{{ '/documents/' | relative_url }}" lang="zh-CN">前往中文主站</a>
-    {% else %}
-      <h2 id="feishu-documents-heading">在熟悉的地方继续写</h2>
-      <p>文档由飞书官方服务托管。本站只负责发起授权与创建，不读取浏览器里的飞书凭证，也不会在前端保存飞书密钥。</p>
+    <div class="feishu-documents__intro-copy">
+      <p class="feishu-documents__eyebrow">FEISHU DOCS</p>
+      {% if documents_lang == 'en' %}
+        <h2 id="feishu-documents-heading">Start here, keep writing in Feishu</h2>
+        <p>
+          This English page is a read-only mirror. Document creation stays on the Chinese source page and uses Feishu's official OAuth and document
+          APIs.
+        </p>
+        <a class="feishu-documents__link" href="{{ '/documents/' | relative_url }}" lang="zh-CN">前往中文主站</a>
+      {% else %}
+        <h2 id="feishu-documents-heading">在这里新建，在飞书里写</h2>
+        <p>正文始终留在飞书；本站只保存标题与官方链接，方便你回来继续。</p>
+        <noscript><p>新建云文档需要启用 JavaScript；阅读网站其他内容不受影响。</p></noscript>
+      {% endif %}
+    </div>
+    {% if documents_lang != 'en' %}
       <p class="feishu-documents__owner-hint owner-only-control">
         <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
-        点击可拖动的浮动铅笔，新建一份飞书云文档。
+        <span><strong>新建文档</strong><small>点击右上角铅笔</small></span>
       </p>
-      <noscript><p>新建云文档需要启用 JavaScript；阅读网站其他内容不受影响。</p></noscript>
     {% endif %}
   </div>
 
@@ -30,14 +34,15 @@
     >
       <header>
         <div>
-          <p class="feishu-documents__eyebrow">PRIVATE · FEISHU</p>
-          <h3 id="feishu-document-library-heading">云文档记录</h3>
+          <p class="feishu-documents__eyebrow">ONLY YOU</p>
+          <h3 id="feishu-document-library-heading">最近文档</h3>
         </div>
         <button id="feishu-document-refresh" class="feishu-documents__refresh" type="button" aria-label="刷新云文档记录" title="刷新">
           <i class="fa-solid fa-rotate" aria-hidden="true"></i>
         </button>
       </header>
-      <p id="feishu-document-list-status" class="feishu-documents__list-status" role="status" aria-live="polite">正在读取私有记录…</p>
+      <p class="feishu-documents__privacy-note"><i class="fa-solid fa-lock" aria-hidden="true"></i> 仅站长可见</p>
+      <p id="feishu-document-list-status" class="feishu-documents__list-status" role="status" aria-live="polite">正在同步文档…</p>
       <ol id="feishu-document-list" class="feishu-documents__list"></ol>
     </section>
   {% endif %}
@@ -69,7 +74,7 @@
         </div>
       </div>
 
-      <form id="feishu-document-form">
+      <form id="feishu-document-form" data-no-page-loader>
         <label for="feishu-document-title">文档标题</label>
         <input
           id="feishu-document-title"

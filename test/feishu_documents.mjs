@@ -54,6 +54,7 @@ const documentRecords = [
   },
 ];
 let createOutcome = "success";
+let createDelay = 0;
 let oauthOutcome = "denied";
 
 await page.route("**/assets/js/spark-vault-client.js*", async (route) => {
@@ -189,6 +190,7 @@ await page.route(`${workerOrigin}/api/feishu/documents`, async (route) => {
     title: createdDocument.title,
     url: createdDocument.url,
   });
+  if (createDelay) await new Promise((resolve) => setTimeout(resolve, createDelay));
   await route.fulfill({
     body: JSON.stringify(createdDocument),
     contentType: "application/json",
@@ -267,12 +269,21 @@ try {
   if (!oauthPage.isClosed()) await oauthPage.waitForEvent("close");
 
   await page.locator("#feishu-document-title").fill("新的研究札记");
+  assert.equal(await page.locator("#feishu-document-form").getAttribute("data-no-page-loader"), "");
   const pagesBeforeCreate = context.pages().length;
+  createDelay = 450;
   await page.locator("#feishu-document-submit").evaluate((button) => {
     button.click();
     button.click();
   });
+  await page.waitForTimeout(260);
+  assert.equal(await page.locator("html").getAttribute("data-page-loading"), null, "in-page creation must never show the page loader");
+  assert.equal(await page.locator("#feishu-document-creator").getAttribute("aria-busy"), "true");
+  assert.equal(await page.locator("#feishu-document-submit").textContent(), "正在创建…");
   await page.waitForFunction(() => document.querySelector("#feishu-document-connection")?.dataset.state === "created");
+  createDelay = 0;
+  assert.equal(await page.locator("#feishu-document-creator").getAttribute("aria-busy"), null);
+  assert.equal(await page.locator("#feishu-document-submit").textContent(), "创建文档");
   assert.equal(context.pages().length, pagesBeforeCreate, "creating a document must not open a window or tab");
   assert.equal(createRequests, 1, "a double click must create at most one Feishu document");
   assert.equal(createdPayload.title, "新的研究札记");
