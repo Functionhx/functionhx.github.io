@@ -327,18 +327,21 @@ try {
   assert.equal(await page.locator('a[data-nav-translation-key="documents"]').count(), 1);
   assert.equal(await page.locator('li.active a[data-nav-translation-key="documents"]').count(), 1);
   assert.equal(await page.locator('script[src*="feishu-documents.js"]').count(), 0, "the Feishu client must load only on owner intent");
+  assert.equal(await page.locator("#feishu-document-library").isHidden(), true, "the document library must start in visitor mode");
   await page.evaluate(() => {
     window.__feishuOwnerSession = true;
     window.functionhxOwnerUi.setVerified(true, false);
   });
 
   await page.locator("#site-inline-editor-toggle").click();
+  await page.waitForFunction(() => document.querySelectorAll("#feishu-document-list a").length === 2);
+  assert.equal(await page.locator("#feishu-document-library").isVisible(), true, "pressing the pencil should reveal the owner document library");
+  assert.equal(await page.locator("#feishu-document-dialog").isHidden(), true, "entering owner mode must not open the creation dialog automatically");
   const createAction = page.locator('#site-author-menu [data-author-action="feishu-document-create"]');
   assert.equal(await createAction.count(), 1, "the Documents pencil must expose only the Feishu create action");
   assert.equal(await page.locator('#site-author-menu [data-author-action="source-edit"]').count(), 0);
   await createAction.click();
   await page.locator("#feishu-document-dialog").waitFor({ state: "visible" });
-  await page.waitForFunction(() => document.querySelectorAll("#feishu-document-list a").length === 2);
   assert.match(await page.locator("#feishu-document-list").textContent(), /已有的研究文档/);
   assert.match(await page.locator("#feishu-document-list").textContent(), /飞书中原有的云文档/);
   assert.equal(await page.locator("#feishu-public-library").isHidden(), true, "unselected Feishu documents must stay invisible to visitors");

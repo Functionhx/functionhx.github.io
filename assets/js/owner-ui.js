@@ -12,11 +12,14 @@
   let dragState = null;
   let suppressNextPointerClick = false;
   let resizeFrame = 0;
+  const visitorToggleLabel = toggle?.getAttribute("aria-label") || "打开站长创作菜单";
+  const visitorToggleTitle = toggle?.getAttribute("title") || "创作与编辑";
 
   // Legacy booleans were only visual hints and could be forged or become stale.
   // Owner-only controls now wait for the encrypted vault/auth flow to announce a
   // real connection. GitHub still enforces every write independently.
   delete document.documentElement.dataset.ownerVerified;
+  delete document.documentElement.dataset.ownerMode;
   try {
     window.sessionStorage.removeItem("functionhx:owner-ui:session");
     window.localStorage.removeItem("functionhx:owner-ui:remembered");
@@ -45,6 +48,25 @@
       setVaultHint(false);
       closeMenu();
     }
+  }
+
+  function ownerModeIsActive() {
+    return document.documentElement.dataset.ownerMode === "true";
+  }
+
+  function setOwnerMode(active, { focus = false } = {}) {
+    const enabled = active === true && document.documentElement.dataset.ownerVerified === "true";
+    if (enabled) document.documentElement.dataset.ownerMode = "true";
+    else delete document.documentElement.dataset.ownerMode;
+    if (toggle) {
+      toggle.setAttribute("aria-pressed", enabled ? "true" : "false");
+      toggle.setAttribute("aria-label", enabled ? "站长模式已开启；打开创作菜单" : visitorToggleLabel);
+      toggle.setAttribute("title", enabled ? "站长模式" : visitorToggleTitle);
+    }
+    if (!enabled) closeMenu();
+    window.dispatchEvent(new CustomEvent("functionhx:owner-mode-changed", { detail: { active: enabled } }));
+    if (focus) window.requestAnimationFrame(() => toggle?.focus());
+    return enabled;
   }
 
   function clamp(value, minimum, maximum) {
@@ -333,6 +355,11 @@
         event.stopImmediatePropagation();
         return;
       }
+      if (!ownerModeIsActive()) {
+        setOwnerMode(true);
+        openMenu(event.detail === 0 ? "first" : "");
+        return;
+      }
       if (menu.hidden) openMenu(event.detail === 0 ? "first" : "");
       else closeMenu();
     });
@@ -345,6 +372,11 @@
     });
 
     menu.addEventListener("click", (event) => {
+      if (event.target.closest("[data-owner-mode-exit]")) {
+        event.preventDefault();
+        setOwnerMode(false, { focus: true });
+        return;
+      }
       if (event.target.closest("[data-author-action], a[href]")) closeMenu();
     });
 
@@ -394,5 +426,5 @@
     setVerified(event.detail.connected === true, event.detail.remembered === true);
   });
 
-  window.functionhxOwnerUi = Object.freeze({ closeMenu, closePrimaryNavigation, setVerified });
+  window.functionhxOwnerUi = Object.freeze({ closeMenu, closePrimaryNavigation, ownerModeIsActive, setOwnerMode, setVerified });
 })();

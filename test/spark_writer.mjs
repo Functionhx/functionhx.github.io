@@ -522,6 +522,8 @@ try {
   await page.goto(`${baseUrl}spark/`, { waitUntil: "networkidle" });
   await page.evaluate(() => window.functionhxOwnerUi?.setVerified?.(true, false));
   assert.equal(await page.locator('footer[role="contentinfo"]').count(), 0, "the removed global footer must not render");
+  assert.equal(await page.locator("#site-spark-create").isHidden(), true, "Spark controls must start in visitor mode");
+  await page.locator("#site-inline-editor-toggle").click();
 
   await page.locator("#site-spark-create").click();
   await page.locator("#site-spark-writer").waitFor({ state: "visible" });
@@ -738,6 +740,8 @@ try {
   await page.evaluate(() => window.localStorage.setItem("theme", "dark"));
   await page.reload({ waitUntil: "networkidle" });
   await page.evaluate(() => window.functionhxOwnerUi?.setVerified?.(true, false));
+  assert.equal(await page.locator("#site-spark-create").isHidden(), true, "a reload must restore the visitor view");
+  await page.locator("#site-inline-editor-toggle").click();
   await page.locator("#site-spark-create").click();
   await page.waitForFunction(() => document.querySelector("#site-spark-writer-connect").dataset.connected === "false");
   assert.equal(await page.evaluate(() => window.__sparkPopupCount), 0, "the encrypted device session must survive reload without another login");

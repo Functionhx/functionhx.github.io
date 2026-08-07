@@ -231,8 +231,19 @@
     loadFeature(featureFor(trigger)).catch(() => undefined);
   }
 
+  function loadOwnerContext() {
+    const context = document.getElementById("site-inline-editor-toggle")?.dataset.authorContext || "";
+    if (context !== "documents") return;
+    loadFeature("feishuDocuments").catch(() => {
+      setLoadStatus("站长文档库暂时没有载入。请重新点击铅笔后重试。", "error");
+    });
+  }
+
   document.addEventListener("pointerover", prepareFromEvent, { capture: true, passive: true });
   document.addEventListener("focusin", prepareFromEvent, true);
+  window.addEventListener("functionhx:owner-mode-changed", (event) => {
+    if (event.detail?.active === true) loadOwnerContext();
+  });
   document.addEventListener(
     "click",
     (event) => {
