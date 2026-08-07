@@ -100,9 +100,22 @@ globalThis.fetch = async (input, init = {}) => {
     const key = fileKey(repository, path);
     if (request.method === "GET") {
       const file = files.get(key);
-      return file
-        ? json({ content: Buffer.from(file.content, "utf8").toString("base64"), path, sha: file.sha, type: "file" })
-        : json({ message: "Not Found" }, 404);
+      if (file) {
+        return json({ content: Buffer.from(file.content, "utf8").toString("base64"), path, sha: file.sha, type: "file" });
+      }
+      const prefix = `${repository}:${path.replace(/\/$/, "")}/`;
+      const entries = [...files.entries()]
+        .filter(([storedKey]) => storedKey.startsWith(prefix) && !storedKey.slice(prefix.length).includes("/"))
+        .map(([storedKey, storedFile]) => {
+          const storedPath = storedKey.slice(`${repository}:`.length);
+          return {
+            name: storedPath.slice(storedPath.lastIndexOf("/") + 1),
+            path: storedPath,
+            sha: storedFile.sha,
+            type: "file",
+          };
+        });
+      return entries.length ? json(entries) : json({ message: "Not Found" }, 404);
     }
     if (request.method === "PUT") {
       const body = await request.json();
@@ -377,11 +390,22 @@ try {
   holdCreate = null;
   assert.equal(firstCreate.status, 200);
   const firstDocument = await firstCreate.json();
-  assert.deepEqual(firstDocument, {
-    document_token: "doxcn_test_1",
-    idempotent: false,
-    title: "Metadata doxcn_test_1",
-    url: "https://owner.feishu.cn/docx/doxcn_test_1",
+  assert.equal(firstDocument.document_token, "doxcn_test_1");
+  assert.equal(firstDocument.idempotent, false);
+  assert.equal(firstDocument.title, "Metadata doxcn_test_1");
+  assert.equal(firstDocument.url, "https://owner.feishu.cn/docx/doxcn_test_1");
+  assert.ok(Number.isFinite(Date.parse(firstDocument.created_at)));
+
+  const listedDocuments = await apiRequest("/api/feishu/documents", "GET", sessionToken);
+  assert.equal(listedDocuments.status, 200);
+  assert.deepEqual(await listedDocuments.json(), {
+    documents: [
+      {
+        created_at: firstDocument.created_at,
+        title: "Metadata doxcn_test_1",
+        url: "https://owner.feishu.cn/docx/doxcn_test_1",
+      },
+    ],
   });
 
   const duplicateAfterSuccess = await apiRequest("/api/feishu/documents", "POST", sessionToken, {

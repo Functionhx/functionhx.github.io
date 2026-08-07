@@ -13,6 +13,10 @@
   const connectionTitle = document.getElementById("feishu-document-connection-title");
   const status = document.getElementById("feishu-document-status");
   const resultLink = document.getElementById("feishu-document-result");
+  const library = document.getElementById("feishu-document-library");
+  const documentList = document.getElementById("feishu-document-list");
+  const documentListStatus = document.getElementById("feishu-document-list-status");
+  const refreshButton = document.getElementById("feishu-document-refresh");
   const pencilToggle = document.getElementById("site-inline-editor-toggle");
   const vaultClient = window.functionhxSparkVault;
   if (
@@ -27,7 +31,11 @@
     !connection ||
     !connectionTitle ||
     !status ||
-    !resultLink
+    !resultLink ||
+    !library ||
+    !documentList ||
+    !documentListStatus ||
+    !refreshButton
   ) {
     return;
   }
@@ -47,7 +55,7 @@
     createFailed: "暂时无法创建云文档。请保留当前标题后重试；重复尝试不会重复创建同一份文档。",
     createInProgress: "创建请求仍在安全处理中，请稍等片刻后用当前标题重试。",
     createOutcomeUnknown: "飞书可能已经创建了文档，但本站未能确认结果。请先到飞书中核对，避免重复创建。",
-    created: "云文档已创建，并已在飞书中打开。",
+    created: "云文档已创建并保存到下方记录。点击链接后会在新标签页打开飞书。",
     createdTitle: "创建成功",
     feishuRequired: "站长身份已验证。继续通过飞书官方 OAuth 授权后即可创建。",
     feishuRequiredTitle: "需要飞书授权",
@@ -61,6 +69,9 @@
     oauthIncomplete: "飞书授权信息不完整，请重新发起授权。",
     oauthScopeMissing: "飞书没有授予创建文档所需权限，请重新授权。",
     popupBlocked: "浏览器拦截了授权窗口。请允许本站打开弹窗后重试。",
+    recordsEmpty: "还没有通过本站创建的飞书云文档。",
+    recordsFailed: "暂时无法读取云文档记录，请稍后刷新。",
+    recordsLoading: "正在读取私有云文档记录…",
     requestFailed: "暂时无法确认飞书连接，请检查网络后重试。",
     requestFailedTitle: "连接检查失败",
     retry: "重新检查",
@@ -74,6 +85,7 @@
   let idempotencyKey = "";
   let oauthPopup = null;
   let oauthCancel = null;
+  let documents = [];
 
   try {
     endpoint = vaultClient?.normalizeEndpoint?.(root.dataset.endpoint || "") || "";
@@ -142,6 +154,94 @@
       return parsed.protocol === "https:" && officialHost && !parsed.username && !parsed.password ? parsed.href : "";
     } catch (_error) {
       return "";
+    }
+  }
+
+  function normalizeDocument(value) {
+    const url = safeDocumentUrl(value?.url);
+    const title = String(value?.title || "").trim();
+    const createdAt = String(value?.created_at || "");
+    if (!url || !title || !Number.isFinite(Date.parse(createdAt))) return null;
+    return { createdAt, title: title.slice(0, 800), url };
+  }
+
+  function displayDocumentTime(value) {
+    try {
+      return new Intl.DateTimeFormat("zh-CN", {
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        month: "short",
+        year: "numeric",
+      }).format(new Date(value));
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  function renderDocuments() {
+    documentList.replaceChildren();
+    library.hidden = false;
+    if (!documents.length) {
+      documentListStatus.textContent = strings.recordsEmpty;
+      documentListStatus.hidden = false;
+      return;
+    }
+    documentListStatus.hidden = true;
+    for (const documentRecord of documents) {
+      const item = document.createElement("li");
+      const link = document.createElement("a");
+      const title = document.createElement("span");
+      const time = document.createElement("time");
+      link.href = documentRecord.url;
+      link.target = "_blank";
+      link.rel = "external noopener noreferrer";
+      title.textContent = documentRecord.title;
+      time.dateTime = documentRecord.createdAt;
+      time.textContent = displayDocumentTime(documentRecord.createdAt);
+      link.append(title, time);
+      item.append(link);
+      documentList.append(item);
+    }
+  }
+
+  function upsertDocument(value) {
+    const record = normalizeDocument(value);
+    if (!record) return;
+    documents = [record, ...documents.filter((item) => item.url !== record.url)].sort(
+      (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)
+    );
+    renderDocuments();
+  }
+
+  async function loadDocuments() {
+    if (!endpoint || !vaultClient?.restore) return false;
+    documentListStatus.hidden = false;
+    documentListStatus.textContent = strings.recordsLoading;
+    refreshButton.disabled = true;
+    try {
+      const ownerSession = await withTimeout(vaultClient.restore(endpoint), 9000, "Owner session check timed out.");
+      if (!ownerSession) {
+        library.hidden = true;
+        return false;
+      }
+      library.hidden = false;
+      const payload = await withTimeout(vaultRequest("/api/feishu/documents"), 12000, "Feishu document records timed out.");
+      documents = (Array.isArray(payload.documents) ? payload.documents : []).map(normalizeDocument).filter(Boolean);
+      documents.sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
+      renderDocuments();
+      return true;
+    } catch (error) {
+      if (error?.status === 401 || error?.code === "authentication_required") {
+        library.hidden = true;
+      } else {
+        library.hidden = false;
+        documentListStatus.hidden = false;
+        documentListStatus.textContent = strings.recordsFailed;
+      }
+      return false;
+    } finally {
+      refreshButton.disabled = false;
     }
   }
 
@@ -337,18 +437,6 @@
       return;
     }
 
-    const popup = window.open("about:blank", "functionhx-feishu-document", "popup=yes,width=1180,height=820");
-    if (!popup) {
-      status.textContent = strings.popupBlocked;
-      return;
-    }
-    try {
-      popup.document.title = "创建飞书云文档 · Magic";
-      popup.document.body.textContent = "正在创建云文档…";
-    } catch (_error) {
-      // The placeholder remains useful even when the browser restricts access.
-    }
-
     if (!idempotencyKey) idempotencyKey = newIdempotencyKey();
     setBusy(true);
     resultLink.hidden = true;
@@ -367,13 +455,12 @@
       resultLink.href = documentUrl;
       resultLink.hidden = false;
       resultLink.textContent = payload.title ? `打开《${payload.title}》` : "打开刚创建的飞书云文档";
+      upsertDocument(payload);
       setConnection("created", strings.createdTitle, strings.created);
       titleInput.value = "";
       idempotencyKey = "";
-      popup.opener = null;
-      popup.location.replace(documentUrl);
+      loadDocuments().catch(() => undefined);
     } catch (error) {
-      if (!popup.closed) popup.close();
       if (error?.code === "feishu_authorization_required" || error?.code === "feishu_reauthorization_required") {
         idempotencyKey = "";
         setConnection("feishu-auth-required", strings.feishuRequiredTitle, strings.feishuRequired);
@@ -410,12 +497,14 @@
     resultLink.hidden = true;
     if (!dialog.open) dialog.showModal();
     checkConnection({ focus: true }).catch(() => undefined);
+    loadDocuments().catch(() => undefined);
   }
 
   trigger.addEventListener("click", openCreator);
   connectButton.addEventListener("click", () => connect().catch(() => undefined));
   form.addEventListener("submit", createDocument);
   closeButton.addEventListener("click", closeCreator);
+  refreshButton.addEventListener("click", () => loadDocuments().catch(() => undefined));
   dialog.addEventListener("cancel", (event) => {
     event.preventDefault();
     closeCreator();
@@ -426,4 +515,5 @@
   titleInput.addEventListener("input", () => {
     idempotencyKey = "";
   });
+  loadDocuments().catch(() => undefined);
 })();

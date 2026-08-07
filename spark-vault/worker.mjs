@@ -674,6 +674,17 @@ async function readRepositoryFile(env, token, repository, branch, path, allowNot
   return { content: decoder.decode(base64ToBytes(remote.content)), sha: remote.sha };
 }
 
+async function readRepositoryDirectory(env, token, repository, branch, path, allowNotFound = false) {
+  const remote = await githubRequest(env, token, repoEndpoint(repository, `/contents/${encodePath(path)}?ref=${encodeURIComponent(branch)}`), {
+    allowNotFound,
+  });
+  if (!remote) return [];
+  if (!Array.isArray(remote)) {
+    throw new HttpError(422, "GitHub returned an unsupported integration directory.", "unsupported_record");
+  }
+  return remote.filter((entry) => entry?.type === "file" && typeof entry.path === "string" && typeof entry.name === "string");
+}
+
 async function writeRepositoryFile(env, token, repository, branch, path, content, message, sha = "") {
   const body = {
     branch,
@@ -1254,11 +1265,62 @@ async function queryFeishuDocumentUrl(env, accessToken, documentToken) {
 
 function feishuCreateResponse(record, idempotent = false) {
   return {
+    created_at: record.completedAt || record.createdAt,
     document_token: record.documentToken,
     idempotent,
     title: record.resultTitle || record.title,
     url: record.url,
   };
+}
+
+function feishuDocumentSummary(record) {
+  if (record?.status !== "succeeded") return null;
+  let url;
+  try {
+    url = new URL(String(record.url || ""));
+  } catch (_error) {
+    return null;
+  }
+  const hostname = url.hostname.toLowerCase();
+  const officialHost = hostname === "feishu.cn" || hostname.endsWith(".feishu.cn");
+  if (url.protocol !== "https:" || !officialHost || url.username || url.password) return null;
+  const createdAt = String(record.completedAt || record.createdAt || "");
+  if (!createdAt || !Number.isFinite(Date.parse(createdAt))) return null;
+  const title = String(record.resultTitle || record.title || "")
+    .trim()
+    .slice(0, 800);
+  if (!title) return null;
+  return { created_at: createdAt, title, url: url.toString() };
+}
+
+async function listFeishuDocuments(env, githubToken) {
+  const entries = await readRepositoryDirectory(
+    env,
+    githubToken,
+    required(env, "PRIVATE_REPO"),
+    branchFor(env, "private"),
+    FEISHU_REQUEST_DIRECTORY,
+    true
+  );
+  const identities = entries
+    .map((entry) => {
+      const match = entry.name.match(/^([0-9a-f]{64})\.json$/);
+      if (!match || entry.path !== `${FEISHU_REQUEST_DIRECTORY}/${entry.name}`) return null;
+      return { id: `feishu-request-${match[1]}`, path: entry.path };
+    })
+    .filter(Boolean);
+
+  const documents = [];
+  for (let offset = 0; offset < identities.length; offset += 12) {
+    const batch = identities.slice(offset, offset + 12);
+    const loaded = await Promise.all(batch.map((identity) => loadIntegrationRecord(env, githubToken, identity.path, identity.id, false)));
+    for (const item of loaded) {
+      const summary = feishuDocumentSummary(item.record);
+      if (summary) documents.push(summary);
+    }
+  }
+  documents.sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at));
+  return documents.slice(0, 200);
 }
 
 function feishuCreateOutcomeIsUnknown(error) {
@@ -1782,6 +1844,8 @@ async function handleApi(request, env) {
     payload = await feishuSessionStatus(env, auth.accessToken);
   } else if (parts.length === 3 && parts[0] === "feishu" && parts[1] === "oauth" && parts[2] === "start" && request.method === "POST") {
     payload = await handleFeishuOAuthStart(request, env, auth);
+  } else if (parts.length === 2 && parts[0] === "feishu" && parts[1] === "documents" && request.method === "GET") {
+    payload = { documents: await listFeishuDocuments(env, auth.accessToken) };
   } else if (parts.length === 2 && parts[0] === "feishu" && parts[1] === "documents" && request.method === "POST") {
     payload = await createFeishuDocument(env, auth.accessToken, await readJson(request));
   } else if (parts.length === 1 && parts[0] === "keyring" && request.method === "GET") {

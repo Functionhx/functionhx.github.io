@@ -46,6 +46,13 @@ let connected = false;
 let createRequests = 0;
 let createdPayload = null;
 const createdPayloads = [];
+const documentRecords = [
+  {
+    created_at: "2026-08-06T08:30:00.000Z",
+    title: "已有的研究文档",
+    url: "https://example.feishu.cn/docx/existingtoken",
+  },
+];
 let createOutcome = "success";
 let oauthOutcome = "denied";
 
@@ -145,6 +152,15 @@ await context.route(`${workerOrigin}/auth/feishu/callback**`, async (route) => {
 });
 
 await page.route(`${workerOrigin}/api/feishu/documents`, async (route) => {
+  if (route.request().method() === "GET") {
+    assert.equal(route.request().headers().authorization, "Bearer test-owner-session");
+    await route.fulfill({
+      body: JSON.stringify({ documents: documentRecords }),
+      contentType: "application/json",
+      status: 200,
+    });
+    return;
+  }
   createRequests += 1;
   assert.equal(route.request().method(), "POST");
   assert.equal(route.request().headers().authorization, "Bearer test-owner-session");
@@ -162,14 +178,25 @@ await page.route(`${workerOrigin}/api/feishu/documents`, async (route) => {
     });
     return;
   }
+  const createdDocument = {
+    created_at: new Date(Date.UTC(2026, 7, 7, 9, createRequests)).toISOString(),
+    document_token: "mocktoken",
+    title: createdPayload.title,
+    url: "https://example.feishu.cn/docx/mocktoken",
+  };
+  documentRecords.unshift({
+    created_at: createdDocument.created_at,
+    title: createdDocument.title,
+    url: createdDocument.url,
+  });
   await route.fulfill({
-    body: JSON.stringify({ document_token: "mocktoken", title: createdPayload.title, url: "https://example.feishu.cn/docx/mocktoken" }),
+    body: JSON.stringify(createdDocument),
     contentType: "application/json",
     status: 200,
   });
 });
 
-await context.route("https://example.feishu.cn/docx/mocktoken", async (route) => {
+await context.route("https://example.feishu.cn/docx/**", async (route) => {
   await route.fulfill({ body: "<title>Mock Feishu document</title>", contentType: "text/html", status: 200 });
 });
 
@@ -189,6 +216,8 @@ try {
   assert.equal(await page.locator('#site-author-menu [data-author-action="source-edit"]').count(), 0);
   await createAction.click();
   await page.locator("#feishu-document-dialog").waitFor({ state: "visible" });
+  await page.waitForFunction(() => document.querySelectorAll("#feishu-document-list a").length === 1);
+  assert.match(await page.locator("#feishu-document-list a").first().textContent(), /已有的研究文档.*2026/s);
   await page.waitForFunction(() => document.querySelector("#feishu-document-connection")?.dataset.state === "unconfigured");
   assert.match(await page.locator("#feishu-document-status").textContent(), /尚未完成配置/);
   assert.doesNotMatch(await page.locator("#feishu-document-status").textContent(), /Thinking/i);
@@ -238,31 +267,32 @@ try {
   if (!oauthPage.isClosed()) await oauthPage.waitForEvent("close");
 
   await page.locator("#feishu-document-title").fill("新的研究札记");
-  const documentPopupPromise = context.waitForEvent("page");
+  const pagesBeforeCreate = context.pages().length;
   await page.locator("#feishu-document-submit").evaluate((button) => {
     button.click();
     button.click();
   });
-  const documentPage = await documentPopupPromise;
   await page.waitForFunction(() => document.querySelector("#feishu-document-connection")?.dataset.state === "created");
+  assert.equal(context.pages().length, pagesBeforeCreate, "creating a document must not open a window or tab");
   assert.equal(createRequests, 1, "a double click must create at most one Feishu document");
   assert.equal(createdPayload.title, "新的研究札记");
   assert.match(createdPayload.idempotency_key, /^feishu-document-[a-z0-9-]+$/);
   assert.equal(await page.locator("#feishu-document-result").getAttribute("href"), "https://example.feishu.cn/docx/mocktoken");
-  await documentPage.waitForURL("https://example.feishu.cn/docx/mocktoken");
-  await documentPage.close();
+  await page.waitForFunction(() => document.querySelector("#feishu-document-list a")?.textContent.includes("新的研究札记"));
   await page.locator("#feishu-document-close").click();
+  const documentTabPromise = context.waitForEvent("page");
+  await page.locator('#feishu-document-list a[href="https://example.feishu.cn/docx/mocktoken"]').first().click();
+  const documentTab = await documentTabPromise;
+  await documentTab.waitForURL("https://example.feishu.cn/docx/mocktoken");
+  await documentTab.close();
 
   await page.locator("#site-inline-editor-toggle").click();
   await createAction.click();
   await page.waitForFunction(() => document.querySelector("#feishu-document-connection")?.dataset.state === "connected");
   await page.locator("#feishu-document-title").fill("重新授权后创建");
   createOutcome = "reauthorize";
-  const rejectedDocumentPopupPromise = context.waitForEvent("page");
   await page.locator("#feishu-document-submit").click();
-  const rejectedDocumentPopup = await rejectedDocumentPopupPromise;
   await page.waitForFunction(() => document.querySelector("#feishu-document-connection")?.dataset.state === "feishu-auth-required");
-  if (!rejectedDocumentPopup.isClosed()) await rejectedDocumentPopup.waitForEvent("close");
   const rejectedKey = createdPayloads.at(-1).idempotency_key;
 
   const reconnectPopupPromise = context.waitForEvent("page");
@@ -271,13 +301,9 @@ try {
   await page.waitForFunction(() => document.querySelector("#feishu-document-connection")?.dataset.state === "connected");
   if (!reconnectPopup.isClosed()) await reconnectPopup.waitForEvent("close");
 
-  const retriedDocumentPopupPromise = context.waitForEvent("page");
   await page.locator("#feishu-document-submit").click();
-  const retriedDocumentPopup = await retriedDocumentPopupPromise;
   await page.waitForFunction(() => document.querySelector("#feishu-document-connection")?.dataset.state === "created");
   assert.notEqual(createdPayloads.at(-1).idempotency_key, rejectedKey, "reauthorization must use a fresh safe request key");
-  await retriedDocumentPopup.waitForURL("https://example.feishu.cn/docx/mocktoken");
-  await retriedDocumentPopup.close();
   await page.locator("#feishu-document-close").click();
 
   await page.goto(`${baseUrl}en/documents/`, { waitUntil: "networkidle" });

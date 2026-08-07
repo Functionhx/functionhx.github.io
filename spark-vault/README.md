@@ -123,7 +123,13 @@ compare-and-swap lease before using the single-use refresh token. Document
 creation reserves an encrypted idempotency record before calling
 `/open-apis/docx/v1/documents`; it then queries
 `/open-apis/drive/v1/metas/batch_query` with `with_url: true` and returns the
-official URL instead of constructing a tenant URL locally.
+official URL instead of constructing a tenant URL locally. Successful request
+records also form the owner's private document index: authenticated
+`GET /api/feishu/documents` decrypts and validates those records, returns at
+most the 200 newest title/URL/timestamp summaries, and never exposes them in
+the static site. Creation itself does not open a window. The owner explicitly
+clicks a recorded link, which opens the official Feishu URL in a new browser
+tab.
 
 ## Legacy migration
 

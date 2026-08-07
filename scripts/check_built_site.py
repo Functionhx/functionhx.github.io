@@ -402,6 +402,10 @@ def main() -> int:
         "feishu-document-connect",
         "feishu-document-submit",
         "feishu-document-result",
+        "feishu-document-library",
+        "feishu-document-list",
+        "feishu-document-list-status",
+        "feishu-document-refresh",
     ):
         if f'id="{required_id}"' not in documents_zh:
             errors.append(f"/documents/: missing Feishu creation control #{required_id}")
@@ -432,11 +436,14 @@ def main() -> int:
         'event.data?.type !== "functionhx:feishu-connected"',
         'officialAuthorizeOrigin = "https://accounts.feishu.cn"',
         "vaultClient.request",
+        'link.target = "_blank"',
     ):
         if contract not in feishu_client_text:
             errors.append(
                 f"assets/js/feishu-documents.js: integration contract {contract!r} missing"
             )
+    if '"functionhx-feishu-document"' in feishu_client_text:
+        errors.append("assets/js/feishu-documents.js: creation must not pre-open a document popup")
 
     for route in ("/spark/",):
         parser = parsed_pages.get(route)

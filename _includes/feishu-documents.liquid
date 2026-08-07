@@ -20,6 +20,27 @@
       <noscript><p>新建云文档需要启用 JavaScript；阅读网站其他内容不受影响。</p></noscript>
     {% endif %}
   </div>
+
+  {% if documents_lang != 'en' %}
+    <section
+      id="feishu-document-library"
+      class="feishu-documents__library owner-only-control"
+      aria-labelledby="feishu-document-library-heading"
+      hidden
+    >
+      <header>
+        <div>
+          <p class="feishu-documents__eyebrow">PRIVATE · FEISHU</p>
+          <h3 id="feishu-document-library-heading">云文档记录</h3>
+        </div>
+        <button id="feishu-document-refresh" class="feishu-documents__refresh" type="button" aria-label="刷新云文档记录" title="刷新">
+          <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+        </button>
+      </header>
+      <p id="feishu-document-list-status" class="feishu-documents__list-status" role="status" aria-live="polite">正在读取私有记录…</p>
+      <ol id="feishu-document-list" class="feishu-documents__list"></ol>
+    </section>
+  {% endif %}
 </section>
 
 {% if documents_lang != 'en' %}
@@ -60,18 +81,20 @@
           required
           disabled
         >
-        <p class="feishu-document-creator__privacy">创建成功后会直接打开飞书返回的官方文档地址。正文仍在飞书内编辑，本站不会复制文档内容。</p>
+        <p class="feishu-document-creator__privacy">
+          创建成功后会保存到本站下方的私有记录。由你点击链接后，才会在新标签页打开飞书继续写作；本站不会复制正文。
+        </p>
         <div class="feishu-document-creator__actions">
           <button id="feishu-document-connect" class="feishu-document-creator__button feishu-document-creator__button--quiet" type="button">
             连接飞书
           </button>
           <button id="feishu-document-submit" class="feishu-document-creator__button feishu-document-creator__button--primary" type="submit" disabled>
-            创建并打开
+            创建文档
           </button>
         </div>
       </form>
 
-      <a id="feishu-document-result" class="feishu-document-creator__result" href="#" target="_blank" rel="external noopener" hidden>
+      <a id="feishu-document-result" class="feishu-document-creator__result" href="#" target="_blank" rel="external noopener noreferrer" hidden>
         打开刚创建的飞书云文档
       </a>
     </div>
