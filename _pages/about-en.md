@@ -9,9 +9,9 @@ subtitle: <a href='https://english.bit.edu.cn/'>Beijing Institute of Technology<
 profile:
   align: right
   image: prof_pic-800.jpg
-  image_alt: Black-and-white placeholder portrait of Albert Einstein
+  image_alt: Portrait of Yuchen Fan
   image_width: 800
-  image_height: 1067
+  image_height: 800
   image_srcset_webp:
     small: prof_pic-480.webp
     large: prof_pic-800.webp

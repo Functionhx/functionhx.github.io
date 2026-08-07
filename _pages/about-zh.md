@@ -9,9 +9,9 @@ subtitle: <a href='https://www.bit.edu.cn/'>北京理工大学</a> · 机器人�
 profile:
   align: right
   image: prof_pic-800.jpg
-  image_alt: 阿尔伯特·爱因斯坦黑白肖像占位图
+  image_alt: 樊宇琛的个人肖像
   image_width: 800
-  image_height: 1067
+  image_height: 800
   image_srcset_webp:
     small: prof_pic-480.webp
     large: prof_pic-800.webp
