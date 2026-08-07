@@ -446,7 +446,7 @@ def main() -> int:
         '"/api/feishu/session"',
         '"/api/feishu/oauth/start"',
         '"/api/feishu/documents"',
-        '"/api/feishu/library"',
+        "/api/feishu/library-page",
         '"/api/feishu/showcase"',
         "idempotency_key",
         "event.origin !== expectedOrigin",

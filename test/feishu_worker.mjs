@@ -497,6 +497,19 @@ try {
     ],
   });
 
+  const rootLibraryPage = await apiRequest("/api/feishu/library-page", "GET", sessionToken);
+  assert.equal(rootLibraryPage.status, 200);
+  const rootLibraryPayload = await rootLibraryPage.json();
+  assert.deepEqual(rootLibraryPayload.folders, ["fldcn_research"]);
+  assert.equal(rootLibraryPayload.has_more, false);
+  assert.ok(rootLibraryPayload.documents.some((document) => document.title === "来自飞书根目录"));
+  assert.ok(rootLibraryPayload.documents.every((document) => document.request_id === null));
+
+  const nestedLibraryPage = await apiRequest("/api/feishu/library-page?folder_token=fldcn_research", "GET", sessionToken);
+  assert.equal(nestedLibraryPage.status, 200);
+  const nestedLibraryPayload = await nestedLibraryPage.json();
+  assert.ok(nestedLibraryPayload.documents.some((document) => document.title === "嵌套研究文档"));
+
   const libraryResponse = await apiRequest("/api/feishu/library", "GET", sessionToken);
   assert.equal(libraryResponse.status, 200);
   const libraryPayload = await libraryResponse.json();

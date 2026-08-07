@@ -90,10 +90,10 @@
     oauthFailed: "飞书官方授权暂时没有完成，请稍后重试。",
     oauthIncomplete: "飞书授权信息不完整，请重新发起授权。",
     oauthScopeMissing: "飞书没有授予管理文档所需权限，请重新授权。",
-    popupBlocked: "浏览器拦截了授权窗口。请允许本站打开弹窗后重试。",
     recordsEmpty: "飞书云空间里暂时没有可管理的文档。",
     recordsFailed: "暂时无法读取云文档记录，请稍后刷新。",
     recordsLoading: "正在读取飞书云空间…",
+    recordsProgress: (count) => `已读取 ${count} 份云文档，正在继续整理…`,
     recordsTruncated: "文档较多，本次只显示了最近的一部分。",
     requestFailed: "暂时无法确认飞书连接，请检查网络后重试。",
     requestFailedTitle: "连接检查失败",
@@ -118,6 +118,7 @@
   let deleteBusy = false;
   let deleteRecord = null;
   let deleteTrigger = null;
+  let libraryLoadPromise = null;
 
   try {
     endpoint = vaultClient?.normalizeEndpoint?.(root.dataset.endpoint || "") || "";
@@ -311,50 +312,102 @@
     }
   }
 
+  function mergeLibraryDocuments(recordsByUrl, nextRecords) {
+    for (const candidate of nextRecords) {
+      const record = normalizeDocument(candidate);
+      if (!record) continue;
+      const existing = recordsByUrl.get(record.url);
+      if (existing?.requestId && !record.requestId) record.requestId = existing.requestId;
+      recordsByUrl.set(record.url, record);
+    }
+    documents = [...recordsByUrl.values()].sort((left, right) => Date.parse(right.modifiedAt) - Date.parse(left.modifiedAt));
+    renderDocuments();
+  }
+
   async function loadDocuments() {
+    if (libraryLoadPromise) return libraryLoadPromise;
     if (!endpoint || !vaultClient?.restore) return false;
-    documentListStatus.hidden = false;
-    documentListStatus.textContent = strings.recordsLoading;
-    refreshButton.disabled = true;
-    try {
-      const ownerSession = await withTimeout(vaultClient.restore(endpoint), 9000, "Owner session check timed out.");
-      if (!ownerSession) {
-        library.hidden = true;
-        return false;
-      }
-      library.hidden = false;
-      let payload;
+    libraryLoadPromise = (async () => {
+      documentListStatus.hidden = false;
+      documentListStatus.textContent = strings.recordsLoading;
+      refreshButton.disabled = true;
       try {
-        payload = await withTimeout(vaultRequest("/api/feishu/library"), 25000, "Feishu document library timed out.");
-      } catch (error) {
-        if (
-          !["feishu_authorization_required", "feishu_reauthorization_required", "feishu_documents_store_missing", "feishu_not_configured"].includes(
-            error?.code
-          )
-        ) {
-          throw error;
+        const ownerSession = await withTimeout(vaultClient.restore(endpoint), 9000, "Owner session check timed out.");
+        if (!ownerSession) {
+          library.hidden = true;
+          return false;
         }
-        payload = await withTimeout(vaultRequest("/api/feishu/documents"), 12000, "Feishu document records timed out.");
-      }
-      documents = (Array.isArray(payload.documents) ? payload.documents : []).map(normalizeDocument).filter(Boolean);
-      documents.sort((left, right) => Date.parse(right.modifiedAt) - Date.parse(left.modifiedAt));
-      renderDocuments();
-      if (payload.truncated === true) {
-        documentListStatus.hidden = false;
-        documentListStatus.textContent = strings.recordsTruncated;
-      }
-      return true;
-    } catch (error) {
-      if (error?.status === 401 || error?.code === "authentication_required") {
-        library.hidden = true;
-      } else {
         library.hidden = false;
-        documentListStatus.hidden = false;
-        documentListStatus.textContent = strings.recordsFailed;
+
+        const createdPayload = await withTimeout(vaultRequest("/api/feishu/documents"), 12000, "Feishu document records timed out.");
+        const recordsByUrl = new Map();
+        mergeLibraryDocuments(recordsByUrl, Array.isArray(createdPayload.documents) ? createdPayload.documents : []);
+
+        const queue = [{ folderToken: "", pageToken: "" }];
+        const visitedFolders = new Set(["__root__"]);
+        let scannedDocuments = 0;
+        let truncated = false;
+        while (queue.length && scannedDocuments < 5000) {
+          const batch = queue.splice(0, 4);
+          const pages = await Promise.all(
+            batch.map(async ({ folderToken, pageToken }) => {
+              const parameters = new URLSearchParams();
+              if (folderToken) parameters.set("folder_token", folderToken);
+              if (pageToken) parameters.set("page_token", pageToken);
+              const suffix = parameters.toString();
+              return withTimeout(vaultRequest(`/api/feishu/library-page${suffix ? `?${suffix}` : ""}`), 25000, "Feishu library page timed out.");
+            })
+          );
+          for (let index = 0; index < pages.length; index += 1) {
+            const page = pages[index];
+            const task = batch[index];
+            const pageDocuments = Array.isArray(page.documents) ? page.documents : [];
+            scannedDocuments += pageDocuments.length;
+            mergeLibraryDocuments(recordsByUrl, pageDocuments);
+            for (const folderToken of Array.isArray(page.folders) ? page.folders : []) {
+              if (!folderToken || visitedFolders.has(folderToken)) continue;
+              if (visitedFolders.size >= 500) {
+                truncated = true;
+                break;
+              }
+              visitedFolders.add(folderToken);
+              queue.push({ folderToken, pageToken: "" });
+            }
+            if (page.has_more === true && page.next_page_token) {
+              queue.push({ folderToken: task.folderToken, pageToken: page.next_page_token });
+            }
+          }
+          documentListStatus.hidden = false;
+          documentListStatus.textContent = strings.recordsProgress(scannedDocuments);
+        }
+        if (queue.length || scannedDocuments >= 5000) truncated = true;
+        if (!documents.length) {
+          documentListStatus.hidden = false;
+          documentListStatus.textContent = strings.recordsEmpty;
+        } else if (truncated) {
+          documentListStatus.hidden = false;
+          documentListStatus.textContent = strings.recordsTruncated;
+        } else {
+          documentListStatus.hidden = true;
+        }
+        return true;
+      } catch (error) {
+        if (error?.status === 401 || error?.code === "authentication_required") {
+          library.hidden = true;
+        } else {
+          library.hidden = false;
+          documentListStatus.hidden = false;
+          documentListStatus.textContent = strings.recordsFailed;
+        }
+        return false;
+      } finally {
+        refreshButton.disabled = false;
       }
-      return false;
+    })();
+    try {
+      return await libraryLoadPromise;
     } finally {
-      refreshButton.disabled = false;
+      libraryLoadPromise = null;
     }
   }
 

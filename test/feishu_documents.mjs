@@ -242,6 +242,24 @@ await page.route(`${workerOrigin}/api/feishu/library`, async (route) => {
   });
 });
 
+await page.route(`${workerOrigin}/api/feishu/library-page**`, async (route) => {
+  assert.equal(route.request().method(), "GET");
+  assert.equal(route.request().headers().authorization, "Bearer test-owner-session");
+  await route.fulfill({
+    body: JSON.stringify({
+      documents: documentRecords.map((documentRecord) => ({
+        ...documentRecord,
+        visible: visibleDocumentIds.has(documentRecord.id),
+      })),
+      folders: [],
+      has_more: false,
+      next_page_token: "",
+    }),
+    contentType: "application/json",
+    status: 200,
+  });
+});
+
 await page.route(`${workerOrigin}/api/feishu/showcase`, async (route) => {
   assert.equal(route.request().method(), "PUT");
   assert.equal(route.request().headers().authorization, "Bearer test-owner-session");

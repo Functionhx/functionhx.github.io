@@ -1495,6 +1495,59 @@ async function listFeishuCreatedRequestIds(env, githubToken) {
   return requestIds;
 }
 
+function normalizeFeishuTraversalToken(value, field) {
+  const token = String(value || "");
+  if (token.length > 200 || /[\u0000-\u001f\u007f]/.test(token)) {
+    throw new HttpError(400, `The Feishu ${field} is invalid.`, "invalid_feishu_cursor");
+  }
+  return token;
+}
+
+async function fetchFeishuLibraryPage(env, accessToken, folderToken = "", pageToken = "") {
+  const query = new URLSearchParams({ direction: "DESC", order_by: "EditedTime", page_size: "200", user_id_type: "open_id" });
+  if (folderToken) query.set("folder_token", folderToken);
+  if (pageToken) query.set("page_token", pageToken);
+  return feishuJsonRequest(env, `/open-apis/drive/v1/files?${query.toString()}`, { accessToken });
+}
+
+async function listFeishuLibraryPage(env, githubToken, searchParams) {
+  requireFeishuConfiguration(env);
+  feishuDocumentsStore(env);
+  const folderToken = normalizeFeishuTraversalToken(searchParams.get("folder_token"), "folder token");
+  const pageToken = normalizeFeishuTraversalToken(searchParams.get("page_token"), "page token");
+  const auth = await acquireFreshFeishuAccessToken(env, githubToken);
+  let payload;
+  try {
+    payload = await fetchFeishuLibraryPage(env, auth.accessToken, folderToken, pageToken);
+  } catch (error) {
+    if (feishuErrorRequiresReconnect(error)) {
+      await markFeishuReauthorizationRequired(env, githubToken);
+      throw feishuReauthorizationError();
+    }
+    throw error;
+  }
+  const showcase = await loadFeishuShowcase(env);
+  const visibleIds = new Set(showcase.documents.map((document) => document.id));
+  const files = Array.isArray(payload.data?.files) ? payload.data.files : [];
+  const documents = (
+    await Promise.all(
+      files
+        .filter((item) => FEISHU_LIBRARY_FILE_TYPES.has(String(item?.type || "")))
+        .map((item) => feishuLibraryDocument(env, item, visibleIds, new Map()))
+    )
+  ).filter(Boolean);
+  const folders = files
+    .filter((item) => String(item?.type || "") === "folder")
+    .map((item) => normalizeFeishuTraversalToken(item?.token, "folder token"))
+    .filter(Boolean);
+  return {
+    documents,
+    folders,
+    has_more: payload.data?.has_more === true,
+    next_page_token: payload.data?.has_more ? normalizeFeishuTraversalToken(payload.data?.next_page_token, "page token") : "",
+  };
+}
+
 async function fetchFeishuLibrary(env, accessToken) {
   const queue = [{ folderToken: "", pageToken: "" }];
   const visitedFolders = new Set(["__root__"]);
@@ -1504,10 +1557,7 @@ async function fetchFeishuLibrary(env, accessToken) {
     const batch = queue.splice(0, FEISHU_LIBRARY_CONCURRENCY);
     const pages = await Promise.all(
       batch.map(async ({ folderToken, pageToken }) => {
-        const query = new URLSearchParams({ direction: "DESC", order_by: "EditedTime", page_size: "200", user_id_type: "open_id" });
-        if (folderToken) query.set("folder_token", folderToken);
-        if (pageToken) query.set("page_token", pageToken);
-        const payload = await feishuJsonRequest(env, `/open-apis/drive/v1/files?${query.toString()}`, { accessToken });
+        const payload = await fetchFeishuLibraryPage(env, accessToken, folderToken, pageToken);
         return { folderToken, payload };
       })
     );
@@ -2249,6 +2299,8 @@ async function handleApi(request, env) {
     payload = await deleteFeishuDocument(env, auth.accessToken, parts[2]);
   } else if (parts.length === 2 && parts[0] === "feishu" && parts[1] === "library" && request.method === "GET") {
     payload = await listFeishuLibrary(env, auth.accessToken);
+  } else if (parts.length === 2 && parts[0] === "feishu" && parts[1] === "library-page" && request.method === "GET") {
+    payload = await listFeishuLibraryPage(env, auth.accessToken, url.searchParams);
   } else if (parts.length === 2 && parts[0] === "feishu" && parts[1] === "showcase" && request.method === "PUT") {
     payload = await updateFeishuShowcase(env, await readJson(request));
   } else if (parts.length === 1 && parts[0] === "keyring" && request.method === "GET") {
