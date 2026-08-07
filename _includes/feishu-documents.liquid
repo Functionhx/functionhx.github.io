@@ -25,6 +25,25 @@
     {% endif %}
   </div>
 
+  <section
+    id="feishu-public-library"
+    class="feishu-documents__public-library"
+    data-endpoint="{{ site.feishu_documents.endpoint | default: site.spark_vault.endpoint | default: '' | escape }}"
+    aria-labelledby="feishu-public-library-heading"
+    hidden
+  >
+    <header>
+      <div>
+        <p class="feishu-documents__eyebrow">SELECTED</p>
+        <h3 id="feishu-public-library-heading">
+          {% if documents_lang == 'en' %}Selected documents{% else %}展示文档{% endif %}
+        </h3>
+      </div>
+    </header>
+    <p id="feishu-public-list-status" class="feishu-documents__list-status" role="status" aria-live="polite"></p>
+    <ol id="feishu-public-list" class="feishu-documents__list"></ol>
+  </section>
+
   {% if documents_lang != 'en' %}
     <section
       id="feishu-document-library"
@@ -35,13 +54,16 @@
       <header>
         <div>
           <p class="feishu-documents__eyebrow">ONLY YOU</p>
-          <h3 id="feishu-document-library-heading">最近文档</h3>
+          <h3 id="feishu-document-library-heading">飞书文档库</h3>
         </div>
         <button id="feishu-document-refresh" class="feishu-documents__refresh" type="button" aria-label="刷新云文档记录" title="刷新">
           <i class="fa-solid fa-rotate" aria-hidden="true"></i>
         </button>
       </header>
-      <p class="feishu-documents__privacy-note"><i class="fa-solid fa-lock" aria-hidden="true"></i> 仅站长可见</p>
+      <p class="feishu-documents__privacy-note">
+        <i class="fa-solid fa-user-check" aria-hidden="true"></i>
+        仅站长可管理 · 全部默认不展示 · 由飞书继续控制正文权限
+      </p>
       <p id="feishu-document-list-status" class="feishu-documents__list-status" role="status" aria-live="polite">正在同步文档…</p>
       <ol id="feishu-document-list" class="feishu-documents__list"></ol>
     </section>
@@ -87,7 +109,7 @@
           disabled
         >
         <p class="feishu-document-creator__privacy">
-          创建成功后会保存到本站下方的私有记录。由你点击链接后，才会在新标签页打开飞书继续写作；本站不会复制正文。
+          创建成功后会加入下方的站长文档库。由你点击链接后，才会在新标签页打开飞书继续写作；本站不会复制正文。
         </p>
         <div class="feishu-document-creator__actions">
           <button id="feishu-document-connect" class="feishu-document-creator__button feishu-document-creator__button--quiet" type="button">
@@ -104,4 +126,40 @@
       </a>
     </div>
   </dialog>
+
+  <dialog
+    id="feishu-document-delete-dialog"
+    class="feishu-document-dialog feishu-document-delete-dialog"
+    aria-labelledby="feishu-document-delete-heading"
+  >
+    <section id="feishu-document-delete" class="feishu-document-delete">
+      <header class="feishu-document-creator__header">
+        <div>
+          <p>MAGIC · FEISHU</p>
+          <h2 id="feishu-document-delete-heading">移到飞书回收站？</h2>
+          <span>这是可恢复操作，但仍需要你明确确认。</span>
+        </div>
+        <button id="feishu-document-delete-close" class="feishu-document-creator__icon-button" type="button" aria-label="关闭" title="关闭">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </header>
+
+      <form id="feishu-document-delete-form" data-no-page-loader>
+        <p class="feishu-document-delete__label">将要移除</p>
+        <p class="feishu-document-delete__title">《<strong id="feishu-document-delete-title"></strong>》</p>
+        <p class="feishu-document-delete__copy">文档会进入飞书回收站；对应的站内记录也会从列表中移除。</p>
+        <p id="feishu-document-delete-status" class="feishu-document-delete__status" role="status" aria-live="polite" hidden></p>
+        <div class="feishu-document-creator__actions">
+          <button id="feishu-document-delete-cancel" class="feishu-document-creator__button feishu-document-creator__button--quiet" type="button">
+            取消
+          </button>
+          <button id="feishu-document-delete-submit" class="feishu-document-creator__button feishu-document-creator__button--danger" type="submit">
+            移到回收站
+          </button>
+        </div>
+      </form>
+    </section>
+  </dialog>
 {% endif %}
+
+<script src="{{ '/assets/js/feishu-showcase.js' | relative_url }}" defer></script>

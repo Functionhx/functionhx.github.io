@@ -16,10 +16,26 @@ const FEISHU_OAUTH_STATE_DIRECTORY = "integrations/feishu/oauth-states";
 const FEISHU_REQUEST_DIRECTORY = "integrations/feishu/requests";
 const FEISHU_CONNECTION_ID = "feishu-oauth";
 const FEISHU_STATE_ID = "feishu-oauth-state";
+const FEISHU_SHOWCASE_KEY = "feishu:showcase:v1";
 const FEISHU_OAUTH_STATE_LIFETIME_SECONDS = 5 * 60;
+const FEISHU_LIBRARY_SELECTION_LIFETIME_SECONDS = 15 * 60;
 const FEISHU_REFRESH_LEASE_SECONDS = 2 * 60;
+const FEISHU_DELETE_LEASE_SECONDS = 2 * 60;
+const FEISHU_LIBRARY_MAX_DOCUMENTS = 5_000;
+const FEISHU_LIBRARY_MAX_FOLDERS = 500;
 const FEISHU_REQUEST_TIMEOUT_MILLISECONDS = 20_000;
-const FEISHU_SCOPES = Object.freeze(["docx:document:create", "drive:drive.metadata:readonly", "offline_access"]);
+const FEISHU_SCOPES = Object.freeze([
+  "docx:document:create",
+  "drive:drive.metadata:readonly",
+  "space:document:delete",
+  "space:document:retrieve",
+  "offline_access",
+]);
+const FEISHU_LEGACY_SCOPE_SETS = Object.freeze([
+  Object.freeze(["docx:document:create", "drive:drive.metadata:readonly", "offline_access"]),
+  Object.freeze(["docx:document:create", "drive:drive.metadata:readonly", "space:document:delete", "offline_access"]),
+]);
+const FEISHU_LIBRARY_FILE_TYPES = Object.freeze(new Set(["bitable", "doc", "docx", "file", "mindnote", "sheet", "slides"]));
 const SEALED_VALUE_PREFIX = "functionhx:zk2:";
 const SESSION_LIFETIME_SECONDS = 30 * 24 * 60 * 60;
 const REFRESH_SKEW_SECONDS = 5 * 60;
@@ -276,7 +292,7 @@ async function decryptRecord(envelope, env) {
 function corsHeaders(request, env) {
   return {
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
-    "Access-Control-Allow-Methods": "GET, PUT, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
     "Access-Control-Allow-Origin": responseSiteOrigin(request, env),
     "Access-Control-Expose-Headers": "X-Spark-Session",
     Vary: "Origin",
@@ -905,6 +921,10 @@ function normalizeFeishuConnection(record) {
   const identity = record?.identity || {};
   const storedScopes = Array.isArray(token.scope) ? [...token.scope].sort() : [];
   const expectedScopes = [...FEISHU_SCOPES].sort();
+  const acceptedScopeSets = [expectedScopes, ...FEISHU_LEGACY_SCOPE_SETS.map((scopes) => [...scopes].sort())];
+  const scopesAreRecognized = acceptedScopeSets.some(
+    (scopes) => scopes.length === storedScopes.length && scopes.every((scope, index) => scope === storedScopes[index])
+  );
   if (
     record?.version !== 1 ||
     record?.id !== FEISHU_CONNECTION_ID ||
@@ -914,8 +934,7 @@ function normalizeFeishuConnection(record) {
     !token.refreshToken ||
     !Number.isSafeInteger(token.refreshExpiresAt) ||
     String(token.tokenType || "").toLowerCase() !== "bearer" ||
-    storedScopes.length !== expectedScopes.length ||
-    storedScopes.some((scope, index) => scope !== expectedScopes[index])
+    !scopesAreRecognized
   ) {
     throw new HttpError(422, "The encrypted Feishu connection is invalid.", "invalid_feishu_connection");
   }
@@ -937,8 +956,13 @@ function publicFeishuIdentity(identity) {
 function feishuConnectionUsable(record) {
   const token = record?.token || {};
   const now = nowSeconds();
+  const storedScopes = Array.isArray(token.scope) ? [...token.scope].sort() : [];
+  const expectedScopes = [...FEISHU_SCOPES].sort();
+  const hasCurrentScopes = storedScopes.length === expectedScopes.length && storedScopes.every((scope, index) => scope === expectedScopes[index]);
   return (
-    !record?.reauthorizationRequired && (Number(token.accessExpiresAt) > now || (Boolean(token.refreshToken) && Number(token.refreshExpiresAt) > now))
+    hasCurrentScopes &&
+    !record?.reauthorizationRequired &&
+    (Number(token.accessExpiresAt) > now || (Boolean(token.refreshToken) && Number(token.refreshExpiresAt) > now))
   );
 }
 
@@ -949,6 +973,9 @@ function isRepositoryConflict(error) {
 async function acquireFreshFeishuAccessToken(env, githubToken) {
   let loaded = await loadFeishuConnection(env, githubToken, true);
   if (!loaded) throw new HttpError(409, "Connect Feishu before creating a document.", "feishu_authorization_required");
+  if (!feishuConnectionUsable(loaded.record)) {
+    throw new HttpError(409, "Reconnect Feishu to grant the current document permissions.", "feishu_reauthorization_required");
+  }
   const now = nowSeconds();
   if (!loaded.record.reauthorizationRequired && loaded.record.token.accessExpiresAt > now + REFRESH_SKEW_SECONDS) {
     return { accessToken: loaded.record.token.accessToken, connection: loaded };
@@ -1268,6 +1295,7 @@ function feishuCreateResponse(record, idempotent = false) {
     created_at: record.completedAt || record.createdAt,
     document_token: record.documentToken,
     idempotent,
+    request_id: record.id,
     title: record.resultTitle || record.title,
     url: record.url,
   };
@@ -1290,7 +1318,9 @@ function feishuDocumentSummary(record) {
     .trim()
     .slice(0, 800);
   if (!title) return null;
-  return { created_at: createdAt, title, url: url.toString() };
+  const requestId = String(record.id || "");
+  if (!/^feishu-request-[0-9a-f]{64}$/.test(requestId)) return null;
+  return { created_at: createdAt, request_id: requestId, title, url: url.toString() };
 }
 
 async function listFeishuDocuments(env, githubToken) {
@@ -1321,6 +1351,359 @@ async function listFeishuDocuments(env, githubToken) {
   }
   documents.sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at));
   return documents.slice(0, 200);
+}
+
+function feishuDocumentsStore(env) {
+  const store = env.FEISHU_DOCUMENTS;
+  if (!store || typeof store.get !== "function" || typeof store.put !== "function") {
+    throw new HttpError(503, "Feishu document display storage is not configured.", "feishu_documents_store_missing");
+  }
+  return store;
+}
+
+function normalizeFeishuPublicDocument(value) {
+  const id = String(value?.id || "");
+  const title = String(value?.title || "")
+    .trim()
+    .slice(0, 800);
+  const type = String(value?.type || "");
+  const createdAt = String(value?.created_at || "");
+  const modifiedAt = String(value?.modified_at || "");
+  let url;
+  try {
+    url = new URL(String(value?.url || ""));
+  } catch (_error) {
+    return null;
+  }
+  const hostname = url.hostname.toLowerCase();
+  const officialHost = hostname === "feishu.cn" || hostname.endsWith(".feishu.cn");
+  if (
+    !/^feishu-file-[0-9a-f]{64}$/.test(id) ||
+    !title ||
+    !FEISHU_LIBRARY_FILE_TYPES.has(type) ||
+    url.protocol !== "https:" ||
+    !officialHost ||
+    url.username ||
+    url.password ||
+    !Number.isFinite(Date.parse(createdAt)) ||
+    !Number.isFinite(Date.parse(modifiedAt))
+  ) {
+    return null;
+  }
+  return { created_at: createdAt, id, modified_at: modifiedAt, title, type, url: url.toString() };
+}
+
+async function loadFeishuShowcase(env) {
+  const raw = await feishuDocumentsStore(env).get(FEISHU_SHOWCASE_KEY);
+  if (!raw) return { documents: [], updated_at: null, version: 1 };
+  let payload;
+  try {
+    payload = typeof raw === "string" ? JSON.parse(raw) : raw;
+  } catch (_error) {
+    throw new HttpError(502, "The Feishu display list is invalid.", "feishu_showcase_invalid");
+  }
+  if (payload?.version !== 1 || !Array.isArray(payload.documents)) {
+    throw new HttpError(502, "The Feishu display list is invalid.", "feishu_showcase_invalid");
+  }
+  const documents = payload.documents.map(normalizeFeishuPublicDocument).filter(Boolean).slice(0, 500);
+  return { documents, updated_at: String(payload.updated_at || "") || null, version: 1 };
+}
+
+async function saveFeishuShowcase(env, documents) {
+  const record = {
+    documents: documents.map(normalizeFeishuPublicDocument).filter(Boolean).slice(0, 500),
+    updated_at: new Date().toISOString(),
+    version: 1,
+  };
+  record.documents.sort((left, right) => Date.parse(right.modified_at) - Date.parse(left.modified_at));
+  await feishuDocumentsStore(env).put(FEISHU_SHOWCASE_KEY, JSON.stringify(record));
+  return record;
+}
+
+function feishuEpochTimestamp(value) {
+  const seconds = Number(value);
+  if (!Number.isFinite(seconds) || seconds <= 0) return "";
+  const date = new Date(seconds * 1000);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : "";
+}
+
+async function feishuLibraryDocument(env, item, visibleIds, createdRequestIds) {
+  const token = String(item?.token || "");
+  const type = String(item?.type || "");
+  const title = String(item?.name || "")
+    .trim()
+    .slice(0, 800);
+  const createdAt = feishuEpochTimestamp(item?.created_time);
+  const modifiedAt = feishuEpochTimestamp(item?.modified_time);
+  if (!token || token.length > 200 || !title || !FEISHU_LIBRARY_FILE_TYPES.has(type) || !createdAt || !modifiedAt) return null;
+  const publicDocument = normalizeFeishuPublicDocument({
+    created_at: createdAt,
+    id: `feishu-file-${await sha256Hex(`${type}:${token}`)}`,
+    modified_at: modifiedAt,
+    title,
+    type,
+    url: item?.url,
+  });
+  if (!publicDocument) return null;
+  const selectionToken = await sealJson(
+    {
+      document: { ...publicDocument, token },
+      expiresAt: nowSeconds() + FEISHU_LIBRARY_SELECTION_LIFETIME_SECONDS,
+      version: 1,
+    },
+    env,
+    "functionhx:feishu-showcase-selection:v1"
+  );
+  return {
+    ...publicDocument,
+    request_id: createdRequestIds.get(`docx:${token}`) || null,
+    selection_token: selectionToken,
+    visible: visibleIds.has(publicDocument.id),
+  };
+}
+
+async function listFeishuCreatedRequestIds(env, githubToken) {
+  const entries = await readRepositoryDirectory(
+    env,
+    githubToken,
+    required(env, "PRIVATE_REPO"),
+    branchFor(env, "private"),
+    FEISHU_REQUEST_DIRECTORY,
+    true
+  );
+  const identities = entries
+    .map((entry) => {
+      const match = entry.name.match(/^([0-9a-f]{64})\.json$/);
+      if (!match || entry.path !== `${FEISHU_REQUEST_DIRECTORY}/${entry.name}`) return null;
+      return { id: `feishu-request-${match[1]}`, path: entry.path };
+    })
+    .filter(Boolean);
+  const requestIds = new Map();
+  for (let offset = 0; offset < identities.length; offset += 12) {
+    const batch = identities.slice(offset, offset + 12);
+    const loaded = await Promise.all(batch.map((identity) => loadIntegrationRecord(env, githubToken, identity.path, identity.id, false)));
+    for (const item of loaded) {
+      const token = String(item.record?.documentToken || "");
+      if (item.record?.status === "succeeded" && token) requestIds.set(`docx:${token}`, item.record.id);
+    }
+  }
+  return requestIds;
+}
+
+async function fetchFeishuLibrary(env, accessToken) {
+  const queue = [{ token: "" }];
+  const visitedFolders = new Set(["__root__"]);
+  const rawDocuments = [];
+  let truncated = false;
+  while (queue.length && rawDocuments.length < FEISHU_LIBRARY_MAX_DOCUMENTS && visitedFolders.size <= FEISHU_LIBRARY_MAX_FOLDERS) {
+    const folder = queue.shift();
+    let pageToken = "";
+    do {
+      const query = new URLSearchParams({ direction: "DESC", order_by: "EditedTime", page_size: "200", user_id_type: "open_id" });
+      if (folder.token) query.set("folder_token", folder.token);
+      if (pageToken) query.set("page_token", pageToken);
+      const payload = await feishuJsonRequest(env, `/open-apis/drive/v1/files?${query.toString()}`, { accessToken });
+      const files = Array.isArray(payload.data?.files) ? payload.data.files : [];
+      for (const item of files) {
+        const type = String(item?.type || "");
+        const token = String(item?.token || "");
+        if (type === "folder" && token && !visitedFolders.has(token)) {
+          if (visitedFolders.size >= FEISHU_LIBRARY_MAX_FOLDERS) {
+            truncated = true;
+          } else {
+            visitedFolders.add(token);
+            queue.push({ token });
+          }
+        } else if (FEISHU_LIBRARY_FILE_TYPES.has(type)) {
+          rawDocuments.push(item);
+          if (rawDocuments.length >= FEISHU_LIBRARY_MAX_DOCUMENTS) {
+            truncated = true;
+            break;
+          }
+        }
+      }
+      pageToken = payload.data?.has_more ? String(payload.data?.next_page_token || "") : "";
+    } while (pageToken && rawDocuments.length < FEISHU_LIBRARY_MAX_DOCUMENTS);
+  }
+  if (queue.length) truncated = true;
+  return { documents: rawDocuments, truncated };
+}
+
+async function listFeishuLibrary(env, githubToken) {
+  requireFeishuConfiguration(env);
+  feishuDocumentsStore(env);
+  const auth = await acquireFreshFeishuAccessToken(env, githubToken);
+  let library;
+  try {
+    library = await fetchFeishuLibrary(env, auth.accessToken);
+  } catch (error) {
+    if (feishuErrorRequiresReconnect(error)) {
+      await markFeishuReauthorizationRequired(env, githubToken);
+      throw feishuReauthorizationError();
+    }
+    throw error;
+  }
+  const [showcase, createdRequestIds] = await Promise.all([loadFeishuShowcase(env), listFeishuCreatedRequestIds(env, githubToken)]);
+  const visibleIds = new Set(showcase.documents.map((document) => document.id));
+  const documents = (await Promise.all(library.documents.map((item) => feishuLibraryDocument(env, item, visibleIds, createdRequestIds)))).filter(
+    Boolean
+  );
+  documents.sort((left, right) => Date.parse(right.modified_at) - Date.parse(left.modified_at));
+  return { documents, truncated: library.truncated };
+}
+
+async function updateFeishuShowcase(env, input) {
+  const candidate = input && typeof input === "object" && !Array.isArray(input) ? input : {};
+  if (typeof candidate.visible !== "boolean") {
+    throw new HttpError(400, "A boolean visible value is required.", "invalid_feishu_visibility");
+  }
+  let selection;
+  try {
+    selection = await unsealJson(String(candidate.selection_token || ""), env, "functionhx:feishu-showcase-selection:v1");
+  } catch (_error) {
+    throw new HttpError(400, "This Feishu document selection expired. Refresh the library.", "feishu_selection_expired");
+  }
+  if (selection?.version !== 1 || selection.expiresAt <= nowSeconds()) {
+    throw new HttpError(400, "This Feishu document selection expired. Refresh the library.", "feishu_selection_expired");
+  }
+  const publicDocument = normalizeFeishuPublicDocument(selection.document);
+  if (!publicDocument || String(selection.document?.token || "").length > 200) {
+    throw new HttpError(400, "The Feishu document selection is invalid.", "invalid_feishu_selection");
+  }
+  const showcase = await loadFeishuShowcase(env);
+  const remaining = showcase.documents.filter((document) => document.id !== publicDocument.id);
+  const saved = await saveFeishuShowcase(env, candidate.visible ? [publicDocument, ...remaining] : remaining);
+  return { document: { ...publicDocument, visible: candidate.visible }, updated_at: saved.updated_at };
+}
+
+async function publicFeishuShowcase(env) {
+  const showcase = await loadFeishuShowcase(env);
+  return { documents: showcase.documents, updated_at: showcase.updated_at };
+}
+
+async function removeFeishuDocumentFromShowcase(env, documentToken, type = "docx") {
+  const token = String(documentToken || "");
+  if (!token || !env.FEISHU_DOCUMENTS) return;
+  const id = `feishu-file-${await sha256Hex(`${type}:${token}`)}`;
+  const showcase = await loadFeishuShowcase(env);
+  const remaining = showcase.documents.filter((document) => document.id !== id);
+  if (remaining.length !== showcase.documents.length) await saveFeishuShowcase(env, remaining);
+}
+
+function feishuRequestIdentityFromId(value) {
+  const id = String(value || "");
+  const match = id.match(/^feishu-request-([0-9a-f]{64})$/);
+  if (!match) throw new HttpError(404, "Feishu document record not found.", "feishu_document_not_found");
+  return { hash: match[1], id, path: `${FEISHU_REQUEST_DIRECTORY}/${match[1]}.json` };
+}
+
+function feishuDeleteResponse(record, idempotent = false) {
+  return {
+    deleted: true,
+    deleted_at: record.deletedAt,
+    idempotent,
+    request_id: record.id,
+    title: String(record.resultTitle || record.title || "").slice(0, 800),
+  };
+}
+
+function feishuDeleteAlreadyCompleted(error) {
+  return error?.code === "feishu_api_error" && [1061003, 1061007, 1065200].includes(Number(error.feishuCode));
+}
+
+async function restoreFeishuDocumentAfterDeleteFailure(env, githubToken, loaded) {
+  const restored = {
+    ...loaded.record,
+    deleteFailedAt: new Date().toISOString(),
+    status: "succeeded",
+  };
+  delete restored.deleteStartedAt;
+  try {
+    await saveIntegrationRecord(env, githubToken, loaded.record.path, restored, loaded.sha, "feishu: release failed document deletion");
+  } catch (error) {
+    if (!isRepositoryConflict(error)) throw error;
+  }
+}
+
+async function deleteFeishuDocument(env, githubToken, requestId) {
+  requireFeishuConfiguration(env);
+  const identity = feishuRequestIdentityFromId(requestId);
+  let loaded = await loadFeishuCreateRequest(env, githubToken, identity);
+  if (!loaded) throw new HttpError(404, "Feishu document record not found.", "feishu_document_not_found");
+  if (loaded.record.status === "deleted") {
+    await removeFeishuDocumentFromShowcase(env, loaded.record.documentToken).catch((error) => console.error("Feishu showcase cleanup failed", error));
+    return feishuDeleteResponse(loaded.record, true);
+  }
+  if (loaded.record.status === "deleting") {
+    const startedAt = Date.parse(String(loaded.record.deleteStartedAt || ""));
+    if (Number.isFinite(startedAt) && startedAt > Date.now() - FEISHU_DELETE_LEASE_SECONDS * 1000) {
+      throw new HttpError(409, "This Feishu document is already being moved to the recycle bin.", "feishu_delete_in_progress");
+    }
+  } else if (loaded.record.status !== "succeeded") {
+    throw new HttpError(409, "Only a confirmed site-created Feishu document can be deleted here.", "feishu_document_not_deletable");
+  }
+
+  const documentToken = String(loaded.record.documentToken || "");
+  if (!documentToken || documentToken.length > 200 || /[\u0000-\u001f\u007f]/.test(documentToken)) {
+    throw new HttpError(422, "The stored Feishu document token is invalid.", "invalid_feishu_document_record");
+  }
+
+  const deleting = {
+    ...loaded.record,
+    deleteStartedAt: new Date().toISOString(),
+    status: "deleting",
+  };
+  try {
+    loaded = await saveIntegrationRecord(env, githubToken, identity.path, deleting, loaded.sha, "feishu: reserve document deletion");
+  } catch (error) {
+    if (!isRepositoryConflict(error)) throw error;
+    const current = await loadFeishuCreateRequest(env, githubToken, identity);
+    if (current?.record?.status === "deleted") return feishuDeleteResponse(current.record, true);
+    throw new HttpError(409, "This Feishu document is already being moved to the recycle bin.", "feishu_delete_in_progress");
+  }
+
+  let alreadyDeleted = false;
+  try {
+    const auth = await acquireFreshFeishuAccessToken(env, githubToken);
+    await feishuJsonRequest(env, `/open-apis/drive/v1/files/${encodeURIComponent(documentToken)}?type=docx`, {
+      accessToken: auth.accessToken,
+      method: "DELETE",
+    });
+  } catch (error) {
+    if (feishuDeleteAlreadyCompleted(error)) {
+      alreadyDeleted = true;
+    } else {
+      await restoreFeishuDocumentAfterDeleteFailure(env, githubToken, loaded);
+      if (feishuErrorRequiresReconnect(error) || error?.code === "feishu_reauthorization_required") {
+        await markFeishuReauthorizationRequired(env, githubToken).catch(() => undefined);
+        throw feishuReauthorizationError();
+      }
+      throw new HttpError(Number(error.status) || 502, error.message, "feishu_delete_failed");
+    }
+  }
+
+  const deleted = {
+    ...loaded.record,
+    deletedAt: new Date().toISOString(),
+    deletedUpstreamAlready: alreadyDeleted,
+    status: "deleted",
+  };
+  delete deleted.deleteStartedAt;
+  try {
+    const saved = await saveIntegrationRecord(env, githubToken, identity.path, deleted, loaded.sha, "feishu: record document in recycle bin");
+    await removeFeishuDocumentFromShowcase(env, documentToken).catch((error) => console.error("Feishu showcase cleanup failed", error));
+    return feishuDeleteResponse(saved.record, alreadyDeleted);
+  } catch (error) {
+    if (!isRepositoryConflict(error)) throw error;
+    const current = await loadFeishuCreateRequest(env, githubToken, identity);
+    if (current?.record?.status === "deleted") {
+      await removeFeishuDocumentFromShowcase(env, documentToken).catch((cleanupError) =>
+        console.error("Feishu showcase cleanup failed", cleanupError)
+      );
+      return feishuDeleteResponse(current.record, true);
+    }
+    throw new HttpError(409, "Feishu accepted the deletion; refresh shortly to reconcile the private record.", "feishu_delete_in_progress");
+  }
 }
 
 function feishuCreateOutcomeIsUnknown(error) {
@@ -1848,6 +2231,12 @@ async function handleApi(request, env) {
     payload = { documents: await listFeishuDocuments(env, auth.accessToken) };
   } else if (parts.length === 2 && parts[0] === "feishu" && parts[1] === "documents" && request.method === "POST") {
     payload = await createFeishuDocument(env, auth.accessToken, await readJson(request));
+  } else if (parts.length === 3 && parts[0] === "feishu" && parts[1] === "documents" && request.method === "DELETE") {
+    payload = await deleteFeishuDocument(env, auth.accessToken, parts[2]);
+  } else if (parts.length === 2 && parts[0] === "feishu" && parts[1] === "library" && request.method === "GET") {
+    payload = await listFeishuLibrary(env, auth.accessToken);
+  } else if (parts.length === 2 && parts[0] === "feishu" && parts[1] === "showcase" && request.method === "PUT") {
+    payload = await updateFeishuShowcase(env, await readJson(request));
   } else if (parts.length === 1 && parts[0] === "keyring" && request.method === "GET") {
     payload = await loadKeyring(env, auth.accessToken);
   } else if (parts.length === 1 && parts[0] === "keyring" && request.method === "PUT") {
@@ -1877,7 +2266,9 @@ async function handleApi(request, env) {
 
 async function routeRequest(request, env) {
   const url = new URL(request.url);
-  if (request.method === "OPTIONS" && url.pathname.startsWith("/api/")) return emptyResponse(204, env, request);
+  if (request.method === "OPTIONS" && (url.pathname.startsWith("/api/") || url.pathname.startsWith("/public/"))) {
+    return emptyResponse(204, env, request);
+  }
   if (request.method === "GET" && url.pathname === "/health") {
     siteOrigins(env);
     required(env, "ALLOWED_GITHUB_USER_ID");
@@ -1893,6 +2284,10 @@ async function routeRequest(request, env) {
   if (request.method === "GET" && url.pathname === "/auth/login") return handleLogin(request, env);
   if (request.method === "GET" && url.pathname === "/auth/callback") return handleCallback(request, env);
   if (request.method === "GET" && url.pathname === "/auth/feishu/callback") return handleFeishuCallback(request, env);
+  if (request.method === "GET" && url.pathname === "/public/feishu/documents") {
+    assertAllowedOrigin(request, env);
+    return jsonResponse(await publicFeishuShowcase(env), 200, env, "", request);
+  }
   if (url.pathname.startsWith("/api/")) return handleApi(request, env);
   throw new HttpError(404, "Spark Vault endpoint not found.", "not_found");
 }

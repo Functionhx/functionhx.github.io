@@ -44,17 +44,38 @@ const page = await context.newPage();
 let configured = false;
 let connected = false;
 let createRequests = 0;
+let deleteRequests = 0;
+let showcaseRequests = 0;
 let createdPayload = null;
 const createdPayloads = [];
 const documentRecords = [
   {
     created_at: "2026-08-06T08:30:00.000Z",
+    id: `feishu-file-${"b".repeat(64)}`,
+    modified_at: "2026-08-06T09:30:00.000Z",
+    request_id: `feishu-request-${"a".repeat(64)}`,
+    selection_token: `functionhx:zk2:${"b".repeat(96)}`,
     title: "已有的研究文档",
+    type: "docx",
     url: "https://example.feishu.cn/docx/existingtoken",
+    visible: false,
+  },
+  {
+    created_at: "2026-08-05T08:30:00.000Z",
+    id: `feishu-file-${"c".repeat(64)}`,
+    modified_at: "2026-08-07T09:30:00.000Z",
+    request_id: null,
+    selection_token: `functionhx:zk2:${"c".repeat(96)}`,
+    title: "飞书中原有的云文档",
+    type: "docx",
+    url: "https://example.feishu.cn/docx/external-token",
+    visible: false,
   },
 ];
+const visibleDocumentIds = new Set();
 let createOutcome = "success";
 let createDelay = 0;
+let deleteDelay = 0;
 let oauthOutcome = "denied";
 
 await page.route("**/assets/js/spark-vault-client.js*", async (route) => {
@@ -182,17 +203,98 @@ await page.route(`${workerOrigin}/api/feishu/documents`, async (route) => {
   const createdDocument = {
     created_at: new Date(Date.UTC(2026, 7, 7, 9, createRequests)).toISOString(),
     document_token: "mocktoken",
+    request_id: `feishu-request-${createRequests.toString(16).padStart(64, "0")}`,
     title: createdPayload.title,
     url: "https://example.feishu.cn/docx/mocktoken",
   };
   documentRecords.unshift({
     created_at: createdDocument.created_at,
+    id: `feishu-file-${createRequests.toString(16).padStart(64, "0")}`,
+    modified_at: createdDocument.created_at,
+    request_id: createdDocument.request_id,
+    selection_token: `functionhx:zk2:${createRequests.toString(16).padStart(96, "0")}`,
     title: createdDocument.title,
+    type: "docx",
     url: createdDocument.url,
+    visible: false,
   });
   if (createDelay) await new Promise((resolve) => setTimeout(resolve, createDelay));
   await route.fulfill({
     body: JSON.stringify(createdDocument),
+    contentType: "application/json",
+    status: 200,
+  });
+});
+
+await page.route(`${workerOrigin}/api/feishu/library`, async (route) => {
+  assert.equal(route.request().method(), "GET");
+  assert.equal(route.request().headers().authorization, "Bearer test-owner-session");
+  await route.fulfill({
+    body: JSON.stringify({
+      documents: documentRecords.map((documentRecord) => ({
+        ...documentRecord,
+        visible: visibleDocumentIds.has(documentRecord.id),
+      })),
+      truncated: false,
+    }),
+    contentType: "application/json",
+    status: 200,
+  });
+});
+
+await page.route(`${workerOrigin}/api/feishu/showcase`, async (route) => {
+  assert.equal(route.request().method(), "PUT");
+  assert.equal(route.request().headers().authorization, "Bearer test-owner-session");
+  const body = route.request().postDataJSON();
+  const record = documentRecords.find((item) => item.selection_token === body.selection_token);
+  assert.ok(record, "the frontend must submit only a selection token returned by the owner library");
+  assert.equal(typeof body.visible, "boolean");
+  showcaseRequests += 1;
+  if (body.visible) visibleDocumentIds.add(record.id);
+  else visibleDocumentIds.delete(record.id);
+  await route.fulfill({
+    body: JSON.stringify({ document: { ...record, visible: body.visible }, updated_at: new Date().toISOString() }),
+    contentType: "application/json",
+    status: 200,
+  });
+});
+
+await page.route(`${workerOrigin}/public/feishu/documents`, async (route) => {
+  const documents = documentRecords
+    .filter((documentRecord) => visibleDocumentIds.has(documentRecord.id))
+    .map(({ created_at, id, modified_at, title, type, url }) => ({ created_at, id, modified_at, title, type, url }));
+  await route.fulfill({
+    body: JSON.stringify({ documents, updated_at: new Date().toISOString() }),
+    contentType: "application/json",
+    status: 200,
+  });
+});
+
+await page.route(`${workerOrigin}/api/feishu/documents/**`, async (route) => {
+  assert.equal(route.request().method(), "DELETE");
+  assert.equal(route.request().headers().authorization, "Bearer test-owner-session");
+  const requestId = new URL(route.request().url()).pathname.split("/").at(-1);
+  assert.match(requestId, /^feishu-request-[0-9a-f]{64}$/);
+  deleteRequests += 1;
+  if (deleteDelay) await new Promise((resolve) => setTimeout(resolve, deleteDelay));
+  const recordIndex = documentRecords.findIndex((record) => record.request_id === requestId);
+  if (recordIndex < 0) {
+    await route.fulfill({
+      body: JSON.stringify({ error: { code: "feishu_document_not_found", message: "Not found" } }),
+      contentType: "application/json",
+      status: 404,
+    });
+    return;
+  }
+  const [record] = documentRecords.splice(recordIndex, 1);
+  visibleDocumentIds.delete(record.id);
+  await route.fulfill({
+    body: JSON.stringify({
+      deleted: true,
+      deleted_at: new Date(Date.UTC(2026, 7, 7, 10, deleteRequests)).toISOString(),
+      request_id: requestId,
+      title: record.title,
+    }),
     contentType: "application/json",
     status: 200,
   });
@@ -218,8 +320,10 @@ try {
   assert.equal(await page.locator('#site-author-menu [data-author-action="source-edit"]').count(), 0);
   await createAction.click();
   await page.locator("#feishu-document-dialog").waitFor({ state: "visible" });
-  await page.waitForFunction(() => document.querySelectorAll("#feishu-document-list a").length === 1);
-  assert.match(await page.locator("#feishu-document-list a").first().textContent(), /已有的研究文档.*2026/s);
+  await page.waitForFunction(() => document.querySelectorAll("#feishu-document-list a").length === 2);
+  assert.match(await page.locator("#feishu-document-list").textContent(), /已有的研究文档/);
+  assert.match(await page.locator("#feishu-document-list").textContent(), /飞书中原有的云文档/);
+  assert.equal(await page.locator("#feishu-public-library").isHidden(), true, "unselected Feishu documents must stay invisible to visitors");
   await page.waitForFunction(() => document.querySelector("#feishu-document-connection")?.dataset.state === "unconfigured");
   assert.match(await page.locator("#feishu-document-status").textContent(), /尚未完成配置/);
   assert.doesNotMatch(await page.locator("#feishu-document-status").textContent(), /Thinking/i);
@@ -268,6 +372,27 @@ try {
   assert.equal(await page.locator("#feishu-document-title").isEnabled(), true);
   if (!oauthPage.isClosed()) await oauthPage.waitForEvent("close");
 
+  const externalId = `feishu-file-${"c".repeat(64)}`;
+  const externalVisibility = page.locator(`[data-feishu-showcase="${externalId}"]`);
+  assert.equal(await externalVisibility.getAttribute("aria-pressed"), "false");
+  assert.equal(
+    await page.locator('li:has(a[href="https://example.feishu.cn/docx/external-token"]) [data-feishu-delete]').count(),
+    0,
+    "documents not created by this site must not expose the site-created deletion endpoint"
+  );
+  await externalVisibility.click();
+  await page.waitForFunction(
+    (id) => document.querySelector(`[data-feishu-showcase="${id}"][aria-pressed="true"]`)?.textContent === "已展示",
+    externalId
+  );
+  await page.waitForFunction(() => document.querySelector('#feishu-public-list a[href="https://example.feishu.cn/docx/external-token"]'));
+  assert.equal(showcaseRequests, 1);
+  assert.equal(await page.locator("#feishu-public-library").isVisible(), true);
+  assert.doesNotMatch(await page.locator("#feishu-public-library").textContent(), /selection_token|functionhx:zk2/);
+  await page.locator(`[data-feishu-showcase="${externalId}"]`).click();
+  await page.waitForFunction(() => document.querySelector("#feishu-public-library")?.hidden === true);
+  assert.equal(showcaseRequests, 2);
+
   await page.locator("#feishu-document-title").fill("新的研究札记");
   assert.equal(await page.locator("#feishu-document-form").getAttribute("data-no-page-loader"), "");
   const pagesBeforeCreate = context.pages().length;
@@ -296,6 +421,31 @@ try {
   const documentTab = await documentTabPromise;
   await documentTab.waitForURL("https://example.feishu.cn/docx/mocktoken");
   await documentTab.close();
+
+  const createdDeleteButton = page.locator(`#feishu-document-list [data-feishu-delete="feishu-request-${"1".padStart(64, "0")}"]`);
+  await createdDeleteButton.click();
+  await page.locator("#feishu-document-delete-dialog").waitFor({ state: "visible" });
+  assert.equal(await page.locator("#feishu-document-delete-title").textContent(), "新的研究札记");
+  assert.match(await page.locator("#feishu-document-delete-dialog").textContent(), /飞书回收站/);
+  await page.locator("#feishu-document-delete-cancel").click();
+  assert.equal(deleteRequests, 0, "canceling the confirmation must never call the delete endpoint");
+  await page.waitForFunction(() => document.activeElement?.matches("[data-feishu-delete]") === true);
+
+  await createdDeleteButton.click();
+  deleteDelay = 420;
+  await page.locator("#feishu-document-delete-submit").evaluate((button) => {
+    button.click();
+    button.click();
+  });
+  await page.waitForTimeout(240);
+  assert.equal(await page.locator("html").getAttribute("data-page-loading"), null, "in-page deletion must never show the page loader");
+  assert.equal(await page.locator("#feishu-document-delete").getAttribute("aria-busy"), "true");
+  assert.equal(await page.locator("#feishu-document-delete-submit").textContent(), "正在移除…");
+  await page.locator("#feishu-document-delete-dialog").waitFor({ state: "hidden" });
+  deleteDelay = 0;
+  assert.equal(deleteRequests, 1, "a double click must delete at most one Feishu document");
+  assert.equal(await page.locator('#feishu-document-list a[href="https://example.feishu.cn/docx/mocktoken"]').count(), 0);
+  assert.match(await page.locator("#feishu-document-list-status").textContent(), /已移到飞书回收站/);
 
   await page.locator("#site-inline-editor-toggle").click();
   await createAction.click();

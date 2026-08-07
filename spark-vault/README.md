@@ -94,6 +94,11 @@ OpenAPI. It remains disabled until both `FEISHU_CLIENT_ID` and the encrypted
 runtime secret `FEISHU_CLIENT_SECRET` are configured. The browser never reads a
 Feishu cookie and never receives a Feishu access token; an already signed-in
 Feishu browser session is reused only by the official authorization page.
+Documents are not part of Spark's zero-knowledge private-note boundary: they
+remain ordinary Feishu documents whose body permissions are controlled by
+Feishu. OAuth credentials are still encrypted server-side, the owner library is
+authenticated, and every document is hidden from the public site until the
+owner explicitly selects it.
 
 1. Create an enterprise custom app at <https://open.feishu.cn/app> and limit
    its availability to the site owner.
@@ -104,15 +109,23 @@ Feishu browser session is reused only by the official authorization page.
    `https://vault.fanyuchen.com.cn/auth/feishu/callback` instead only when the
    Tencent-hosted service is the configured public endpoint.
 3. Enable only the user scopes `docx:document:create`,
-   `drive:drive.metadata:readonly`, and `offline_access`. Enable refresh-token
-   support in security settings if the console shows that switch, then publish
-   the app so the permissions take effect.
+   `drive:drive.metadata:readonly`, `space:document:delete`,
+   `space:document:retrieve`, and `offline_access`. Enable refresh-token support
+   in security settings if the console shows that switch, then publish the app
+   so the permissions take effect. Existing connections created before library
+   and deletion support are kept only long enough to identify the pinned owner
+   and require one explicit OAuth reconnection before document management is
+   available.
 4. Store `FEISHU_CLIENT_SECRET` only in the host's encrypted secret store. The
    App ID is placed in `FEISHU_CLIENT_ID`. Optionally set
    `ALLOWED_FEISHU_OPEN_ID` and `ALLOWED_FEISHU_TENANT_KEY`; otherwise the first
    successful owner connection is encrypted and pinned in the private content
    repository. `FEISHU_FOLDER_TOKEN` may select a destination folder; omitting
    it creates documents in the user's root space.
+5. Create a Workers KV namespace and bind it as `FEISHU_DOCUMENTS`. This store
+   contains only the title, official URL, type, and timestamps of documents the
+   owner deliberately selected for public display. It never contains Feishu
+   OAuth tokens, private Spark content, or an unselected document index.
 
 The authenticated site calls `POST /api/feishu/oauth/start`, opens the returned
 official authorization URL, and receives a token-free completion message from
@@ -124,12 +137,24 @@ creation reserves an encrypted idempotency record before calling
 `/open-apis/docx/v1/documents`; it then queries
 `/open-apis/drive/v1/metas/batch_query` with `with_url: true` and returns the
 official URL instead of constructing a tenant URL locally. Successful request
-records also form the owner's private document index: authenticated
-`GET /api/feishu/documents` decrypts and validates those records, returns at
-most the 200 newest title/URL/timestamp summaries, and never exposes them in
-the static site. Creation itself does not open a window. The owner explicitly
-clicks a recorded link, which opens the official Feishu URL in a new browser
-tab.
+records also form a recoverable owner audit index: authenticated
+`GET /api/feishu/documents` decrypts and validates those records and returns at
+most the 200 newest title/URL/timestamp summaries. Authenticated
+`GET /api/feishu/library` recursively reads the owner's Feishu cloud-space
+folders and joins matching site-created records. Each result is hidden by
+default and carries a short-lived sealed selection handle, never a plaintext
+Feishu file token. `PUT /api/feishu/showcase` accepts only that handle and an
+explicit boolean; selected safe metadata is copied to Workers KV for the
+read-only `GET /public/feishu/documents` endpoint. Unselected documents never
+enter that public store. Creation itself does not open a window. The owner
+explicitly clicks a recorded link, which opens the official Feishu URL in a new
+browser tab. Authenticated `DELETE /api/feishu/documents/:request_id` accepts
+only the opaque ID of one of those encrypted creation records, loads the stored
+document token server-side, and calls Feishu's official
+`DELETE /open-apis/drive/v1/files/:file_token?type=docx` endpoint. The document
+enters Feishu's recycle bin, while the encrypted request record is retained as
+a deletion audit marker and omitted from later list responses. Arbitrary
+client-supplied document tokens and URLs are never accepted.
 
 ## Legacy migration
 

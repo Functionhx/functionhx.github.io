@@ -394,6 +394,16 @@ def main() -> int:
 
     documents_zh = route_file(site, "/documents/").read_text(encoding="utf-8")
     documents_en = route_file(site, "/en/documents/").read_text(encoding="utf-8")
+    for route, html in (("/documents/", documents_zh), ("/en/documents/", documents_en)):
+        for required_id in (
+            "feishu-public-library",
+            "feishu-public-list",
+            "feishu-public-list-status",
+        ):
+            if f'id="{required_id}"' not in html:
+                errors.append(f"{route}: missing public Feishu showcase #{required_id}")
+        if "/assets/js/feishu-showcase.js" not in html:
+            errors.append(f"{route}: public Feishu showcase client is missing")
     for required_id in (
         "feishu-document-dialog",
         "feishu-document-creator",
@@ -406,6 +416,12 @@ def main() -> int:
         "feishu-document-list",
         "feishu-document-list-status",
         "feishu-document-refresh",
+        "feishu-document-delete-dialog",
+        "feishu-document-delete-form",
+        "feishu-document-delete-title",
+        "feishu-document-delete-status",
+        "feishu-document-delete-cancel",
+        "feishu-document-delete-submit",
     ):
         if f'id="{required_id}"' not in documents_zh:
             errors.append(f"/documents/: missing Feishu creation control #{required_id}")
@@ -430,6 +446,8 @@ def main() -> int:
         '"/api/feishu/session"',
         '"/api/feishu/oauth/start"',
         '"/api/feishu/documents"',
+        '"/api/feishu/library"',
+        '"/api/feishu/showcase"',
         "idempotency_key",
         "event.origin !== expectedOrigin",
         "event.source !== popup",
@@ -437,6 +455,10 @@ def main() -> int:
         'officialAuthorizeOrigin = "https://accounts.feishu.cn"',
         "vaultClient.request",
         'link.target = "_blank"',
+        'method: "DELETE"',
+        'method: "PUT"',
+        "dataset.feishuDelete",
+        "dataset.feishuShowcase",
     ):
         if contract not in feishu_client_text:
             errors.append(
@@ -444,6 +466,25 @@ def main() -> int:
             )
     if '"functionhx-feishu-document"' in feishu_client_text:
         errors.append("assets/js/feishu-documents.js: creation must not pre-open a document popup")
+
+    feishu_showcase_path = site.parent / "assets" / "js" / "feishu-showcase.js"
+    feishu_showcase_text = (
+        feishu_showcase_path.read_text(encoding="utf-8")
+        if feishu_showcase_path.exists()
+        else ""
+    )
+    for contract in (
+        "/public/feishu/documents",
+        'link.target = "_blank"',
+        'hostname === "feishu.cn"',
+        'root.hidden = true',
+    ):
+        if contract not in feishu_showcase_text:
+            errors.append(
+                f"assets/js/feishu-showcase.js: public-list contract {contract!r} missing"
+            )
+    if "selection_token" in feishu_showcase_text:
+        errors.append("assets/js/feishu-showcase.js: public client must not receive owner selection tokens")
 
     for route in ("/spark/",):
         parser = parsed_pages.get(route)

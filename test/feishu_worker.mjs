@@ -10,6 +10,15 @@ const privateRepo = "Functionhx/functionhx-spark-private";
 const connectionPath = "integrations/feishu/oauth.v1.json";
 const validSha = (value) => createHash("sha1").update(String(value)).digest("hex");
 const now = Math.floor(Date.now() / 1000);
+const kvRecords = new Map();
+const feishuDocumentsStore = {
+  async get(key) {
+    return kvRecords.get(key) ?? null;
+  },
+  async put(key, value) {
+    kvRecords.set(key, String(value));
+  },
+};
 const env = {
   ALLOWED_FEISHU_OPEN_ID: "ou_owner",
   ALLOWED_FEISHU_TENANT_KEY: "tenant_owner",
@@ -18,6 +27,7 @@ const env = {
   FEISHU_API_BASE: "https://open.feishu.test",
   FEISHU_CLIENT_ID: "cli_feishu_test",
   FEISHU_CLIENT_SECRET: "not-a-real-feishu-secret",
+  FEISHU_DOCUMENTS: feishuDocumentsStore,
   GITHUB_API_BASE: "https://api.github.test",
   GITHUB_CLIENT_ID: "Iv1.spark-vault-test",
   GITHUB_CLIENT_SECRET: "not-a-real-github-secret",
@@ -37,6 +47,7 @@ const feishuCalls = [];
 let currentFeishuIdentity = { name: "Owner", open_id: "ou_owner", tenant_key: "tenant_owner" };
 let authorizationCounter = 0;
 let createCounter = 0;
+let deleteCounter = 0;
 let refreshCounter = 0;
 let holdCreate = null;
 let holdRefresh = null;
@@ -143,7 +154,7 @@ globalThis.fetch = async (input, init = {}) => {
           expires_in: 7200,
           refresh_token: `u_refresh_authorization_${authorizationCounter}`,
           refresh_token_expires_in: 604800,
-          scope: "docx:document:create drive:drive.metadata:readonly offline_access",
+          scope: "docx:document:create drive:drive.metadata:readonly space:document:delete space:document:retrieve offline_access",
           token_type: "Bearer",
         });
       }
@@ -159,7 +170,7 @@ globalThis.fetch = async (input, init = {}) => {
           expires_in: 7200,
           refresh_token: `u_refresh_rotated_${refreshCounter}`,
           refresh_token_expires_in: 604800,
-          scope: "docx:document:create drive:drive.metadata:readonly offline_access",
+          scope: "docx:document:create drive:drive.metadata:readonly space:document:delete space:document:retrieve offline_access",
           token_type: "Bearer",
         });
       }
@@ -210,6 +221,64 @@ globalThis.fetch = async (input, init = {}) => {
         },
         msg: "success",
       });
+    }
+    if (url.pathname === "/open-apis/drive/v1/files" && request.method === "GET") {
+      const folderToken = url.searchParams.get("folder_token") || "";
+      const filesForCreatedDocuments = Array.from({ length: createCounter }, (_, index) => {
+        const sequence = index + 1;
+        return {
+          created_time: String(1_754_500_000 + sequence),
+          modified_time: String(1_754_600_000 + sequence),
+          name: `Metadata doxcn_test_${sequence}`,
+          token: `doxcn_test_${sequence}`,
+          type: "docx",
+          url: `https://owner.feishu.cn/docx/doxcn_test_${sequence}`,
+        };
+      });
+      if (!folderToken) {
+        return json({
+          code: 0,
+          data: {
+            files: [
+              ...filesForCreatedDocuments,
+              {
+                created_time: "1754400000",
+                modified_time: "1754500000",
+                name: "来自飞书根目录",
+                token: "doxcn_external_root",
+                type: "docx",
+                url: "https://owner.feishu.cn/docx/doxcn_external_root",
+              },
+              { name: "研究文件夹", token: "fldcn_research", type: "folder" },
+            ],
+            has_more: false,
+          },
+          msg: "success",
+        });
+      }
+      assert.equal(folderToken, "fldcn_research");
+      return json({
+        code: 0,
+        data: {
+          files: [
+            {
+              created_time: "1754300000",
+              modified_time: "1754600000",
+              name: "嵌套研究文档",
+              token: "doxcn_nested",
+              type: "docx",
+              url: "https://owner.feishu.cn/docx/doxcn_nested",
+            },
+          ],
+          has_more: false,
+        },
+        msg: "success",
+      });
+    }
+    if (url.pathname.startsWith("/open-apis/drive/v1/files/") && request.method === "DELETE") {
+      deleteCounter += 1;
+      assert.equal(url.searchParams.get("type"), "docx", "document deletion must identify the exact Feishu file type");
+      return json({ code: 0, data: {}, msg: "success" });
     }
     return json({ code: 404, msg: "Unhandled Feishu test endpoint" }, 404);
   }
@@ -295,7 +364,7 @@ try {
   assert.equal(authorize.searchParams.get("code_challenge_method"), "S256");
   assert.deepEqual(
     new Set(authorize.searchParams.get("scope").split(" ")),
-    new Set(["docx:document:create", "drive:drive.metadata:readonly", "offline_access"])
+    new Set(["docx:document:create", "drive:drive.metadata:readonly", "space:document:delete", "space:document:retrieve", "offline_access"])
   );
   const state = authorize.searchParams.get("state");
   assert.ok(state);
@@ -323,7 +392,10 @@ try {
   assert.equal(feishuTokenBodies[0].grant_type, "authorization_code");
   assert.equal(feishuTokenBodies[0].client_secret, env.FEISHU_CLIENT_SECRET);
   assert.equal(feishuTokenBodies[0].redirect_uri, `${workerOrigin}/auth/feishu/callback`);
-  assert.equal(feishuTokenBodies[0].scope, "docx:document:create drive:drive.metadata:readonly offline_access");
+  assert.equal(
+    feishuTokenBodies[0].scope,
+    "docx:document:create drive:drive.metadata:readonly space:document:delete space:document:retrieve offline_access"
+  );
   assert.equal(
     createHash("sha256").update(feishuTokenBodies[0].code_verifier).digest("base64url"),
     authorize.searchParams.get("code_challenge"),
@@ -349,6 +421,19 @@ try {
   });
 
   const validConnectionFile = structuredClone(files.get(fileKey(privateRepo, connectionPath)));
+  const legacyScopeRecord = await testing.decryptRecord(JSON.parse(validConnectionFile.content), env);
+  legacyScopeRecord.token.scope = ["docx:document:create", "drive:drive.metadata:readonly", "offline_access"].sort();
+  const legacyScopeEnvelope = await testing.encryptRecord(legacyScopeRecord, env);
+  files.set(fileKey(privateRepo, connectionPath), {
+    content: `${JSON.stringify(legacyScopeEnvelope, null, 2)}\n`,
+    message: "test: retain legacy connection for safe reauthorization",
+    sha: validSha(JSON.stringify(legacyScopeEnvelope)),
+  });
+  const legacyScopeStatus = await apiRequest("/api/feishu/session", "GET", sessionToken);
+  assert.equal(legacyScopeStatus.status, 200);
+  assert.deepEqual(await legacyScopeStatus.json(), { configured: true, connected: false });
+  files.set(fileKey(privateRepo, connectionPath), validConnectionFile);
+
   const invalidScopeRecord = await testing.decryptRecord(JSON.parse(validConnectionFile.content), env);
   invalidScopeRecord.token.scope.push("drive:drive:readonly");
   const invalidScopeEnvelope = await testing.encryptRecord(invalidScopeRecord, env);
@@ -390,8 +475,10 @@ try {
   holdCreate = null;
   assert.equal(firstCreate.status, 200);
   const firstDocument = await firstCreate.json();
+  const firstRequestId = `feishu-request-${createHash("sha256").update(idempotencyKey).digest("hex")}`;
   assert.equal(firstDocument.document_token, "doxcn_test_1");
   assert.equal(firstDocument.idempotent, false);
+  assert.equal(firstDocument.request_id, firstRequestId);
   assert.equal(firstDocument.title, "Metadata doxcn_test_1");
   assert.equal(firstDocument.url, "https://owner.feishu.cn/docx/doxcn_test_1");
   assert.ok(Number.isFinite(Date.parse(firstDocument.created_at)));
@@ -402,11 +489,58 @@ try {
     documents: [
       {
         created_at: firstDocument.created_at,
+        request_id: firstRequestId,
         title: "Metadata doxcn_test_1",
         url: "https://owner.feishu.cn/docx/doxcn_test_1",
       },
     ],
   });
+
+  const libraryResponse = await apiRequest("/api/feishu/library", "GET", sessionToken);
+  assert.equal(libraryResponse.status, 200);
+  const libraryPayload = await libraryResponse.json();
+  assert.equal(libraryPayload.truncated, false);
+  assert.ok(libraryPayload.documents.some((document) => document.title === "来自飞书根目录"));
+  assert.ok(
+    libraryPayload.documents.some((document) => document.title === "嵌套研究文档"),
+    "nested folders must be traversed"
+  );
+  const createdLibraryDocument = libraryPayload.documents.find((document) => document.request_id === firstRequestId);
+  assert.equal(createdLibraryDocument.title, "Metadata doxcn_test_1");
+  assert.equal(createdLibraryDocument.visible, false);
+  assert.ok(createdLibraryDocument.selection_token);
+  assert.equal(createdLibraryDocument.selection_token.includes("doxcn_test_1"), false, "selection tokens must conceal Feishu file tokens");
+
+  const forgedShowcase = await apiRequest("/api/feishu/showcase", "PUT", sessionToken, {
+    selection_token: "forged",
+    visible: true,
+  });
+  assert.equal(forgedShowcase.status, 400);
+  assert.equal((await forgedShowcase.json()).error.code, "feishu_selection_expired");
+
+  const showDocument = await apiRequest("/api/feishu/showcase", "PUT", sessionToken, {
+    selection_token: createdLibraryDocument.selection_token,
+    visible: true,
+  });
+  assert.equal(showDocument.status, 200);
+  assert.equal((await showDocument.json()).document.visible, true);
+  const publicShowcase = await worker.fetch(new Request(`${workerOrigin}/public/feishu/documents`, { headers: { Origin: siteOrigin } }), env);
+  assert.equal(publicShowcase.status, 200);
+  const publicShowcasePayload = await publicShowcase.json();
+  assert.deepEqual(
+    publicShowcasePayload.documents.map((document) => document.title),
+    ["Metadata doxcn_test_1"]
+  );
+  assert.equal(JSON.stringify(publicShowcasePayload).includes("selection_token"), false);
+  assert.equal(JSON.stringify(publicShowcasePayload).includes("doxcn_test_1"), true, "the selected official URL is intentionally public");
+
+  const hideDocument = await apiRequest("/api/feishu/showcase", "PUT", sessionToken, {
+    selection_token: createdLibraryDocument.selection_token,
+    visible: false,
+  });
+  assert.equal(hideDocument.status, 200);
+  const publicAfterHide = await worker.fetch(new Request(`${workerOrigin}/public/feishu/documents`, { headers: { Origin: siteOrigin } }), env);
+  assert.deepEqual((await publicAfterHide.json()).documents, []);
 
   const duplicateAfterSuccess = await apiRequest("/api/feishu/documents", "POST", sessionToken, {
     idempotency_key: idempotencyKey,
@@ -540,7 +674,10 @@ try {
   assert.equal(refreshCounter, 1);
   assert.equal(feishuTokenBodies.at(-1).grant_type, "refresh_token");
   assert.equal(feishuTokenBodies.at(-1).refresh_token, "u_refresh_authorization_1");
-  assert.equal(feishuTokenBodies.at(-1).scope, "docx:document:create drive:drive.metadata:readonly offline_access");
+  assert.equal(
+    feishuTokenBodies.at(-1).scope,
+    "docx:document:create drive:drive.metadata:readonly space:document:delete space:document:retrieve offline_access"
+  );
   assert.ok(
     feishuCalls.some((call) => call.path === "/open-apis/docx/v1/documents" && call.authorization === "Bearer u_access_refreshed_1"),
     "document creation after expiry must use the refreshed access token"
@@ -572,6 +709,65 @@ try {
     feishuCalls.some((call) => call.path === "/open-apis/drive/v1/metas/batch_query?user_id_type=open_id"),
     "the backend must ask the official Drive API for the exact document URL"
   );
+
+  const deletesBeforeUnknown = deleteCounter;
+  const unknownDelete = await apiRequest(`/api/feishu/documents/feishu-request-${"f".repeat(64)}`, "DELETE", sessionToken);
+  assert.equal(unknownDelete.status, 404, "an arbitrary record id must never reach Feishu");
+  assert.equal((await unknownDelete.json()).error.code, "feishu_document_not_found");
+  assert.equal(deleteCounter, deletesBeforeUnknown);
+
+  const unauthenticatedDelete = await worker.fetch(
+    new Request(`${workerOrigin}/api/feishu/documents/${firstRequestId}`, {
+      headers: { Origin: siteOrigin },
+      method: "DELETE",
+    }),
+    env
+  );
+  assert.equal(unauthenticatedDelete.status, 401, "only the verified GitHub owner may delete a Feishu document");
+
+  const reshowBeforeDelete = await apiRequest("/api/feishu/showcase", "PUT", sessionToken, {
+    selection_token: createdLibraryDocument.selection_token,
+    visible: true,
+  });
+  assert.equal(reshowBeforeDelete.status, 200);
+
+  const deletedDocument = await apiRequest(`/api/feishu/documents/${firstRequestId}`, "DELETE", sessionToken);
+  assert.equal(deletedDocument.status, 200);
+  const deletedPayload = await deletedDocument.json();
+  assert.equal(deletedPayload.deleted, true);
+  assert.equal(deletedPayload.idempotent, false);
+  assert.equal(deletedPayload.request_id, firstRequestId);
+  assert.ok(Number.isFinite(Date.parse(deletedPayload.deleted_at)));
+  assert.ok(
+    feishuCalls.some(
+      (call) =>
+        call.method === "DELETE" &&
+        call.path === "/open-apis/drive/v1/files/doxcn_test_1?type=docx" &&
+        call.authorization.startsWith("Bearer u_access_")
+    ),
+    "the backend must delete only the token stored in its encrypted creation record"
+  );
+  const firstRequestHash = firstRequestId.replace("feishu-request-", "");
+  const deletedEnvelope = JSON.parse(files.get(fileKey(privateRepo, `integrations/feishu/requests/${firstRequestHash}.json`)).content);
+  const deletedRecord = await testing.decryptRecord(deletedEnvelope, env);
+  assert.equal(deletedRecord.status, "deleted");
+  assert.equal(deletedRecord.documentToken, "doxcn_test_1");
+  assert.ok(Number.isFinite(Date.parse(deletedRecord.deletedAt)));
+  const publicAfterDelete = await worker.fetch(new Request(`${workerOrigin}/public/feishu/documents`, { headers: { Origin: siteOrigin } }), env);
+  assert.deepEqual((await publicAfterDelete.json()).documents, [], "a recycled document must also disappear from the public showcase");
+
+  const documentsAfterDelete = await apiRequest("/api/feishu/documents", "GET", sessionToken);
+  const documentsAfterDeletePayload = await documentsAfterDelete.json();
+  assert.equal(
+    documentsAfterDeletePayload.documents.some((document) => document.request_id === firstRequestId),
+    false,
+    "a recycled document must disappear from the private site index"
+  );
+  const deletesBeforeReplay = deleteCounter;
+  const replayedDelete = await apiRequest(`/api/feishu/documents/${firstRequestId}`, "DELETE", sessionToken);
+  assert.equal(replayedDelete.status, 200);
+  assert.equal((await replayedDelete.json()).idempotent, true);
+  assert.equal(deleteCounter, deletesBeforeReplay, "replaying a completed deletion must not call Feishu again");
 
   const expiredTokenKey = "d9cf3a0b-455d-4ae7-ad92-524db748d9a7";
   nextCreateFailure = "token";

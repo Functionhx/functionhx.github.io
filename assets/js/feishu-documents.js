@@ -17,6 +17,14 @@
   const documentList = document.getElementById("feishu-document-list");
   const documentListStatus = document.getElementById("feishu-document-list-status");
   const refreshButton = document.getElementById("feishu-document-refresh");
+  const deleteDialog = document.getElementById("feishu-document-delete-dialog");
+  const deleteRoot = document.getElementById("feishu-document-delete");
+  const deleteForm = document.getElementById("feishu-document-delete-form");
+  const deleteTitle = document.getElementById("feishu-document-delete-title");
+  const deleteStatus = document.getElementById("feishu-document-delete-status");
+  const deleteCloseButton = document.getElementById("feishu-document-delete-close");
+  const deleteCancelButton = document.getElementById("feishu-document-delete-cancel");
+  const deleteSubmitButton = document.getElementById("feishu-document-delete-submit");
   const pencilToggle = document.getElementById("site-inline-editor-toggle");
   const vaultClient = window.functionhxSparkVault;
   if (
@@ -35,7 +43,15 @@
     !library ||
     !documentList ||
     !documentListStatus ||
-    !refreshButton
+    !refreshButton ||
+    !deleteDialog ||
+    !deleteRoot ||
+    !deleteForm ||
+    !deleteTitle ||
+    !deleteStatus ||
+    !deleteCloseButton ||
+    !deleteCancelButton ||
+    !deleteSubmitButton
   ) {
     return;
   }
@@ -58,6 +74,11 @@
     createOutcomeUnknown: "飞书可能已经创建了文档，但本站未能确认结果。请先到飞书中核对，避免重复创建。",
     created: "云文档已创建并保存到下方记录。点击链接后会在新标签页打开飞书。",
     createdTitle: "创建成功",
+    deleted: (title) => `《${title}》已移到飞书回收站。`,
+    deleteFailed: "删除失败，文档仍保留在本站列表中。请稍后重试。",
+    deleteInProgress: "这份文档正在移到回收站，请稍后刷新。",
+    deleteReauthorization: "删除需要新增的飞书权限。请先打开右上角铅笔，重新连接一次飞书。",
+    deleting: "正在移除…",
     feishuRequired: "站长身份已验证。继续通过飞书官方 OAuth 授权后即可创建。",
     feishuRequiredTitle: "需要飞书授权",
     invalidResponse: "服务端没有返回可安全打开的飞书文档地址。请稍后重试。",
@@ -68,14 +89,20 @@
     oauthAccountDenied: "当前飞书账号未获本站授权，请使用已经绑定的账号。",
     oauthFailed: "飞书官方授权暂时没有完成，请稍后重试。",
     oauthIncomplete: "飞书授权信息不完整，请重新发起授权。",
-    oauthScopeMissing: "飞书没有授予创建文档所需权限，请重新授权。",
+    oauthScopeMissing: "飞书没有授予管理文档所需权限，请重新授权。",
     popupBlocked: "浏览器拦截了授权窗口。请允许本站打开弹窗后重试。",
-    recordsEmpty: "还没有通过本站创建的飞书云文档。",
+    recordsEmpty: "飞书云空间里暂时没有可管理的文档。",
     recordsFailed: "暂时无法读取云文档记录，请稍后刷新。",
-    recordsLoading: "正在读取私有云文档记录…",
+    recordsLoading: "正在读取飞书云空间…",
+    recordsTruncated: "文档较多，本次只显示了最近的一部分。",
     requestFailed: "暂时无法确认飞书连接，请检查网络后重试。",
     requestFailedTitle: "连接检查失败",
     retry: "重新检查",
+    showcaseFailed: "暂时无法修改网站展示状态，请刷新文档库后重试。",
+    showcaseHiding: "正在从网站隐藏…",
+    showcaseShowing: "正在加入网站展示…",
+    showcaseVisible: "已展示",
+    showcaseHidden: "展示",
     titleRequired: "请先填写文档标题。",
   };
 
@@ -87,6 +114,10 @@
   let oauthPopup = null;
   let oauthCancel = null;
   let documents = [];
+  const showcaseBusyIds = new Set();
+  let deleteBusy = false;
+  let deleteRecord = null;
+  let deleteTrigger = null;
 
   try {
     endpoint = vaultClient?.normalizeEndpoint?.(root.dataset.endpoint || "") || "";
@@ -162,10 +193,41 @@
 
   function normalizeDocument(value) {
     const url = safeDocumentUrl(value?.url);
+    const requestId = String(value?.request_id || "");
+    const id = String(value?.id || "");
+    const selectionToken = String(value?.selection_token || "");
     const title = String(value?.title || "").trim();
     const createdAt = String(value?.created_at || "");
-    if (!url || !title || !Number.isFinite(Date.parse(createdAt))) return null;
-    return { createdAt, title: title.slice(0, 800), url };
+    const modifiedAt = String(value?.modified_at || createdAt);
+    const validRequestId = /^feishu-request-[0-9a-f]{64}$/.test(requestId) ? requestId : "";
+    const validLibraryId = /^feishu-file-[0-9a-f]{64}$/.test(id) ? id : "";
+    const validSelectionToken = /^functionhx:zk2:[A-Za-z0-9_-]+$/.test(selectionToken) ? selectionToken : "";
+    if (!url || !title || !Number.isFinite(Date.parse(createdAt)) || !Number.isFinite(Date.parse(modifiedAt))) return null;
+    if (validLibraryId && validSelectionToken) {
+      return {
+        createdAt,
+        id: validLibraryId,
+        modifiedAt,
+        requestId: validRequestId,
+        selectionToken: validSelectionToken,
+        title: title.slice(0, 800),
+        type: String(value?.type || "docx").slice(0, 24),
+        url,
+        visible: value?.visible === true,
+      };
+    }
+    if (!validRequestId) return null;
+    return {
+      createdAt,
+      id: validRequestId,
+      modifiedAt,
+      requestId: validRequestId,
+      selectionToken: "",
+      title: title.slice(0, 800),
+      type: "docx",
+      url,
+      visible: false,
+    };
   }
 
   function displayDocumentTime(value) {
@@ -198,6 +260,7 @@
       const iconGlyph = document.createElement("i");
       const title = document.createElement("span");
       const time = document.createElement("time");
+      const actions = document.createElement("span");
       link.href = documentRecord.url;
       link.target = "_blank";
       link.rel = "external noopener noreferrer";
@@ -207,21 +270,45 @@
       icon.append(iconGlyph);
       title.className = "feishu-documents__list-title";
       title.textContent = documentRecord.title;
-      time.dateTime = documentRecord.createdAt;
-      time.textContent = displayDocumentTime(documentRecord.createdAt);
+      time.dateTime = documentRecord.modifiedAt;
+      time.textContent = displayDocumentTime(documentRecord.modifiedAt);
       link.append(icon, title, time);
-      item.append(link);
+      actions.className = "feishu-documents__list-actions";
+      if (documentRecord.selectionToken) {
+        const visibilityButton = document.createElement("button");
+        const visibilityBusy = showcaseBusyIds.has(documentRecord.id);
+        visibilityButton.className = "feishu-documents__visibility";
+        visibilityButton.classList.toggle("feishu-documents__visibility--active", documentRecord.visible);
+        visibilityButton.type = "button";
+        visibilityButton.dataset.feishuShowcase = documentRecord.id;
+        visibilityButton.setAttribute("aria-pressed", documentRecord.visible ? "true" : "false");
+        visibilityButton.setAttribute(
+          "aria-label",
+          documentRecord.visible ? `从网站隐藏《${documentRecord.title}》` : `在网站展示《${documentRecord.title}》`
+        );
+        visibilityButton.disabled = visibilityBusy;
+        visibilityButton.textContent = visibilityBusy
+          ? documentRecord.visible
+            ? strings.showcaseHiding
+            : strings.showcaseShowing
+          : documentRecord.visible
+            ? strings.showcaseVisible
+            : strings.showcaseHidden;
+        actions.append(visibilityButton);
+      }
+      if (documentRecord.requestId) {
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "feishu-documents__delete";
+        deleteButton.type = "button";
+        deleteButton.dataset.feishuDelete = documentRecord.requestId;
+        deleteButton.setAttribute("aria-label", `删除《${documentRecord.title}》`);
+        deleteButton.title = "移到飞书回收站";
+        deleteButton.innerHTML = '<i class="fa-regular fa-trash-can" aria-hidden="true"></i>';
+        actions.append(deleteButton);
+      }
+      item.append(link, actions);
       documentList.append(item);
     }
-  }
-
-  function upsertDocument(value) {
-    const record = normalizeDocument(value);
-    if (!record) return;
-    documents = [record, ...documents.filter((item) => item.url !== record.url)].sort(
-      (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)
-    );
-    renderDocuments();
   }
 
   async function loadDocuments() {
@@ -236,10 +323,26 @@
         return false;
       }
       library.hidden = false;
-      const payload = await withTimeout(vaultRequest("/api/feishu/documents"), 12000, "Feishu document records timed out.");
+      let payload;
+      try {
+        payload = await withTimeout(vaultRequest("/api/feishu/library"), 25000, "Feishu document library timed out.");
+      } catch (error) {
+        if (
+          !["feishu_authorization_required", "feishu_reauthorization_required", "feishu_documents_store_missing", "feishu_not_configured"].includes(
+            error?.code
+          )
+        ) {
+          throw error;
+        }
+        payload = await withTimeout(vaultRequest("/api/feishu/documents"), 12000, "Feishu document records timed out.");
+      }
       documents = (Array.isArray(payload.documents) ? payload.documents : []).map(normalizeDocument).filter(Boolean);
-      documents.sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
+      documents.sort((left, right) => Date.parse(right.modifiedAt) - Date.parse(left.modifiedAt));
       renderDocuments();
+      if (payload.truncated === true) {
+        documentListStatus.hidden = false;
+        documentListStatus.textContent = strings.recordsTruncated;
+      }
       return true;
     } catch (error) {
       if (error?.status === 401 || error?.code === "authentication_required") {
@@ -252,6 +355,103 @@
       return false;
     } finally {
       refreshButton.disabled = false;
+    }
+  }
+
+  async function toggleShowcase(record, triggerButton) {
+    if (!record?.selectionToken || showcaseBusyIds.has(record.id)) return;
+    const nextVisible = !record.visible;
+    showcaseBusyIds.add(record.id);
+    renderDocuments();
+    try {
+      const payload = await withTimeout(
+        vaultRequest("/api/feishu/showcase", {
+          body: { selection_token: record.selectionToken, visible: nextVisible },
+          method: "PUT",
+        }),
+        12000,
+        "Feishu document display update timed out."
+      );
+      record.visible = payload?.document?.visible === true;
+      window.dispatchEvent(new CustomEvent("functionhx:feishu-showcase-updated"));
+    } catch (_error) {
+      documentListStatus.hidden = false;
+      documentListStatus.textContent = strings.showcaseFailed;
+    } finally {
+      showcaseBusyIds.delete(record.id);
+      renderDocuments();
+      window.requestAnimationFrame(() => {
+        const nextButton = documentList.querySelector(`[data-feishu-showcase="${record.id}"]`);
+        if (triggerButton === document.activeElement || !document.activeElement || document.activeElement === document.body) nextButton?.focus();
+      });
+    }
+  }
+
+  function setDeleteBusy(active) {
+    deleteBusy = active;
+    if (active) deleteRoot.setAttribute("aria-busy", "true");
+    else deleteRoot.removeAttribute("aria-busy");
+    deleteCloseButton.disabled = active;
+    deleteCancelButton.disabled = active;
+    deleteSubmitButton.disabled = active;
+    deleteSubmitButton.textContent = active ? strings.deleting : "移到回收站";
+  }
+
+  function closeDeleteDialog() {
+    if (deleteBusy) return;
+    if (deleteDialog.open) deleteDialog.close();
+    const triggerToFocus = deleteTrigger;
+    deleteRecord = null;
+    deleteTrigger = null;
+    deleteStatus.hidden = true;
+    deleteStatus.textContent = "";
+    window.requestAnimationFrame(() => triggerToFocus?.isConnected && triggerToFocus.focus());
+  }
+
+  function openDeleteDialog(record, triggerButton) {
+    if (deleteBusy || !record) return;
+    deleteRecord = record;
+    deleteTrigger = triggerButton;
+    deleteTitle.textContent = record.title;
+    deleteStatus.hidden = true;
+    deleteStatus.textContent = "";
+    if (!deleteDialog.open) deleteDialog.showModal();
+    window.requestAnimationFrame(() => deleteCancelButton.focus());
+  }
+
+  async function deleteDocument(event) {
+    event.preventDefault();
+    window.functionhxSitePreferences?.hideLoading?.();
+    if (deleteBusy || !deleteRecord) return;
+    const record = deleteRecord;
+    setDeleteBusy(true);
+    deleteStatus.hidden = true;
+    deleteStatus.textContent = "";
+    try {
+      await withTimeout(
+        vaultRequest(`/api/feishu/documents/${encodeURIComponent(record.requestId)}`, { method: "DELETE" }),
+        20000,
+        "Feishu document deletion timed out."
+      );
+      documents = documents.filter((item) => item.requestId !== record.requestId);
+      renderDocuments();
+      window.dispatchEvent(new CustomEvent("functionhx:feishu-showcase-updated"));
+      documentListStatus.hidden = false;
+      documentListStatus.textContent = strings.deleted(record.title);
+      setDeleteBusy(false);
+      closeDeleteDialog();
+    } catch (error) {
+      if (error?.code === "feishu_authorization_required" || error?.code === "feishu_reauthorization_required") {
+        deleteStatus.textContent = strings.deleteReauthorization;
+      } else if (error?.code === "feishu_delete_in_progress") {
+        deleteStatus.textContent = strings.deleteInProgress;
+      } else {
+        deleteStatus.textContent = strings.deleteFailed;
+      }
+      deleteStatus.hidden = false;
+      setDeleteBusy(false);
+    } finally {
+      window.functionhxSitePreferences?.hideLoading?.();
     }
   }
 
@@ -467,7 +667,6 @@
       resultLink.href = documentUrl;
       resultLink.hidden = false;
       resultLink.textContent = payload.title ? `打开《${payload.title}》` : "打开刚创建的飞书云文档";
-      upsertDocument(payload);
       setConnection("created", strings.createdTitle, strings.created);
       titleInput.value = "";
       idempotencyKey = "";
@@ -519,6 +718,28 @@
   form.addEventListener("submit", createDocument);
   closeButton.addEventListener("click", closeCreator);
   refreshButton.addEventListener("click", () => loadDocuments().catch(() => undefined));
+  documentList.addEventListener("click", (event) => {
+    const deleteButton = event.target.closest("[data-feishu-delete]");
+    if (deleteButton && documentList.contains(deleteButton)) {
+      const record = documents.find((item) => item.requestId === deleteButton.dataset.feishuDelete);
+      openDeleteDialog(record, deleteButton);
+      return;
+    }
+    const visibilityButton = event.target.closest("[data-feishu-showcase]");
+    if (!visibilityButton || !documentList.contains(visibilityButton)) return;
+    const record = documents.find((item) => item.id === visibilityButton.dataset.feishuShowcase);
+    toggleShowcase(record, visibilityButton).catch(() => undefined);
+  });
+  deleteForm.addEventListener("submit", deleteDocument);
+  deleteCloseButton.addEventListener("click", closeDeleteDialog);
+  deleteCancelButton.addEventListener("click", closeDeleteDialog);
+  deleteDialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeDeleteDialog();
+  });
+  deleteDialog.addEventListener("click", (event) => {
+    if (event.target === deleteDialog) closeDeleteDialog();
+  });
   dialog.addEventListener("cancel", (event) => {
     event.preventDefault();
     closeCreator();

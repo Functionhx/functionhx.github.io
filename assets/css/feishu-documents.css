@@ -76,22 +76,26 @@
   margin-top: 0.45rem;
 }
 
-.feishu-documents__library {
+.feishu-documents__library,
+.feishu-documents__public-library {
   margin-top: clamp(1.5rem, 3vw, 2.25rem);
 }
 
-.feishu-documents__library[hidden] {
+.feishu-documents__library[hidden],
+.feishu-documents__public-library[hidden] {
   display: none;
 }
 
-.feishu-documents__library > header {
+.feishu-documents__library > header,
+.feishu-documents__public-library > header {
   align-items: flex-start;
   display: flex;
   gap: 1rem;
   justify-content: space-between;
 }
 
-.feishu-documents__library h3 {
+.feishu-documents__library h3,
+.feishu-documents__public-library h3 {
   font-size: 1.2rem;
   letter-spacing: -0.01em;
   margin: 0;
@@ -153,7 +157,11 @@
 }
 
 .feishu-documents__list li {
+  align-items: center;
   border-top: 1px solid color-mix(in srgb, var(--global-divider-color) 72%, transparent);
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .feishu-documents__list a {
@@ -162,6 +170,7 @@
   display: grid;
   gap: 0.45rem 0.8rem;
   grid-template-columns: 1.7rem minmax(0, 1fr) auto auto;
+  min-width: 0;
   padding: 0.82rem 0.15rem;
   text-decoration: none;
 }
@@ -207,6 +216,82 @@
   color: var(--global-text-color-light);
   font-size: 0.74rem;
   white-space: nowrap;
+}
+
+.feishu-documents__list-actions {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.feishu-documents__visibility {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 999px;
+  color: var(--global-text-color-light);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.68rem;
+  line-height: 1;
+  min-width: 3.2rem;
+  padding: 0.48rem 0.65rem;
+  white-space: nowrap;
+}
+
+.feishu-documents__visibility:hover,
+.feishu-documents__visibility:focus-visible {
+  border-color: color-mix(in srgb, var(--global-theme-color) 48%, var(--global-divider-color));
+  color: var(--global-theme-color);
+  outline: 0;
+}
+
+.feishu-documents__visibility:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--global-theme-color) 16%, transparent);
+}
+
+.feishu-documents__visibility--active {
+  background: color-mix(in srgb, var(--global-theme-color) 10%, transparent);
+  border-color: color-mix(in srgb, var(--global-theme-color) 30%, var(--global-divider-color));
+  color: var(--global-theme-color);
+}
+
+.feishu-documents__visibility:disabled {
+  cursor: progress;
+  opacity: 0.52;
+}
+
+.feishu-documents__delete {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: var(--global-text-color-light);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.1rem;
+  justify-content: center;
+  margin-right: 0.05rem;
+  padding: 0;
+  width: 2.1rem;
+}
+
+.feishu-documents__delete:hover,
+.feishu-documents__delete:focus-visible {
+  background: color-mix(in srgb, #b42318 9%, transparent);
+  color: #b42318;
+  outline: 0;
+}
+
+.feishu-documents__delete:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, #b42318 22%, transparent);
+}
+
+.feishu-documents__delete:disabled {
+  cursor: progress;
+  opacity: 0.45;
 }
 
 .feishu-document-dialog {
@@ -388,6 +473,12 @@
   color: var(--global-bg-color);
 }
 
+.feishu-document-creator__button--danger {
+  background: #b42318;
+  border-color: #b42318;
+  color: #fff;
+}
+
 .feishu-document-creator__button:hover:not(:disabled),
 .feishu-document-creator__button:focus-visible:not(:disabled) {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--global-theme-color) 15%, transparent);
@@ -412,6 +503,55 @@
   display: none;
 }
 
+.feishu-document-delete-dialog {
+  max-width: min(30rem, calc(100vw - 2rem));
+}
+
+.feishu-document-delete {
+  background: var(--global-bg-color);
+  border: 1px solid var(--global-divider-color);
+  border-radius: 0.9rem;
+  box-shadow: 0 1.25rem 4rem color-mix(in srgb, #000 24%, transparent);
+  overflow: hidden;
+}
+
+.feishu-document-delete form {
+  padding: 1.25rem 1.45rem 1.45rem;
+}
+
+.feishu-document-delete__label {
+  color: var(--global-text-color-light);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+}
+
+.feishu-document-delete__title {
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.feishu-document-delete__copy {
+  color: var(--global-text-color-light);
+  font-size: 0.8rem;
+  line-height: 1.65;
+  margin: 0.75rem 0 1.15rem;
+}
+
+.feishu-document-delete__status {
+  background: color-mix(in srgb, #b42318 7%, var(--global-bg-color));
+  border-radius: 0.6rem;
+  color: var(--global-text-color);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.8rem;
+}
+
 @media (max-width: 575.98px) {
   .feishu-documents__intro {
     align-items: stretch;
@@ -429,7 +569,8 @@
 
   .feishu-document-creator__header,
   .feishu-document-creator__connection,
-  .feishu-document-creator form {
+  .feishu-document-creator form,
+  .feishu-document-delete form {
     padding-right: 1rem;
     padding-left: 1rem;
   }
@@ -445,6 +586,17 @@
 
   .feishu-documents__list a {
     grid-template-columns: 1.7rem minmax(0, 1fr) auto;
+  }
+
+  .feishu-documents__list li {
+    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 0.65rem;
+  }
+
+  .feishu-documents__list-actions {
+    justify-content: flex-start;
+    padding-left: 2.65rem;
   }
 
   .feishu-documents__list time {
