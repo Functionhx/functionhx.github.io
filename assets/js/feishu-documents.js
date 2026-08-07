@@ -630,7 +630,8 @@
       }
       popup.location.replace(authorizeUrl);
       await watchOAuthPopup(popup);
-      await checkConnection({ focus: true });
+      const connected = await checkConnection({ focus: true });
+      if (connected) await loadDocuments();
     } catch (error) {
       if (popup && !popup.closed) popup.close();
       const message = String(error?.code || "").startsWith("feishu_") ? error.message : strings.requestFailed;

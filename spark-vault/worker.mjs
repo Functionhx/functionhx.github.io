@@ -21,6 +21,7 @@ const FEISHU_OAUTH_STATE_LIFETIME_SECONDS = 5 * 60;
 const FEISHU_LIBRARY_SELECTION_LIFETIME_SECONDS = 15 * 60;
 const FEISHU_REFRESH_LEASE_SECONDS = 2 * 60;
 const FEISHU_DELETE_LEASE_SECONDS = 2 * 60;
+const FEISHU_LIBRARY_CONCURRENCY = 6;
 const FEISHU_LIBRARY_MAX_DOCUMENTS = 5_000;
 const FEISHU_LIBRARY_MAX_FOLDERS = 500;
 const FEISHU_REQUEST_TIMEOUT_MILLISECONDS = 20_000;
@@ -1495,18 +1496,23 @@ async function listFeishuCreatedRequestIds(env, githubToken) {
 }
 
 async function fetchFeishuLibrary(env, accessToken) {
-  const queue = [{ token: "" }];
+  const queue = [{ folderToken: "", pageToken: "" }];
   const visitedFolders = new Set(["__root__"]);
   const rawDocuments = [];
   let truncated = false;
-  while (queue.length && rawDocuments.length < FEISHU_LIBRARY_MAX_DOCUMENTS && visitedFolders.size <= FEISHU_LIBRARY_MAX_FOLDERS) {
-    const folder = queue.shift();
-    let pageToken = "";
-    do {
-      const query = new URLSearchParams({ direction: "DESC", order_by: "EditedTime", page_size: "200", user_id_type: "open_id" });
-      if (folder.token) query.set("folder_token", folder.token);
-      if (pageToken) query.set("page_token", pageToken);
-      const payload = await feishuJsonRequest(env, `/open-apis/drive/v1/files?${query.toString()}`, { accessToken });
+  while (queue.length && rawDocuments.length < FEISHU_LIBRARY_MAX_DOCUMENTS) {
+    const batch = queue.splice(0, FEISHU_LIBRARY_CONCURRENCY);
+    const pages = await Promise.all(
+      batch.map(async ({ folderToken, pageToken }) => {
+        const query = new URLSearchParams({ direction: "DESC", order_by: "EditedTime", page_size: "200", user_id_type: "open_id" });
+        if (folderToken) query.set("folder_token", folderToken);
+        if (pageToken) query.set("page_token", pageToken);
+        const payload = await feishuJsonRequest(env, `/open-apis/drive/v1/files?${query.toString()}`, { accessToken });
+        return { folderToken, payload };
+      })
+    );
+
+    for (const { folderToken, payload } of pages) {
       const files = Array.isArray(payload.data?.files) ? payload.data.files : [];
       for (const item of files) {
         const type = String(item?.type || "");
@@ -1516,7 +1522,7 @@ async function fetchFeishuLibrary(env, accessToken) {
             truncated = true;
           } else {
             visitedFolders.add(token);
-            queue.push({ token });
+            queue.push({ folderToken: token, pageToken: "" });
           }
         } else if (FEISHU_LIBRARY_FILE_TYPES.has(type)) {
           rawDocuments.push(item);
@@ -1526,8 +1532,12 @@ async function fetchFeishuLibrary(env, accessToken) {
           }
         }
       }
-      pageToken = payload.data?.has_more ? String(payload.data?.next_page_token || "") : "";
-    } while (pageToken && rawDocuments.length < FEISHU_LIBRARY_MAX_DOCUMENTS);
+      const nextPageToken = payload.data?.has_more ? String(payload.data?.next_page_token || "") : "";
+      if (nextPageToken && rawDocuments.length < FEISHU_LIBRARY_MAX_DOCUMENTS) {
+        queue.push({ folderToken, pageToken: nextPageToken });
+      }
+      if (rawDocuments.length >= FEISHU_LIBRARY_MAX_DOCUMENTS) break;
+    }
   }
   if (queue.length) truncated = true;
   return { documents: rawDocuments, truncated };
