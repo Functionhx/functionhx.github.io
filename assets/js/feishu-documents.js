@@ -594,17 +594,21 @@
     }
 
     if (state !== "feishu-auth-required") return;
-    const popup = window.open("about:blank", "functionhx-feishu-oauth", "popup=yes,width=620,height=760");
-    if (!popup) {
-      setConnection("feishu-auth-required", strings.feishuRequiredTitle, strings.popupBlocked);
-      return;
+    let popup = null;
+    try {
+      popup = window.open("about:blank", "functionhx-feishu-oauth", "popup=yes,width=620,height=760");
+    } catch (_error) {
+      // Browsers and automation/privacy extensions may reject popup creation.
+      // The official OAuth flow can safely continue in this tab instead.
     }
     oauthPopup = popup;
-    try {
-      popup.document.title = "连接飞书 · Magic";
-      popup.document.body.textContent = "正在前往飞书官方授权页面…";
-    } catch (_error) {
-      // The placeholder remains useful even when the browser restricts access.
+    if (popup) {
+      try {
+        popup.document.title = "连接飞书 · Magic";
+        popup.document.body.textContent = "正在前往飞书官方授权页面…";
+      } catch (_error) {
+        // The placeholder remains useful even when the browser restricts access.
+      }
     }
 
     setConnection("authorizing", strings.connectingFeishuTitle, strings.connectingFeishu);
@@ -620,11 +624,15 @@
       );
       const authorizeUrl = safeAuthorizeUrl(payload.authorize_url);
       if (!authorizeUrl) throw new Error("Invalid Feishu authorization URL.");
+      if (!popup) {
+        window.location.assign(authorizeUrl);
+        return;
+      }
       popup.location.replace(authorizeUrl);
       await watchOAuthPopup(popup);
       await checkConnection({ focus: true });
     } catch (error) {
-      if (!popup.closed) popup.close();
+      if (popup && !popup.closed) popup.close();
       const message = String(error?.code || "").startsWith("feishu_") ? error.message : strings.requestFailed;
       setConnection("feishu-auth-required", strings.feishuRequiredTitle, message);
     } finally {

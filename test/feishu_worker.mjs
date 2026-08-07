@@ -388,6 +388,11 @@ try {
     type: "functionhx:feishu-connected",
     user: { name: "Owner", open_id: "ou_owner" },
   });
+  assert.match(
+    callbackHtml,
+    /feishu_oauth=connected/,
+    "the callback must return to the document page when a browser does not provide an opener"
+  );
   assert.equal(callbackHtml.includes("u_access_authorization_1"), false, "the callback must not expose a Feishu token");
   assert.equal(feishuTokenBodies[0].grant_type, "authorization_code");
   assert.equal(feishuTokenBodies[0].client_secret, env.FEISHU_CLIENT_SECRET);

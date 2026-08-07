@@ -1161,13 +1161,17 @@ async function consumeFeishuOAuthState(env, githubToken, state) {
   }
 }
 
-function feishuCallbackPage(origin, _returnPath, payload) {
+function feishuCallbackPage(origin, returnPath, payload) {
   const nonce = base64UrlEncode(randomBytes(18));
   const safePayload = JSON.stringify({ type: "functionhx:feishu-connected", ...payload }).replace(/</g, "\\u003c");
   const safeTarget = JSON.stringify(origin);
+  const fallback = new URL(returnPath, origin);
+  fallback.searchParams.set("feishu_oauth", payload.connected ? "connected" : "failed");
   const heading = payload.connected ? "飞书已连接" : "飞书未连接";
   const copy = payload.connected ? "正在返回文档页，可以关闭这个窗口。" : "授权没有完成，请返回文档页后重试。";
-  const script = `const payload=${safePayload};const target=${safeTarget};if(window.opener&&!window.opener.closed){window.opener.postMessage(payload,target);window.close()}`;
+  const script = `const payload=${safePayload};const target=${safeTarget};if(window.opener&&!window.opener.closed){window.opener.postMessage(payload,target);window.close()}else{window.location.replace(${JSON.stringify(
+    fallback.toString()
+  )})}`;
   const html = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${heading}</title><style>body{font:16px/1.6 -apple-system,BlinkMacSystemFont,sans-serif;display:grid;min-height:100vh;place-items:center;margin:0;background:#fff;color:#222}main{max-width:28rem;padding:2rem;text-align:center}p{color:#666}</style><main><h1>${heading}</h1><p>${copy}</p></main><script nonce="${nonce}">${script}</script></html>`;
   return new Response(html, {
     headers: {

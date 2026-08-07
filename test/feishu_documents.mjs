@@ -371,6 +371,7 @@ try {
   assert.match(await page.locator("#feishu-document-status").textContent(), /测试用户/);
   assert.equal(await page.locator("#feishu-document-title").isEnabled(), true);
   if (!oauthPage.isClosed()) await oauthPage.waitForEvent("close");
+  await page.locator("#feishu-document-close").click();
 
   const externalId = `feishu-file-${"c".repeat(64)}`;
   const externalVisibility = page.locator(`[data-feishu-showcase="${externalId}"]`);
@@ -393,6 +394,9 @@ try {
   await page.waitForFunction(() => document.querySelector("#feishu-public-library")?.hidden === true);
   assert.equal(showcaseRequests, 2);
 
+  await page.locator("#site-inline-editor-toggle").click();
+  await createAction.click();
+  await page.waitForFunction(() => document.querySelector("#feishu-document-connection")?.dataset.state === "connected");
   await page.locator("#feishu-document-title").fill("新的研究札记");
   assert.equal(await page.locator("#feishu-document-form").getAttribute("data-no-page-loader"), "");
   const pagesBeforeCreate = context.pages().length;
@@ -414,7 +418,9 @@ try {
   assert.equal(createdPayload.title, "新的研究札记");
   assert.match(createdPayload.idempotency_key, /^feishu-document-[a-z0-9-]+$/);
   assert.equal(await page.locator("#feishu-document-result").getAttribute("href"), "https://example.feishu.cn/docx/mocktoken");
-  await page.waitForFunction(() => document.querySelector("#feishu-document-list a")?.textContent.includes("新的研究札记"));
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll("#feishu-document-list a")].some((link) => link.textContent.includes("新的研究札记"))
+  );
   await page.locator("#feishu-document-close").click();
   const documentTabPromise = context.waitForEvent("page");
   await page.locator('#feishu-document-list a[href="https://example.feishu.cn/docx/mocktoken"]').first().click();
