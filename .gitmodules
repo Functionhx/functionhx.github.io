@@ -1,3 +1,3 @@
 [submodule "vendor/magic-notes"]
 	path = vendor/magic-notes
-	url = ssh://git@ssh.github.com:443/Functionhx/magic-notes.git
+	url = https://github.com/Functionhx/magic-notes.git
