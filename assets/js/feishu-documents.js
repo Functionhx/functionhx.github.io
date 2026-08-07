@@ -202,7 +202,7 @@
     const modifiedAt = String(value?.modified_at || createdAt);
     const validRequestId = /^feishu-request-[0-9a-f]{64}$/.test(requestId) ? requestId : "";
     const validLibraryId = /^feishu-file-[0-9a-f]{64}$/.test(id) ? id : "";
-    const validSelectionToken = /^functionhx:zk2:[A-Za-z0-9_-]+$/.test(selectionToken) ? selectionToken : "";
+    const validSelectionToken = /^[A-Za-z0-9_-]{16,256}\.[A-Za-z0-9_-]{16,8192}$/.test(selectionToken) ? selectionToken : "";
     if (!url || !title || !Number.isFinite(Date.parse(createdAt)) || !Number.isFinite(Date.parse(modifiedAt))) return null;
     if (validLibraryId && validSelectionToken) {
       return {
