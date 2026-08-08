@@ -15,6 +15,7 @@
     "test:spark-vault": "node test/spark_vault_worker.mjs",
     "test:spark-vault-server": "node test/spark_vault_server.mjs",
     "test:spark-vault-unlock": "node test/spark_vault_unlock.mjs",
+    "test:turbo-mode": "node test/turbo_mode.mjs",
     "test:visual": "playwright test --config test/visual/playwright.config.js",
     "test:visual:update": "playwright test --config test/visual/playwright.config.js --update-snapshots"
   },

@@ -14,11 +14,14 @@
     try {
       const savedFont = window.localStorage.getItem('functionhx:site-font');
       const savedLoadingCopy = window.localStorage.getItem('functionhx:loading-copy');
+      const savedTurboMode = window.localStorage.getItem('functionhx:turbo-mode');
       root.dataset.siteFont = supportedFonts.has(savedFont) ? savedFont : 'system';
       root.dataset.loadingCopy = supportedLoadingCopy.has(savedLoadingCopy) ? savedLoadingCopy : 'thinking';
+      root.dataset.turbo = savedTurboMode === 'on' ? 'on' : 'off';
     } catch (_error) {
       root.dataset.siteFont = 'system';
       root.dataset.loadingCopy = 'thinking';
+      root.dataset.turbo = 'off';
     }
   })();
 </script>

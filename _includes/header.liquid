@@ -49,8 +49,9 @@
   {% assign settings_label = 'Manage navigation and create sections' %}
   {% assign editor_title = 'Create and edit' %}
   {% assign editor_label = 'Open the owner writing menu' %}
-  {% assign theme_title = 'Change theme' %}
-  {% assign theme_label = 'Change color theme' %}
+  {% assign theme_title = 'Change theme · hold for Turbo' %}
+  {% assign theme_label = 'Click to change color theme; press and hold to toggle Turbo mode' %}
+  {% assign turbo_hint = 'Hold for Turbo' %}
 {% else %}
   {% assign target_lang = 'en' %}
   {% assign language_label = 'EN' %}
@@ -61,8 +62,9 @@
   {% assign settings_label = '管理栏目并新建栏目' %}
   {% assign editor_title = '创作与编辑' %}
   {% assign editor_label = '打开站长创作菜单' %}
-  {% assign theme_title = '切换主题' %}
-  {% assign theme_label = '切换日间或夜间主题' %}
+  {% assign theme_title = '切换主题 · 长按启动 Turbo' %}
+  {% assign theme_label = '点击切换日间或夜间主题，长按启动或关闭 Turbo 模式' %}
+  {% assign turbo_hint = '长按 Turbo' %}
 {% endif %}
 {% assign language_page = translated_pages | where: 'lang', target_lang | first %}
 {% unless language_page %}
@@ -326,10 +328,18 @@
           {% if site.enable_darkmode %}
             <!-- Toggle theme mode -->
             <li class="toggle-container">
-              <button id="light-toggle" type="button" title="{{ theme_title }}" aria-label="{{ theme_label }}">
+              <button
+                id="light-toggle"
+                type="button"
+                title="{{ theme_title }}"
+                aria-label="{{ theme_label }}"
+                aria-keyshortcuts="Shift+T"
+                data-turbo-trigger
+              >
                 <i class="fa-half-sun-moon" id="light-toggle-system"></i>
                 <i class="fa-solid fa-moon" id="light-toggle-dark"></i>
                 <i class="fa-solid fa-sun" id="light-toggle-light"></i>
+                <span class="turbo-trigger-hint" aria-hidden="true">{{ turbo_hint }}</span>
               </button>
             </li>
           {% endif %}
