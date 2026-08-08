@@ -129,8 +129,8 @@ bing_site_verification: # out your bing-site-verification ID (Bing Webmaster)
 # Blog
 # -----------------------------------------------------------------------------
 
-blog_name: 写作
-blog_description: 记录机器人、具身智能、工程实践，以及那些值得认真想一想的问题。
+blog_name: 博客
+blog_description: 技术拆解、工程实践，以及不绕弯子的观点。
 permalink: /blog/:year/:title/
 lsi: false # produce an index for related posts
 

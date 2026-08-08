@@ -6,8 +6,10 @@ lang: zh
 translation_key: blog
 nav: true
 nav_order: 1
-blog_name: 写作
-blog_description: 记录机器人、具身智能、工程实践，以及那些值得认真想一想的问题。
+blog_kicker: MAGIC · BLOG
+blog_name: 博客
+blog_description: 技术拆解、工程实践，以及不绕弯子的观点。
+blog_topics: 机器人 · 工程 · 观点
 display_tags: []
 display_categories: []
 pagination:

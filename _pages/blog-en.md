@@ -6,8 +6,10 @@ lang: en
 translation_key: blog
 nav: true
 nav_order: 1
-blog_name: Writing
-blog_description: Notes on robotics, embodied intelligence, engineering practice, and questions worth thinking through.
+blog_kicker: MAGIC · BLOG
+blog_name: Blog
+blog_description: Technical breakdowns, engineering practice, and opinions without the detour.
+blog_topics: Robotics · Engineering · Opinion
 display_tags: []
 display_categories: []
 pagination:

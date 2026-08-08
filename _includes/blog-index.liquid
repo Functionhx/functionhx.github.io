@@ -1,61 +1,159 @@
 {% assign current_lang = page.lang | default: 'zh' %}
 {% if current_lang == 'en' %}
   {% assign read_label = 'min read' %}
+  {% assign latest_label = 'Latest' %}
+  {% assign more_label = 'More writing' %}
+  {% assign read_more_label = 'Read article' %}
+  {% assign public_count_label = 'public posts' %}
+  {% assign summary_label = 'Blog summary' %}
   {% assign empty_label = 'No public writing yet.' %}
   {% assign external_label = 'Open external article' %}
 {% else %}
   {% assign read_label = '分钟阅读' %}
+  {% assign latest_label = '最新文章' %}
+  {% assign more_label = '更多文章' %}
+  {% assign read_more_label = '阅读全文' %}
+  {% assign public_count_label = '篇公开文章' %}
+  {% assign summary_label = '博客概览' %}
   {% assign empty_label = '暂时还没有公开文章。' %}
   {% assign external_label = '打开外部文章' %}
 {% endif %}
 
-<div class="post">
-  <header class="header-bar">
+{% assign postlist = paginator.posts | where: 'lang', current_lang %}
+{% assign featured_post = postlist | first %}
+
+<div class="blog-index">
+  <header class="blog-hero">
+    <p class="blog-hero__kicker">{{ page.blog_kicker }}</p>
     <h1>{{ page.blog_name }}</h1>
-    <h2>{{ page.blog_description }}</h2>
+    <p class="blog-hero__description">{{ page.blog_description }}</p>
+    <div class="blog-hero__meta" aria-label="{{ summary_label }}">
+      <span
+        ><strong>{{ postlist.size }}</strong> {{ public_count_label -}}
+      </span>
+      <span>{{ page.blog_topics }}</span>
+    </div>
   </header>
 
-  {% assign postlist = paginator.posts | where: 'lang', current_lang %}
-  {% if postlist.size > 0 %}
-    <ul class="post-list">
-      {% for post in postlist %}
-        {% assign read_time = post.content | number_of_words | divided_by: 180 | plus: 1 %}
-        <li>
-          <h3>
-            {% if post.redirect == blank %}
-              <a class="post-title" href="{{ post.url | relative_url }}">{{ post.title }}</a>
-            {% elsif post.redirect contains '://' %}
-              <a class="post-title" href="{{ post.redirect }}" target="_blank" rel="noopener noreferrer">
-                {{- post.title -}}
-                <span class="sr-only">（{{ external_label }}）</span>
-                <span aria-hidden="true"> ↗</span>
-              </a>
+  {% if featured_post %}
+    {% assign featured_read_time = featured_post.content | number_of_words | divided_by: 180 | plus: 1 %}
+    {% assign featured_category = featured_post.categories | first %}
+    <article class="blog-feature">
+      <div class="blog-feature__topline">
+        <span class="blog-feature__label">{{ latest_label }}</span>
+        <span class="blog-feature__meta">
+          <time datetime="{{ featured_post.date | date_to_xmlschema }}">
+            {% if current_lang == 'en' %}
+              {{ featured_post.date | date: '%B %d, %Y' }}
             {% else %}
-              <a class="post-title" href="{{ post.redirect | relative_url }}">{{ post.title }}</a>
+              {{ featured_post.date | date: '%Y.%m.%d' }}
             {% endif %}
-          </h3>
+          </time>
+          {% if featured_category %}
+            <span aria-hidden="true">·</span>
+            <span>{{ featured_category }}</span>
+          {% endif %}
+        </span>
+      </div>
 
-          <p>{{ post.description }}</p>
+      <h2>
+        {% if featured_post.redirect == blank %}
+          <a href="{{ featured_post.url | relative_url }}">{{ featured_post.title }}</a>
+        {% elsif featured_post.redirect contains '://' %}
+          <a href="{{ featured_post.redirect }}" target="_blank" rel="noopener noreferrer">
+            {{- featured_post.title -}}
+            <span class="sr-only">（{{ external_label }}）</span>
+          </a>
+        {% else %}
+          <a href="{{ featured_post.redirect | relative_url }}">{{ featured_post.title }}</a>
+        {% endif %}
+      </h2>
 
-          <p class="post-meta">
-            <time datetime="{{ post.date | date_to_xmlschema }}">
-              {% if current_lang == 'en' %}
-                {{ post.date | date: '%B %d, %Y' }}
-              {% else %}
-                {{ post.date | date: '%Y.%m.%d' }}
-              {% endif %}
-            </time>
-            &nbsp;·&nbsp; {{ read_time }}
-            {{ read_label }}
-            {% if post.external_source %}
-              &nbsp;·&nbsp; {{ post.external_source }}
-            {% endif %}
-          </p>
-        </li>
-      {% endfor %}
-    </ul>
+      <p class="blog-feature__description">{{ featured_post.description }}</p>
+
+      <div class="blog-feature__footer">
+        <span>
+          {{- featured_read_time }}
+          {{ read_label -}}
+        </span>
+        {% if featured_post.redirect == blank %}
+          <a href="{{ featured_post.url | relative_url }}">
+            {{- read_more_label }}
+            <span aria-hidden="true">↗</span></a
+          >
+        {% elsif featured_post.redirect contains '://' %}
+          <a href="{{ featured_post.redirect }}" target="_blank" rel="noopener noreferrer">
+            {{- read_more_label }}
+            <span aria-hidden="true">↗</span>
+          </a>
+        {% else %}
+          <a href="{{ featured_post.redirect | relative_url }}">
+            {{- read_more_label }}
+            <span aria-hidden="true">↗</span></a
+          >
+        {% endif %}
+      </div>
+      <span class="blog-feature__number" aria-hidden="true">01</span>
+    </article>
+
+    {% if postlist.size > 1 %}
+      <section class="blog-archive" aria-labelledby="blog-archive-title">
+        <div class="blog-archive__heading">
+          <h2 id="blog-archive-title">{{ more_label }}</h2>
+          <span aria-hidden="true"></span>
+        </div>
+
+        <ol class="blog-archive__list" start="2">
+          {% for post in postlist offset: 1 %}
+            {% assign read_time = post.content | number_of_words | divided_by: 180 | plus: 1 %}
+            {% assign post_category = post.categories | first %}
+            {% assign archive_number = forloop.index | plus: 1 %}
+            <li class="blog-archive__item">
+              <div class="blog-archive__index" aria-hidden="true">
+                {%- if archive_number < 10 %}0{% endif -%}
+                {{- archive_number -}}
+              </div>
+              <div class="blog-archive__content">
+                <p class="blog-archive__meta">
+                  <time datetime="{{ post.date | date_to_xmlschema }}">
+                    {% if current_lang == 'en' %}
+                      {{ post.date | date: '%B %d, %Y' }}
+                    {% else %}
+                      {{ post.date | date: '%Y.%m.%d' }}
+                    {% endif %}
+                  </time>
+                  {% if post_category %}
+                    <span aria-hidden="true">·</span>
+                    <span>{{ post_category }}</span>
+                  {% endif %}
+                  <span aria-hidden="true">·</span>
+                  <span>
+                    {{- read_time }}
+                    {{ read_label -}}
+                  </span>
+                </p>
+                <h3>
+                  {% if post.redirect == blank %}
+                    <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
+                  {% elsif post.redirect contains '://' %}
+                    <a href="{{ post.redirect }}" target="_blank" rel="noopener noreferrer">
+                      {{- post.title -}}
+                      <span class="sr-only">（{{ external_label }}）</span>
+                    </a>
+                  {% else %}
+                    <a href="{{ post.redirect | relative_url }}">{{ post.title }}</a>
+                  {% endif %}
+                </h3>
+                <p>{{ post.description }}</p>
+              </div>
+              <span class="blog-archive__arrow" aria-hidden="true">↗</span>
+            </li>
+          {% endfor %}
+        </ol>
+      </section>
+    {% endif %}
   {% else %}
-    <p class="post-meta">{{ empty_label }}</p>
+    <p class="blog-index__empty">{{ empty_label }}</p>
   {% endif %}
 
   {% include pagination.liquid %}
