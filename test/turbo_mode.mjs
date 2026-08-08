@@ -122,7 +122,7 @@ try {
   state = await turboState();
   assert.equal(state.cursorState, "tracking", "The cursor must use its neutral tracking state over page content");
   assert.equal(state.cursorVisible, "true", "The tracking cursor must remain visible over page content");
-  assert.ok(state.cursorLag <= 8.1, `The targeting frame must stay close to the pointer; measured ${state.cursorLag}px`);
+  assert.ok(state.cursorLag <= 0.1, `The targeting frame must stay on the pointer; measured ${state.cursorLag}px`);
 
   await page.mouse.move(150, 210);
   state = await turboState();

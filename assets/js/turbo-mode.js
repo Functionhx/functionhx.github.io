@@ -16,7 +16,6 @@
   const STORAGE_KEY = "functionhx:turbo-mode";
   const HOLD_DURATION = 680;
   const HOLD_MOVE_TOLERANCE = 14;
-  const CURSOR_MAX_LAG = 8;
   const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   const finePointerQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
   const INTERACTIVE_CURSOR_SELECTOR = [
@@ -69,10 +68,6 @@
   let statusTimer = 0;
   let bootTimer = 0;
   let lastParticleAt = 0;
-  let cursorFrameRequest = 0;
-  let cursorRingX = window.innerWidth / 2;
-  let cursorRingY = window.innerHeight / 2;
-  let cursorRingInitialized = false;
   let palette = readPalette();
   let particles = [];
   let circuitNodes = [];
@@ -118,37 +113,6 @@
     cursor.dataset.pressed = pressed ? "true" : "false";
   }
 
-  function stopCursorAnimation() {
-    if (cursorFrameRequest) window.cancelAnimationFrame(cursorFrameRequest);
-    cursorFrameRequest = 0;
-  }
-
-  function animateCursor() {
-    if (!canUseTurboCursor() || !pointer.seen || pointer.nativeCursor || document.hidden) {
-      cursorFrameRequest = 0;
-      return;
-    }
-
-    const easing = pointer.interactive ? 0.82 : 0.68;
-    cursorRingX += (pointer.x - cursorRingX) * easing;
-    cursorRingY += (pointer.y - cursorRingY) * easing;
-    cursor.style.setProperty("--turbo-cursor-ring-x", `${cursorRingX}px`);
-    cursor.style.setProperty("--turbo-cursor-ring-y", `${cursorRingY}px`);
-    cursorFrameRequest = window.requestAnimationFrame(animateCursor);
-  }
-
-  function startCursorAnimation() {
-    if (!canUseTurboCursor() || !pointer.seen || pointer.nativeCursor || document.hidden) return;
-    if (!cursorRingInitialized) {
-      cursorRingX = pointer.x;
-      cursorRingY = pointer.y;
-      cursorRingInitialized = true;
-      cursor.style.setProperty("--turbo-cursor-ring-x", `${cursorRingX}px`);
-      cursor.style.setProperty("--turbo-cursor-ring-y", `${cursorRingY}px`);
-    }
-    if (!cursorFrameRequest) cursorFrameRequest = window.requestAnimationFrame(animateCursor);
-  }
-
   function updateCursorTarget(target) {
     const element = target instanceof Element ? target : null;
     pointer.nativeCursor = Boolean(element?.closest(NATIVE_CURSOR_SELECTOR));
@@ -156,28 +120,16 @@
     cursor.dataset.state = pointer.interactive ? "locked" : "tracking";
     cursor.style.setProperty("--turbo-cursor-core-x", `${pointer.x}px`);
     cursor.style.setProperty("--turbo-cursor-core-y", `${pointer.y}px`);
-
-    if (cursorRingInitialized) {
-      const deltaX = pointer.x - cursorRingX;
-      const deltaY = pointer.y - cursorRingY;
-      const distance = Math.hypot(deltaX, deltaY);
-      if (distance > CURSOR_MAX_LAG) {
-        cursorRingX = pointer.x - (deltaX / distance) * CURSOR_MAX_LAG;
-        cursorRingY = pointer.y - (deltaY / distance) * CURSOR_MAX_LAG;
-        cursor.style.setProperty("--turbo-cursor-ring-x", `${cursorRingX}px`);
-        cursor.style.setProperty("--turbo-cursor-ring-y", `${cursorRingY}px`);
-      }
-    }
+    cursor.style.setProperty("--turbo-cursor-ring-x", `${pointer.x}px`);
+    cursor.style.setProperty("--turbo-cursor-ring-y", `${pointer.y}px`);
 
     if (!canUseTurboCursor() || pointer.nativeCursor) {
       setCursorVisible(false);
       setCursorPressed(false);
-      stopCursorAnimation();
       return;
     }
 
     setCursorVisible(true);
-    startCursorAnimation();
   }
 
   function syncCursorCapability() {
@@ -186,7 +138,6 @@
     if (!enabled || pointer.nativeCursor || !pointer.seen) {
       setCursorVisible(false);
       setCursorPressed(false);
-      stopCursorAnimation();
       return;
     }
     updateCursorTarget(document.elementFromPoint(pointer.x, pointer.y));
@@ -1030,7 +981,6 @@
       window.clearTimeout(bootTimer);
       root.dataset.turboBoot = "false";
       particles = [];
-      cursorRingInitialized = false;
       clearCanvas();
     }
 
@@ -1164,19 +1114,16 @@
   document.documentElement.addEventListener("pointerleave", () => {
     setCursorVisible(false);
     setCursorPressed(false);
-    stopCursorAnimation();
   });
   window.addEventListener("blur", () => {
     setCursorVisible(false);
     setCursorPressed(false);
-    stopCursorAnimation();
   });
 
   window.addEventListener("resize", resizeCanvas, { passive: true });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       stopAnimation();
-      stopCursorAnimation();
       setCursorVisible(false);
     } else {
       startAnimation();
