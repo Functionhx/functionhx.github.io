@@ -162,7 +162,12 @@
       await loadScript("github-auth-vault.js");
       const session = await window.functionhxGitHubAuth?.restore({ owner: "Functionhx", repository: "Functionhx/functionhx.github.io" });
       if (!session?.token) {
-        window.functionhxOwnerUi?.setVerified?.(false);
+        // A lazy restore can finish after another authoring surface has already
+        // completed a fresh verification. Never let that stale empty result
+        // revoke the newer owner state or collapse an active editing session.
+        if (document.documentElement.dataset.ownerVerified !== "true") {
+          window.functionhxOwnerUi?.setVerified?.(false);
+        }
         return;
       }
 

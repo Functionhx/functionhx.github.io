@@ -665,7 +665,15 @@
     const connectLabel = elements.connect.querySelector("span");
     if (connectLabel) connectLabel.textContent = activeToken ? strings.connected : disconnectedLabel;
     elements.connect.dataset.connected = String(Boolean(activeToken));
-    window.functionhxOwnerUi?.setVerified?.(Boolean(activeToken), session?.remembered === true);
+    if (activeToken) {
+      window.functionhxOwnerUi?.setVerified?.(true, session?.remembered === true);
+    } else if (document.documentElement.dataset.ownerVerified !== "true") {
+      // This editor is loaded lazily after owner intent. Its initial empty
+      // restore must not revoke a page-level verification that completed first.
+      // Explicit disconnects and expired credentials still announce a false
+      // GitHub auth event and are handled by owner-ui immediately.
+      window.functionhxOwnerUi?.setVerified?.(false);
+    }
   }
 
   async function withSuppressedAuthEvents(action) {

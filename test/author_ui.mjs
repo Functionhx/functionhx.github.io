@@ -147,9 +147,15 @@ try {
     undefined,
     "restoring the owner identity must still render the page in visitor mode"
   );
-  const contextualOwnerControl = page.locator(".activity-feed__edit.owner-only-control").first();
-  assert.ok((await contextualOwnerControl.count()) > 0, "the home page should expose contextual owner controls after entering owner mode");
-  assert.equal(await contextualOwnerControl.isHidden(), true, "verified owners must not see editing controls before pressing the pencil");
+  const contextualOwnerControls = page.locator(".activity-feed__edit.owner-only-control");
+  assert.ok((await contextualOwnerControls.count()) > 1, "the home page should expose contextual owner controls for its activity rows");
+  assert.equal(
+    await contextualOwnerControls.evaluateAll((controls) =>
+      controls.every((control) => control.hidden && getComputedStyle(control).display === "none")
+    ),
+    true,
+    "every activity pencil must stay hidden before the owner presses the mode pencil"
+  );
 
   const authorToggle = page.locator("#site-inline-editor-toggle");
   const launcherPositionKey = "functionhx:owner-ui:launcher-position:v1";
@@ -173,7 +179,7 @@ try {
   await page.reload({ waitUntil: "networkidle" });
   await page.waitForFunction(() => document.documentElement.dataset.ownerVerified === "true");
   assert.equal(await page.evaluate(() => document.documentElement.dataset.ownerMode), undefined, "a reload must return to visitor mode");
-  assert.equal(await contextualOwnerControl.isHidden(), true);
+  assert.equal(await contextualOwnerControls.evaluateAll((controls) => controls.every((control) => control.hidden)), true);
   const restoredLauncher = await authorToggle.boundingBox();
   assert.ok(restoredLauncher);
   assert.ok(Math.abs(restoredLauncher.x - afterDrag.x) < 2, "the pencil should restore its last horizontal position after a reload");
@@ -181,15 +187,29 @@ try {
   await authorToggle.click();
   assert.equal(await page.locator("#site-author-menu").isVisible(), true, "a plain pointer click must still open the author menu");
   assert.equal(await page.evaluate(() => document.documentElement.dataset.ownerMode), "true");
-  assert.equal(await contextualOwnerControl.isVisible(), true, "pressing the pencil should reveal the contextual owner controls");
+  assert.equal(
+    await contextualOwnerControls.evaluateAll((controls) =>
+      controls.every((control) => !control.hidden && getComputedStyle(control).display !== "none")
+    ),
+    true,
+    "pressing the mode pencil should reveal every activity edit control"
+  );
   await page.locator("[data-owner-mode-exit]").click();
   assert.equal(await page.evaluate(() => document.documentElement.dataset.ownerMode), undefined);
   assert.equal(await page.locator("#site-author-menu").isHidden(), true);
-  assert.equal(await contextualOwnerControl.isHidden(), true, "returning to visitor mode must hide editing controls immediately");
+  assert.equal(
+    await contextualOwnerControls.evaluateAll((controls) =>
+      controls.every((control) => control.hidden && getComputedStyle(control).display === "none")
+    ),
+    true,
+    "returning to visitor mode must hide every activity pencil immediately"
+  );
   assert.equal(await authorToggle.isVisible(), true, "the verified-owner pencil remains available to re-enter owner mode");
   await authorToggle.click();
   await authorToggle.click();
   assert.equal(await page.locator("#site-author-menu").isHidden(), true);
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.ownerMode), "true");
+  assert.equal(await contextualOwnerControls.evaluateAll((controls) => controls.every((control) => !control.hidden)), true);
   assert.equal(await authorToggle.evaluate((element) => getComputedStyle(element).touchAction), "none");
 
   for (const [x, y] of [
@@ -376,6 +396,30 @@ try {
   });
   assert.ok(editTarget.width >= 36 && editTarget.height >= 36, "dynamic edit controls must expose at least a 36px target");
   assert.ok(editTarget.opacity >= 0.7, "dynamic edit controls should be visible without hover");
+  await page.evaluate(() => {
+    window.dispatchEvent(
+      new CustomEvent("functionhx:github-auth-changed", {
+        detail: { connected: false, remembered: false, repository: "Functionhx/functionhx.github.io" },
+      })
+    );
+    window.dispatchEvent(
+      new CustomEvent("functionhx:github-auth-changed", {
+        detail: { connected: true, remembered: true, repository: "Functionhx/functionhx.github.io" },
+      })
+    );
+  });
+  assert.equal(
+    await page.evaluate(() => document.documentElement.dataset.ownerMode),
+    undefined,
+    "identity recovery must never re-enter owner mode automatically"
+  );
+  assert.equal(
+    await contextualOwnerControls.evaluateAll((controls) =>
+      controls.every((control) => control.hidden && getComputedStyle(control).display === "none")
+    ),
+    true,
+    "identity recovery must preserve the visitor view until the mode pencil is pressed again"
+  );
 
   const settingsRestoreContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const settingsRestorePage = await settingsRestoreContext.newPage();

@@ -27,6 +27,14 @@
     // Storage can be unavailable; clearing the DOM marker is sufficient.
   }
 
+  function syncContextualOwnerControls(enabled) {
+    document.querySelectorAll("[data-owner-context-control]").forEach((control) => {
+      control.hidden = enabled !== true;
+    });
+  }
+
+  syncContextualOwnerControls(false);
+
   function setVaultHint(enabled) {
     try {
       if (enabled) window.localStorage.setItem(vaultHintKey, "true");
@@ -43,10 +51,10 @@
       setVaultHint(remembered === true);
       window.requestAnimationFrame(restoreLauncherPosition);
     } else {
+      setOwnerMode(false);
       delete document.documentElement.dataset.ownerVerified;
       delete document.documentElement.dataset.ownerRestore;
       setVaultHint(false);
-      closeMenu();
     }
   }
 
@@ -58,6 +66,7 @@
     const enabled = active === true && document.documentElement.dataset.ownerVerified === "true";
     if (enabled) document.documentElement.dataset.ownerMode = "true";
     else delete document.documentElement.dataset.ownerMode;
+    syncContextualOwnerControls(enabled);
     if (toggle) {
       toggle.setAttribute("aria-pressed", enabled ? "true" : "false");
       toggle.setAttribute("aria-label", enabled ? "站长模式已开启；打开创作菜单" : visitorToggleLabel);
@@ -368,6 +377,7 @@
       if (moveLauncherWithKeyboard(event)) return;
       if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
       event.preventDefault();
+      if (!ownerModeIsActive()) setOwnerMode(true);
       openMenu(event.key === "ArrowUp" || event.key === "End" ? "last" : "first");
     });
 

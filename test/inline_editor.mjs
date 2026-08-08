@@ -545,6 +545,10 @@ try {
   );
   await page.waitForFunction(() => document.querySelector("#site-inline-editor-connect span")?.textContent.includes("退出"));
   await page.locator("#site-inline-editor-close").click();
+  assert.equal(await page.locator("html").getAttribute("data-owner-mode"), null, "reconnecting identity must preserve visitor mode");
+  assert.equal(await activityEditor.isHidden(), true, "activity pencils must stay hidden until owner mode is explicitly re-entered");
+  await page.locator("#site-inline-editor-toggle").click();
+  assert.equal(await activityEditor.isVisible(), true, "the mode pencil should reveal activity editing after reconnection");
   await activityEditor.click();
   await page.locator("#site-inline-editor-form").waitFor({ state: "visible" });
   assert.equal(expiredSourceRequests, 1, "an expired credential should be attempted only once");

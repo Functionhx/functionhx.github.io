@@ -35,10 +35,12 @@
                 <button
                   type="button"
                   class="activity-feed__edit owner-only-control"
+                  data-owner-context-control
                   data-author-action="source-edit"
                   data-source-path="{{ item.path | escape }}"
                   title="编辑动态：{{ item.title | escape }}"
                   aria-label="编辑动态：{{ item.title | escape }}"
+                  hidden
                 >
                   <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
                 </button>
