@@ -6,16 +6,16 @@ lang: en
 translation_key: blog
 nav: true
 nav_order: 1
-blog_name: al-folio
-blog_description: a simple whitespace theme for academics
-display_tags: [formatting, images, links, math, code, blockquotes]
-display_categories: [external-services]
+blog_name: Writing
+blog_description: Notes on robotics, embodied intelligence, engineering practice, and questions worth thinking through.
+display_tags: []
+display_categories: []
 pagination:
   enabled: true
   collection: posts
   locale: en
   permalink: /page/:num/
-  per_page: 5
+  per_page: 10
   sort_field: date
   sort_reverse: true
   trail:

@@ -129,8 +129,8 @@ bing_site_verification: # out your bing-site-verification ID (Bing Webmaster)
 # Blog
 # -----------------------------------------------------------------------------
 
-blog_name: al-folio
-blog_description: a simple whitespace theme for academics
+blog_name: 写作
+blog_description: 记录机器人、具身智能、工程实践，以及那些值得认真想一想的问题。
 permalink: /blog/:year/:title/
 lsi: false # produce an index for related posts
 
@@ -340,8 +340,8 @@ jekyll-archives:
   books:
     enabled: [year, tags, categories] # enables year, tag and category archives (remove if you need to disable one of them).
 
-display_tags: ["formatting", "images", "links", "math", "code", "blockquotes"]
-display_categories: ["external-services"]
+display_tags: []
+display_categories: []
 
 # -----------------------------------------------------------------------------
 # Jekyll Scholar

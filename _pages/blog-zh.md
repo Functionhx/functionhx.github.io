@@ -6,16 +6,16 @@ lang: zh
 translation_key: blog
 nav: true
 nav_order: 1
-blog_name: al-folio
-blog_description: 一个面向学术主页的简洁留白主题
-display_tags: [排版, 图片, 链接, 数学, 代码, 引用]
-display_categories: [外部文章]
+blog_name: 写作
+blog_description: 记录机器人、具身智能、工程实践，以及那些值得认真想一想的问题。
+display_tags: []
+display_categories: []
 pagination:
   enabled: true
   collection: posts
   locale: zh
   permalink: /page/:num/
-  per_page: 5
+  per_page: 10
   sort_field: date
   sort_reverse: true
   trail:
