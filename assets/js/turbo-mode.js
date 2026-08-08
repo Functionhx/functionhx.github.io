@@ -16,6 +16,7 @@
   const STORAGE_KEY = "functionhx:turbo-mode";
   const HOLD_DURATION = 680;
   const HOLD_MOVE_TOLERANCE = 14;
+  const CURSOR_MAX_LAG = 8;
   const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   const finePointerQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
   const INTERACTIVE_CURSOR_SELECTOR = [
@@ -128,7 +129,7 @@
       return;
     }
 
-    const easing = pointer.interactive ? 0.28 : 0.2;
+    const easing = pointer.interactive ? 0.82 : 0.68;
     cursorRingX += (pointer.x - cursorRingX) * easing;
     cursorRingY += (pointer.y - cursorRingY) * easing;
     cursor.style.setProperty("--turbo-cursor-ring-x", `${cursorRingX}px`);
@@ -155,6 +156,18 @@
     cursor.dataset.state = pointer.interactive ? "locked" : "tracking";
     cursor.style.setProperty("--turbo-cursor-core-x", `${pointer.x}px`);
     cursor.style.setProperty("--turbo-cursor-core-y", `${pointer.y}px`);
+
+    if (cursorRingInitialized) {
+      const deltaX = pointer.x - cursorRingX;
+      const deltaY = pointer.y - cursorRingY;
+      const distance = Math.hypot(deltaX, deltaY);
+      if (distance > CURSOR_MAX_LAG) {
+        cursorRingX = pointer.x - (deltaX / distance) * CURSOR_MAX_LAG;
+        cursorRingY = pointer.y - (deltaY / distance) * CURSOR_MAX_LAG;
+        cursor.style.setProperty("--turbo-cursor-ring-x", `${cursorRingX}px`);
+        cursor.style.setProperty("--turbo-cursor-ring-y", `${cursorRingY}px`);
+      }
+    }
 
     if (!canUseTurboCursor() || pointer.nativeCursor) {
       setCursorVisible(false);

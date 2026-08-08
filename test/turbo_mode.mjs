@@ -40,17 +40,26 @@ const context = await browser.newContext({ viewport: { width: 1440, height: 900 
 const page = await context.newPage();
 
 async function turboState() {
-  return page.evaluate(() => ({
-    active: document.documentElement.dataset.turbo,
-    canvasVisibility: window.getComputedStyle(document.getElementById("turbo-canvas")).visibility,
-    cursorCapability: document.documentElement.dataset.turboCursor,
-    cursorVisible: document.getElementById("turbo-cursor").dataset.visible,
-    cursorState: document.getElementById("turbo-cursor").dataset.state,
-    cursorPressed: document.getElementById("turbo-cursor").dataset.pressed,
-    bodyCursor: window.getComputedStyle(document.body).cursor,
-    setting: document.documentElement.dataset.themeSetting,
-    stored: window.localStorage.getItem("functionhx:turbo-mode"),
-  }));
+  return page.evaluate(() => {
+    const cursor = document.getElementById("turbo-cursor");
+    const cursorStyles = window.getComputedStyle(cursor);
+    const coreX = Number.parseFloat(cursorStyles.getPropertyValue("--turbo-cursor-core-x"));
+    const coreY = Number.parseFloat(cursorStyles.getPropertyValue("--turbo-cursor-core-y"));
+    const ringX = Number.parseFloat(cursorStyles.getPropertyValue("--turbo-cursor-ring-x"));
+    const ringY = Number.parseFloat(cursorStyles.getPropertyValue("--turbo-cursor-ring-y"));
+    return {
+      active: document.documentElement.dataset.turbo,
+      canvasVisibility: window.getComputedStyle(document.getElementById("turbo-canvas")).visibility,
+      cursorCapability: document.documentElement.dataset.turboCursor,
+      cursorVisible: cursor.dataset.visible,
+      cursorState: cursor.dataset.state,
+      cursorPressed: cursor.dataset.pressed,
+      cursorLag: Math.hypot(coreX - ringX, coreY - ringY),
+      bodyCursor: window.getComputedStyle(document.body).cursor,
+      setting: document.documentElement.dataset.themeSetting,
+      stored: window.localStorage.getItem("functionhx:turbo-mode"),
+    };
+  });
 }
 
 async function holdThemeButton() {
@@ -113,6 +122,7 @@ try {
   state = await turboState();
   assert.equal(state.cursorState, "tracking", "The cursor must use its neutral tracking state over page content");
   assert.equal(state.cursorVisible, "true", "The tracking cursor must remain visible over page content");
+  assert.ok(state.cursorLag <= 8.1, `The targeting frame must stay close to the pointer; measured ${state.cursorLag}px`);
 
   await page.mouse.move(150, 210);
   state = await turboState();

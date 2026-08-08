@@ -109,8 +109,7 @@ html:not([data-theme="light"]) .turbo-cursor {
   transform: translate3d(var(--turbo-cursor-core-x), var(--turbo-cursor-core-y), 0) translate(-50%, -50%) rotate(45deg);
   transition:
     background-color 80ms ease,
-    color 80ms ease,
-    transform 70ms ease;
+    color 80ms ease;
   width: 0.24rem;
 }
 
