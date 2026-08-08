@@ -87,7 +87,10 @@
   border: 1px solid var(--global-divider-color);
   border-radius: 0.65rem;
   background: var(--global-card-bg-color);
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .macapp-card:hover {
@@ -137,9 +140,7 @@
 }
 
 .macapp-card__visual--bridge {
-  background:
-    radial-gradient(circle at 25% 18%, #fff4dd 0, transparent 38%),
-    linear-gradient(145deg, #f3d9bd, #3a2932 78%);
+  background: radial-gradient(circle at 25% 18%, #fff4dd 0, transparent 38%), linear-gradient(145deg, #f3d9bd, #3a2932 78%);
 }
 
 .macapp-card__visual--launchpad {
