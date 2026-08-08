@@ -2,18 +2,50 @@
 layout: page
 title: 工具
 permalink: /tools/
-description: 自己做的小玩意、公开产品与实验性工具。
+description: 在线工具与为 macOS 打造的原生应用。
 lang: zh
 translation_key: tools
 nav: true
 nav_order: 10
 ---
 
-<div class="projects">
-  {% assign localized_projects = site.projects | where: "lang", "zh" | where: "kind", "tool" | sort: "importance" %}
-  <div class="row row-cols-1 row-cols-md-3">
-    {% for project in localized_projects %}
-      {% include projects.liquid %}
+{% assign localized_projects = site.projects | where: "lang", "zh" | where: "kind", "tool" | sort: "importance" %}
+{% assign online_tools = localized_projects | where_exp: "project", "project.category != 'macapp'" %}
+{% assign mac_apps = localized_projects | where: "category", "macapp" %}
+
+<nav class="tool-family-nav" aria-label="工具分类">
+  <a href="#online-tools">在线工具 <span>{{ online_tools | size }}</span></a>
+  <a href="#macapp">MacAPP <span>{{ mac_apps | size }}</span></a>
+</nav>
+
+<section id="online-tools" class="tool-family" aria-labelledby="online-tools-title">
+  <header class="tool-family__heading">
+    <div>
+      <p class="tool-family__eyebrow">WEB · EXPERIMENTS</p>
+      <h2 id="online-tools-title">在线工具</h2>
+    </div>
+    <p>打开浏览器即可使用的小产品与实验。</p>
+  </header>
+  <div class="projects">
+    <div class="row row-cols-1 row-cols-md-3">
+      {% for project in online_tools %}
+        {% include projects.liquid %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section id="macapp" class="tool-family tool-family--macapp" aria-labelledby="macapp-title">
+  <header class="tool-family__heading">
+    <div>
+      <p class="tool-family__eyebrow">NATIVE · MACOS</p>
+      <h2 id="macapp-title">MacAPP</h2>
+    </div>
+    <p>为自己的真实工作流写下的原生 Mac 应用。</p>
+  </header>
+  <div class="macapp-grid">
+    {% for project in mac_apps %}
+      {% include macapp-card.liquid project=project %}
     {% endfor %}
   </div>
-</div>
+</section>

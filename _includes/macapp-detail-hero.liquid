@@ -1,0 +1,35 @@
+{% if page.lang == 'en' %}
+  {% assign source_label = 'View source' %}
+  {% assign back_label = 'All MacAPPs' %}
+  {% assign back_url = '/en/tools/#macapp' %}
+{% else %}
+  {% assign source_label = '查看源码' %}
+  {% assign back_label = '全部 MacAPP' %}
+  {% assign back_url = '/tools/#macapp' %}
+{% endif %}
+
+<section class="macapp-detail-hero">
+  <div class="macapp-detail-hero__visual macapp-card__visual--{{ page.app_visual | default: 'icon' | escape }}">
+    <img
+      src="{{ page.img | relative_url }}"
+      alt="{{ page.image_alt | default: page.title | escape }}"
+      width="{{ page.image_width | default: 1200 }}"
+      height="{{ page.image_height | default: 675 }}"
+      decoding="async"
+    >
+  </div>
+  <div class="macapp-detail-hero__content">
+    <p class="macapp-card__kicker">MAGIC · MACAPP</p>
+    <div class="macapp-detail-hero__meta">
+      <span>{{ page.platform }}</span>
+      <span>{{ page.distribution_label }}</span>
+    </div>
+    <p>{{ page.product_note }}</p>
+    <div class="macapp-detail-hero__actions">
+      <a class="macapp-action macapp-action--primary" href="{{ page.github }}">
+        <i class="fa-brands fa-github" aria-hidden="true"></i>{{ source_label }}
+      </a>
+      <a class="macapp-action" href="{{ back_url | relative_url }}">{{ back_label }}</a>
+    </div>
+  </div>
+</section>

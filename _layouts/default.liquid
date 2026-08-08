@@ -45,6 +45,9 @@
     {% if page.translation_key == 'documents' %}
       <link rel="stylesheet" href="{{ '/assets/css/feishu-documents.css' | relative_url | bust_file_cache }}">
     {% endif %}
+    {% if page.translation_key == 'tools' or page.category == 'macapp' %}
+      <link rel="stylesheet" href="{{ '/assets/css/tools.css' | relative_url | bust_file_cache }}">
+    {% endif %}
     {% if page.video %}
       <link rel="stylesheet" href="{{ '/assets/css/media-embeds.css' | relative_url | bust_file_cache }}">
     {% endif %}

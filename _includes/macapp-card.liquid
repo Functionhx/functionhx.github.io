@@ -1,0 +1,25 @@
+{% assign app = include.project %}
+<article class="macapp-card">
+  <a class="macapp-card__link" href="{{ app.url | relative_url }}" aria-label="{{ app.title | escape }}">
+    <div class="macapp-card__visual macapp-card__visual--{{ app.app_visual | default: 'icon' | escape }}">
+      <img
+        src="{{ app.img | relative_url }}"
+        alt="{{ app.image_alt | default: app.title | escape }}"
+        width="{{ app.image_width | default: 1200 }}"
+        height="{{ app.image_height | default: 675 }}"
+        loading="lazy"
+        decoding="async"
+      >
+      <span class="macapp-card__platform">{{ app.platform }}</span>
+    </div>
+    <div class="macapp-card__body">
+      <p class="macapp-card__kicker">MAGIC · MACAPP</p>
+      <h3>{{ app.title }}</h3>
+      <p>{{ app.description }}</p>
+      <footer>
+        <span>{{ app.distribution_label }}</span>
+        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+      </footer>
+    </div>
+  </a>
+</article>
