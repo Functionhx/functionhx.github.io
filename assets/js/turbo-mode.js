@@ -4,10 +4,11 @@
   const root = document.documentElement;
   const trigger = document.querySelector("[data-turbo-trigger]");
   const canvas = document.getElementById("turbo-canvas");
+  const cursor = document.getElementById("turbo-cursor");
   const status = document.getElementById("turbo-status");
   const bootScreen = document.getElementById("turbo-boot");
 
-  if (!trigger || !canvas || !status || !bootScreen) return;
+  if (!trigger || !canvas || !cursor || !status || !bootScreen) return;
 
   const context = canvas.getContext("2d", { alpha: true });
   if (!context) return;
@@ -16,6 +17,39 @@
   const HOLD_DURATION = 680;
   const HOLD_MOVE_TOLERANCE = 14;
   const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const finePointerQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+  const INTERACTIVE_CURSOR_SELECTOR = [
+    "a[href]",
+    "button",
+    "summary",
+    "label",
+    "[role='button']",
+    "[role='link']",
+    "input[type='button']",
+    "input[type='submit']",
+    "input[type='reset']",
+    "input[type='checkbox']",
+    "input[type='radio']",
+  ].join(",");
+  const NATIVE_CURSOR_SELECTOR = [
+    "textarea",
+    "select",
+    "[contenteditable='true']",
+    "[contenteditable='plaintext-only']",
+    "input:not([type])",
+    "input[type='text']",
+    "input[type='search']",
+    "input[type='email']",
+    "input[type='password']",
+    "input[type='number']",
+    "input[type='tel']",
+    "input[type='url']",
+    "input[type='date']",
+    "input[type='datetime-local']",
+    "input[type='month']",
+    "input[type='time']",
+    "input[type='week']",
+  ].join(",");
 
   let active = root.dataset.turbo === "on";
   let reducedMotion = reducedMotionQuery.matches;
@@ -34,10 +68,20 @@
   let statusTimer = 0;
   let bootTimer = 0;
   let lastParticleAt = 0;
+  let cursorFrameRequest = 0;
+  let cursorRingX = window.innerWidth / 2;
+  let cursorRingY = window.innerHeight / 2;
+  let cursorRingInitialized = false;
   let palette = readPalette();
   let particles = [];
   let circuitNodes = [];
-  const pointer = { x: window.innerWidth / 2, y: window.innerHeight / 2, seen: false };
+  const pointer = {
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2,
+    seen: false,
+    interactive: false,
+    nativeCursor: false,
+  };
 
   function readPalette() {
     const styles = window.getComputedStyle(root);
@@ -59,6 +103,80 @@
 
   function clamp(value, minimum, maximum) {
     return Math.min(maximum, Math.max(minimum, value));
+  }
+
+  function canUseTurboCursor() {
+    return active && finePointerQuery.matches && !reducedMotion;
+  }
+
+  function setCursorVisible(visible) {
+    cursor.dataset.visible = visible ? "true" : "false";
+  }
+
+  function setCursorPressed(pressed) {
+    cursor.dataset.pressed = pressed ? "true" : "false";
+  }
+
+  function stopCursorAnimation() {
+    if (cursorFrameRequest) window.cancelAnimationFrame(cursorFrameRequest);
+    cursorFrameRequest = 0;
+  }
+
+  function animateCursor() {
+    if (!canUseTurboCursor() || !pointer.seen || pointer.nativeCursor || document.hidden) {
+      cursorFrameRequest = 0;
+      return;
+    }
+
+    const easing = pointer.interactive ? 0.28 : 0.2;
+    cursorRingX += (pointer.x - cursorRingX) * easing;
+    cursorRingY += (pointer.y - cursorRingY) * easing;
+    cursor.style.setProperty("--turbo-cursor-ring-x", `${cursorRingX}px`);
+    cursor.style.setProperty("--turbo-cursor-ring-y", `${cursorRingY}px`);
+    cursorFrameRequest = window.requestAnimationFrame(animateCursor);
+  }
+
+  function startCursorAnimation() {
+    if (!canUseTurboCursor() || !pointer.seen || pointer.nativeCursor || document.hidden) return;
+    if (!cursorRingInitialized) {
+      cursorRingX = pointer.x;
+      cursorRingY = pointer.y;
+      cursorRingInitialized = true;
+      cursor.style.setProperty("--turbo-cursor-ring-x", `${cursorRingX}px`);
+      cursor.style.setProperty("--turbo-cursor-ring-y", `${cursorRingY}px`);
+    }
+    if (!cursorFrameRequest) cursorFrameRequest = window.requestAnimationFrame(animateCursor);
+  }
+
+  function updateCursorTarget(target) {
+    const element = target instanceof Element ? target : null;
+    pointer.nativeCursor = Boolean(element?.closest(NATIVE_CURSOR_SELECTOR));
+    pointer.interactive = !pointer.nativeCursor && Boolean(element?.closest(INTERACTIVE_CURSOR_SELECTOR));
+    cursor.dataset.state = pointer.interactive ? "locked" : "tracking";
+    cursor.style.setProperty("--turbo-cursor-core-x", `${pointer.x}px`);
+    cursor.style.setProperty("--turbo-cursor-core-y", `${pointer.y}px`);
+
+    if (!canUseTurboCursor() || pointer.nativeCursor) {
+      setCursorVisible(false);
+      setCursorPressed(false);
+      stopCursorAnimation();
+      return;
+    }
+
+    setCursorVisible(true);
+    startCursorAnimation();
+  }
+
+  function syncCursorCapability() {
+    const enabled = canUseTurboCursor();
+    root.dataset.turboCursor = enabled ? "enabled" : "native";
+    if (!enabled || pointer.nativeCursor || !pointer.seen) {
+      setCursorVisible(false);
+      setCursorPressed(false);
+      stopCursorAnimation();
+      return;
+    }
+    updateCursorTarget(document.elementFromPoint(pointer.x, pointer.y));
   }
 
   function resizeCanvas() {
@@ -690,41 +808,6 @@
     context.restore();
   }
 
-  function drawTargetReticle(time) {
-    if (!pointer.seen || reducedMotion) return;
-    const x = pointer.x;
-    const y = pointer.y;
-    const radius = 17 + Math.sin(time / 240) * 2;
-    const rotation = time / 850;
-
-    context.save();
-    context.translate(x, y);
-    context.rotate(rotation);
-    context.strokeStyle = palette.amber;
-    context.fillStyle = palette.amber;
-    context.shadowColor = palette.amber;
-    context.shadowBlur = 8;
-    context.globalAlpha = 0.72;
-    context.lineWidth = 0.8;
-    for (let index = 0; index < 4; index += 1) {
-      const angle = (Math.PI / 2) * index;
-      context.beginPath();
-      context.arc(0, 0, radius, angle - 0.28, angle + 0.28);
-      context.stroke();
-    }
-    context.rotate(-rotation);
-    drawLine(-radius - 7, 0, -radius + 2, 0);
-    drawLine(radius - 2, 0, radius + 7, 0);
-    drawLine(0, -radius - 7, 0, -radius + 2);
-    drawLine(0, radius - 2, 0, radius + 7);
-    context.fillRect(-1, -1, 2, 2);
-    context.shadowBlur = 0;
-    context.globalAlpha = 0.48;
-    context.font = '500 7px "SFMono-Regular", Consolas, monospace';
-    context.fillText(`${Math.round(x).toString().padStart(4, "0")} / ${Math.round(y).toString().padStart(4, "0")}`, radius + 10, -radius - 3);
-    context.restore();
-  }
-
   function drawHud(time) {
     const margin = viewportWidth < 720 ? 17 : 30;
     const length = viewportWidth < 720 ? 26 : 48;
@@ -847,7 +930,6 @@
     drawHeavyMech(rightX, mechY, scale, -1, palette.magenta, time, "M-02 / ARMORED");
     drawCombatBeam(time, leftMech, rightMech, core);
     drawHud(time);
-    drawTargetReticle(time);
     drawParticles();
   }
 
@@ -921,6 +1003,7 @@
     active = Boolean(nextActive);
     root.dataset.turbo = active ? "on" : "off";
     trigger.dataset.turboActive = active ? "true" : "false";
+    syncCursorCapability();
     if (persist) storePreference(active);
 
     stopAnimation();
@@ -934,6 +1017,7 @@
       window.clearTimeout(bootTimer);
       root.dataset.turboBoot = "false";
       particles = [];
+      cursorRingInitialized = false;
       clearCanvas();
     }
 
@@ -1038,6 +1122,7 @@
       pointer.x = event.clientX;
       pointer.y = event.clientY;
       pointer.seen = true;
+      updateCursorTarget(event.target);
       if (!active || reducedMotion || event.timeStamp - lastParticleAt < 15) return;
       lastParticleAt = event.timeStamp;
       const speed = Math.hypot(event.movementX, event.movementY);
@@ -1048,21 +1133,61 @@
     { passive: true }
   );
 
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      if (!event.isPrimary || !canUseTurboCursor() || pointer.nativeCursor) return;
+      setCursorPressed(true);
+      for (let index = 0; index < 8; index += 1) {
+        spawnParticle(event.clientX, event.clientY, index % 3 === 0 ? palette.danger : palette.amber, 1.5);
+      }
+    },
+    { passive: true }
+  );
+
+  const releaseCursor = () => setCursorPressed(false);
+  document.addEventListener("pointerup", releaseCursor, { passive: true });
+  document.addEventListener("pointercancel", releaseCursor, { passive: true });
+  document.documentElement.addEventListener("pointerleave", () => {
+    setCursorVisible(false);
+    setCursorPressed(false);
+    stopCursorAnimation();
+  });
+  window.addEventListener("blur", () => {
+    setCursorVisible(false);
+    setCursorPressed(false);
+    stopCursorAnimation();
+  });
+
   window.addEventListener("resize", resizeCanvas, { passive: true });
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) stopAnimation();
-    else startAnimation();
+    if (document.hidden) {
+      stopAnimation();
+      stopCursorAnimation();
+      setCursorVisible(false);
+    } else {
+      startAnimation();
+      syncCursorCapability();
+    }
   });
 
   const handleReducedMotionChange = (event) => {
     reducedMotion = event.matches;
     stopAnimation();
+    syncCursorCapability();
     if (active) startAnimation();
   };
   if (typeof reducedMotionQuery.addEventListener === "function") {
     reducedMotionQuery.addEventListener("change", handleReducedMotionChange);
   } else {
     reducedMotionQuery.addListener(handleReducedMotionChange);
+  }
+
+  const handleFinePointerChange = () => syncCursorCapability();
+  if (typeof finePointerQuery.addEventListener === "function") {
+    finePointerQuery.addEventListener("change", handleFinePointerChange);
+  } else {
+    finePointerQuery.addListener(handleFinePointerChange);
   }
 
   new MutationObserver((records) => {

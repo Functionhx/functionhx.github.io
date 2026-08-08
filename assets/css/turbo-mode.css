@@ -18,6 +18,209 @@ html[data-theme="dark"] {
   --turbo-steel: #95abc0;
 }
 
+.turbo-cursor {
+  --turbo-cursor-core-x: 50vw;
+  --turbo-cursor-core-y: 50vh;
+  --turbo-cursor-ring-x: 50vw;
+  --turbo-cursor-ring-y: 50vh;
+  color: color-mix(in srgb, var(--turbo-cyan) 68%, #006172);
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: fixed;
+  transition: opacity 80ms ease;
+  visibility: hidden;
+  z-index: 2147483645;
+}
+
+html[data-theme="dark"] .turbo-cursor,
+html:not([data-theme="light"]) .turbo-cursor {
+  color: var(--turbo-cyan);
+}
+
+.turbo-cursor[data-visible="true"] {
+  opacity: 1;
+  visibility: visible;
+}
+
+.turbo-cursor__lock,
+.turbo-cursor__core {
+  color: inherit;
+  left: 0;
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  will-change: transform;
+}
+
+.turbo-cursor__lock {
+  background:
+    linear-gradient(currentColor 0 0) left top / 0.56rem 1px no-repeat,
+    linear-gradient(currentColor 0 0) left top / 1px 0.56rem no-repeat,
+    linear-gradient(currentColor 0 0) right top / 0.56rem 1px no-repeat,
+    linear-gradient(currentColor 0 0) right top / 1px 0.56rem no-repeat,
+    linear-gradient(currentColor 0 0) left bottom / 0.56rem 1px no-repeat,
+    linear-gradient(currentColor 0 0) left bottom / 1px 0.56rem no-repeat,
+    linear-gradient(currentColor 0 0) right bottom / 0.56rem 1px no-repeat,
+    linear-gradient(currentColor 0 0) right bottom / 1px 0.56rem no-repeat;
+  filter: drop-shadow(0 0 0.2rem color-mix(in srgb, currentColor 82%, transparent))
+    drop-shadow(0 1px 0 color-mix(in srgb, var(--turbo-void) 55%, transparent));
+  height: 1.75rem;
+  transform: translate3d(var(--turbo-cursor-ring-x), var(--turbo-cursor-ring-y), 0) translate(-50%, -50%);
+  transition:
+    color 100ms ease,
+    filter 100ms ease;
+  width: 1.75rem;
+}
+
+.turbo-cursor__lock::before {
+  animation: turbo-cursor-orbit 2.7s linear infinite;
+  background: repeating-conic-gradient(from 10deg, currentColor 0 16deg, transparent 16deg 45deg);
+  content: "";
+  inset: 0.33rem;
+  mask: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 calc(100% - 1px));
+  opacity: 0.72;
+  position: absolute;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 calc(100% - 1px));
+}
+
+.turbo-cursor__lock::after {
+  color: currentColor;
+  content: "LOCK";
+  font-family: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
+  font-size: 0.38rem;
+  font-weight: 700;
+  left: calc(100% + 0.42rem);
+  letter-spacing: 0.12em;
+  opacity: 0;
+  position: absolute;
+  text-shadow: 0 0 0.45rem currentColor;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: opacity 80ms ease;
+}
+
+.turbo-cursor__core {
+  background: currentColor;
+  box-shadow:
+    0 0 0.42rem currentColor,
+    0 1px 0 color-mix(in srgb, var(--turbo-void) 65%, transparent);
+  height: 0.24rem;
+  transform: translate3d(var(--turbo-cursor-core-x), var(--turbo-cursor-core-y), 0) translate(-50%, -50%) rotate(45deg);
+  transition:
+    background-color 80ms ease,
+    color 80ms ease,
+    transform 70ms ease;
+  width: 0.24rem;
+}
+
+.turbo-cursor__core::before,
+.turbo-cursor__core::after {
+  background: currentColor;
+  content: "";
+  left: 50%;
+  opacity: 0.7;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.turbo-cursor__core::before {
+  height: 1px;
+  width: 0.9rem;
+}
+
+.turbo-cursor__core::after {
+  height: 0.9rem;
+  width: 1px;
+}
+
+.turbo-cursor[data-state="locked"] {
+  color: color-mix(in srgb, var(--turbo-magenta) 78%, #7d146e);
+}
+
+html[data-theme="dark"] .turbo-cursor[data-state="locked"],
+html:not([data-theme="light"]) .turbo-cursor[data-state="locked"] {
+  color: var(--turbo-magenta);
+}
+
+.turbo-cursor[data-state="locked"] .turbo-cursor__lock {
+  filter: drop-shadow(0 0 0.42rem color-mix(in srgb, currentColor 88%, transparent))
+    drop-shadow(0 1px 0 color-mix(in srgb, var(--turbo-void) 65%, transparent));
+  transform: translate3d(var(--turbo-cursor-ring-x), var(--turbo-cursor-ring-y), 0) translate(-50%, -50%) scale(0.82);
+}
+
+.turbo-cursor[data-state="locked"] .turbo-cursor__lock::before {
+  animation-duration: 1.2s;
+}
+
+.turbo-cursor[data-state="locked"] .turbo-cursor__lock::after {
+  opacity: 0.88;
+  transform: translateY(-50%);
+}
+
+.turbo-cursor[data-pressed="true"] {
+  color: color-mix(in srgb, var(--turbo-amber) 72%, #875100);
+}
+
+html[data-theme="dark"] .turbo-cursor[data-pressed="true"],
+html:not([data-theme="light"]) .turbo-cursor[data-pressed="true"] {
+  color: var(--turbo-amber);
+}
+
+.turbo-cursor[data-pressed="true"] .turbo-cursor__lock {
+  filter: drop-shadow(0 0 0.7rem currentColor);
+  transform: translate3d(var(--turbo-cursor-ring-x), var(--turbo-cursor-ring-y), 0) translate(-50%, -50%) scale(0.58) rotate(90deg);
+}
+
+.turbo-cursor[data-pressed="true"] .turbo-cursor__core {
+  transform: translate3d(var(--turbo-cursor-core-x), var(--turbo-cursor-core-y), 0) translate(-50%, -50%) rotate(45deg) scale(1.8);
+}
+
+.turbo-cursor[data-pressed="true"] .turbo-cursor__lock::after {
+  opacity: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-turbo="on"][data-turbo-cursor="enabled"] body,
+  html[data-turbo="on"][data-turbo-cursor="enabled"] body * {
+    cursor: none !important;
+  }
+
+  html[data-turbo="on"][data-turbo-cursor="enabled"]
+    body
+    :is(
+      textarea,
+      [contenteditable="true"],
+      [contenteditable="plaintext-only"],
+      input:not([type]),
+      input[type="text"],
+      input[type="search"],
+      input[type="email"],
+      input[type="password"],
+      input[type="number"],
+      input[type="tel"],
+      input[type="url"],
+      input[type="date"],
+      input[type="datetime-local"],
+      input[type="month"],
+      input[type="time"],
+      input[type="week"]
+    ) {
+    cursor: text !important;
+  }
+
+  html[data-turbo="on"][data-turbo-cursor="enabled"] body select {
+    cursor: default !important;
+  }
+}
+
+@keyframes turbo-cursor-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .turbo-canvas {
   filter: contrast(1.08) saturate(1.18);
   height: 100vh;
@@ -586,6 +789,10 @@ html[data-turbo="on"] #light-toggle[data-turbo-trigger]::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .turbo-cursor {
+    display: none;
+  }
+
   .turbo-canvas,
   .turbo-chrome,
   .turbo-status,

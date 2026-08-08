@@ -43,6 +43,11 @@ async function turboState() {
   return page.evaluate(() => ({
     active: document.documentElement.dataset.turbo,
     canvasVisibility: window.getComputedStyle(document.getElementById("turbo-canvas")).visibility,
+    cursorCapability: document.documentElement.dataset.turboCursor,
+    cursorVisible: document.getElementById("turbo-cursor").dataset.visible,
+    cursorState: document.getElementById("turbo-cursor").dataset.state,
+    cursorPressed: document.getElementById("turbo-cursor").dataset.pressed,
+    bodyCursor: window.getComputedStyle(document.body).cursor,
     setting: document.documentElement.dataset.themeSetting,
     stored: window.localStorage.getItem("functionhx:turbo-mode"),
   }));
@@ -78,6 +83,49 @@ try {
   assert.equal(state.stored, "on", "Turbo choice must be persisted");
   assert.equal(state.setting, settingAfterClick, "Holding for Turbo must not change the color theme");
   assert.equal(state.canvasVisibility, "visible", "Turbo canvas must be visible while active");
+  assert.equal(state.cursorCapability, "enabled", "Turbo must enable its custom cursor on a desktop pointer");
+  assert.equal(state.cursorVisible, "true", "The Turbo cursor must appear after pointer input");
+  assert.equal(state.cursorState, "locked", "The Turbo cursor must lock onto the appearance control");
+  assert.equal(state.bodyCursor, "none", "The native cursor must be hidden while the Turbo cursor is active");
+
+  if (process.env.TURBO_SCREENSHOT_PATH) {
+    await page.waitForTimeout(1250);
+    const blogLink = page.locator('a[data-nav-translation-key="blog"]');
+    const blogBox = await blogLink.boundingBox();
+    assert.ok(blogBox, "Blog navigation link must be visible for the Turbo screenshot");
+    await page.mouse.move(blogBox.x + 20, blogBox.y + blogBox.height / 2);
+    await page.waitForTimeout(180);
+    await page.screenshot({ path: process.env.TURBO_SCREENSHOT_PATH });
+  }
+
+  await page.evaluate(() => {
+    const fixture = document.createElement("div");
+    fixture.id = "turbo-cursor-fixture";
+    fixture.innerHTML = `
+      <div id="turbo-cursor-plain" style="position:fixed;left:20px;top:180px;width:70px;height:70px;z-index:2147483644"></div>
+      <button id="turbo-cursor-action" style="position:fixed;left:110px;top:180px;width:80px;height:70px;z-index:2147483644">Action</button>
+      <input id="turbo-cursor-input" type="text" style="position:fixed;left:210px;top:180px;width:120px;height:70px;z-index:2147483644">
+    `;
+    document.body.append(fixture);
+  });
+
+  await page.mouse.move(50, 210);
+  state = await turboState();
+  assert.equal(state.cursorState, "tracking", "The cursor must use its neutral tracking state over page content");
+  assert.equal(state.cursorVisible, "true", "The tracking cursor must remain visible over page content");
+
+  await page.mouse.move(150, 210);
+  state = await turboState();
+  assert.equal(state.cursorState, "locked", "The cursor must show a lock state over interactive controls");
+  await page.mouse.down();
+  assert.equal((await turboState()).cursorPressed, "true", "The cursor must compress on pointer down");
+  await page.mouse.up();
+  assert.equal((await turboState()).cursorPressed, "false", "The cursor must release after pointer up");
+
+  await page.mouse.move(250, 210);
+  state = await turboState();
+  assert.equal(state.cursorVisible, "false", "Text entry must restore a native cursor instead of obscuring the caret");
+  assert.equal(await page.locator("#turbo-cursor-input").evaluate((input) => window.getComputedStyle(input).cursor), "text");
 
   await page.reload({ waitUntil: "networkidle" });
   state = await turboState();
@@ -86,6 +134,8 @@ try {
   await page.keyboard.press("Shift+T");
   state = await turboState();
   assert.equal(state.active, "off", "Shift+T must disable Turbo");
+  assert.equal(state.cursorVisible, "false", "Disabling Turbo must hide the custom cursor");
+  assert.notEqual(state.bodyCursor, "none", "Disabling Turbo must restore the system cursor");
 
   await page.evaluate(() => {
     const input = document.createElement("input");
@@ -102,6 +152,29 @@ try {
   await assert.doesNotReject(async () => {
     await page.locator("#turbo-status").filter({ hasText: "ROBOT ARENA READY" }).waitFor({ state: "visible" });
   }, "English pages must announce Turbo in English");
+
+  const reducedContext = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    reducedMotion: "reduce",
+  });
+  try {
+    const reducedPage = await reducedContext.newPage();
+    await reducedPage.goto(baseUrl, { waitUntil: "networkidle" });
+    await reducedPage.keyboard.press("Shift+T");
+    await reducedPage.mouse.move(600, 400);
+    const reducedState = await reducedPage.evaluate(() => ({
+      active: document.documentElement.dataset.turbo,
+      cursorCapability: document.documentElement.dataset.turboCursor,
+      cursorVisible: document.getElementById("turbo-cursor").dataset.visible,
+      bodyCursor: window.getComputedStyle(document.body).cursor,
+    }));
+    assert.equal(reducedState.active, "on", "Reduced motion users may still enable the static Turbo scene");
+    assert.equal(reducedState.cursorCapability, "native", "Reduced motion must keep the system cursor");
+    assert.equal(reducedState.cursorVisible, "false", "Reduced motion must not force the animated cursor");
+    assert.notEqual(reducedState.bodyCursor, "none", "Reduced motion must preserve the native cursor appearance");
+  } finally {
+    await reducedContext.close();
+  }
 
   console.log("Turbo mode browser test passed.");
 } finally {
