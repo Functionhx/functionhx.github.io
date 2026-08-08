@@ -11,8 +11,28 @@ const publicRepo = "Functionhx/functionhx.github.io";
 const validSha = (value) => createHash("sha1").update(String(value)).digest("hex");
 const sessionSecret = Buffer.alloc(32, 17).toString("base64url");
 const masterSecret = Buffer.alloc(32, 29).toString("base64url");
+
+class MemoryKV {
+  constructor() {
+    this.values = new Map();
+  }
+
+  async get(key) {
+    return this.values.get(key) ?? null;
+  }
+
+  async put(key, value) {
+    this.values.set(key, value);
+  }
+
+  async delete(key) {
+    this.values.delete(key);
+  }
+}
+
 const env = {
   ALLOWED_GITHUB_USER_ID: "172989722",
+  AUTH_CODES: new MemoryKV(),
   GITHUB_API_BASE: "https://api.github.test",
   GITHUB_CLIENT_ID: "Iv1.spark-vault-test",
   GITHUB_CLIENT_SECRET: "not-a-real-client-secret",
@@ -147,6 +167,21 @@ function apiRequest(path, method, token, body, origin = siteOrigin) {
   );
 }
 
+function nativeRequest(path, method, token, body, origin = "") {
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (origin) headers.Origin = origin;
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  return worker.fetch(
+    new Request(`${workerOrigin}${path}`, {
+      body: body === undefined ? undefined : JSON.stringify(body),
+      headers,
+      method,
+    }),
+    env
+  );
+}
+
 function extractCallbackPayload(html) {
   const match = html.match(/const payload=(\{.*?\});const target=/);
   assert.ok(match, "the OAuth callback should contain a postMessage payload");
@@ -210,6 +245,67 @@ try {
   assert.equal(callbackPayload.user.id, 172989722);
   assert.equal(callbackPayload.token.includes("ghu_not-a-real-user-token"), false, "the browser session must conceal the GitHub token");
   let sessionToken = callbackPayload.token;
+
+  const nativeVerifier = `magic-bridge-${"v".repeat(48)}`;
+  const nativeChallenge = createHash("sha256").update(nativeVerifier).digest("base64url");
+  const nativeClientState = "native-state-1234567890abcdef1234567890";
+  const nativeLogin = await worker.fetch(
+    new Request(
+      `${workerOrigin}/auth/native/login?code_challenge=${encodeURIComponent(nativeChallenge)}&code_challenge_method=S256&state=${nativeClientState}`
+    ),
+    env
+  );
+  assert.equal(nativeLogin.status, 302);
+  const nativeAuthorize = new URL(nativeLogin.headers.get("Location"));
+  const nativeOAuthState = nativeAuthorize.searchParams.get("state");
+  assert.ok(nativeOAuthState);
+  const nativeCallback = await worker.fetch(
+    new Request(`${workerOrigin}/auth/callback?code=native-code&state=${encodeURIComponent(nativeOAuthState)}`),
+    env
+  );
+  assert.equal(nativeCallback.status, 302);
+  const nativeReturn = new URL(nativeCallback.headers.get("Location"));
+  assert.equal(nativeReturn.protocol, "magicbridge:");
+  assert.equal(nativeReturn.hostname, "oauth");
+  assert.equal(nativeReturn.pathname, "/callback");
+  assert.equal(nativeReturn.searchParams.get("state"), nativeClientState);
+  const nativeAuthorizationCode = nativeReturn.searchParams.get("code");
+  assert.ok(nativeAuthorizationCode);
+
+  const browserNativeExchange = await nativeRequest(
+    "/auth/native/session",
+    "POST",
+    "",
+    { code: nativeAuthorizationCode, code_verifier: nativeVerifier },
+    siteOrigin
+  );
+  assert.equal(browserNativeExchange.status, 403, "browser origins must not redeem native authorization codes");
+
+  const nativeExchange = await nativeRequest("/auth/native/session", "POST", "", {
+    code: nativeAuthorizationCode,
+    code_verifier: nativeVerifier,
+  });
+  assert.equal(nativeExchange.status, 200);
+  const nativePayload = await nativeExchange.json();
+  assert.equal(nativePayload.authenticated, true);
+  assert.deepEqual(nativePayload.user, { id: 172989722, login: "Functionhx" });
+  assert.equal(nativePayload.session.includes("ghu_not-a-real-user-token"), false, "the native session must conceal the GitHub token");
+  let nativeSessionToken = nativePayload.session;
+
+  const reusedNativeCode = await nativeRequest("/auth/native/session", "POST", "", {
+    code: nativeAuthorizationCode,
+    code_verifier: nativeVerifier,
+  });
+  assert.equal(reusedNativeCode.status, 401, "native authorization codes must be single use");
+
+  const nativeSession = await nativeRequest("/api/native/session", "GET", nativeSessionToken);
+  assert.equal(nativeSession.status, 200);
+  assert.deepEqual((await nativeSession.json()).user, { id: 172989722, login: "Functionhx" });
+
+  const browserTokenOnNativeApi = await nativeRequest("/api/native/session", "GET", sessionToken);
+  assert.equal(browserTokenOnNativeApi.status, 401, "browser sessions and native sessions must use distinct sealing purposes");
+  const nativeTokenOnBrowserApi = await apiRequest("/api/session", "GET", nativeSessionToken);
+  assert.equal(nativeTokenOnBrowserApi.status, 401, "native sessions must not be accepted by browser endpoints");
 
   const continuationLogin = await worker.fetch(
     new Request(`${workerOrigin}/auth/login?return_to=/spark/&site_origin=${encodeURIComponent(siteOrigin)}&continuation=strong-unlock`),

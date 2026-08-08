@@ -40,6 +40,11 @@ const FEISHU_LIBRARY_FILE_TYPES = Object.freeze(new Set(["bitable", "doc", "docx
 const SEALED_VALUE_PREFIX = "functionhx:zk2:";
 const SESSION_LIFETIME_SECONDS = 30 * 24 * 60 * 60;
 const REFRESH_SKEW_SECONDS = 5 * 60;
+const NATIVE_AUTH_CODE_LIFETIME_SECONDS = 5 * 60;
+const NATIVE_AUTH_CODE_PREFIX = "native-auth-code:v1:";
+const NATIVE_CALLBACK_URI = "magicbridge://oauth/callback";
+const BROWSER_SESSION_PURPOSE = "functionhx:spark-session:v1";
+const NATIVE_SESSION_PURPOSE = "functionhx:magic-bridge-session:v1";
 const MAX_BODY_LENGTH = 500_000;
 
 class HttpError extends Error {
@@ -181,6 +186,46 @@ async function sha256Hex(value) {
   return Array.from(await sha256Bytes(value), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function nativeAuthorizationStore(env) {
+  const store = env.AUTH_CODES || env.FEISHU_DOCUMENTS;
+  if (!store || typeof store.get !== "function" || typeof store.put !== "function" || typeof store.delete !== "function") {
+    throw new HttpError(503, "Magic Bridge authorization storage is not configured.", "native_auth_not_configured");
+  }
+  return store;
+}
+
+function normalizedPkceValue(value, label) {
+  const normalized = String(value || "");
+  if (!/^[A-Za-z0-9._~-]{43,128}$/.test(normalized)) {
+    throw new HttpError(400, `${label} is invalid.`, "invalid_pkce");
+  }
+  return normalized;
+}
+
+function normalizedNativeState(value) {
+  const normalized = String(value || "");
+  if (!/^[A-Za-z0-9_-]{24,128}$/.test(normalized)) {
+    throw new HttpError(400, "The Magic Bridge login state is invalid.", "invalid_native_state");
+  }
+  return normalized;
+}
+
+function nativeCallbackUri(env) {
+  const configured = String(env.MAGIC_BRIDGE_CALLBACK_URI || NATIVE_CALLBACK_URI).trim();
+  let callback;
+  try {
+    callback = new URL(configured);
+  } catch (_error) {
+    throw new HttpError(503, "Magic Bridge callback configuration is invalid.", "native_auth_not_configured");
+  }
+  if (callback.protocol !== "magicbridge:" || callback.hostname !== "oauth" || callback.pathname !== "/callback") {
+    throw new HttpError(503, "Magic Bridge callback configuration is invalid.", "native_auth_not_configured");
+  }
+  callback.search = "";
+  callback.hash = "";
+  return callback.toString();
+}
+
 function decodeSecret(value, name) {
   try {
     const bytes = base64UrlDecode(value);
@@ -307,6 +352,17 @@ function jsonResponse(payload, status, env, sessionToken = "", request = null) {
     ...corsHeaders(request, env),
   };
   if (sessionToken) headers["X-Spark-Session"] = sessionToken;
+  return new Response(JSON.stringify(payload), { headers, status });
+}
+
+function nativeJsonResponse(payload, status, sessionToken = "") {
+  const headers = {
+    "Cache-Control": "no-store",
+    "Content-Type": "application/json; charset=utf-8",
+    "Referrer-Policy": "no-referrer",
+    "X-Content-Type-Options": "nosniff",
+  };
+  if (sessionToken) headers["X-Magic-Bridge-Session"] = sessionToken;
   return new Response(JSON.stringify(payload), { headers, status });
 }
 
@@ -451,8 +507,8 @@ async function validateAuthorizedUser(env, accessToken) {
   return user;
 }
 
-async function authenticateSealedSession(sealed, env) {
-  const session = await unsealJson(sealed, env, "functionhx:spark-session:v1");
+async function authenticateSealedSession(sealed, env, purpose = BROWSER_SESSION_PURPOSE) {
+  const session = await unsealJson(sealed, env, purpose);
   const now = nowSeconds();
   const allowedId = Number(required(env, "ALLOWED_GITHUB_USER_ID"));
   if (session.version !== 1 || session.expiresAt <= now || Number(session.user?.id) !== allowedId) {
@@ -474,7 +530,7 @@ async function authenticateSealedSession(sealed, env) {
     session.user
   );
   next.expiresAt = session.expiresAt;
-  const rotatedToken = await sealJson(next, env, "functionhx:spark-session:v1");
+  const rotatedToken = await sealJson(next, env, purpose);
   return {
     accessToken: next.accessToken,
     rotatedToken,
@@ -491,6 +547,19 @@ async function authenticate(request, env) {
   const sealed = authorization.slice("Bearer ".length).trim();
   if (!sealed) throw new HttpError(401, "Sign in with GitHub to open Spark Vault.", "authentication_required");
   return authenticateSealedSession(sealed, env);
+}
+
+async function authenticateNative(request, env) {
+  if (request.headers.get("Origin")) {
+    throw new HttpError(403, "Browser origins cannot use the Magic Bridge API.", "native_origin_denied");
+  }
+  const authorization = request.headers.get("Authorization") || "";
+  if (!authorization.startsWith("Bearer ")) {
+    throw new HttpError(401, "Connect Magic Bridge with GitHub to continue.", "authentication_required");
+  }
+  const sealed = authorization.slice("Bearer ".length).trim();
+  if (!sealed) throw new HttpError(401, "Connect Magic Bridge with GitHub to continue.", "authentication_required");
+  return authenticateSealedSession(sealed, env, NATIVE_SESSION_PURPOSE);
 }
 
 function safeReturnPath(value) {
@@ -532,6 +601,95 @@ async function handleLogin(request, env) {
   authorize.searchParams.set("state", state);
   authorize.searchParams.set("allow_signup", "false");
   return Response.redirect(authorize.toString(), 302);
+}
+
+async function handleNativeLogin(request, env) {
+  const url = new URL(request.url);
+  const codeChallenge = normalizedPkceValue(url.searchParams.get("code_challenge"), "The PKCE code challenge");
+  const clientState = normalizedNativeState(url.searchParams.get("state"));
+  if (url.searchParams.get("code_challenge_method") !== "S256") {
+    throw new HttpError(400, "Magic Bridge requires PKCE S256.", "invalid_pkce");
+  }
+  const state = await sealJson(
+    {
+      clientState,
+      codeChallenge,
+      expiresAt: nowSeconds() + 10 * 60,
+      flow: "native",
+      nonce: base64UrlEncode(randomBytes(24)),
+      redirectUri: nativeCallbackUri(env),
+      version: 1,
+    },
+    env,
+    "functionhx:spark-oauth-state:v1"
+  );
+  const callback = `${workerOrigin(request, env)}/auth/callback`;
+  const authorize = new URL(`${githubWebBase(env)}/login/oauth/authorize`);
+  authorize.searchParams.set("client_id", required(env, "GITHUB_CLIENT_ID"));
+  authorize.searchParams.set("redirect_uri", callback);
+  authorize.searchParams.set("state", state);
+  authorize.searchParams.set("allow_signup", "false");
+  return Response.redirect(authorize.toString(), 302);
+}
+
+async function finishNativeCallback(state, oauth, user, env) {
+  const authorizationCode = base64UrlEncode(randomBytes(32));
+  const codeKey = `${NATIVE_AUTH_CODE_PREFIX}${await sha256Hex(authorizationCode)}`;
+  const value = await sealJson(
+    {
+      codeChallenge: state.codeChallenge,
+      expiresAt: nowSeconds() + NATIVE_AUTH_CODE_LIFETIME_SECONDS,
+      session: sessionFromOAuth(oauth, user),
+      version: 1,
+    },
+    env,
+    "functionhx:magic-bridge-auth-code:v1"
+  );
+  await nativeAuthorizationStore(env).put(codeKey, value, {
+    expirationTtl: NATIVE_AUTH_CODE_LIFETIME_SECONDS,
+  });
+  const callback = new URL(state.redirectUri || nativeCallbackUri(env));
+  callback.searchParams.set("code", authorizationCode);
+  callback.searchParams.set("state", state.clientState);
+  return new Response(null, {
+    headers: {
+      "Cache-Control": "no-store",
+      Location: callback.toString(),
+      "Referrer-Policy": "no-referrer",
+    },
+    status: 302,
+  });
+}
+
+async function handleNativeSessionExchange(request, env) {
+  if (request.headers.get("Origin")) {
+    throw new HttpError(403, "Browser origins cannot redeem a Magic Bridge login.", "native_origin_denied");
+  }
+  const payload = await readJson(request);
+  const authorizationCode = String(payload.code || "");
+  if (!/^[A-Za-z0-9_-]{43,128}$/.test(authorizationCode)) {
+    throw new HttpError(400, "The Magic Bridge authorization code is invalid.", "invalid_native_code");
+  }
+  const verifier = normalizedPkceValue(payload.code_verifier, "The PKCE code verifier");
+  const store = nativeAuthorizationStore(env);
+  const codeKey = `${NATIVE_AUTH_CODE_PREFIX}${await sha256Hex(authorizationCode)}`;
+  const sealedRecord = await store.get(codeKey);
+  if (!sealedRecord) {
+    throw new HttpError(401, "The Magic Bridge login expired or was already used.", "native_code_expired");
+  }
+  let record;
+  try {
+    record = await unsealJson(sealedRecord, env, "functionhx:magic-bridge-auth-code:v1");
+  } catch (_error) {
+    throw new HttpError(401, "The Magic Bridge login expired or was already used.", "native_code_expired");
+  }
+  const challenge = await sha256Base64Url(verifier);
+  if (record.version !== 1 || record.expiresAt <= nowSeconds() || record.codeChallenge !== challenge) {
+    throw new HttpError(401, "The Magic Bridge login could not be verified.", "native_code_verification_failed");
+  }
+  await store.delete(codeKey);
+  const sessionToken = await sealJson(record.session, env, NATIVE_SESSION_PURPOSE);
+  return nativeJsonResponse({ authenticated: true, session: sessionToken, user: record.session.user }, 200, sessionToken);
 }
 
 function callbackPage(origin, sessionToken, user, returnPath, continuation = "", vaultOrigin = "") {
@@ -587,8 +745,14 @@ async function handleCallback(request, env) {
   const callback = `${workerOrigin(request, env)}/auth/callback`;
   const oauth = await exchangeOAuthCode(env, code, callback);
   const user = await validateAuthorizedUser(env, oauth.access_token);
+  if (state.flow === "native") {
+    return finishNativeCallback(state, oauth, user, env);
+  }
+  if (state.flow) {
+    throw new HttpError(400, "The GitHub login flow is invalid.", "oauth_state_invalid");
+  }
   const session = sessionFromOAuth(oauth, user);
-  const sealed = await sealJson(session, env, "functionhx:spark-session:v1");
+  const sealed = await sealJson(session, env, BROWSER_SESSION_PURPOSE);
   const origin = state.origin ? allowedSiteOrigin(state.origin, env) : siteOrigin(env);
   return callbackPage(
     origin,
@@ -2330,6 +2494,16 @@ async function handleApi(request, env) {
   return jsonResponse(payload, status, env, auth.rotatedToken, request);
 }
 
+async function handleNativeApi(request, env) {
+  const auth = await authenticateNative(request, env);
+  const url = new URL(request.url);
+  const path = url.pathname.replace(/^\/api\/native\/?/, "");
+  if (path === "session" && request.method === "GET") {
+    return nativeJsonResponse({ authenticated: true, user: auth.session.user }, 200, auth.rotatedToken);
+  }
+  throw new HttpError(404, "Magic Bridge endpoint not found.", "not_found");
+}
+
 async function routeRequest(request, env) {
   const url = new URL(request.url);
   if (request.method === "OPTIONS" && (url.pathname.startsWith("/api/") || url.pathname.startsWith("/public/"))) {
@@ -2348,12 +2522,15 @@ async function routeRequest(request, env) {
   }
   if (request.method === "GET" && url.pathname === "/unlock") return createUnlockPage(siteOrigins(env));
   if (request.method === "GET" && url.pathname === "/auth/login") return handleLogin(request, env);
+  if (request.method === "GET" && url.pathname === "/auth/native/login") return handleNativeLogin(request, env);
+  if (request.method === "POST" && url.pathname === "/auth/native/session") return handleNativeSessionExchange(request, env);
   if (request.method === "GET" && url.pathname === "/auth/callback") return handleCallback(request, env);
   if (request.method === "GET" && url.pathname === "/auth/feishu/callback") return handleFeishuCallback(request, env);
   if (request.method === "GET" && url.pathname === "/public/feishu/documents") {
     assertAllowedOrigin(request, env);
     return jsonResponse(await publicFeishuShowcase(env), 200, env, "", request);
   }
+  if (url.pathname.startsWith("/api/native/")) return handleNativeApi(request, env);
   if (url.pathname.startsWith("/api/")) return handleApi(request, env);
   throw new HttpError(404, "Spark Vault endpoint not found.", "not_found");
 }
@@ -2368,6 +2545,10 @@ const worker = {
       const code = error.code || "internal_error";
       if (status >= 500) console.error("Spark Vault request failed", error);
       try {
+        const pathname = new URL(request.url).pathname;
+        if (pathname.startsWith("/auth/native/") || pathname.startsWith("/api/native/")) {
+          return nativeJsonResponse({ error: { code, message } }, status);
+        }
         return jsonResponse({ error: { code, message } }, status, env, "", request);
       } catch (_configurationError) {
         return new Response(JSON.stringify({ error: { code, message } }), {
