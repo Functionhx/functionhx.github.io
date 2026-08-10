@@ -46,6 +46,18 @@ const NATIVE_CALLBACK_URI = "magicbridge://oauth/callback";
 const BROWSER_SESSION_PURPOSE = "functionhx:spark-session:v1";
 const NATIVE_SESSION_PURPOSE = "functionhx:magic-bridge-session:v1";
 const MAX_BODY_LENGTH = 500_000;
+const MAX_SEALED_BODY_LENGTH = 12_000_000;
+const MAX_MEDIA_COUNT = 8;
+const MAX_MEDIA_BYTES = 1_572_864;
+const MAX_MEDIA_TOTAL_BYTES = 5_242_880;
+const MEDIA_TYPES = Object.freeze(
+  new Map([
+    ["image/gif", "gif"],
+    ["image/jpeg", "jpg"],
+    ["image/png", "png"],
+    ["image/webp", "webp"],
+  ])
+);
 
 class HttpError extends Error {
   constructor(status, message, code = "request_failed") {
@@ -779,6 +791,50 @@ function normalizedText(value, label, maximum, requiredValue = false) {
   return text;
 }
 
+function normalizeMedia(input) {
+  if (input === undefined || input === null) return [];
+  if (!Array.isArray(input)) throw new HttpError(400, "Spark media must be a list.", "invalid_media");
+  if (input.length > MAX_MEDIA_COUNT) throw new HttpError(413, "This Spark contains too many images.", "media_too_large");
+  const seen = new Set();
+  const media = [];
+  let totalBytes = 0;
+  for (const candidate of input) {
+    const id = String(candidate?.id || "").toLowerCase();
+    const type = String(candidate?.type || "").toLowerCase();
+    const data = String(candidate?.data || "").replace(/\s/g, "");
+    if (!/^[a-f0-9]{16}$/.test(id) || seen.has(id)) {
+      throw new HttpError(400, "A Spark image id is invalid.", "invalid_media");
+    }
+    if (!MEDIA_TYPES.has(type) || !/^[a-z0-9+/]*={0,2}$/i.test(data)) {
+      throw new HttpError(400, "A Spark image is not a supported format.", "invalid_media");
+    }
+    let bytes;
+    try {
+      bytes = base64ToBytes(data);
+    } catch (_error) {
+      throw new HttpError(400, "A Spark image is not valid base64.", "invalid_media");
+    }
+    if (!bytes.length || bytes.length > MAX_MEDIA_BYTES) {
+      throw new HttpError(413, "A Spark image is too large.", "media_too_large");
+    }
+    totalBytes += bytes.length;
+    if (totalBytes > MAX_MEDIA_TOTAL_BYTES) {
+      throw new HttpError(413, "The images in this Spark are too large together.", "media_too_large");
+    }
+    seen.add(id);
+    media.push({
+      data,
+      height: Math.max(0, Math.min(20_000, Number(candidate?.height) || 0)),
+      id,
+      name: normalizedText(candidate?.name, "image name", 120).replace(/[\u0000-\u001f]/g, "") || "image",
+      size: bytes.length,
+      type,
+      width: Math.max(0, Math.min(20_000, Number(candidate?.width) || 0)),
+    });
+  }
+  return media;
+}
+
 function normalizeValues(input, id) {
   const values = input && typeof input === "object" ? input : {};
   const slug = normalizeId(values.slug);
@@ -792,7 +848,7 @@ function normalizeValues(input, id) {
   for (const language of ["zh", "en"]) {
     const requiredLanguage = language === "zh";
     const candidateBody = String(values[language]?.body || "");
-    const bodyLimit = language === "zh" && candidateBody.startsWith(SEALED_VALUE_PREFIX) ? 800_000 : MAX_BODY_LENGTH;
+    const bodyLimit = language === "zh" && candidateBody.startsWith(SEALED_VALUE_PREFIX) ? MAX_SEALED_BODY_LENGTH : MAX_BODY_LENGTH;
     localized[language] = {
       body: normalizedText(candidateBody, `${language} body`, bodyLimit, requiredLanguage),
       summary: normalizedText(values[language]?.summary, `${language} summary`, 1_000),
@@ -805,6 +861,7 @@ function normalizeValues(input, id) {
     date: String(values.date),
     en: localized.en,
     kind,
+    media: normalizeMedia(values.media),
     published: Boolean(values.published),
     slug,
     zh: localized.zh,
@@ -833,7 +890,17 @@ function normalizePublicState(input, id) {
   };
   const shas = { en: normalizeSha(input.shas?.en), zh: normalizeSha(input.shas?.zh) };
   if (!shas.en || !shas.zh) throw new HttpError(400, "Public Spark source SHAs are required.", "invalid_public_sha");
-  return { paths, shas };
+  const media = {};
+  for (const [mediaId, candidate] of Object.entries(input.media || {})) {
+    const normalizedId = String(mediaId).toLowerCase();
+    const path = String(candidate?.path || "");
+    const sha = normalizeSha(candidate?.sha);
+    if (!/^[a-f0-9]{16}$/.test(normalizedId) || !path.startsWith(`assets/img/spark/${id}/`) || path.includes("..") || !sha) {
+      throw new HttpError(400, "A public Spark image state is invalid.", "invalid_public_media");
+    }
+    media[normalizedId] = { path, sha };
+  }
+  return { media, paths, shas };
 }
 
 function notePath(id) {
@@ -849,10 +916,18 @@ async function readRepositoryFile(env, token, repository, branch, path, allowNot
     allowNotFound,
   });
   if (!remote) return null;
-  if (remote.type !== "file" || !remote.content || !remote.sha) {
+  if (remote.type !== "file" || !remote.sha) {
     throw new HttpError(422, "GitHub returned an unsupported private Spark record.", "unsupported_record");
   }
-  return { content: decoder.decode(base64ToBytes(remote.content)), sha: remote.sha };
+  let content = remote.content;
+  if (!content) {
+    const blob = await githubRequest(env, token, repoEndpoint(repository, `/git/blobs/${encodeURIComponent(remote.sha)}`));
+    if (blob.encoding !== "base64" || !blob.content) {
+      throw new HttpError(422, "GitHub returned an unsupported large Spark record.", "unsupported_record");
+    }
+    content = blob.content;
+  }
+  return { content: decoder.decode(base64ToBytes(content)), sha: remote.sha };
 }
 
 async function readRepositoryDirectory(env, token, repository, branch, path, allowNotFound = false) {
@@ -2295,10 +2370,26 @@ function publicLocalization(language, record) {
   };
 }
 
-function composePublicSource(language, record, path) {
+function publicMediaPaths(record) {
+  return Object.fromEntries(
+    (record.values.media || []).map((item) => [item.id, `assets/img/spark/${record.id}/${item.id}.${MEDIA_TYPES.get(item.type)}`])
+  );
+}
+
+function renderPublicMedia(body, mediaPaths) {
+  let rendered = String(body || "");
+  for (const [id, path] of Object.entries(mediaPaths)) rendered = rendered.split(`spark-media://${id}`).join(`/${path}`);
+  if (/spark-media:\/\/[a-f0-9]+/i.test(rendered)) {
+    throw new HttpError(422, "The Spark body refers to an image that is no longer attached.", "missing_media");
+  }
+  return rendered;
+}
+
+function composePublicSource(language, record, path, mediaPaths = {}) {
   const values = record.values;
   const localized = publicLocalization(language, record);
-  const description = localized.summary.trim() || plainSummary(localized.body);
+  const body = renderPublicMedia(localized.body, mediaPaths);
+  const description = localized.summary.trim() || plainSummary(body);
   const permalink = language === "en" ? `/en/spark/${record.id}/` : `/spark/${record.id}/`;
   return {
     content: [
@@ -2321,7 +2412,7 @@ function composePublicSource(language, record, path) {
       `giscus_comments: ${values.comments ? "true" : "false"}`,
       "---",
       "",
-      localized.body.trimEnd(),
+      body.trimEnd(),
       "",
     ].join("\n"),
     path,
@@ -2360,11 +2451,58 @@ async function verifyPublicTargets(env, token, record, paths) {
   return remotes;
 }
 
+async function readRepositoryMetadata(env, token, repository, branch, path, allowNotFound = false) {
+  const remote = await githubRequest(env, token, repoEndpoint(repository, `/contents/${encodePath(path)}?ref=${encodeURIComponent(branch)}`), {
+    allowNotFound,
+  });
+  if (!remote) return null;
+  if (remote.type !== "file" || !normalizeSha(remote.sha)) {
+    throw new HttpError(422, "GitHub returned unsupported Spark media metadata.", "unsupported_media");
+  }
+  return { path, sha: remote.sha };
+}
+
+async function verifyPublicMediaTargets(env, token, record, desiredPaths) {
+  const repository = required(env, "PUBLIC_REPO");
+  const branch = branchFor(env, "public");
+  const existing = record.public?.media || {};
+  for (const [id, state] of Object.entries(existing)) {
+    const remote = await readRepositoryMetadata(env, token, repository, branch, state.path, true);
+    if (!remote || remote.sha !== normalizeSha(state.sha)) {
+      throw new HttpError(409, "A public Spark image changed after the private copy was opened.", "public_conflict");
+    }
+    if (desiredPaths[id] && desiredPaths[id] !== state.path) {
+      throw new HttpError(409, "A public Spark image path changed unexpectedly.", "public_conflict");
+    }
+  }
+  for (const [id, path] of Object.entries(desiredPaths)) {
+    if (existing[id]) continue;
+    const remote = await readRepositoryMetadata(env, token, repository, branch, path, true);
+    if (remote) throw new HttpError(409, "That public Spark image path already exists.", "public_collision");
+  }
+}
+
+async function createPublicMediaBlobs(env, token, record, paths) {
+  const repository = required(env, "PUBLIC_REPO");
+  const blobs = {};
+  for (const item of record.values.media || []) {
+    const blob = await githubRequest(env, token, repoEndpoint(repository, "/git/blobs"), {
+      body: { content: item.data, encoding: "base64" },
+      method: "POST",
+    });
+    if (!normalizeSha(blob.sha)) throw new HttpError(502, "GitHub did not return a Spark image blob.", "media_upload_failed");
+    blobs[item.id] = { path: paths[item.id], sha: blob.sha };
+  }
+  return blobs;
+}
+
 async function commitPublicPair(env, token, record, remove = false, message = "") {
   const repository = required(env, "PUBLIC_REPO");
   const branch = branchFor(env, "public");
   const paths = publicPaths(record);
+  const desiredMediaPaths = remove ? {} : publicMediaPaths(record);
   await verifyPublicTargets(env, token, record, paths);
+  await verifyPublicMediaTargets(env, token, record, desiredMediaPaths);
   const head = await githubRequest(env, token, repoEndpoint(repository, `/git/ref/heads/${encodeURIComponent(branch)}`));
   const headSha = head.object?.sha;
   if (!headSha) throw new HttpError(502, "The public branch head is unavailable.", "branch_unavailable");
@@ -2374,17 +2512,23 @@ async function commitPublicPair(env, token, record, remove = false, message = ""
   const pair = remove
     ? null
     : {
-        en: composePublicSource("en", record, paths.en),
-        zh: composePublicSource("zh", record, paths.zh),
+        en: composePublicSource("en", record, paths.en, desiredMediaPaths),
+        zh: composePublicSource("zh", record, paths.zh, desiredMediaPaths),
       };
+  const mediaBlobs = remove ? {} : await createPublicMediaBlobs(env, token, record, desiredMediaPaths);
+  const sourceEntries = ["zh", "en"].map((language) =>
+    remove
+      ? { mode: "100644", path: paths[language], sha: null, type: "blob" }
+      : { content: pair[language].content, mode: "100644", path: paths[language], type: "blob" }
+  );
+  const mediaEntries = Object.values(mediaBlobs).map((item) => ({ mode: "100644", path: item.path, sha: item.sha, type: "blob" }));
+  const staleMediaEntries = Object.entries(record.public?.media || {})
+    .filter(([id]) => remove || !desiredMediaPaths[id])
+    .map(([, item]) => ({ mode: "100644", path: item.path, sha: null, type: "blob" }));
   const tree = await githubRequest(env, token, repoEndpoint(repository, "/git/trees"), {
     body: {
       base_tree: baseTree,
-      tree: ["zh", "en"].map((language) =>
-        remove
-          ? { mode: "100644", path: paths[language], sha: null, type: "blob" }
-          : { content: pair[language].content, mode: "100644", path: paths[language], type: "blob" }
-      ),
+      tree: [...sourceEntries, ...mediaEntries, ...staleMediaEntries],
     },
     method: "POST",
   });
@@ -2407,7 +2551,7 @@ async function commitPublicPair(env, token, record, remove = false, message = ""
       }
     }
   }
-  return { commit, paths, shas, tree };
+  return { commit, media: remove ? {} : mediaBlobs, paths, shas, tree };
 }
 
 async function changeVisibility(env, token, id, payload, makePublic) {
@@ -2423,7 +2567,7 @@ async function changeVisibility(env, token, id, payload, makePublic) {
   const message = normalizedText(payload.message, "commit message", 200);
   const publicResult = await commitPublicPair(env, token, loaded.record, !makePublic, message);
   loaded.record.values.published = makePublic;
-  loaded.record.public = makePublic ? { paths: publicResult.paths, shas: publicResult.shas } : null;
+  loaded.record.public = makePublic ? { media: publicResult.media, paths: publicResult.paths, shas: publicResult.shas } : null;
   loaded.record.updatedAt = new Date().toISOString();
   const nextSha = await saveEncryptedRecord(
     env,

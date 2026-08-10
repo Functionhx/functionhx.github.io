@@ -10,6 +10,7 @@ const vaultOrigin = "https://spark-vault.test";
 const vaultToken = "opaque-not-a-real-spark-session";
 const vaultRootKey = Buffer.alloc(32, 61).toString("base64url");
 const testDeepSeekKey = "not-a-real-deepseek-spark-key";
+const testImageBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=";
 const sha = (value) => createHash("sha1").update(String(value)).digest("hex");
 const editPaths = {
   en: "_posts/2026-07-30-existing-spark-en.md",
@@ -534,6 +535,21 @@ try {
   await page.locator("#site-spark-writer-title-zh").fill("只写中文的草稿");
   await page.locator("#site-spark-writer-summary-zh").fill("先保存中文，之后再翻译。");
   await page.locator("#site-spark-writer-body-zh").fill("这是只写了中文、但应该能够安全保存的正文。");
+  await page.locator('[data-spark-dropzone="zh"]').evaluate((dropzone, imageBase64) => {
+    const bytes = Uint8Array.from(window.atob(imageBase64), (character) => character.charCodeAt(0));
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([bytes], "spark-drag.png", { type: "image/png" }));
+    dropzone.dispatchEvent(new DragEvent("dragenter", { bubbles: true, dataTransfer: transfer }));
+    if (dropzone.dataset.dragging !== "true") throw new Error("drop feedback did not activate");
+    dropzone.dispatchEvent(new DragEvent("drop", { bubbles: true, dataTransfer: transfer }));
+  }, testImageBase64);
+  await page.waitForFunction(() => document.querySelector("#site-spark-writer-body-zh").value.includes("spark-media://"));
+  assert.equal(
+    await page.locator('[data-spark-media-list="zh"] .site-spark-writer__media-card').count(),
+    1,
+    "a dropped image must appear immediately"
+  );
+  assert.match(await page.locator("#site-spark-writer-status").textContent(), /插入 1 张图片/);
   await page.locator(".site-spark-writer__settings > summary").click();
   await page.locator("#site-spark-writer-slug").fill("chinese-first");
   await page.waitForTimeout(500);
@@ -549,6 +565,7 @@ try {
     "the autosave should enter the encrypted device vault"
   );
   assert.equal(JSON.stringify(draftRecords).includes("只写中文的草稿"), false);
+  assert.equal(JSON.stringify(draftRecords).includes(testImageBase64), false, "image bytes must also remain encrypted in device autosave");
 
   await page.locator("#site-spark-writer-close").click();
   await page.locator("#site-spark-create").click();
@@ -609,6 +626,7 @@ try {
   assert.match(vaultWrites[0].values.zh.body, /^functionhx:zk2:/);
   assert.equal(JSON.stringify(vaultWrites[0]).includes("只写中文的草稿"), false, "the private request must not contain the title");
   assert.equal(JSON.stringify(vaultWrites[0]).includes("这是只写了中文"), false, "the private request must not contain the body");
+  assert.equal(JSON.stringify(vaultWrites[0]).includes(testImageBase64), false, "a private request must not expose image bytes");
   assert.equal(publicChanges.length, 0, "a private save must not touch the public repository");
   assert.equal(await page.evaluate(() => window.__sparkPopupCount), 2, "each save attempt must use at most one OAuth-to-unlock popup");
   assert.match(
@@ -651,6 +669,8 @@ try {
   assert.equal(publicChanges.length, 1);
   assert.equal(publicChanges[0].action, "publish");
   assert.equal(publicChanges[0].values.en.title, "");
+  assert.equal(publicChanges[0].values.media.length, 1, "publishing must carry the encrypted draft image into the public commit flow");
+  assert.equal(publicChanges[0].values.media[0].data, testImageBase64);
 
   await page.locator("#site-spark-writer-translate").click();
   await page.locator("#deepseek-translator-dialog").waitFor({ state: "visible" });

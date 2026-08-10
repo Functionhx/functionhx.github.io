@@ -8,7 +8,10 @@ const mirrorOrigin = "https://fanyuchen.com.cn";
 const workerOrigin = "https://spark-vault.test";
 const privateRepo = "Functionhx/functionhx-spark-private";
 const publicRepo = "Functionhx/functionhx.github.io";
-const validSha = (value) => createHash("sha1").update(String(value)).digest("hex");
+const validSha = (value) =>
+  createHash("sha1")
+    .update(Buffer.isBuffer(value) ? value : String(value))
+    .digest("hex");
 const sessionSecret = Buffer.alloc(32, 17).toString("base64url");
 const masterSecret = Buffer.alloc(32, 29).toString("base64url");
 
@@ -48,6 +51,7 @@ const env = {
 };
 
 const files = new Map();
+const blobs = new Map();
 const requests = [];
 let treeCounter = 0;
 let commitCounter = 0;
@@ -106,7 +110,7 @@ globalThis.fetch = async (input, init = {}) => {
     if (request.method === "GET") {
       const file = files.get(key);
       return file
-        ? json({ content: Buffer.from(file.content, "utf8").toString("base64"), path, sha: file.sha, type: "file" })
+        ? json({ content: Buffer.from(file.content).toString("base64"), path, sha: file.sha, type: "file" })
         : json({ message: "Not Found" }, 404);
     }
     if (request.method === "PUT") {
@@ -126,6 +130,18 @@ globalThis.fetch = async (input, init = {}) => {
   if (/^\/git\/commits\/[0-9a-f]{40}$/.test(suffix) && request.method === "GET") {
     return json({ tree: { sha: validSha(`base-tree-${treeCounter}`) } });
   }
+  if (/^\/git\/blobs\/[0-9a-f]{40}$/.test(suffix) && request.method === "GET") {
+    const sha = suffix.split("/").at(-1);
+    const content = blobs.get(sha);
+    return content ? json({ content: content.toString("base64"), encoding: "base64", sha }) : json({ message: "Not Found" }, 404);
+  }
+  if (suffix === "/git/blobs" && request.method === "POST") {
+    const body = await request.json();
+    const content = body.encoding === "base64" ? Buffer.from(body.content, "base64") : Buffer.from(body.content || "", "utf8");
+    const sha = validSha(content);
+    blobs.set(sha, content);
+    return json({ sha }, 201);
+  }
   if (suffix === "/git/trees" && request.method === "POST") {
     const body = await request.json();
     treeCounter += 1;
@@ -135,8 +151,9 @@ globalThis.fetch = async (input, init = {}) => {
         files.delete(key);
         return { path: entry.path, sha: null };
       }
-      const sha = validSha(entry.content);
-      files.set(key, { content: entry.content, sha });
+      const content = entry.content !== undefined ? entry.content : blobs.get(entry.sha);
+      const sha = entry.sha || validSha(content);
+      files.set(key, { content, sha });
       return { path: entry.path, sha };
     });
     return json({ sha: validSha(`tree-${treeCounter}`), tree }, 201);
@@ -200,6 +217,8 @@ function extractContinuationDestination(html) {
   return JSON.parse(match[1]);
 }
 
+const tinyPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=";
+const mediaId = "0123456789abcdef";
 const values = {
   comments: true,
   date: "2026-07-31T21:30",
@@ -209,10 +228,21 @@ const values = {
     title: "Encrypted Spark",
   },
   kind: "note",
+  media: [
+    {
+      data: tinyPngBase64,
+      height: 1,
+      id: mediaId,
+      name: "spark-test.png",
+      size: Buffer.from(tinyPngBase64, "base64").length,
+      type: "image/png",
+      width: 1,
+    },
+  ],
   published: false,
   slug: "encrypted-spark",
   zh: {
-    body: "这是一条只应由樊宇琛读取的加密 Spark。",
+    body: `这是一条只应由樊宇琛读取的加密 Spark。\n\n![测试图片](spark-media://${mediaId})`,
     summary: "一条加密 Spark。",
     title: "加密 Spark",
   },
@@ -458,7 +488,8 @@ try {
   const chineseOnlyPublicZh = files.get(fileKey(publicRepo, `_posts/2026-07-31-${chineseOnlyValues.slug}-zh.md`));
   const chineseOnlyPublicEn = files.get(fileKey(publicRepo, `_posts/2026-07-31-${chineseOnlyValues.slug}-en.md`));
   assert.ok(chineseOnlyPublicZh && chineseOnlyPublicEn, "publishing keeps a bilingual route pair");
-  assert.match(chineseOnlyPublicZh.content, new RegExp(chineseOnlyValues.zh.body));
+  assert.match(chineseOnlyPublicZh.content, /这是一条只应由樊宇琛读取的加密 Spark。/);
+  assert.match(chineseOnlyPublicZh.content, new RegExp(`/assets/img/spark/${chineseOnlyValues.slug}/${mediaId}\\.png`));
   assert.match(chineseOnlyPublicEn.content, /English translation pending/);
   assert.match(chineseOnlyPublicEn.content, new RegExp(`/spark/${chineseOnlyValues.slug}/`));
 
@@ -495,11 +526,17 @@ try {
   assert.equal(publishPayload.note.published, true);
   const publicZh = files.get(fileKey(publicRepo, `_posts/2026-07-31-${values.slug}-zh.md`));
   const publicEn = files.get(fileKey(publicRepo, `_posts/2026-07-31-${values.slug}-en.md`));
+  const publicMediaPath = `assets/img/spark/${values.slug}/${mediaId}.png`;
+  const publicMedia = files.get(fileKey(publicRepo, publicMediaPath));
   assert.ok(publicZh && publicEn, "publishing must create both language files");
+  assert.ok(publicMedia, "publishing must create the attached image in the public repository");
+  assert.deepEqual(Buffer.from(publicMedia.content), Buffer.from(tinyPngBase64, "base64"));
   assert.match(publicZh.content, /^published: true$/m);
   assert.match(publicEn.content, /^published: true$/m);
   assert.match(publicZh.content, /translation_key: spark-encrypted-spark/);
   assert.match(publicEn.content, /translation_key: spark-encrypted-spark/);
+  assert.match(publicZh.content, new RegExp(`/${publicMediaPath}`));
+  assert.doesNotMatch(publicZh.content, /spark-media:\/\//);
 
   const unpublished = await apiRequest(`/api/notes/${values.slug}/unpublish`, "POST", sessionToken, {
     expectedSha: publishPayload.note.sha,
@@ -510,6 +547,7 @@ try {
   assert.equal(unpublishPayload.note.published, false);
   assert.equal(files.has(fileKey(publicRepo, `_posts/2026-07-31-${values.slug}-zh.md`)), false);
   assert.equal(files.has(fileKey(publicRepo, `_posts/2026-07-31-${values.slug}-en.md`)), false);
+  assert.equal(files.has(fileKey(publicRepo, publicMediaPath)), false, "making a Spark private must remove its public images");
 
   const staleSave = await apiRequest(`/api/notes/${values.slug}`, "PUT", sessionToken, {
     expectedSha: savedNote.sha,

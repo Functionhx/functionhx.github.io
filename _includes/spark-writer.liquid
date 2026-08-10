@@ -53,6 +53,24 @@
   {% assign writer_translate_note = 'Uses the translator’s own API Key; only @Functionhx can publish.' %}
   {% assign writer_close = 'Close writer' %}
   {% assign writer_idle = 'Start writing. Changes will be encrypted and saved on this device automatically.' %}
+  {% assign writer_format_toolbar = 'Writing tools' %}
+  {% assign writer_undo = 'Undo' %}
+  {% assign writer_redo = 'Redo' %}
+  {% assign writer_heading = 'Heading' %}
+  {% assign writer_bold = 'Bold' %}
+  {% assign writer_italic = 'Italic' %}
+  {% assign writer_bullet_list = 'Bulleted list' %}
+  {% assign writer_numbered_list = 'Numbered list' %}
+  {% assign writer_quote = 'Quote' %}
+  {% assign writer_divider = 'Divider' %}
+  {% assign writer_code = 'Code block' %}
+  {% assign writer_link = 'Link' %}
+  {% assign writer_table = 'Table' %}
+  {% assign writer_image = 'Image' %}
+  {% assign writer_drop_image = 'Release to insert the image' %}
+  {% assign writer_media = 'Images in this Spark' %}
+  {% assign writer_media_hint = 'Drag, paste, or use the image button' %}
+  {% assign writer_char_unit = 'characters' %}
 {% else %}
   {% assign writer_eyebrow = 'SPARK · 原位写作' %}
   {% assign writer_new_heading = '写一条新的 Spark' %}
@@ -91,6 +109,24 @@
   {% assign writer_translate_note = '可稍后使用自己的 API Key 生成英文阅读镜像；不会阻塞中文发布。' %}
   {% assign writer_close = '关闭写作区' %}
   {% assign writer_idle = '直接开始写，修改会加密保存在这台设备中。' %}
+  {% assign writer_format_toolbar = '写作工具' %}
+  {% assign writer_undo = '撤销' %}
+  {% assign writer_redo = '重做' %}
+  {% assign writer_heading = '标题' %}
+  {% assign writer_bold = '加粗' %}
+  {% assign writer_italic = '斜体' %}
+  {% assign writer_bullet_list = '无序列表' %}
+  {% assign writer_numbered_list = '有序列表' %}
+  {% assign writer_quote = '引用' %}
+  {% assign writer_divider = '分割线' %}
+  {% assign writer_code = '代码块' %}
+  {% assign writer_link = '链接' %}
+  {% assign writer_table = '表格' %}
+  {% assign writer_image = '图片' %}
+  {% assign writer_drop_image = '松手插入图片' %}
+  {% assign writer_media = '这条 Spark 的图片' %}
+  {% assign writer_media_hint = '可拖入、粘贴，或点击图片按钮' %}
+  {% assign writer_char_unit = '字' %}
 {% endif %}
 
 <section
@@ -186,16 +222,85 @@
       data-writer-field="summary"
       data-writer-language="zh"
     >
-    <label class="sr-only" for="site-spark-writer-body-zh">{{ writer_body_zh }}</label>
-    <textarea
-      id="site-spark-writer-body-zh"
-      class="site-spark-writer__body"
-      rows="12"
-      placeholder="{{ writer_body_zh_placeholder }}"
-      spellcheck="true"
-      data-writer-field="body"
-      data-writer-language="zh"
-    ></textarea>
+    <div class="site-spark-writer__editor" data-spark-editor="zh">
+      <div class="site-spark-writer__formatbar" role="toolbar" aria-label="{{ writer_format_toolbar }}">
+        <button type="button" data-spark-command="undo" title="{{ writer_undo }}" aria-label="{{ writer_undo }}">
+          <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="redo" title="{{ writer_redo }}" aria-label="{{ writer_redo }}">
+          <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+        </button>
+        <span class="site-spark-writer__format-separator" aria-hidden="true"></span>
+        <button type="button" data-spark-command="heading" title="{{ writer_heading }}" aria-label="{{ writer_heading }}"><strong>H</strong></button>
+        <button type="button" data-spark-command="bold" title="{{ writer_bold }}" aria-label="{{ writer_bold }}"><strong>B</strong></button>
+        <button type="button" data-spark-command="italic" title="{{ writer_italic }}" aria-label="{{ writer_italic }}"><em>I</em></button>
+        <button type="button" data-spark-command="bullet-list" title="{{ writer_bullet_list }}" aria-label="{{ writer_bullet_list }}">
+          <i class="fa-solid fa-list-ul" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="numbered-list" title="{{ writer_numbered_list }}" aria-label="{{ writer_numbered_list }}">
+          <i class="fa-solid fa-list-ol" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="quote" title="{{ writer_quote }}" aria-label="{{ writer_quote }}">
+          <i class="fa-solid fa-quote-left" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="divider" title="{{ writer_divider }}" aria-label="{{ writer_divider }}">
+          <i class="fa-solid fa-minus" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="code" title="{{ writer_code }}" aria-label="{{ writer_code }}">
+          <i class="fa-solid fa-code" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="link" title="{{ writer_link }}" aria-label="{{ writer_link }}">
+          <i class="fa-solid fa-link" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="table" title="{{ writer_table }}" aria-label="{{ writer_table }}">
+          <i class="fa-solid fa-table-cells" aria-hidden="true"></i>
+        </button>
+        <span class="site-spark-writer__format-separator" aria-hidden="true"></span>
+        <button
+          class="site-spark-writer__image-command"
+          type="button"
+          data-spark-command="image"
+          title="{{ writer_image }}"
+          aria-label="{{ writer_image }}"
+        >
+          <i class="fa-regular fa-image" aria-hidden="true"></i><span>{{ writer_image }}</span>
+        </button>
+        <input
+          class="site-spark-writer__image-input"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          multiple
+          data-spark-image-input="zh"
+          tabindex="-1"
+          aria-hidden="true"
+        >
+      </div>
+      <div class="site-spark-writer__dropzone" data-spark-dropzone="zh">
+        <label class="sr-only" for="site-spark-writer-body-zh">{{ writer_body_zh }}</label>
+        <textarea
+          id="site-spark-writer-body-zh"
+          class="site-spark-writer__body"
+          rows="12"
+          placeholder="{{ writer_body_zh_placeholder }}"
+          spellcheck="true"
+          data-writer-field="body"
+          data-writer-language="zh"
+        ></textarea>
+        <div class="site-spark-writer__drop-overlay" data-spark-drop-overlay="zh" aria-hidden="true">
+          <i class="fa-regular fa-image" aria-hidden="true"></i>
+          <strong>{{ writer_drop_image }}</strong>
+        </div>
+      </div>
+      <section class="site-spark-writer__media" data-spark-media-section="zh" aria-label="{{ writer_media }}" hidden>
+        <header>
+          <strong>{{ writer_media }}</strong><span data-spark-media-total="zh"></span>
+        </header>
+        <div class="site-spark-writer__media-list" data-spark-media-list="zh"></div>
+      </section>
+      <div class="site-spark-writer__editor-meta">
+        <span><strong data-spark-character-count="zh">0</strong> {{ writer_char_unit }}</span><span>{{ writer_media_hint }}</span>
+      </div>
+    </div>
   </div>
 
   <div class="site-spark-writer__translation">
@@ -236,16 +341,85 @@
       data-writer-field="summary"
       data-writer-language="en"
     >
-    <label class="sr-only" for="site-spark-writer-body-en">{{ writer_body_en }}</label>
-    <textarea
-      id="site-spark-writer-body-en"
-      class="site-spark-writer__body"
-      rows="12"
-      placeholder="{{ writer_body_en_placeholder }}"
-      spellcheck="true"
-      data-writer-field="body"
-      data-writer-language="en"
-    ></textarea>
+    <div class="site-spark-writer__editor" data-spark-editor="en">
+      <div class="site-spark-writer__formatbar" role="toolbar" aria-label="{{ writer_format_toolbar }}">
+        <button type="button" data-spark-command="undo" title="{{ writer_undo }}" aria-label="{{ writer_undo }}">
+          <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="redo" title="{{ writer_redo }}" aria-label="{{ writer_redo }}">
+          <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+        </button>
+        <span class="site-spark-writer__format-separator" aria-hidden="true"></span>
+        <button type="button" data-spark-command="heading" title="{{ writer_heading }}" aria-label="{{ writer_heading }}"><strong>H</strong></button>
+        <button type="button" data-spark-command="bold" title="{{ writer_bold }}" aria-label="{{ writer_bold }}"><strong>B</strong></button>
+        <button type="button" data-spark-command="italic" title="{{ writer_italic }}" aria-label="{{ writer_italic }}"><em>I</em></button>
+        <button type="button" data-spark-command="bullet-list" title="{{ writer_bullet_list }}" aria-label="{{ writer_bullet_list }}">
+          <i class="fa-solid fa-list-ul" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="numbered-list" title="{{ writer_numbered_list }}" aria-label="{{ writer_numbered_list }}">
+          <i class="fa-solid fa-list-ol" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="quote" title="{{ writer_quote }}" aria-label="{{ writer_quote }}">
+          <i class="fa-solid fa-quote-left" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="divider" title="{{ writer_divider }}" aria-label="{{ writer_divider }}">
+          <i class="fa-solid fa-minus" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="code" title="{{ writer_code }}" aria-label="{{ writer_code }}">
+          <i class="fa-solid fa-code" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="link" title="{{ writer_link }}" aria-label="{{ writer_link }}">
+          <i class="fa-solid fa-link" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-spark-command="table" title="{{ writer_table }}" aria-label="{{ writer_table }}">
+          <i class="fa-solid fa-table-cells" aria-hidden="true"></i>
+        </button>
+        <span class="site-spark-writer__format-separator" aria-hidden="true"></span>
+        <button
+          class="site-spark-writer__image-command"
+          type="button"
+          data-spark-command="image"
+          title="{{ writer_image }}"
+          aria-label="{{ writer_image }}"
+        >
+          <i class="fa-regular fa-image" aria-hidden="true"></i><span>{{ writer_image }}</span>
+        </button>
+        <input
+          class="site-spark-writer__image-input"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          multiple
+          data-spark-image-input="en"
+          tabindex="-1"
+          aria-hidden="true"
+        >
+      </div>
+      <div class="site-spark-writer__dropzone" data-spark-dropzone="en">
+        <label class="sr-only" for="site-spark-writer-body-en">{{ writer_body_en }}</label>
+        <textarea
+          id="site-spark-writer-body-en"
+          class="site-spark-writer__body"
+          rows="12"
+          placeholder="{{ writer_body_en_placeholder }}"
+          spellcheck="true"
+          data-writer-field="body"
+          data-writer-language="en"
+        ></textarea>
+        <div class="site-spark-writer__drop-overlay" data-spark-drop-overlay="en" aria-hidden="true">
+          <i class="fa-regular fa-image" aria-hidden="true"></i>
+          <strong>{{ writer_drop_image }}</strong>
+        </div>
+      </div>
+      <section class="site-spark-writer__media" data-spark-media-section="en" aria-label="{{ writer_media }}" hidden>
+        <header>
+          <strong>{{ writer_media }}</strong><span data-spark-media-total="en"></span>
+        </header>
+        <div class="site-spark-writer__media-list" data-spark-media-list="en"></div>
+      </section>
+      <div class="site-spark-writer__editor-meta">
+        <span><strong data-spark-character-count="en">0</strong> {{ writer_char_unit }}</span><span>{{ writer_media_hint }}</span>
+      </div>
+    </div>
   </div>
 
   <details class="site-spark-writer__settings">

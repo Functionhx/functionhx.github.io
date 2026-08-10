@@ -70,6 +70,16 @@
         vaultNotConfigured: "Spark Vault is not configured yet. This draft remains encrypted on this device only.",
         vaultUnlocked: "Spark Vault unlocked for this tab only.",
         viewCommit: "View the public commit on GitHub →",
+        imageAdded: (count) => `${count} image${count === 1 ? "" : "s"} inserted at the cursor.`,
+        imageFailed: "The image could not be inserted.",
+        imageInvalid: "Use JPEG, PNG, WebP, or GIF images only.",
+        imageLimit: "A Spark can contain up to 8 images and 5 MB of optimized image data.",
+        imageProcessing: "Optimizing the image locally…",
+        imageRemove: "Remove this image from both language drafts?",
+        imageUploadSaving: (count) => `Saving ${count} image${count === 1 ? "" : "s"} with this Spark…`,
+        mediaCount: (count, size) => `${count} image${count === 1 ? "" : "s"} · ${size}`,
+        removeImage: "Remove image",
+        locateImage: "Locate image in the draft",
       }
     : {
         authFailed: "GitHub 登录失败。",
@@ -117,12 +127,29 @@
         vaultNotConfigured: "Spark 私密库尚未配置；当前草稿只会加密保存在这台设备中。",
         vaultUnlocked: "Spark 私密库已解锁；根密钥只保留在当前标签页内存中。",
         viewCommit: "在 GitHub 查看公开 Commit →",
+        imageAdded: (count) => `已在光标处插入 ${count} 张图片。`,
+        imageFailed: "无法插入这张图片。",
+        imageInvalid: "只支持 JPEG、PNG、WebP 或 GIF 图片。",
+        imageLimit: "每条 Spark 最多 8 张图片，优化后的图片总量不超过 5 MB。",
+        imageProcessing: "正在本地优化图片…",
+        imageRemove: "从中英文草稿中移除这张图片？",
+        imageUploadSaving: (count) => `正在随 Spark 安全保存 ${count} 张图片…`,
+        mediaCount: (count, size) => `${count} 张 · ${size}`,
+        removeImage: "移除图片",
+        locateImage: "在正文中定位图片",
       };
 
   const fields = {
     zh: {
       body: document.getElementById("site-spark-writer-body-zh"),
+      characterCount: root.querySelector('[data-spark-character-count="zh"]'),
       complete: document.getElementById("site-spark-writer-complete-zh"),
+      dropzone: root.querySelector('[data-spark-dropzone="zh"]'),
+      editor: root.querySelector('[data-spark-editor="zh"]'),
+      imageInput: root.querySelector('[data-spark-image-input="zh"]'),
+      mediaList: root.querySelector('[data-spark-media-list="zh"]'),
+      mediaSection: root.querySelector('[data-spark-media-section="zh"]'),
+      mediaTotal: root.querySelector('[data-spark-media-total="zh"]'),
       panel: document.getElementById("site-spark-writer-panel-zh"),
       summary: document.getElementById("site-spark-writer-summary-zh"),
       tab: document.getElementById("site-spark-writer-tab-zh"),
@@ -130,7 +157,14 @@
     },
     en: {
       body: document.getElementById("site-spark-writer-body-en"),
+      characterCount: root.querySelector('[data-spark-character-count="en"]'),
       complete: document.getElementById("site-spark-writer-complete-en"),
+      dropzone: root.querySelector('[data-spark-dropzone="en"]'),
+      editor: root.querySelector('[data-spark-editor="en"]'),
+      imageInput: root.querySelector('[data-spark-image-input="en"]'),
+      mediaList: root.querySelector('[data-spark-media-list="en"]'),
+      mediaSection: root.querySelector('[data-spark-media-section="en"]'),
+      mediaTotal: root.querySelector('[data-spark-media-total="en"]'),
       panel: document.getElementById("site-spark-writer-panel-en"),
       summary: document.getElementById("site-spark-writer-summary-en"),
       tab: document.getElementById("site-spark-writer-tab-en"),
@@ -168,6 +202,16 @@
     .map(([, element]) => element);
   if (!fields.zh.body || !fields.en.body || requiredElements.some((element) => element === null)) return;
 
+  const allowedImageTypes = new Map([
+    ["image/gif", "gif"],
+    ["image/jpeg", "jpg"],
+    ["image/png", "png"],
+    ["image/webp", "webp"],
+  ]);
+  const maximumImageCount = 8;
+  const maximumImageBytes = 1.5 * 1024 * 1024;
+  const maximumMediaBytes = 5 * 1024 * 1024;
+
   let activeTrigger = toggle;
   let busy = false;
   let cachedPrivateDrafts = [];
@@ -181,6 +225,7 @@
   let draftTimer = 0;
   let draftWritePromise = Promise.resolve();
   let initialSnapshot = "";
+  let media = [];
   let originalValues = null;
   let originals = { zh: null, en: null };
   let privateDraftRefreshVersion = 0;
@@ -282,6 +327,10 @@
       fields[language].title.disabled = nextBusy;
       fields[language].summary.disabled = nextBusy;
       fields[language].body.disabled = nextBusy;
+      fields[language].imageInput.disabled = nextBusy;
+      for (const button of fields[language].editor.querySelectorAll("[data-spark-command], .site-spark-writer__media-remove")) {
+        button.disabled = nextBusy;
+      }
     }
     for (const control of [elements.announce, elements.comments, elements.date, elements.kind, elements.message, elements.slug]) {
       control.disabled = nextBusy;
@@ -298,6 +347,360 @@
   function autoSize(textarea) {
     textarea.style.height = "auto";
     textarea.style.height = `${Math.max(textarea.scrollHeight, 304)}px`;
+  }
+
+  function bytesToBase64(bytes) {
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+    }
+    return window.btoa(binary);
+  }
+
+  function base64ByteLength(value) {
+    const normalized = String(value || "").replace(/\s/g, "");
+    if (!normalized) return 0;
+    const padding = normalized.endsWith("==") ? 2 : normalized.endsWith("=") ? 1 : 0;
+    return Math.max(0, Math.floor((normalized.length * 3) / 4) - padding);
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  }
+
+  function normalizedMedia(input) {
+    if (!Array.isArray(input)) return [];
+    const seen = new Set();
+    const normalized = [];
+    for (const candidate of input.slice(0, maximumImageCount)) {
+      const id = String(candidate?.id || "").toLowerCase();
+      const type = String(candidate?.type || "").toLowerCase();
+      const data = String(candidate?.data || "").replace(/\s/g, "");
+      if (!/^[a-f0-9]{16}$/.test(id) || seen.has(id) || !allowedImageTypes.has(type) || !/^[a-z0-9+/]*={0,2}$/i.test(data)) continue;
+      const size = base64ByteLength(data);
+      if (!size || size > maximumImageBytes) continue;
+      seen.add(id);
+      normalized.push({
+        data,
+        height: Math.max(0, Number(candidate.height) || 0),
+        id,
+        name: String(candidate.name || "image").slice(0, 120),
+        size,
+        type,
+        width: Math.max(0, Number(candidate.width) || 0),
+      });
+    }
+    return normalized;
+  }
+
+  function mediaSize() {
+    return media.reduce((total, item) => total + item.size, 0);
+  }
+
+  function mediaSource(item) {
+    return `data:${item.type};base64,${item.data}`;
+  }
+
+  function mediaMarker(item) {
+    const alt =
+      String(item.name || "image")
+        .replace(/\.[^.]+$/, "")
+        .replace(/[\[\]]/g, "")
+        .trim() || "image";
+    return `![${alt}](spark-media://${item.id})`;
+  }
+
+  function characterCount(value) {
+    return Array.from(
+      String(value || "")
+        .replace(/!\[[^\]]*\]\(spark-media:\/\/[^)]+\)/g, "")
+        .replace(/\s/g, "")
+    ).length;
+  }
+
+  function updateEditorMeta() {
+    for (const language of ["zh", "en"]) fields[language].characterCount.textContent = String(characterCount(fields[language].body.value));
+  }
+
+  function locateMedia(language, item) {
+    const textarea = fields[language].body;
+    const token = `spark-media://${item.id}`;
+    const index = textarea.value.indexOf(token);
+    if (index < 0) {
+      insertText(textarea, mediaMarker(item), { block: true });
+      return;
+    }
+    textarea.focus();
+    textarea.setSelectionRange(index, index + token.length);
+    const lineHeight = Number.parseFloat(window.getComputedStyle(textarea).lineHeight) || 30;
+    const before = textarea.value.slice(0, index);
+    textarea.scrollTop = Math.max(0, before.split("\n").length * lineHeight - textarea.clientHeight / 2);
+  }
+
+  function removeMedia(item) {
+    if (!window.confirm(strings.imageRemove)) return;
+    const markerPattern = new RegExp(`!?\\[[^\\]]*\\]\\(spark-media:\\/\\/${item.id}\\)`, "g");
+    media = media.filter((candidate) => candidate.id !== item.id);
+    for (const language of ["zh", "en"]) {
+      const textarea = fields[language].body;
+      const nextValue = textarea.value.replace(markerPattern, "").replace(/\n{3,}/g, "\n\n");
+      if (nextValue !== textarea.value) textarea.value = nextValue;
+      autoSize(textarea);
+    }
+    renderMedia();
+    handleChange();
+  }
+
+  function renderMedia() {
+    const countLabel = strings.mediaCount(media.length, formatBytes(mediaSize()));
+    for (const language of ["zh", "en"]) {
+      fields[language].mediaList.replaceChildren();
+      fields[language].mediaSection.hidden = media.length === 0;
+      fields[language].mediaTotal.textContent = countLabel;
+      for (const item of media) {
+        const figure = document.createElement("figure");
+        figure.className = "site-spark-writer__media-card";
+
+        const locate = document.createElement("button");
+        locate.type = "button";
+        locate.title = strings.locateImage;
+        locate.setAttribute("aria-label", `${strings.locateImage}: ${item.name}`);
+        locate.addEventListener("click", () => locateMedia(language, item));
+        const image = document.createElement("img");
+        image.alt = "";
+        image.decoding = "async";
+        image.loading = "lazy";
+        image.src = mediaSource(item);
+        locate.append(image);
+
+        const caption = document.createElement("figcaption");
+        const name = document.createElement("strong");
+        name.textContent = item.name;
+        const size = document.createElement("span");
+        size.textContent = formatBytes(item.size);
+        caption.append(name, size);
+
+        const remove = document.createElement("button");
+        remove.className = "site-spark-writer__media-remove";
+        remove.type = "button";
+        remove.title = strings.removeImage;
+        remove.setAttribute("aria-label", `${strings.removeImage}: ${item.name}`);
+        remove.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+        remove.addEventListener("click", () => removeMedia(item));
+        remove.disabled = busy;
+
+        figure.append(locate, caption, remove);
+        fields[language].mediaList.append(figure);
+      }
+    }
+    updateEditorMeta();
+  }
+
+  function randomMediaId() {
+    const bytes = window.crypto.getRandomValues(new Uint8Array(8));
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
+  function canvasBlob(canvas, type, quality) {
+    return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+  }
+
+  async function decodeImage(file) {
+    if (typeof window.createImageBitmap === "function") {
+      const bitmap = await window.createImageBitmap(file);
+      return { close: () => bitmap.close(), height: bitmap.height, source: bitmap, width: bitmap.width };
+    }
+    const url = URL.createObjectURL(file);
+    try {
+      const image = new Image();
+      image.decoding = "async";
+      image.src = url;
+      await image.decode();
+      return { close: () => URL.revokeObjectURL(url), height: image.naturalHeight, source: image, width: image.naturalWidth };
+    } catch (error) {
+      URL.revokeObjectURL(url);
+      throw error;
+    }
+  }
+
+  async function optimizeImage(file) {
+    if (!allowedImageTypes.has(file.type)) {
+      const error = new Error(strings.imageInvalid);
+      error.code = "invalid_image";
+      throw error;
+    }
+    if (file.type === "image/gif" || file.size <= maximumImageBytes) {
+      if (file.size > maximumImageBytes) {
+        const error = new Error(strings.imageLimit);
+        error.code = "image_limit";
+        throw error;
+      }
+      return { blob: file, height: 0, type: file.type, width: 0 };
+    }
+
+    const decoded = await decodeImage(file);
+    try {
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d", { alpha: true });
+      if (!context) throw new Error(strings.imageFailed);
+      const maximumDimension = 2048;
+      let scale = Math.min(1, maximumDimension / Math.max(decoded.width, decoded.height));
+      for (const quality of [0.88, 0.78, 0.68, 0.58]) {
+        canvas.width = Math.max(1, Math.round(decoded.width * scale));
+        canvas.height = Math.max(1, Math.round(decoded.height * scale));
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(decoded.source, 0, 0, canvas.width, canvas.height);
+        const blob = await canvasBlob(canvas, "image/webp", quality);
+        if (blob && blob.size <= maximumImageBytes) {
+          return { blob, height: canvas.height, type: "image/webp", width: canvas.width };
+        }
+        scale *= 0.82;
+      }
+      const error = new Error(strings.imageLimit);
+      error.code = "image_limit";
+      throw error;
+    } finally {
+      decoded.close();
+    }
+  }
+
+  async function fileToMedia(file) {
+    const optimized = await optimizeImage(file);
+    const bytes = new Uint8Array(await optimized.blob.arrayBuffer());
+    return {
+      data: bytesToBase64(bytes),
+      height: optimized.height,
+      id: randomMediaId(),
+      name:
+        String(file.name || "image")
+          .replace(/[\u0000-\u001f]/g, "")
+          .slice(0, 120) || "image",
+      size: bytes.length,
+      type: optimized.type,
+      width: optimized.width,
+    };
+  }
+
+  function insertText(textarea, text, options = {}) {
+    const start = textarea.selectionStart ?? textarea.value.length;
+    const end = textarea.selectionEnd ?? start;
+    const before = textarea.value.slice(0, start);
+    const after = textarea.value.slice(end);
+    const prefix = options.block && before && !before.endsWith("\n\n") ? (before.endsWith("\n") ? "\n" : "\n\n") : "";
+    const suffix = options.block && after && !after.startsWith("\n\n") ? (after.startsWith("\n") ? "\n" : "\n\n") : "";
+    textarea.setRangeText(`${prefix}${text}${suffix}`, start, end, "end");
+    textarea.focus();
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function wrapSelection(textarea, before, after = before, placeholder = "") {
+    const start = textarea.selectionStart ?? 0;
+    const end = textarea.selectionEnd ?? start;
+    const selected = textarea.value.slice(start, end) || placeholder;
+    textarea.setRangeText(`${before}${selected}${after}`, start, end, "select");
+    textarea.setSelectionRange(start + before.length, start + before.length + selected.length);
+    textarea.focus();
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function prefixSelectedLines(textarea, prefix) {
+    const start = textarea.selectionStart ?? 0;
+    const end = textarea.selectionEnd ?? start;
+    const lineStart = textarea.value.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
+    const nextBreak = textarea.value.indexOf("\n", end);
+    const lineEnd = nextBreak < 0 ? textarea.value.length : nextBreak;
+    const selected = textarea.value.slice(lineStart, lineEnd);
+    const lines = selected.split("\n");
+    const isNumberedList = prefix === "1. ";
+    const hasPrefix = (line) => (isNumberedList ? /^\d+\.\s/.test(line) : line.startsWith(prefix));
+    const alreadyPrefixed = lines.every((line) => !line.trim() || hasPrefix(line));
+    const replacement = lines
+      .map((line, index) => {
+        if (!line.trim()) return line;
+        if (alreadyPrefixed) return isNumberedList ? line.replace(/^\d+\.\s/, "") : line.slice(prefix.length);
+        return isNumberedList ? `${index + 1}. ${line}` : `${prefix}${line}`;
+      })
+      .join("\n");
+    textarea.setRangeText(replacement, lineStart, lineEnd, "select");
+    textarea.focus();
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function runEditorCommand(language, command) {
+    const textarea = fields[language].body;
+    if (command === "image") {
+      fields[language].imageInput.click();
+      return;
+    }
+    if (command === "undo" || command === "redo") {
+      textarea.focus();
+      document.execCommand(command);
+      updateEditorMeta();
+      return;
+    }
+    if (command === "heading") prefixSelectedLines(textarea, "## ");
+    else if (command === "bold") wrapSelection(textarea, "**", "**", isEnglish ? "bold text" : "加粗文字");
+    else if (command === "italic") wrapSelection(textarea, "_", "_", isEnglish ? "italic text" : "斜体文字");
+    else if (command === "bullet-list") prefixSelectedLines(textarea, "- ");
+    else if (command === "numbered-list") prefixSelectedLines(textarea, "1. ");
+    else if (command === "quote") prefixSelectedLines(textarea, "> ");
+    else if (command === "divider") insertText(textarea, "---", { block: true });
+    else if (command === "code") {
+      const selected = textarea.value.slice(textarea.selectionStart ?? 0, textarea.selectionEnd ?? 0);
+      if (selected.includes("\n")) wrapSelection(textarea, "```\n", "\n```", selected);
+      else wrapSelection(textarea, "`", "`", isEnglish ? "code" : "代码");
+    } else if (command === "link") {
+      const start = textarea.selectionStart ?? 0;
+      const selected = textarea.value.slice(start, textarea.selectionEnd ?? start) || (isEnglish ? "link text" : "链接文字");
+      const inserted = `[${selected}](https://)`;
+      textarea.setRangeText(inserted, start, textarea.selectionEnd ?? start, "end");
+      textarea.focus();
+      const urlStart = start + selected.length + 3;
+      textarea.setSelectionRange(urlStart, urlStart + 8);
+      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    } else if (command === "table") {
+      insertText(textarea, `| ${isEnglish ? "Column 1" : "列 1"} | ${isEnglish ? "Column 2" : "列 2"} |\n| --- | --- |\n|  |  |`, { block: true });
+    }
+  }
+
+  async function addImages(language, files) {
+    const candidates = Array.from(files || []).filter((file) => file?.type?.startsWith("image/"));
+    if (!candidates.length) {
+      setStatus(strings.imageInvalid, "error");
+      return;
+    }
+    if (media.length + candidates.length > maximumImageCount) {
+      setStatus(strings.imageLimit, "error");
+      return;
+    }
+    setStatus(strings.imageProcessing);
+    let inserted = 0;
+    try {
+      for (const file of candidates) {
+        const item = await fileToMedia(file);
+        if (mediaSize() + item.size > maximumMediaBytes) {
+          const error = new Error(strings.imageLimit);
+          error.code = "image_limit";
+          throw error;
+        }
+        media.push(item);
+        insertText(fields[language].body, mediaMarker(item), { block: true });
+        inserted += 1;
+      }
+      renderMedia();
+      setStatus(strings.imageAdded(inserted), "success");
+    } catch (error) {
+      renderMedia();
+      setStatus(
+        error.code === "invalid_image" || error.code === "image_limit" ? error.message : `${strings.imageFailed} ${error.message || ""}`.trim(),
+        "error"
+      );
+    } finally {
+      fields[language].imageInput.value = "";
+    }
   }
 
   function selectLanguage(language, focus = false) {
@@ -322,6 +725,7 @@
         title: fields.en.title.value,
       },
       kind: elements.kind.value,
+      media: media.map((item) => ({ ...item })),
       message: elements.message.value,
       published: elements.published.checked,
       slug: elements.slug.value,
@@ -334,6 +738,7 @@
   }
 
   function writeValues(values) {
+    media = normalizedMedia(values.media);
     for (const language of ["zh", "en"]) {
       const localized = values[language] || {};
       fields[language].title.value = localized.title || "";
@@ -349,6 +754,7 @@
     elements.published.checked = values.published === true;
     elements.message.value = values.message || "";
     updateCompletion();
+    renderMedia();
   }
 
   function snapshot() {
@@ -369,6 +775,7 @@
     for (const language of ["zh", "en"]) {
       fields[language].complete.dataset.complete = String(languageComplete(language));
     }
+    updateEditorMeta();
   }
 
   function draftStorageId(key) {
@@ -1025,7 +1432,7 @@
     try {
       const access = desiredPublished ? await ensureVaultSession() : await ensureVaultUnlocked();
       if (!access || access.decoy) return;
-      setStatus(strings.saving);
+      setStatus(media.length ? strings.imageUploadSaving(media.length) : strings.saving);
       elements.result.hidden = true;
       const payload = {
         expectedSha: currentVaultSha,
@@ -1173,6 +1580,47 @@
   elements.translate.addEventListener("click", translateChineseDraft);
   fields.zh.tab.addEventListener("click", () => selectLanguage("zh", true));
   fields.en.tab.addEventListener("click", () => selectLanguage("en", true));
+
+  for (const language of ["zh", "en"]) {
+    fields[language].editor.addEventListener("click", (event) => {
+      const command = event.target.closest("[data-spark-command]")?.dataset.sparkCommand;
+      if (command && !busy) runEditorCommand(language, command);
+    });
+    fields[language].imageInput.addEventListener("change", () => addImages(language, fields[language].imageInput.files));
+    fields[language].body.addEventListener("paste", (event) => {
+      const files = Array.from(event.clipboardData?.items || [])
+        .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+        .map((item) => item.getAsFile())
+        .filter(Boolean);
+      if (!files.length) return;
+      event.preventDefault();
+      addImages(language, files);
+    });
+    fields[language].dropzone.addEventListener("dragenter", (event) => {
+      if (!Array.from(event.dataTransfer?.types || []).includes("Files")) return;
+      event.preventDefault();
+      fields[language].dropzone.dataset.dragging = "true";
+    });
+    fields[language].dropzone.addEventListener("dragover", (event) => {
+      if (!Array.from(event.dataTransfer?.types || []).includes("Files")) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+      fields[language].dropzone.dataset.dragging = "true";
+    });
+    fields[language].dropzone.addEventListener("dragleave", (event) => {
+      if (event.relatedTarget && fields[language].dropzone.contains(event.relatedTarget)) return;
+      delete fields[language].dropzone.dataset.dragging;
+    });
+    fields[language].dropzone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      delete fields[language].dropzone.dataset.dragging;
+      addImages(language, Array.from(event.dataTransfer?.files || []));
+    });
+  }
+
+  window.addEventListener("dragend", () => {
+    for (const language of ["zh", "en"]) delete fields[language].dropzone.dataset.dragging;
+  });
 
   document.addEventListener("click", (event) => {
     const authorTrigger = event.target.closest("[data-author-action]");
