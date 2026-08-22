@@ -5,6 +5,38 @@ layout: default
 {% assign tags = page.tags | join: '' %}
 {% assign categories = page.categories | join: '' %}
 {% assign url_beginning = page.url | slice: 0, 6 %}
+{% assign post_text = content | strip_html | strip_newlines %}
+{% if page.lang == 'en' %}
+  {% assign reading_time = post_text | number_of_words | divided_by: 220 | plus: 1 %}
+  {% assign back_label = 'All writing' %}
+  {% assign article_label = 'Article' %}
+  {% assign reading_label = 'min read' %}
+  {% assign back_path = '/en/blog/' %}
+  {% if page.kind == 'note' %}
+    {% assign back_label = 'All notes' %}
+    {% assign article_label = 'Note' %}
+    {% assign back_path = '/en/notes/' %}
+  {% elsif page.kind == 'log' %}
+    {% assign back_label = 'All logs' %}
+    {% assign article_label = 'Log' %}
+    {% assign back_path = '/en/logs/' %}
+  {% endif %}
+{% else %}
+  {% assign reading_time = post_text | size | divided_by: 500 | plus: 1 %}
+  {% assign back_label = '全部文章' %}
+  {% assign article_label = '文章' %}
+  {% assign reading_label = '分钟阅读' %}
+  {% assign back_path = '/blog/' %}
+  {% if page.kind == 'note' %}
+    {% assign back_label = '全部笔记' %}
+    {% assign article_label = '笔记' %}
+    {% assign back_path = '/notes/' %}
+  {% elsif page.kind == 'log' %}
+    {% assign back_label = '全部日志' %}
+    {% assign article_label = '日志' %}
+    {% assign back_path = '/logs/' %}
+  {% endif %}
+{% endif %}
 
 {% if page._styles %}
   <!-- Page/Post style -->
@@ -13,62 +45,81 @@ layout: default
   </style>
 {% endif %}
 
-<div class="post">
+<div class="post post--article">
+  <div class="post-reading-progress" aria-hidden="true"></div>
   {% if page.lang != 'en' %}
     {% if page.kind == 'note' or page.kind == 'log' %}
       {% include spark-writer.liquid mode='edit' %}
     {% endif %}
   {% endif %}
-  <header class="post-header">
-    <h1 class="post-title">{{ page.title }}</h1>
-    <p class="post-meta">
-      {% if page.lang == 'zh' %}
-        发布于 {{ page.date | date: '%Y-%m-%d' }}
-        {% if page.author %}，作者 {{ page.author }}{% endif %}
-        {% assign last_date = page.last_modified_at | default: page.last_updated %}
-        {% if last_date %}，更新于 {{ last_date | date: '%Y-%m-%d' }}{% endif %}
-      {% else %}
-        Created on {{ page.date | date: '%B %d, %Y' }}
-        {% if page.author %}by {{ page.author }}{% endif %}
-        {% assign last_date = page.last_modified_at | default: page.last_updated %}
-        {% if last_date %}, last updated on {{ last_date | date: '%B %d, %Y' }}{% endif %}
-      {% endif %}
-      {% if page.meta %}• {{ page.meta }}{% endif %}
-    </p>
-    <p class="post-tags">
-      {% if url_beginning == '/blog/' %}
-        <a href="{{ year | prepend: '/blog/' | relative_url }}"> <i class="fa-solid fa-calendar fa-sm"></i> {{ year }} </a>
-      {% else %}
-        <i class="fa-solid fa-calendar fa-sm"></i> {{ year }}
-      {% endif %}
-      {% if tags != '' %}
-        &nbsp; &middot; &nbsp;
-        {% for tag in page.tags %}
-          {% if url_beginning == '/blog/' %}
-            <a href="{{ tag | slugify | prepend: '/blog/tag/' | relative_url }}"> <i class="fa-solid fa-hashtag fa-sm"></i> {{ tag }}</a>
-          {% else %}
-            <i class="fa-solid fa-hashtag fa-sm"></i> {{ tag }}
-          {% endif %}
-          {% unless forloop.last %}
-            &nbsp;
-          {% endunless %}
-        {% endfor %}
-      {% endif %}
+  <header class="post-header post-hero">
+    <a class="post-back-link" href="{{ back_path | relative_url }}">
+      <span aria-hidden="true">←</span>
+      {{ back_label }}
+    </a>
 
-      {% if categories != '' %}
-        &nbsp; &middot; &nbsp;
-        {% for category in page.categories %}
-          {% if url_beginning == '/blog/' %}
-            <a href="{{ category | slugify | prepend: '/blog/category/' | relative_url }}"> <i class="fa-solid fa-tag fa-sm"></i> {{ category -}}</a>
-          {% else %}
-            <i class="fa-solid fa-tag fa-sm"></i> {{ category }}
+    <div class="post-hero__layout">
+      <div class="post-trajectory" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="post-hero__content">
+        <p class="post-kicker">
+          <span>{{ article_label }}</span>
+          {% if categories != '' %}
+            <span aria-hidden="true">/</span>
+            <span>{{ page.categories | first }}</span>
           {% endif %}
-          {% unless forloop.last %}
-            &nbsp;
-          {% endunless %}
-        {% endfor %}
-      {% endif %}
-    </p>
+        </p>
+        <h1 class="post-title">{{ page.title }}</h1>
+        {% if page.description %}
+          <p class="post-description">{{ page.description }}</p>
+        {% endif %}
+
+        <div class="post-meta" aria-label="{% if page.lang == 'en' %}Article details{% else %}文章信息{% endif %}">
+          <span>
+            {% if page.lang == 'zh' %}
+              发布于 <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: '%Y-%m-%d' }}</time>
+            {% else %}
+              Created on <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: '%B %d, %Y' }}</time>
+            {% endif %}
+          </span>
+          {% if page.author %}
+            <span>{{ page.author }}</span>
+          {% endif %}
+          <span>
+            {{- reading_time }}
+            {{ reading_label -}}
+          </span>
+          {% assign last_date = page.last_modified_at | default: page.last_updated %}
+          {% if last_date %}
+            <span>
+              {% if page.lang == 'zh' %}
+                更新于 <time datetime="{{ last_date | date_to_xmlschema }}">{{ last_date | date: '%Y-%m-%d' }}</time>
+              {% else %}
+                Updated <time datetime="{{ last_date | date_to_xmlschema }}">{{ last_date | date: '%B %d, %Y' }}</time>
+              {% endif %}
+            </span>
+          {% endif %}
+          {% if page.meta -%}
+            <span>{{ page.meta }}</span>
+          {%- endif %}
+        </div>
+
+        {% if tags != '' %}
+          <nav class="post-tags" aria-label="{% if page.lang == 'en' %}Topics{% else %}文章主题{% endif %}">
+            {% for tag in page.tags %}
+              {% if url_beginning == '/blog/' %}
+                <a href="{{ tag | slugify | prepend: '/blog/tag/' | relative_url }}">#{{ tag }}</a>
+              {% else %}
+                <span>#{{ tag }}</span>
+              {% endif %}
+            {% endfor %}
+          </nav>
+        {% endif %}
+      </div>
+    </div>
   </header>
 
   <article class="post-content">
@@ -101,6 +152,16 @@ layout: default
       {% include related_posts.liquid %}
     {% endif %}
   {% endif %}
+
+  <footer class="post-footer-nav">
+    <p>
+      {% if page.lang == 'en' %}Continue exploring{% else %}继续浏览{% endif %}
+    </p>
+    <a href="{{ back_path | relative_url }}">
+      <span aria-hidden="true">←</span>
+      {{ back_label }}
+    </a>
+  </footer>
 
   {% if page.giscus_comments %}
     {% include giscus-comments.liquid %}

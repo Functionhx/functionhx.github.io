@@ -1,0 +1,492 @@
+.post--article {
+  --post-ink: var(--global-text-color);
+  --post-muted: var(--global-text-color-light);
+  --post-line: var(--global-divider-color);
+  --post-accent: var(--global-theme-color);
+  --post-surface: color-mix(in srgb, var(--global-text-color) 3%, var(--global-bg-color));
+  --post-accent-soft: color-mix(in srgb, var(--global-theme-color) 9%, var(--global-bg-color));
+  margin: 0 auto;
+  max-width: 68rem;
+  padding-bottom: clamp(3rem, 7vw, 6rem);
+}
+
+.post-reading-progress {
+  display: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  .post-reading-progress {
+    animation: post-reading-progress linear both;
+    animation-timeline: scroll(root block);
+    background: var(--post-accent);
+    display: block;
+    height: 0.18rem;
+    left: 0;
+    position: fixed;
+    right: 0;
+    top: 57px;
+    transform: scaleX(0);
+    transform-origin: left center;
+    z-index: 1029;
+  }
+}
+
+@keyframes post-reading-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.post-hero {
+  margin: 0 auto;
+  max-width: 59rem;
+  padding: clamp(1rem, 3vw, 2.5rem) 0 clamp(2.8rem, 7vw, 5.75rem);
+}
+
+.post-back-link {
+  align-items: center;
+  color: var(--post-muted);
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 600;
+  gap: 0.55rem;
+  letter-spacing: 0.025em;
+  margin-bottom: clamp(2.5rem, 7vw, 5.25rem);
+  text-decoration: none;
+}
+
+.post-back-link span {
+  color: var(--post-accent);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  transition: transform 160ms ease;
+}
+
+.post-back-link:hover,
+.post-back-link:focus-visible {
+  color: var(--post-accent);
+  text-decoration: none;
+}
+
+.post-back-link:hover span,
+.post-back-link:focus-visible span {
+  transform: translateX(-0.2rem);
+}
+
+.post-hero__layout {
+  display: grid;
+  gap: clamp(1.2rem, 3vw, 2.35rem);
+  grid-template-columns: 1rem minmax(0, 1fr);
+}
+
+.post-trajectory {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: 0.35rem 0 0.65rem;
+  position: relative;
+}
+
+.post-trajectory::before {
+  background: linear-gradient(to bottom, var(--post-accent), color-mix(in srgb, var(--post-accent) 18%, var(--post-line)));
+  content: "";
+  inset: 0.25rem auto;
+  position: absolute;
+  width: 1px;
+}
+
+.post-trajectory span {
+  background: var(--global-bg-color);
+  border: 1px solid var(--post-accent);
+  border-radius: 50%;
+  height: 0.52rem;
+  position: relative;
+  width: 0.52rem;
+  z-index: 1;
+}
+
+.post-trajectory span:first-child {
+  background: var(--post-accent);
+  box-shadow: 0 0 0 0.26rem var(--post-accent-soft);
+}
+
+.post-kicker {
+  align-items: center;
+  color: var(--post-accent);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.74rem;
+  font-weight: 700;
+  gap: 0.55rem;
+  letter-spacing: 0.13em;
+  margin: 0 0 1.15rem;
+  text-transform: uppercase;
+}
+
+.post--article .post-title {
+  color: var(--post-ink);
+  font-family: "Roboto Slab", "Iowan Old Style", "Songti SC", STSong, serif;
+  font-size: clamp(2.25rem, 5.7vw, 4.65rem);
+  font-weight: 500;
+  letter-spacing: -0.047em;
+  line-height: 1.11;
+  margin: 0;
+  max-width: 56rem;
+  text-wrap: balance;
+}
+
+.post--article .post-description {
+  color: var(--post-muted);
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  line-height: 1.72;
+  margin: clamp(1.4rem, 3vw, 2rem) 0 0;
+  max-width: 47rem;
+  text-wrap: pretty;
+}
+
+.post--article .post-meta {
+  align-items: center;
+  color: var(--post-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.74rem;
+  gap: 0.55rem 0;
+  line-height: 1.6;
+  margin-top: 1.6rem;
+}
+
+.post--article .post-meta > span {
+  color: inherit;
+}
+
+.post--article .post-meta > span:not(:last-child)::after {
+  color: color-mix(in srgb, var(--post-muted) 48%, transparent);
+  content: "·";
+  padding: 0 0.7rem;
+}
+
+.post--article .post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 1.15rem 0 0;
+  padding: 0;
+}
+
+.post--article .post-tags a,
+.post--article .post-tags span {
+  background: var(--post-surface);
+  border: 1px solid var(--post-line);
+  border-radius: 999px;
+  color: var(--post-muted);
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 0.42rem 0.68rem;
+  text-decoration: none;
+}
+
+.post--article .post-tags a:hover,
+.post--article .post-tags a:focus-visible {
+  background: var(--post-accent-soft);
+  border-color: color-mix(in srgb, var(--post-accent) 42%, var(--post-line));
+  color: var(--post-accent);
+  text-decoration: none;
+}
+
+.post--article .post-content,
+.post--article > .publications,
+.post--article > h2,
+.post--article > .related-posts,
+.post--article > #giscus_thread,
+.post-footer-nav {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 48rem;
+}
+
+.post--article #markdown-content {
+  color: var(--post-ink);
+  font-size: 1.075rem;
+  line-height: 1.86;
+}
+
+.post--article #markdown-content > :first-child {
+  margin-top: 0;
+}
+
+.post--article #markdown-content p {
+  margin-bottom: 1.4rem;
+  text-wrap: pretty;
+}
+
+.post--article #markdown-content h2,
+.post--article #markdown-content h3,
+.post--article #markdown-content h4 {
+  color: var(--post-ink);
+  font-family: "Roboto Slab", "Iowan Old Style", "Songti SC", STSong, serif;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.35;
+  position: relative;
+  scroll-margin-top: 5rem;
+}
+
+.post--article #markdown-content h2 {
+  font-size: clamp(1.65rem, 3vw, 2.15rem);
+  margin: clamp(3.5rem, 7vw, 5.25rem) 0 1.35rem;
+}
+
+.post--article #markdown-content h2::before {
+  background: var(--post-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 0.24rem var(--post-accent-soft);
+  content: "";
+  height: 0.42rem;
+  left: -1.65rem;
+  position: absolute;
+  top: 0.67em;
+  width: 0.42rem;
+}
+
+.post--article #markdown-content h3 {
+  font-size: clamp(1.3rem, 2.35vw, 1.58rem);
+  margin: 2.8rem 0 1rem;
+}
+
+.post--article #markdown-content h4 {
+  font-size: 1.12rem;
+  margin: 2.25rem 0 0.8rem;
+}
+
+.post--article #markdown-content ul,
+.post--article #markdown-content ol {
+  margin-bottom: 1.5rem;
+  padding-left: 1.45rem;
+}
+
+.post--article #markdown-content li {
+  margin-bottom: 0.45rem;
+  padding-left: 0.25rem;
+}
+
+.post--article #markdown-content li::marker {
+  color: var(--post-accent);
+}
+
+.post--article #markdown-content a {
+  text-decoration-color: color-mix(in srgb, var(--post-accent) 45%, transparent);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.19em;
+}
+
+.post--article #markdown-content a:hover,
+.post--article #markdown-content a:focus-visible {
+  text-decoration-color: var(--post-accent);
+}
+
+.post--article #markdown-content blockquote {
+  background: var(--post-accent-soft);
+  border: 0;
+  border-left: 0.22rem solid var(--post-accent);
+  border-radius: 0 0.65rem 0.65rem 0;
+  color: var(--post-ink);
+  font-size: 1.06rem;
+  line-height: 1.75;
+  margin: 2.25rem 0;
+  padding: 1.15rem 1.35rem;
+}
+
+.post--article #markdown-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.post--article #markdown-content :not(pre) > code {
+  background: var(--post-surface);
+  border: 1px solid var(--post-line);
+  border-radius: 0.28rem;
+  color: var(--post-ink);
+  font-size: 0.87em;
+  padding: 0.12em 0.34em;
+}
+
+.post--article #markdown-content figure.highlight,
+.post--article #markdown-content div.highlight {
+  border: 1px solid var(--post-line);
+  border-radius: 0.65rem;
+  margin: 1.85rem 0;
+  overflow: hidden;
+}
+
+.post--article #markdown-content figure.highlight pre,
+.post--article #markdown-content div.highlight pre {
+  border-radius: 0;
+  margin: 0;
+  padding: 1.15rem 1.25rem;
+}
+
+.post--article #markdown-content table:not(.table) {
+  border-bottom: 1px solid var(--post-line);
+  display: block;
+  font-size: 0.94rem;
+  margin: 2rem 0;
+  max-width: 100%;
+  overflow-x: auto;
+  width: max-content;
+}
+
+.post--article #markdown-content table:not(.table) th {
+  background: var(--post-surface);
+  color: var(--post-ink);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.post--article #markdown-content table:not(.table) td,
+.post--article #markdown-content table:not(.table) th {
+  padding: 0.7rem 1rem;
+}
+
+.post--article #markdown-content img {
+  border-radius: 0.65rem;
+  box-shadow: 0 0 0 1px var(--post-line);
+}
+
+.post--article #markdown-content figcaption {
+  color: var(--post-muted);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.74rem;
+  line-height: 1.55;
+  margin-top: 0.7rem;
+  text-align: center;
+}
+
+.post--article #table-of-contents {
+  background: var(--post-surface);
+  border: 1px solid var(--post-line);
+  border-radius: 0.65rem;
+  margin-bottom: 2.5rem;
+  padding: 1.2rem 1.35rem;
+}
+
+.post--article #table-of-contents + hr {
+  display: none;
+}
+
+.post-footer-nav {
+  border-top: 1px solid var(--post-line);
+  margin-top: clamp(4rem, 8vw, 6rem);
+  padding-top: 1.25rem;
+}
+
+.post-footer-nav p {
+  color: var(--post-muted);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  margin: 0 0 0.55rem;
+  text-transform: uppercase;
+}
+
+.post-footer-nav a {
+  align-items: center;
+  color: var(--post-ink);
+  display: inline-flex;
+  font-family: "Roboto Slab", "Iowan Old Style", "Songti SC", STSong, serif;
+  font-size: 1.35rem;
+  font-weight: 500;
+  gap: 0.65rem;
+  text-decoration: none;
+}
+
+.post-footer-nav a span {
+  color: var(--post-accent);
+}
+
+.post-footer-nav a:hover,
+.post-footer-nav a:focus-visible {
+  color: var(--post-accent);
+  text-decoration: none;
+}
+
+.post--article #giscus_thread {
+  border-top: 1px solid var(--post-line);
+  margin-top: 3.5rem;
+  padding-top: 2rem;
+}
+
+.post--article a:focus-visible {
+  border-radius: 0.18rem;
+  outline: 2px solid color-mix(in srgb, var(--post-accent) 58%, transparent);
+  outline-offset: 0.22rem;
+}
+
+html[data-site-font="dyslexic"] .post--article .post-title,
+html[data-site-font="dyslexic"] .post--article #markdown-content h2,
+html[data-site-font="dyslexic"] .post--article #markdown-content h3,
+html[data-site-font="dyslexic"] .post--article #markdown-content h4,
+html[data-site-font="dyslexic"] .post-footer-nav a {
+  font-family: var(--site-font-family);
+}
+
+@media (max-width: 767.98px) {
+  .post-hero {
+    padding-top: 0.25rem;
+  }
+
+  .post-back-link {
+    margin-bottom: 2.75rem;
+  }
+
+  .post--article .post-title {
+    font-size: clamp(2.15rem, 10.4vw, 3.45rem);
+    letter-spacing: -0.04em;
+  }
+
+  .post--article #markdown-content h2::before {
+    left: -1rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .post-hero__layout {
+    gap: 0.85rem;
+    grid-template-columns: 0.45rem minmax(0, 1fr);
+  }
+
+  .post-trajectory span {
+    height: 0.4rem;
+    width: 0.4rem;
+  }
+
+  .post--article .post-description {
+    font-size: 1rem;
+    line-height: 1.68;
+  }
+
+  .post--article #markdown-content {
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+
+  .post--article #markdown-content h2::before {
+    display: none;
+  }
+
+  .post--article #markdown-content table:not(.table) td,
+  .post--article #markdown-content table:not(.table) th {
+    padding: 0.62rem 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-reading-progress {
+    animation: none;
+    display: none;
+  }
+
+  .post-back-link span {
+    transition: none;
+  }
+}

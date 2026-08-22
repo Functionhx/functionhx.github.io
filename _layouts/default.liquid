@@ -52,6 +52,9 @@
     {% if page.translation_key == 'blog' %}
       <link rel="stylesheet" href="{{ '/assets/css/blog.css' | relative_url | bust_file_cache }}">
     {% endif %}
+    {% if page.layout == 'post' %}
+      <link rel="stylesheet" href="{{ '/assets/css/post.css' | relative_url | bust_file_cache }}">
+    {% endif %}
     {% if page.video %}
       <link rel="stylesheet" href="{{ '/assets/css/media-embeds.css' | relative_url | bust_file_cache }}">
     {% endif %}

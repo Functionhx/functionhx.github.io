@@ -19,6 +19,7 @@ const contracts = {
     ".site-author-menu[hidden]",
     "@media (max-width: 575.98px)",
   ],
+  "post.css": ["max-width: 48rem", "@media (max-width: 575.98px)", "@media (prefers-reduced-motion: reduce)"],
   "site-preferences.css": ["@media (prefers-color-scheme: dark)", "@media (prefers-reduced-motion: reduce)"],
   "site-settings.css": ["max-width: min(50rem, calc(100vw - 2rem))", ".site-settings-dialog::backdrop", "@media (max-width: 575px)"],
   "spark-writer.css": [".site-spark-writer[hidden]", "@media (max-width: 767px)", "@media (max-width: 420px)"],
