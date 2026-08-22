@@ -77,6 +77,11 @@
       mediaSection: root.querySelector('[data-content-media-section="zh"]'),
       mediaTotal: root.querySelector('[data-content-media-total="zh"]'),
       panel: document.getElementById("site-content-creator-panel-zh"),
+      preview: root.querySelector('[data-content-preview="zh"]'),
+      previewBody: root.querySelector('[data-content-preview-body="zh"]'),
+      previewEmpty: root.querySelector('[data-content-preview-empty="zh"]'),
+      previewSummary: root.querySelector('[data-content-preview-summary="zh"]'),
+      previewTitle: root.querySelector('[data-content-preview-title="zh"]'),
       tab: document.getElementById("site-content-creator-tab-zh"),
       title: elements.titleZh,
     },
@@ -92,6 +97,11 @@
       mediaSection: root.querySelector('[data-content-media-section="en"]'),
       mediaTotal: root.querySelector('[data-content-media-total="en"]'),
       panel: document.getElementById("site-content-creator-english"),
+      preview: root.querySelector('[data-content-preview="en"]'),
+      previewBody: root.querySelector('[data-content-preview-body="en"]'),
+      previewEmpty: root.querySelector('[data-content-preview-empty="en"]'),
+      previewSummary: root.querySelector('[data-content-preview-summary="en"]'),
+      previewTitle: root.querySelector('[data-content-preview-title="en"]'),
       tab: document.getElementById("site-content-creator-tab-en"),
       title: elements.titleEn,
     },
@@ -252,6 +262,41 @@
     for (const language of ["zh", "en"]) fields[language].characterCount.textContent = String(characterCount(fields[language].body.value));
   }
 
+  function resolvePreviewImage(source) {
+    const match = String(source || "").match(/^content-media:\/\/([a-f0-9]{16})$/);
+    if (!match) return source;
+    const item = media.find((candidate) => candidate.id === match[1]);
+    return item ? mediaSource(item) : "";
+  }
+
+  function updatePreview(language) {
+    const field = fields[language];
+    const title = field.title.value.trim();
+    const summary = field.description.value.trim();
+    const body = field.body.value;
+    const hasContent = Boolean(title || summary || body.trim());
+    field.previewTitle.textContent = title || field.preview.dataset.untitled;
+    field.previewTitle.hidden = !hasContent;
+    field.previewSummary.textContent = summary;
+    field.previewSummary.hidden = !summary;
+    field.previewEmpty.hidden = hasContent;
+    if (window.functionhxMarkdownPreview?.render) {
+      field.previewBody.innerHTML = window.functionhxMarkdownPreview.render(body, {
+        imageUnavailable: field.preview.dataset.imageUnavailable,
+        resolveImage: resolvePreviewImage,
+      });
+    } else {
+      field.previewBody.textContent = body;
+    }
+    if (window.MathJax && typeof window.MathJax.typesetPromise === "function") {
+      window.MathJax.typesetPromise([field.previewBody]).catch(() => {});
+    }
+  }
+
+  function updatePreviews() {
+    for (const language of ["zh", "en"]) updatePreview(language);
+  }
+
   function languageComplete(language) {
     const field = fields[language];
     return Boolean(
@@ -264,6 +309,7 @@
   function updateCompletion() {
     for (const language of ["zh", "en"]) fields[language].complete.dataset.complete = String(languageComplete(language));
     updateEditorMeta();
+    updatePreviews();
   }
 
   function insertText(textarea, text, options = {}) {

@@ -151,6 +151,11 @@
       mediaSection: root.querySelector('[data-spark-media-section="zh"]'),
       mediaTotal: root.querySelector('[data-spark-media-total="zh"]'),
       panel: document.getElementById("site-spark-writer-panel-zh"),
+      preview: root.querySelector('[data-spark-preview="zh"]'),
+      previewBody: root.querySelector('[data-spark-preview-body="zh"]'),
+      previewEmpty: root.querySelector('[data-spark-preview-empty="zh"]'),
+      previewSummary: root.querySelector('[data-spark-preview-summary="zh"]'),
+      previewTitle: root.querySelector('[data-spark-preview-title="zh"]'),
       summary: document.getElementById("site-spark-writer-summary-zh"),
       tab: document.getElementById("site-spark-writer-tab-zh"),
       title: document.getElementById("site-spark-writer-title-zh"),
@@ -166,6 +171,11 @@
       mediaSection: root.querySelector('[data-spark-media-section="en"]'),
       mediaTotal: root.querySelector('[data-spark-media-total="en"]'),
       panel: document.getElementById("site-spark-writer-panel-en"),
+      preview: root.querySelector('[data-spark-preview="en"]'),
+      previewBody: root.querySelector('[data-spark-preview-body="en"]'),
+      previewEmpty: root.querySelector('[data-spark-preview-empty="en"]'),
+      previewSummary: root.querySelector('[data-spark-preview-summary="en"]'),
+      previewTitle: root.querySelector('[data-spark-preview-title="en"]'),
       summary: document.getElementById("site-spark-writer-summary-en"),
       tab: document.getElementById("site-spark-writer-tab-en"),
       title: document.getElementById("site-spark-writer-title-en"),
@@ -200,7 +210,11 @@
   const requiredElements = Object.entries(elements)
     .filter(([name]) => !optionalElements.has(name))
     .map(([, element]) => element);
-  if (!fields.zh.body || !fields.en.body || requiredElements.some((element) => element === null)) return;
+  if (
+    Object.values(fields).some((field) => Object.values(field).some((element) => element === null)) ||
+    requiredElements.some((element) => element === null)
+  )
+    return;
 
   const allowedImageTypes = new Map([
     ["image/gif", "gif"],
@@ -423,6 +437,41 @@
 
   function updateEditorMeta() {
     for (const language of ["zh", "en"]) fields[language].characterCount.textContent = String(characterCount(fields[language].body.value));
+  }
+
+  function resolvePreviewImage(source) {
+    const match = String(source || "").match(/^spark-media:\/\/([a-f0-9]{16})$/);
+    if (!match) return source;
+    const item = media.find((candidate) => candidate.id === match[1]);
+    return item ? mediaSource(item) : "";
+  }
+
+  function updatePreview(language) {
+    const field = fields[language];
+    const title = field.title.value.trim();
+    const summary = field.summary.value.trim();
+    const body = field.body.value;
+    const hasContent = Boolean(title || summary || body.trim());
+    field.previewTitle.textContent = title || field.preview.dataset.untitled;
+    field.previewTitle.hidden = !hasContent;
+    field.previewSummary.textContent = summary;
+    field.previewSummary.hidden = !summary;
+    field.previewEmpty.hidden = hasContent;
+    if (window.functionhxMarkdownPreview?.render) {
+      field.previewBody.innerHTML = window.functionhxMarkdownPreview.render(body, {
+        imageUnavailable: field.preview.dataset.imageUnavailable,
+        resolveImage: resolvePreviewImage,
+      });
+    } else {
+      field.previewBody.textContent = body;
+    }
+    if (window.MathJax && typeof window.MathJax.typesetPromise === "function") {
+      window.MathJax.typesetPromise([field.previewBody]).catch(() => {});
+    }
+  }
+
+  function updatePreviews() {
+    for (const language of ["zh", "en"]) updatePreview(language);
   }
 
   function locateMedia(language, item) {
@@ -776,6 +825,7 @@
       fields[language].complete.dataset.complete = String(languageComplete(language));
     }
     updateEditorMeta();
+    updatePreviews();
   }
 
   function draftStorageId(key) {

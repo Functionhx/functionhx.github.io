@@ -531,10 +531,19 @@ try {
   assert.equal(await page.locator("#site-rendered-content").isVisible(), true, "writing should stay inside the Spark page");
   assert.equal(await page.locator("#site-inline-editor").isVisible(), false, "the source editor must stay closed");
   assert.equal(await page.locator("#site-spark-writer-published").isChecked(), false, "new Sparks must default to private");
+  const desktopWorkspace = await page.locator("#site-spark-writer-panel-zh .site-markdown-editor__workspace").evaluate((workspace) => {
+    const source = workspace.querySelector(".site-markdown-editor__source").getBoundingClientRect();
+    const preview = workspace.querySelector(".site-markdown-editor__preview").getBoundingClientRect();
+    return { previewLeft: preview.left, previewWidth: preview.width, sourceRight: source.right, sourceWidth: source.width };
+  });
+  assert.ok(desktopWorkspace.sourceWidth > 300 && desktopWorkspace.previewWidth > 300, "Spark should provide useful source and preview columns");
+  assert.ok(desktopWorkspace.previewLeft >= desktopWorkspace.sourceRight - 1, "Spark preview should sit to the right of its Markdown source");
 
   await page.locator("#site-spark-writer-title-zh").fill("只写中文的草稿");
   await page.locator("#site-spark-writer-summary-zh").fill("先保存中文，之后再翻译。");
   await page.locator("#site-spark-writer-body-zh").fill("这是只写了中文、但应该能够安全保存的正文。");
+  assert.equal(await page.locator('[data-spark-preview-title="zh"]').textContent(), "只写中文的草稿");
+  assert.match(await page.locator('[data-spark-preview-body="zh"]').textContent(), /这是只写了中文/);
   await page.locator('[data-spark-dropzone="zh"]').evaluate((dropzone, imageBase64) => {
     const bytes = Uint8Array.from(window.atob(imageBase64), (character) => character.charCodeAt(0));
     const transfer = new DataTransfer();
@@ -544,6 +553,8 @@ try {
     dropzone.dispatchEvent(new DragEvent("drop", { bubbles: true, dataTransfer: transfer }));
   }, testImageBase64);
   await page.waitForFunction(() => document.querySelector("#site-spark-writer-body-zh").value.includes("spark-media://"));
+  await page.locator('[data-spark-preview-body="zh"] img').waitFor({ state: "visible" });
+  assert.match(await page.locator('[data-spark-preview-body="zh"] img').getAttribute("src"), /^data:image\/png;base64,/);
   assert.equal(
     await page.locator('[data-spark-media-list="zh"] .site-spark-writer__media-card').count(),
     1,
@@ -756,6 +767,12 @@ try {
     return { left: rect.left, right: rect.right, viewport: document.documentElement.clientWidth };
   });
   assert.ok(mobileBounds.left >= 0 && mobileBounds.right <= mobileBounds.viewport + 1, "the writer must fit the mobile viewport");
+  const mobileWorkspace = await page.locator("#site-spark-writer-panel-zh .site-markdown-editor__workspace").evaluate((workspace) => {
+    const source = workspace.querySelector(".site-markdown-editor__source").getBoundingClientRect();
+    const preview = workspace.querySelector(".site-markdown-editor__preview").getBoundingClientRect();
+    return { previewTop: preview.top, sourceBottom: source.bottom };
+  });
+  assert.ok(mobileWorkspace.previewTop >= mobileWorkspace.sourceBottom - 1, "Spark preview should stack below its source on mobile");
 
   await page.evaluate(() => window.localStorage.setItem("theme", "dark"));
   await page.reload({ waitUntil: "networkidle" });

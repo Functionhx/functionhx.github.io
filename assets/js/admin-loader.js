@@ -15,7 +15,7 @@
   const features = {
     creator: {
       styles: ["deployment-monitor.css", "deepseek-translator.css", "spark-writer.css", "content-creator.css"],
-      scripts: ["github-auth-vault.js", "deployment-monitor.js", "deepseek-translator.js", "content-creator.js"],
+      scripts: ["github-auth-vault.js", "deployment-monitor.js", "deepseek-translator.js", "markdown-preview.js", "content-creator.js"],
     },
     editor: {
       styles: ["deployment-monitor.css", "deepseek-translator.css", "inline-editor.css"],
@@ -31,7 +31,14 @@
     },
     spark: {
       styles: ["deployment-monitor.css", "deepseek-translator.css"],
-      scripts: ["github-auth-vault.js", "deployment-monitor.js", "deepseek-translator.js", "spark-vault-client.js", "spark-writer.js"],
+      scripts: [
+        "github-auth-vault.js",
+        "deployment-monitor.js",
+        "deepseek-translator.js",
+        "markdown-preview.js",
+        "spark-vault-client.js",
+        "spark-writer.js",
+      ],
     },
     feishuDocuments: {
       styles: [],

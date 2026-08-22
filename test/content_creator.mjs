@@ -222,6 +222,16 @@ try {
     13,
     "articles should use the Spark Markdown toolbar"
   );
+  const desktopWorkspace = await page.locator("#site-content-creator-panel-zh .site-markdown-editor__workspace").evaluate((workspace) => {
+    const source = workspace.querySelector(".site-markdown-editor__source").getBoundingClientRect();
+    const preview = workspace.querySelector(".site-markdown-editor__preview").getBoundingClientRect();
+    return { previewLeft: preview.left, previewWidth: preview.width, sourceRight: source.right, sourceWidth: source.width };
+  });
+  assert.ok(
+    desktopWorkspace.sourceWidth > 300 && desktopWorkspace.previewWidth > 300,
+    "desktop writing should reserve a useful column for source and preview"
+  );
+  assert.ok(desktopWorkspace.previewLeft >= desktopWorkspace.sourceRight - 1, "the page preview should sit to the right of the Markdown source");
   assert.equal(await page.locator("#site-content-creator-english").isHidden(), true);
   await page.locator("#site-content-creator-tab-en").click();
   assert.equal(await page.locator("#site-content-creator-english").isVisible(), true, "the English draft should use a dedicated writing tab");
@@ -232,6 +242,13 @@ try {
   await page.locator("#site-content-creator-body-zh").selectText();
   await page.locator('#site-content-creator-panel-zh [data-content-command="bold"]').click();
   assert.equal(await page.locator("#site-content-creator-body-zh").inputValue(), "**工具栏**");
+  assert.equal(
+    await page.locator('[data-content-preview-body="zh"] strong').textContent(),
+    "工具栏",
+    "Markdown formatting should render immediately"
+  );
+  await page.locator("#site-content-creator-body-zh").fill("| A | B |\n| --- | --- |\n| 1 | 2 |");
+  assert.equal(await page.locator('[data-content-preview-body="zh"] table').count(), 1, "Markdown tables should render in the preview");
   await page.locator("#site-content-creator-body-zh").fill("## 正文\n\n这是中文正文。");
   await page.locator('[data-content-image-input="zh"]').setInputFiles({
     buffer: Buffer.from(testImageBase64, "base64"),
@@ -239,6 +256,20 @@ try {
     name: "article-inline.png",
   });
   await page.waitForFunction(() => document.getElementById("site-content-creator-body-zh")?.value.includes("content-media://"));
+  await page.locator('[data-content-preview-body="zh"] img').waitFor({ state: "visible" });
+  assert.match(
+    await page.locator('[data-content-preview-body="zh"] img').getAttribute("src"),
+    /^data:image\/png;base64,/,
+    "local images should appear in the live preview"
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileWorkspace = await page.locator("#site-content-creator-panel-zh .site-markdown-editor__workspace").evaluate((workspace) => {
+    const source = workspace.querySelector(".site-markdown-editor__source").getBoundingClientRect();
+    const preview = workspace.querySelector(".site-markdown-editor__preview").getBoundingClientRect();
+    return { previewTop: preview.top, sourceBottom: source.bottom };
+  });
+  assert.ok(mobileWorkspace.previewTop >= mobileWorkspace.sourceBottom - 1, "the preview should stack below the source on mobile");
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.locator("#site-content-creator-settings > summary").click();
   await page.locator("#site-content-creator-slug").fill("chinese-first-article");
   await page.locator("#site-content-creator-commit").evaluate((button) => {
@@ -292,6 +323,7 @@ try {
     "tool creation should reveal cover and link settings immediately"
   );
   assert.match(await page.locator("#site-content-creator-settings-label").innerText(), /封面与链接/);
+  assert.equal(await page.locator('[data-content-preview="zh"]').isVisible(), true, "tool creation should include a live preview");
   for (const selector of ["#site-content-creator-url", "#site-content-creator-github", "#site-content-creator-cover"]) {
     assert.equal(await page.locator(selector).isVisible(), true, `${selector} should be visible when the tool creator opens`);
   }
@@ -339,6 +371,7 @@ try {
       `${type} creation should use the Spark editor`
     );
     assert.equal(await page.locator('[data-content-dropzone="zh"]').isVisible(), true, `${type} creation should accept inline images`);
+    assert.equal(await page.locator('[data-content-preview="zh"]').isVisible(), true, `${type} creation should include a live preview`);
     await page.locator("#site-content-creator-tab-en").click();
     assert.equal(await page.locator("#site-content-creator-english").isVisible(), true, `${type} creation should expose the English writing tab`);
     await page.locator("#site-content-creator-close").click();
@@ -354,6 +387,7 @@ try {
     "project creation should use the Spark editor"
   );
   assert.equal(await page.locator('[data-content-dropzone="zh"]').isVisible(), true, "project creation should accept inline images");
+  assert.equal(await page.locator('[data-content-preview="zh"]').isVisible(), true, "project creation should include a live preview");
   await page.locator("#site-content-creator-tab-en").click();
   assert.equal(await page.locator("#site-content-creator-english").isVisible(), true, "project creation should expose the English writing tab");
   await page.locator("#site-content-creator-close").click();

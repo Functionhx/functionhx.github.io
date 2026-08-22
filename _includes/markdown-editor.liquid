@@ -1,5 +1,20 @@
 {% assign markdown_language = include.language | default: 'zh' %}
 {% assign markdown_hook = include.mode | default: 'spark' %}
+{% if markdown_language == 'en' %}
+  {% assign markdown_source_label = 'Markdown source' %}
+  {% assign markdown_preview_label = 'Page preview' %}
+  {% assign markdown_preview_live = 'Live' %}
+  {% assign markdown_preview_empty = 'The formatted page will appear here as you write.' %}
+  {% assign markdown_preview_untitled = 'Untitled' %}
+  {% assign markdown_image_unavailable = 'Image preview unavailable' %}
+{% else %}
+  {% assign markdown_source_label = 'Markdown 原文' %}
+  {% assign markdown_preview_label = '页面预览' %}
+  {% assign markdown_preview_live = '即时' %}
+  {% assign markdown_preview_empty = '开始写作后，这里会显示排版后的页面。' %}
+  {% assign markdown_preview_untitled = '未命名' %}
+  {% assign markdown_image_unavailable = '图片暂时无法预览' %}
+{% endif %}
 {% if page.lang == 'en' %}
   {% assign markdown_toolbar_label = 'Writing tools' %}
   {% assign markdown_undo = 'Undo' %}
@@ -151,27 +166,53 @@
       aria-hidden="true"
     >
   </div>
-  <div class="site-spark-writer__dropzone" data-{{ markdown_hook }}-dropzone="{{ markdown_language }}">
-    <label class="sr-only" for="{{ include.body_id }}">{{ include.body_label }}</label>
-    <textarea
-      id="{{ include.body_id }}"
-      class="site-spark-writer__body"
-      rows="12"
-      placeholder="{{ include.body_placeholder }}"
-      spellcheck="true"
-      {% if markdown_hook == 'spark' %}
-        data-writer-field="body"
-        data-writer-language="{{ markdown_language }}"
-      {% endif %}
-    ></textarea>
-    <div
-      class="site-spark-writer__drop-overlay"
-      data-{{ markdown_hook }}-drop-overlay="{{ markdown_language }}"
-      aria-hidden="true"
-    >
-      <i class="fa-regular fa-image" aria-hidden="true"></i>
-      <strong>{{ include.drop_label }}</strong>
-    </div>
+  <div class="site-markdown-editor__workspace">
+    <section class="site-markdown-editor__source" aria-labelledby="{{ include.body_id }}-source-label">
+      <header class="site-markdown-editor__column-heading">
+        <strong id="{{ include.body_id }}-source-label">{{ markdown_source_label }}</strong>
+        <span>.md</span>
+      </header>
+      <div class="site-spark-writer__dropzone" data-{{ markdown_hook }}-dropzone="{{ markdown_language }}">
+        <label class="sr-only" for="{{ include.body_id }}">{{ include.body_label }}</label>
+        <textarea
+          id="{{ include.body_id }}"
+          class="site-spark-writer__body"
+          rows="12"
+          placeholder="{{ include.body_placeholder }}"
+          spellcheck="true"
+          {% if markdown_hook == 'spark' %}
+            data-writer-field="body"
+            data-writer-language="{{ markdown_language }}"
+          {% endif %}
+        ></textarea>
+        <div
+          class="site-spark-writer__drop-overlay"
+          data-{{ markdown_hook }}-drop-overlay="{{ markdown_language }}"
+          aria-hidden="true"
+        >
+          <i class="fa-regular fa-image" aria-hidden="true"></i>
+          <strong>{{ include.drop_label }}</strong>
+        </div>
+      </div>
+    </section>
+    <aside class="site-markdown-editor__preview" aria-labelledby="{{ include.body_id }}-preview-label">
+      <header class="site-markdown-editor__column-heading">
+        <strong id="{{ include.body_id }}-preview-label">{{ markdown_preview_label }}</strong>
+        <span><i aria-hidden="true"></i>{{ markdown_preview_live }}</span>
+      </header>
+      <article
+        data-{{ markdown_hook }}-preview="{{ markdown_language }}"
+        data-untitled="{{ markdown_preview_untitled }}"
+        data-image-unavailable="{{ markdown_image_unavailable }}"
+      >
+        <h2 data-{{ markdown_hook }}-preview-title="{{ markdown_language }}" hidden></h2>
+        <p class="site-markdown-editor__preview-summary" data-{{ markdown_hook }}-preview-summary="{{ markdown_language }}" hidden></p>
+        <div class="site-markdown-editor__preview-body" data-{{ markdown_hook }}-preview-body="{{ markdown_language }}"></div>
+        <p class="site-markdown-editor__preview-empty" data-{{ markdown_hook }}-preview-empty="{{ markdown_language }}">
+          {{ markdown_preview_empty }}
+        </p>
+      </article>
+    </aside>
   </div>
   <section
     class="site-spark-writer__media"
