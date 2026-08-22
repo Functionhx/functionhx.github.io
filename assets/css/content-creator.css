@@ -1,10 +1,12 @@
 .site-content-creator {
+  border-top: 2px solid var(--global-theme-color);
   margin: 0 auto;
   max-width: 58rem;
-  padding: 0.25rem 0 3rem;
+  padding: 1.25rem 0 3rem;
 }
 
-.site-content-creator[hidden] {
+.site-content-creator[hidden],
+.site-content-creator [hidden] {
   display: none;
 }
 
@@ -68,7 +70,7 @@ body.site-content-creator-active #site-inline-editor {
 .site-content-creator__status {
   color: var(--global-text-color-light);
   font-size: 0.76rem;
-  margin: 0.8rem 0 0;
+  margin: 0.8rem 0;
 }
 
 .site-content-creator__status[data-state="error"] {
@@ -80,7 +82,7 @@ body.site-content-creator-active #site-inline-editor {
 }
 
 .site-content-creator__paper {
-  padding: clamp(1.5rem, 4vw, 3rem) 0 2rem;
+  padding: clamp(1.3rem, 4vw, 2.4rem) clamp(0rem, 2vw, 1rem) 1rem;
 }
 
 .site-content-creator__paper input,
@@ -94,6 +96,10 @@ body.site-content-creator-active #site-inline-editor {
   outline: 0;
   padding: 0;
   width: 100%;
+}
+
+.site-content-creator .site-spark-writer__image-input {
+  display: none;
 }
 
 .site-content-creator__title {
@@ -115,8 +121,10 @@ body.site-content-creator-active #site-inline-editor {
   font-family: inherit;
   font-size: 1rem;
   line-height: 1.9;
-  min-height: 20rem;
-  resize: vertical;
+  min-height: 19rem;
+  overflow: hidden;
+  padding: 1.25rem 0;
+  resize: none;
 }
 
 .site-content-creator__paper--english textarea {
@@ -129,13 +137,11 @@ body.site-content-creator-active #site-inline-editor {
   opacity: 1;
 }
 
-.site-content-creator__english,
 .site-content-creator__settings {
   border-top: 1px solid var(--global-divider-color);
   padding: 0.8rem 0;
 }
 
-.site-content-creator__english > summary,
 .site-content-creator__settings > summary {
   align-items: baseline;
   color: var(--global-text-color);
@@ -146,16 +152,20 @@ body.site-content-creator-active #site-inline-editor {
   width: max-content;
 }
 
-.site-content-creator__english > summary small {
-  color: var(--global-text-color-light);
-  font-size: 0.66rem;
-}
-
 .site-content-creator__translation {
   align-items: center;
   display: flex;
   gap: 0.65rem;
+  justify-content: flex-end;
   margin-top: 0.9rem;
+}
+
+.site-content-creator__language-tabs {
+  margin-top: 1.2rem;
+}
+
+.site-content-creator__paper--english {
+  padding-top: clamp(1.3rem, 4vw, 2.4rem);
 }
 
 .site-content-creator__translation button {

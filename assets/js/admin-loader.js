@@ -14,7 +14,7 @@
 
   const features = {
     creator: {
-      styles: ["deployment-monitor.css", "deepseek-translator.css", "content-creator.css"],
+      styles: ["deployment-monitor.css", "deepseek-translator.css", "spark-writer.css", "content-creator.css"],
       scripts: ["github-auth-vault.js", "deployment-monitor.js", "deepseek-translator.js", "content-creator.js"],
     },
     editor: {

@@ -1,0 +1,198 @@
+{% assign markdown_language = include.language | default: 'zh' %}
+{% assign markdown_hook = include.mode | default: 'spark' %}
+{% if page.lang == 'en' %}
+  {% assign markdown_toolbar_label = 'Writing tools' %}
+  {% assign markdown_undo = 'Undo' %}
+  {% assign markdown_redo = 'Redo' %}
+  {% assign markdown_heading = 'Heading' %}
+  {% assign markdown_bold = 'Bold' %}
+  {% assign markdown_italic = 'Italic' %}
+  {% assign markdown_bullet_list = 'Bulleted list' %}
+  {% assign markdown_numbered_list = 'Numbered list' %}
+  {% assign markdown_quote = 'Quote' %}
+  {% assign markdown_divider = 'Divider' %}
+  {% assign markdown_code = 'Code' %}
+  {% assign markdown_link = 'Link' %}
+  {% assign markdown_table = 'Table' %}
+  {% assign markdown_image = 'Image' %}
+{% else %}
+  {% assign markdown_toolbar_label = '写作工具' %}
+  {% assign markdown_undo = '撤销' %}
+  {% assign markdown_redo = '重做' %}
+  {% assign markdown_heading = '标题' %}
+  {% assign markdown_bold = '加粗' %}
+  {% assign markdown_italic = '斜体' %}
+  {% assign markdown_bullet_list = '无序列表' %}
+  {% assign markdown_numbered_list = '有序列表' %}
+  {% assign markdown_quote = '引用' %}
+  {% assign markdown_divider = '分割线' %}
+  {% assign markdown_code = '代码' %}
+  {% assign markdown_link = '链接' %}
+  {% assign markdown_table = '表格' %}
+  {% assign markdown_image = '图片' %}
+{% endif %}
+
+<div class="site-spark-writer__editor site-markdown-editor" data-{{ markdown_hook }}-editor="{{ markdown_language }}">
+  <div class="site-spark-writer__formatbar" role="toolbar" aria-label="{{ markdown_toolbar_label }}">
+    <button
+      type="button"
+      data-{{ markdown_hook }}-command="undo"
+      title="{{ markdown_undo }}"
+      aria-label="{{ markdown_undo }}"
+    >
+      <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+    </button>
+    <button
+      type="button"
+      data-{{ markdown_hook }}-command="redo"
+      title="{{ markdown_redo }}"
+      aria-label="{{ markdown_redo }}"
+    >
+      <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+    </button>
+    <span class="site-spark-writer__format-separator" aria-hidden="true"></span>
+    <button
+      type="button"
+      data-{{ markdown_hook }}-command="heading"
+      title="{{ markdown_heading }}"
+      aria-label="{{ markdown_heading }}"
+    >
+      <strong>H</strong>
+    </button>
+    <button
+      type="button"
+      data-{{ markdown_hook }}-command="bold"
+      title="{{ markdown_bold }}"
+      aria-label="{{ markdown_bold }}"
+    >
+      <strong>B</strong>
+    </button>
+    <button
+      type="button"
+      data-{{ markdown_hook }}-command="italic"
+      title="{{ markdown_italic }}"
+      aria-label="{{ markdown_italic }}"
+    >
+      <em>I</em>
+    </button>
+    <button
+      type="button"
+      data-{{ markdown_hook }}-command="bullet-list"
+      title="{{ markdown_bullet_list }}"
+      aria-label="{{ markdown_bullet_list }}"
+    >
+      <i class="fa-solid fa-list-ul" aria-hidden="true"></i>
+    </button>
+    <button
+      type="button"
+      data-{{ markdown_hook }}-command="numbered-list"
+      title="{{ markdown_numbered_list }}"
+      aria-label="{{ markdown_numbered_list }}"
+    >
+      <i class="fa-solid fa-list-ol" aria-hidden="true"></i>
+    </button>
+    <button
+      type="button"
+      data-{{ markdown_hook }}-command="quote"
+      title="{{ markdown_quote }}"
+      aria-label="{{ markdown_quote }}"
+    >
+      <i class="fa-solid fa-quote-left" aria-hidden="true"></i>
+    </button>
+    <button
+      type="button"
+      data-{{ markdown_hook }}-command="divider"
+      title="{{ markdown_divider }}"
+      aria-label="{{ markdown_divider }}"
+    >
+      <i class="fa-solid fa-minus" aria-hidden="true"></i>
+    </button>
+    <button
+      type="button"
+      data-{{ markdown_hook }}-command="code"
+      title="{{ markdown_code }}"
+      aria-label="{{ markdown_code }}"
+    >
+      <i class="fa-solid fa-code" aria-hidden="true"></i>
+    </button>
+    <button
+      type="button"
+      data-{{ markdown_hook }}-command="link"
+      title="{{ markdown_link }}"
+      aria-label="{{ markdown_link }}"
+    >
+      <i class="fa-solid fa-link" aria-hidden="true"></i>
+    </button>
+    <button
+      type="button"
+      data-{{ markdown_hook }}-command="table"
+      title="{{ markdown_table }}"
+      aria-label="{{ markdown_table }}"
+    >
+      <i class="fa-solid fa-table-cells" aria-hidden="true"></i>
+    </button>
+    <span class="site-spark-writer__format-separator" aria-hidden="true"></span>
+    <button
+      class="site-spark-writer__image-command"
+      type="button"
+      data-{{ markdown_hook }}-command="image"
+      title="{{ markdown_image }}"
+      aria-label="{{ markdown_image }}"
+    >
+      <i class="fa-regular fa-image" aria-hidden="true"></i><span>{{ markdown_image }}</span>
+    </button>
+    <input
+      class="site-spark-writer__image-input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/gif"
+      multiple
+      data-{{ markdown_hook }}-image-input="{{ markdown_language }}"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+  </div>
+  <div class="site-spark-writer__dropzone" data-{{ markdown_hook }}-dropzone="{{ markdown_language }}">
+    <label class="sr-only" for="{{ include.body_id }}">{{ include.body_label }}</label>
+    <textarea
+      id="{{ include.body_id }}"
+      class="site-spark-writer__body"
+      rows="12"
+      placeholder="{{ include.body_placeholder }}"
+      spellcheck="true"
+      {% if markdown_hook == 'spark' %}
+        data-writer-field="body"
+        data-writer-language="{{ markdown_language }}"
+      {% endif %}
+    ></textarea>
+    <div
+      class="site-spark-writer__drop-overlay"
+      data-{{ markdown_hook }}-drop-overlay="{{ markdown_language }}"
+      aria-hidden="true"
+    >
+      <i class="fa-regular fa-image" aria-hidden="true"></i>
+      <strong>{{ include.drop_label }}</strong>
+    </div>
+  </div>
+  <section
+    class="site-spark-writer__media"
+    data-{{ markdown_hook }}-media-section="{{ markdown_language }}"
+    aria-label="{{ include.media_label }}"
+    hidden
+  >
+    <header>
+      <strong>{{ include.media_label }}</strong>
+      <span data-{{ markdown_hook }}-media-total="{{ markdown_language }}"></span>
+    </header>
+    <div
+      class="site-spark-writer__media-list"
+      data-{{ markdown_hook }}-media-list="{{ markdown_language }}"
+    ></div>
+  </section>
+  <div class="site-spark-writer__editor-meta">
+    <span
+      ><strong data-{{ markdown_hook }}-character-count="{{ markdown_language }}">0</strong>
+      {{ include.character_unit -}}
+    </span>
+    <span>{{ include.media_hint }}</span>
+  </div>
+</div>

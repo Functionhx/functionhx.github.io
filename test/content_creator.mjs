@@ -6,6 +6,7 @@ import { chromium } from "playwright";
 
 const siteRoot = new URL("../_site/", import.meta.url);
 const testToken = "not-a-real-creator-token";
+const testImageBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=";
 const treeRequests = [];
 const blobRequests = [];
 const commitRequests = [];
@@ -216,9 +217,28 @@ try {
 
   await openCreator("article-create");
   assert.equal(await page.locator("#site-content-creator-settings").evaluate((element) => element.open), false);
+  assert.equal(
+    await page.locator("#site-content-creator-panel-zh [data-content-command]").count(),
+    13,
+    "articles should use the Spark Markdown toolbar"
+  );
+  assert.equal(await page.locator("#site-content-creator-english").isHidden(), true);
+  await page.locator("#site-content-creator-tab-en").click();
+  assert.equal(await page.locator("#site-content-creator-english").isVisible(), true, "the English draft should use a dedicated writing tab");
+  await page.locator("#site-content-creator-tab-zh").click();
   await page.locator("#site-content-creator-title-zh").fill("中文优先的新文章");
   await page.locator("#site-content-creator-description-zh").fill("只写中文也能创建公开文章。");
+  await page.locator("#site-content-creator-body-zh").fill("工具栏");
+  await page.locator("#site-content-creator-body-zh").selectText();
+  await page.locator('#site-content-creator-panel-zh [data-content-command="bold"]').click();
+  assert.equal(await page.locator("#site-content-creator-body-zh").inputValue(), "**工具栏**");
   await page.locator("#site-content-creator-body-zh").fill("## 正文\n\n这是中文正文。");
+  await page.locator('[data-content-image-input="zh"]').setInputFiles({
+    buffer: Buffer.from(testImageBase64, "base64"),
+    mimeType: "image/png",
+    name: "article-inline.png",
+  });
+  await page.waitForFunction(() => document.getElementById("site-content-creator-body-zh")?.value.includes("content-media://"));
   await page.locator("#site-content-creator-settings > summary").click();
   await page.locator("#site-content-creator-slug").fill("chinese-first-article");
   await page.locator("#site-content-creator-commit").evaluate((button) => {
@@ -254,8 +274,15 @@ try {
   assert.match(articleZh.content, /中文优先的新文章/);
   assert.doesNotMatch(articleZh.content, /不应进入 Commit/);
   assert.match(articleZh.content, /这是中文正文/);
+  assert.match(articleZh.content, /\/assets\/img\/posts\/chinese-first-article\/[a-f0-9]{16}\.png/);
   assert.match(articleEn.content, /English translation pending/);
   assert.match(articleEn.content, /translation_key: post-chinese-first-article/);
+  assert.ok(
+    articleEntries.some(
+      (entry) => /^assets\/img\/posts\/chinese-first-article\/[a-f0-9]{16}\.png$/.test(entry.path) && entry.sha === "cover-blob-sha"
+    ),
+    "inline article images should be committed beside the article"
+  );
 
   await page.locator("#site-content-creator-close").click();
   await openCreator("tool-create");
@@ -268,7 +295,7 @@ try {
   for (const selector of ["#site-content-creator-url", "#site-content-creator-github", "#site-content-creator-cover"]) {
     assert.equal(await page.locator(selector).isVisible(), true, `${selector} should be visible when the tool creator opens`);
   }
-  assert.equal(await page.locator("#site-content-creator-english").evaluate((element) => element.open), false);
+  assert.equal(await page.locator("#site-content-creator-english").isHidden(), true);
   await page.locator("#site-content-creator-title-zh").fill("极简小工具");
   await page.locator("#site-content-creator-description-zh").fill("一个测试封面与动态联动的小工具。");
   await page.locator("#site-content-creator-body-zh").fill("工具详情。");
@@ -283,8 +310,9 @@ try {
   await page.locator("#site-content-creator-commit").click();
   await page.locator('#site-content-creator-result[href*="creator-2"]').waitFor({ state: "visible" });
 
-  assert.equal(blobRequests.length, 1);
+  assert.equal(blobRequests.length, 2);
   assert.equal(blobRequests[0].encoding, "base64");
+  assert.equal(blobRequests[1].encoding, "base64");
   assert.equal(treeRequests.length, 2);
   const toolEntries = treeRequests[1].tree;
   assert.ok(toolEntries.some((entry) => entry.path === "assets/img/tools/minimal-tool-cover.png" && entry.sha === "cover-blob-sha"));
@@ -301,8 +329,39 @@ try {
   );
 
   await page.locator("#site-content-creator-close").click();
+
+  for (const [action, type] of [["activity-create", "activity"]]) {
+    await openCreator(action);
+    assert.equal(await page.locator("#site-content-creator").getAttribute("data-creator-type"), type);
+    assert.equal(
+      await page.locator("#site-content-creator-panel-zh [data-content-command]").count(),
+      13,
+      `${type} creation should use the Spark editor`
+    );
+    assert.equal(await page.locator('[data-content-dropzone="zh"]').isVisible(), true, `${type} creation should accept inline images`);
+    await page.locator("#site-content-creator-tab-en").click();
+    assert.equal(await page.locator("#site-content-creator-english").isVisible(), true, `${type} creation should expose the English writing tab`);
+    await page.locator("#site-content-creator-close").click();
+  }
+
+  await page.goto(`${baseUrl}projects/`, { waitUntil: "networkidle" });
+  await page.locator("#site-inline-editor-toggle").waitFor({ state: "visible" });
+  await openCreator("project-create");
+  assert.equal(await page.locator("#site-content-creator").getAttribute("data-creator-type"), "project");
+  assert.equal(
+    await page.locator("#site-content-creator-panel-zh [data-content-command]").count(),
+    13,
+    "project creation should use the Spark editor"
+  );
+  assert.equal(await page.locator('[data-content-dropzone="zh"]').isVisible(), true, "project creation should accept inline images");
+  await page.locator("#site-content-creator-tab-en").click();
+  assert.equal(await page.locator("#site-content-creator-english").isVisible(), true, "project creation should expose the English writing tab");
+  await page.locator("#site-content-creator-close").click();
+  await page.goto(baseUrl, { waitUntil: "networkidle" });
+  await page.locator("#site-inline-editor-toggle").waitFor({ state: "visible" });
+
   await openCreator("tool-create");
-  await waitForCreatorStatus("中文写完即可创建");
+  await waitForCreatorStatus("直接开始写");
   assert.equal(await page.locator("#site-content-creator-title-zh").inputValue(), "", "an unchanged committed tool must not return as a draft");
   await page.locator("#site-content-creator-close").click();
 

@@ -8,10 +8,19 @@
   const owner = root.dataset.owner;
   const branch = root.dataset.branch;
   const maxCoverBytes = 5 * 1024 * 1024;
+  const maximumImageCount = 8;
+  const maximumImageBytes = 1.5 * 1024 * 1024;
+  const maximumMediaBytes = 5 * 1024 * 1024;
   const allowedCoverTypes = new Map([
     ["image/webp", "webp"],
     ["image/png", "png"],
     ["image/jpeg", "jpg"],
+  ]);
+  const allowedImageTypes = new Map([
+    ["image/gif", "gif"],
+    ["image/jpeg", "jpg"],
+    ["image/png", "png"],
+    ["image/webp", "webp"],
   ]);
 
   const elements = {
@@ -44,6 +53,8 @@
     settingsLabel: document.getElementById("site-content-creator-settings-label"),
     slug: document.getElementById("site-content-creator-slug"),
     status: document.getElementById("site-content-creator-status"),
+    tabEn: document.getElementById("site-content-creator-tab-en"),
+    tabZh: document.getElementById("site-content-creator-tab-zh"),
     tags: document.getElementById("site-content-creator-tags"),
     tagsField: document.getElementById("site-content-creator-tags-field"),
     titleEn: document.getElementById("site-content-creator-title-en"),
@@ -53,7 +64,45 @@
     urlField: document.getElementById("site-content-creator-url-field"),
   };
 
-  if (Object.values(elements).some((element) => element === null)) return;
+  const fields = {
+    zh: {
+      body: elements.bodyZh,
+      characterCount: root.querySelector('[data-content-character-count="zh"]'),
+      complete: document.getElementById("site-content-creator-complete-zh"),
+      description: elements.descriptionZh,
+      dropzone: root.querySelector('[data-content-dropzone="zh"]'),
+      editor: root.querySelector('[data-content-editor="zh"]'),
+      imageInput: root.querySelector('[data-content-image-input="zh"]'),
+      mediaList: root.querySelector('[data-content-media-list="zh"]'),
+      mediaSection: root.querySelector('[data-content-media-section="zh"]'),
+      mediaTotal: root.querySelector('[data-content-media-total="zh"]'),
+      panel: document.getElementById("site-content-creator-panel-zh"),
+      tab: document.getElementById("site-content-creator-tab-zh"),
+      title: elements.titleZh,
+    },
+    en: {
+      body: elements.bodyEn,
+      characterCount: root.querySelector('[data-content-character-count="en"]'),
+      complete: document.getElementById("site-content-creator-complete-en"),
+      description: elements.descriptionEn,
+      dropzone: root.querySelector('[data-content-dropzone="en"]'),
+      editor: root.querySelector('[data-content-editor="en"]'),
+      imageInput: root.querySelector('[data-content-image-input="en"]'),
+      mediaList: root.querySelector('[data-content-media-list="en"]'),
+      mediaSection: root.querySelector('[data-content-media-section="en"]'),
+      mediaTotal: root.querySelector('[data-content-media-total="en"]'),
+      panel: document.getElementById("site-content-creator-english"),
+      tab: document.getElementById("site-content-creator-tab-en"),
+      title: elements.titleEn,
+    },
+  };
+
+  if (
+    Object.values(elements).some((element) => element === null) ||
+    Object.values(fields).some((field) => Object.values(field).some((element) => element === null))
+  ) {
+    return;
+  }
 
   const typeLabels = {
     activity: "动态",
@@ -73,7 +122,11 @@
   let baselineSnapshot = "";
   let busy = false;
   let coverFile = null;
+  let currentLanguage = "zh";
   let currentType = "article";
+  let draftTimer = 0;
+  let draftWritePromise = Promise.resolve();
+  let media = [];
   let previousScrollY = 0;
   let restorePromise = Promise.resolve(null);
   let slugIsAutomatic = true;
@@ -110,6 +163,383 @@
     busy = nextBusy;
     root.setAttribute("aria-busy", String(nextBusy));
     for (const element of [elements.close, elements.commit, elements.connect, elements.draft, elements.translate]) element.disabled = nextBusy;
+    for (const language of ["zh", "en"]) {
+      fields[language].imageInput.disabled = nextBusy;
+      for (const button of fields[language].editor.querySelectorAll("[data-content-command], .site-spark-writer__media-remove")) {
+        button.disabled = nextBusy;
+      }
+    }
+  }
+
+  function autoSize(textarea) {
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.max(textarea.scrollHeight, 304)}px`;
+  }
+
+  function bytesToBase64(bytes) {
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+    }
+    return window.btoa(binary);
+  }
+
+  function base64ByteLength(value) {
+    const normalized = String(value || "").replace(/\s/g, "");
+    if (!normalized) return 0;
+    const padding = normalized.endsWith("==") ? 2 : normalized.endsWith("=") ? 1 : 0;
+    return Math.max(0, Math.floor((normalized.length * 3) / 4) - padding);
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  }
+
+  function normalizedMedia(input) {
+    if (!Array.isArray(input)) return [];
+    const seen = new Set();
+    const normalized = [];
+    for (const candidate of input.slice(0, maximumImageCount)) {
+      const id = String(candidate?.id || "").toLowerCase();
+      const type = String(candidate?.type || "").toLowerCase();
+      const data = String(candidate?.data || "").replace(/\s/g, "");
+      if (!/^[a-f0-9]{16}$/.test(id) || seen.has(id) || !allowedImageTypes.has(type) || !/^[a-z0-9+/]*={0,2}$/i.test(data)) continue;
+      const size = base64ByteLength(data);
+      if (!size || size > maximumImageBytes) continue;
+      seen.add(id);
+      normalized.push({
+        data,
+        height: Math.max(0, Number(candidate.height) || 0),
+        id,
+        name: String(candidate.name || "image").slice(0, 120),
+        size,
+        type,
+        width: Math.max(0, Number(candidate.width) || 0),
+      });
+    }
+    return normalized;
+  }
+
+  function mediaSize() {
+    return media.reduce((total, item) => total + item.size, 0);
+  }
+
+  function mediaSource(item) {
+    return `data:${item.type};base64,${item.data}`;
+  }
+
+  function mediaMarker(item) {
+    const alt =
+      String(item.name || "image")
+        .replace(/\.[^.]+$/, "")
+        .replace(/[\[\]]/g, "")
+        .trim() || "image";
+    return `![${alt}](content-media://${item.id})`;
+  }
+
+  function characterCount(value) {
+    return Array.from(
+      String(value || "")
+        .replace(/!\[[^\]]*\]\(content-media:\/\/[^)]+\)/g, "")
+        .replace(/\s/g, "")
+    ).length;
+  }
+
+  function updateEditorMeta() {
+    for (const language of ["zh", "en"]) fields[language].characterCount.textContent = String(characterCount(fields[language].body.value));
+  }
+
+  function languageComplete(language) {
+    const field = fields[language];
+    return Boolean(
+      field.title.value.trim() &&
+      field.description.value.trim() &&
+      (currentType !== "article" && currentType !== "activity" ? true : field.body.value.trim())
+    );
+  }
+
+  function updateCompletion() {
+    for (const language of ["zh", "en"]) fields[language].complete.dataset.complete = String(languageComplete(language));
+    updateEditorMeta();
+  }
+
+  function insertText(textarea, text, options = {}) {
+    const start = textarea.selectionStart ?? textarea.value.length;
+    const end = textarea.selectionEnd ?? start;
+    const before = textarea.value.slice(0, start);
+    const after = textarea.value.slice(end);
+    const prefix = options.block && before && !before.endsWith("\n\n") ? (before.endsWith("\n") ? "\n" : "\n\n") : "";
+    const suffix = options.block && after && !after.startsWith("\n\n") ? (after.startsWith("\n") ? "\n" : "\n\n") : "";
+    textarea.setRangeText(`${prefix}${text}${suffix}`, start, end, "end");
+    textarea.focus();
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function wrapSelection(textarea, before, after = before, placeholder = "") {
+    const start = textarea.selectionStart ?? 0;
+    const end = textarea.selectionEnd ?? start;
+    const selected = textarea.value.slice(start, end) || placeholder;
+    textarea.setRangeText(`${before}${selected}${after}`, start, end, "select");
+    textarea.setSelectionRange(start + before.length, start + before.length + selected.length);
+    textarea.focus();
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function prefixSelectedLines(textarea, prefix) {
+    const start = textarea.selectionStart ?? 0;
+    const end = textarea.selectionEnd ?? start;
+    const lineStart = textarea.value.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
+    const nextBreak = textarea.value.indexOf("\n", end);
+    const lineEnd = nextBreak < 0 ? textarea.value.length : nextBreak;
+    const lines = textarea.value.slice(lineStart, lineEnd).split("\n");
+    const isNumberedList = prefix === "1. ";
+    const hasPrefix = (line) => (isNumberedList ? /^\d+\.\s/.test(line) : line.startsWith(prefix));
+    const alreadyPrefixed = lines.every((line) => !line.trim() || hasPrefix(line));
+    const replacement = lines
+      .map((line, index) => {
+        if (!line.trim()) return line;
+        if (alreadyPrefixed) return isNumberedList ? line.replace(/^\d+\.\s/, "") : line.slice(prefix.length);
+        return isNumberedList ? `${index + 1}. ${line}` : `${prefix}${line}`;
+      })
+      .join("\n");
+    textarea.setRangeText(replacement, lineStart, lineEnd, "select");
+    textarea.focus();
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function runEditorCommand(language, command) {
+    const textarea = fields[language].body;
+    if (command === "image") {
+      fields[language].imageInput.click();
+      return;
+    }
+    if (command === "undo" || command === "redo") {
+      textarea.focus();
+      document.execCommand(command);
+      updateEditorMeta();
+      return;
+    }
+    const isEnglish = language === "en";
+    if (command === "heading") prefixSelectedLines(textarea, "## ");
+    else if (command === "bold") wrapSelection(textarea, "**", "**", isEnglish ? "bold text" : "加粗文字");
+    else if (command === "italic") wrapSelection(textarea, "_", "_", isEnglish ? "italic text" : "斜体文字");
+    else if (command === "bullet-list") prefixSelectedLines(textarea, "- ");
+    else if (command === "numbered-list") prefixSelectedLines(textarea, "1. ");
+    else if (command === "quote") prefixSelectedLines(textarea, "> ");
+    else if (command === "divider") insertText(textarea, "---", { block: true });
+    else if (command === "code") {
+      const selected = textarea.value.slice(textarea.selectionStart ?? 0, textarea.selectionEnd ?? 0);
+      if (selected.includes("\n")) wrapSelection(textarea, "```\n", "\n```", selected);
+      else wrapSelection(textarea, "`", "`", isEnglish ? "code" : "代码");
+    } else if (command === "link") {
+      const start = textarea.selectionStart ?? 0;
+      const selected = textarea.value.slice(start, textarea.selectionEnd ?? start) || (isEnglish ? "link text" : "链接文字");
+      const inserted = `[${selected}](https://)`;
+      textarea.setRangeText(inserted, start, textarea.selectionEnd ?? start, "end");
+      textarea.focus();
+      const urlStart = start + selected.length + 3;
+      textarea.setSelectionRange(urlStart, urlStart + 8);
+      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    } else if (command === "table") {
+      insertText(textarea, `| ${isEnglish ? "Column 1" : "列 1"} | ${isEnglish ? "Column 2" : "列 2"} |\n| --- | --- |\n|  |  |`, { block: true });
+    }
+  }
+
+  function locateMedia(language, item) {
+    const textarea = fields[language].body;
+    const token = `content-media://${item.id}`;
+    const index = textarea.value.indexOf(token);
+    if (index < 0) {
+      insertText(textarea, mediaMarker(item), { block: true });
+      return;
+    }
+    textarea.focus();
+    textarea.setSelectionRange(index, index + token.length);
+    const lineHeight = Number.parseFloat(window.getComputedStyle(textarea).lineHeight) || 30;
+    textarea.scrollTop = Math.max(0, textarea.value.slice(0, index).split("\n").length * lineHeight - textarea.clientHeight / 2);
+  }
+
+  function removeMedia(item) {
+    if (!window.confirm("从中英文草稿中移除这张图片？")) return;
+    const markerPattern = new RegExp(`!?\\[[^\\]]*\\]\\(content-media:\\/\\/${item.id}\\)`, "g");
+    media = media.filter((candidate) => candidate.id !== item.id);
+    for (const language of ["zh", "en"]) {
+      const textarea = fields[language].body;
+      textarea.value = textarea.value.replace(markerPattern, "").replace(/\n{3,}/g, "\n\n");
+      autoSize(textarea);
+    }
+    renderMedia();
+    handleChange();
+  }
+
+  function renderMedia() {
+    const total = `${media.length} 张 · ${formatBytes(mediaSize())}`;
+    for (const language of ["zh", "en"]) {
+      fields[language].mediaList.replaceChildren();
+      fields[language].mediaSection.hidden = media.length === 0;
+      fields[language].mediaTotal.textContent = total;
+      for (const item of media) {
+        const figure = document.createElement("figure");
+        figure.className = "site-spark-writer__media-card";
+
+        const locate = document.createElement("button");
+        locate.type = "button";
+        locate.title = "在正文中定位图片";
+        locate.setAttribute("aria-label", `在正文中定位图片：${item.name}`);
+        locate.addEventListener("click", () => locateMedia(language, item));
+        const image = document.createElement("img");
+        image.alt = "";
+        image.decoding = "async";
+        image.loading = "lazy";
+        image.src = mediaSource(item);
+        locate.append(image);
+
+        const caption = document.createElement("figcaption");
+        const name = document.createElement("strong");
+        name.textContent = item.name;
+        const size = document.createElement("span");
+        size.textContent = formatBytes(item.size);
+        caption.append(name, size);
+
+        const remove = document.createElement("button");
+        remove.className = "site-spark-writer__media-remove";
+        remove.type = "button";
+        remove.title = "移除图片";
+        remove.setAttribute("aria-label", `移除图片：${item.name}`);
+        remove.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+        remove.addEventListener("click", () => removeMedia(item));
+        remove.disabled = busy;
+
+        figure.append(locate, caption, remove);
+        fields[language].mediaList.append(figure);
+      }
+    }
+    updateEditorMeta();
+  }
+
+  function randomMediaId() {
+    const bytes = window.crypto.getRandomValues(new Uint8Array(8));
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
+  function canvasBlob(canvas, type, quality) {
+    return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+  }
+
+  async function decodeImage(file) {
+    if (typeof window.createImageBitmap === "function") {
+      const bitmap = await window.createImageBitmap(file);
+      return { close: () => bitmap.close(), height: bitmap.height, source: bitmap, width: bitmap.width };
+    }
+    const url = URL.createObjectURL(file);
+    try {
+      const image = new Image();
+      image.decoding = "async";
+      image.src = url;
+      await image.decode();
+      return { close: () => URL.revokeObjectURL(url), height: image.naturalHeight, source: image, width: image.naturalWidth };
+    } catch (error) {
+      URL.revokeObjectURL(url);
+      throw error;
+    }
+  }
+
+  async function optimizeImage(file) {
+    if (!allowedImageTypes.has(file.type)) {
+      const error = new Error("只支持 JPEG、PNG、WebP 或 GIF 图片。");
+      error.code = "invalid_image";
+      throw error;
+    }
+    if (file.type === "image/gif" || file.size <= maximumImageBytes) {
+      if (file.size > maximumImageBytes) {
+        const error = new Error("单张图片优化后不能超过 1.5 MB。");
+        error.code = "image_limit";
+        throw error;
+      }
+      return { blob: file, height: 0, type: file.type, width: 0 };
+    }
+
+    const decoded = await decodeImage(file);
+    try {
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d", { alpha: true });
+      if (!context) throw new Error("浏览器无法处理这张图片。");
+      let scale = Math.min(1, 2048 / Math.max(decoded.width, decoded.height));
+      for (const quality of [0.88, 0.78, 0.68, 0.58]) {
+        canvas.width = Math.max(1, Math.round(decoded.width * scale));
+        canvas.height = Math.max(1, Math.round(decoded.height * scale));
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(decoded.source, 0, 0, canvas.width, canvas.height);
+        const blob = await canvasBlob(canvas, "image/webp", quality);
+        if (blob && blob.size <= maximumImageBytes) return { blob, height: canvas.height, type: "image/webp", width: canvas.width };
+        scale *= 0.82;
+      }
+      const error = new Error("单张图片优化后不能超过 1.5 MB。");
+      error.code = "image_limit";
+      throw error;
+    } finally {
+      decoded.close();
+    }
+  }
+
+  async function fileToMedia(file) {
+    const optimized = await optimizeImage(file);
+    const bytes = new Uint8Array(await optimized.blob.arrayBuffer());
+    return {
+      data: bytesToBase64(bytes),
+      height: optimized.height,
+      id: randomMediaId(),
+      name:
+        String(file.name || "image")
+          .replace(/[\u0000-\u001f]/g, "")
+          .slice(0, 120) || "image",
+      size: bytes.length,
+      type: optimized.type,
+      width: optimized.width,
+    };
+  }
+
+  async function addImages(language, files) {
+    const candidates = Array.from(files || []).filter((file) => file?.type?.startsWith("image/"));
+    if (!candidates.length) {
+      setStatus("只支持 JPEG、PNG、WebP 或 GIF 图片。", "error");
+      return;
+    }
+    if (media.length + candidates.length > maximumImageCount) {
+      setStatus("每份内容最多插入 8 张图片。", "error");
+      return;
+    }
+    setStatus("正在本地优化图片…");
+    let inserted = 0;
+    try {
+      for (const file of candidates) {
+        const item = await fileToMedia(file);
+        if (mediaSize() + item.size > maximumMediaBytes) throw new Error("优化后的图片总量不能超过 5 MB。");
+        media.push(item);
+        insertText(fields[language].body, mediaMarker(item), { block: true });
+        inserted += 1;
+      }
+      renderMedia();
+      setStatus(`已在光标处插入 ${inserted} 张图片。`, "success");
+    } catch (error) {
+      renderMedia();
+      setStatus(error.message || "无法插入图片。", "error");
+    } finally {
+      fields[language].imageInput.value = "";
+    }
+  }
+
+  function selectLanguage(language, focus = false) {
+    currentLanguage = language === "en" ? "en" : "zh";
+    for (const candidate of ["zh", "en"]) {
+      const selected = candidate === currentLanguage;
+      fields[candidate].tab.setAttribute("aria-selected", String(selected));
+      fields[candidate].panel.hidden = !selected;
+    }
+    if (focus) fields[currentLanguage].title.focus();
   }
 
   function draftStorageId(type = currentType) {
@@ -127,6 +557,7 @@
       descriptionEn: elements.descriptionEn.value,
       descriptionZh: elements.descriptionZh.value,
       github: elements.github.value,
+      media: media.map((item) => ({ ...item })),
       message: elements.message.value,
       slug: elements.slug.value,
       tags: elements.tags.value,
@@ -148,6 +579,7 @@
       descriptionEn: values.descriptionEn,
       descriptionZh: values.descriptionZh,
       github: values.github,
+      media: normalizedMedia(values.media),
       message: values.message,
       slug: values.slug,
       tags: values.tags,
@@ -163,6 +595,7 @@
   }
 
   function writeValues(values) {
+    media = normalizedMedia(values.media);
     elements.announce.checked = values.announce !== false;
     elements.bodyEn.value = values.bodyEn || "";
     elements.bodyZh.value = values.bodyZh || "";
@@ -178,10 +611,14 @@
     elements.titleEn.value = values.titleEn || "";
     elements.titleZh.value = values.titleZh || "";
     elements.url.value = values.url || "";
+    for (const language of ["zh", "en"]) autoSize(fields[language].body);
+    renderMedia();
+    updateCompletion();
   }
 
   async function restoreDraft() {
     try {
+      await draftWritePromise.catch(() => undefined);
       const serialized = await window.functionhxGitHubAuth?.restoreOpaque?.({ id: draftStorageId() });
       const draft = JSON.parse(serialized || "null");
       if (!draft?.values || draft.values.type !== currentType) return false;
@@ -193,7 +630,7 @@
     }
   }
 
-  async function saveDraft(showStatus = true) {
+  async function persistDraft(showStatus = true) {
     try {
       if (!window.functionhxGitHubAuth?.saveOpaque) throw new Error("Encrypted device storage is unavailable.");
       await window.functionhxGitHubAuth.saveOpaque({
@@ -211,6 +648,22 @@
     }
   }
 
+  function saveDraft(showStatus = true) {
+    draftWritePromise = draftWritePromise.catch(() => undefined).then(() => persistDraft(showStatus));
+    return draftWritePromise;
+  }
+
+  function scheduleDraftSave() {
+    window.clearTimeout(draftTimer);
+    draftTimer = window.setTimeout(() => saveDraft(false), 350);
+  }
+
+  function handleChange() {
+    updateCompletion();
+    elements.result.hidden = true;
+    scheduleDraftSave();
+  }
+
   async function forgetDraft(type = currentType) {
     await window.functionhxGitHubAuth?.forgetOpaque?.({ id: draftStorageId(type) }).catch(() => undefined);
   }
@@ -219,7 +672,7 @@
     currentType = type;
     root.dataset.creatorType = type;
     elements.heading.textContent = elements.heading.dataset[`heading${type[0].toUpperCase()}${type.slice(1)}`] || "新建内容";
-    elements.kind.textContent = typeLabels[type];
+    elements.kind.textContent = `${typeLabels[type]} · 中文优先 · 修改会自动加密保存`;
     const isArticle = type === "article";
     const isCard = type === "tool" || type === "project";
     const isActivity = type === "activity";
@@ -237,6 +690,7 @@
 
   async function openCreator(type, trigger) {
     if (!typeLabels[type] || busy) return;
+    if (!root.hidden && currentType !== type) await saveDraft(false);
     activeTrigger = trigger;
     previousScrollY = window.scrollY;
     configureType(type);
@@ -251,7 +705,6 @@
       slug: defaultSlug(type),
       type,
     });
-    elements.english.open = false;
     elements.settings.open = type === "tool";
     elements.result.hidden = true;
     root.hidden = false;
@@ -259,7 +712,8 @@
     root.scrollIntoView({ block: "start" });
     const restored = await restoreDraft();
     baselineSnapshot = restored ? "" : serializeFormValues(readValues());
-    setStatus(restored ? "已恢复这台设备上的加密草稿。" : "中文写完即可创建；英文镜像可以留空，稍后再翻译。", restored ? "success" : "");
+    selectLanguage("zh");
+    setStatus(restored ? "已恢复这台设备上的加密草稿。" : "直接开始写；修改会自动加密保存在这台设备中。", restored ? "success" : "");
     window.requestAnimationFrame(() => elements.titleZh.focus());
   }
 
@@ -342,6 +796,12 @@
       setStatus("封面必须是 WebP、PNG 或 JPEG，且不超过 5 MB。", "error");
       return false;
     }
+    const mediaIds = new Set(values.media.map((item) => item.id));
+    const referencedIds = [...`${values.bodyZh}\n${values.bodyEn}`.matchAll(/content-media:\/\/([a-f0-9]{16})/g)].map((match) => match[1]);
+    if (referencedIds.some((id) => !mediaIds.has(id))) {
+      setStatus("正文引用了一张已经移除的图片，请重新插入。", "error");
+      return false;
+    }
     return true;
   }
 
@@ -350,11 +810,12 @@
     return { date, year: date.slice(0, 4), jekyll: `${value.replace("T", " ")}:00 +0800` };
   }
 
-  function englishLocalization(values, targetPath) {
-    const complete = values.titleEn.trim() && values.bodyEn.trim();
+  function englishLocalization(values, targetPath, options = {}) {
+    const body = values.bodyEn.trim() || (options.allowDescriptionBody ? values.descriptionEn.trim() : "");
+    const complete = values.titleEn.trim() && body;
     if (complete) {
       return {
-        body: values.bodyEn.trim(),
+        body,
         description: values.descriptionEn.trim() || plainSummary(values.bodyEn),
         title: values.titleEn.trim(),
       };
@@ -370,6 +831,21 @@
     return `${["---", ...frontMatter, "---", "", body.trimEnd(), ""].join("\n")}`;
   }
 
+  function mediaDirectory(type, slug) {
+    const section = type === "article" ? "posts" : type === "activity" ? "news" : type === "tool" ? "tools" : "projects";
+    return `assets/img/${section}/${slug}`;
+  }
+
+  function mediaPath(type, slug, item) {
+    return `${mediaDirectory(type, slug)}/${item.id}.${allowedImageTypes.get(item.type)}`;
+  }
+
+  function renderMediaMarkers(body, type, slug) {
+    let rendered = String(body || "");
+    for (const item of media) rendered = rendered.split(`content-media://${item.id}`).join(`/${mediaPath(type, slug, item)}`);
+    return rendered;
+  }
+
   function composeArticle(language, values) {
     const parts = dateParts(values.date);
     const zhPath = `/blog/${parts.year}/${values.slug}/`;
@@ -377,6 +853,7 @@
       language === "zh"
         ? { body: values.bodyZh.trim(), description: values.descriptionZh.trim(), title: values.titleZh.trim() }
         : englishLocalization(values, zhPath);
+    localized.body = renderMediaMarkers(localized.body, "article", values.slug);
     const permalink = language === "zh" ? zhPath : `/en/blog/${parts.year}/${values.slug}/`;
     return sourceBlock(
       [
@@ -411,7 +888,8 @@
             description: values.descriptionZh.trim(),
             title: values.titleZh.trim(),
           }
-        : englishLocalization(values, zhPath);
+        : englishLocalization(values, zhPath, { allowDescriptionBody: true });
+    localized.body = renderMediaMarkers(localized.body, type, values.slug);
     const frontMatter = [
       "layout: page",
       `title: ${JSON.stringify(localized.title)}`,
@@ -445,6 +923,7 @@
               body: options.enBody || `English translation pending. [Read the Chinese update](${zhPath}).`,
               title: options.enTitle || `Translation pending · ${values.titleZh.trim()}`,
             };
+    localized.body = renderMediaMarkers(localized.body, "activity", values.slug);
     return sourceBlock(
       [
         "layout: post",
@@ -556,15 +1035,6 @@
     if (settingsToggle) settingsToggle.click();
   }
 
-  function bytesToBase64(bytes) {
-    let binary = "";
-    const chunkSize = 0x8000;
-    for (let index = 0; index < bytes.length; index += chunkSize) {
-      binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
-    }
-    return window.btoa(binary);
-  }
-
   function createCommitIntent(type, values, selectedCover) {
     const frozenValues = Object.freeze(formValues({ ...values, type }));
     let cover = null;
@@ -579,9 +1049,18 @@
     const sources = Object.freeze(
       sourceEntries(type, frozenValues, cover?.path || "").map((entry) => Object.freeze({ content: entry.content, path: entry.path }))
     );
+    const mediaFiles = Object.freeze(
+      frozenValues.media.map((item) =>
+        Object.freeze({
+          data: item.data,
+          path: mediaPath(type, frozenValues.slug, item),
+        })
+      )
+    );
     return Object.freeze({
       branch,
       cover,
+      mediaFiles,
       message: frozenValues.message.trim() || `content: add ${type} "${frozenValues.slug}"`,
       repository,
       sources,
@@ -598,6 +1077,16 @@
       token: snapshot.token,
     });
     if (!blob.sha) throw new Error("GitHub 未返回封面文件标识。");
+    return blob.sha;
+  }
+
+  async function createMediaBlob(item, snapshot) {
+    const blob = await githubRequest(`/repos/${snapshot.repository}/git/blobs`, {
+      body: { content: item.data, encoding: "base64" },
+      method: "POST",
+      token: snapshot.token,
+    });
+    if (!blob.sha) throw new Error("GitHub 未返回正文图片文件标识。");
     return blob.sha;
   }
 
@@ -624,11 +1113,18 @@
     if (!baseTree) throw new Error("无法读取 main 分支文件树。");
 
     const coverEntry = snapshot.cover ? { mode: "100644", path: snapshot.cover.path, type: "blob" } : null;
-    await ensurePathsAvailable([...snapshot.sources, ...(coverEntry ? [coverEntry] : [])], headSha, snapshot);
+    const mediaEntries = snapshot.mediaFiles.map((item) => ({ mode: "100644", path: item.path, type: "blob" }));
+    await ensurePathsAvailable([...snapshot.sources, ...(coverEntry ? [coverEntry] : []), ...mediaEntries], headSha, snapshot);
     if (coverEntry) coverEntry.sha = await createCoverBlob(snapshot.cover.file, snapshot);
+    await Promise.all(
+      mediaEntries.map(async (entry, index) => {
+        entry.sha = await createMediaBlob(snapshot.mediaFiles[index], snapshot);
+      })
+    );
 
     const treeEntries = snapshot.sources.map((entry) => ({ content: entry.content, mode: "100644", path: entry.path, type: "blob" }));
     if (coverEntry) treeEntries.push(coverEntry);
+    treeEntries.push(...mediaEntries);
     const tree = await githubRequest(`/repos/${snapshot.repository}/git/trees`, {
       body: { base_tree: baseTree, tree: treeEntries },
       method: "POST",
@@ -673,6 +1169,7 @@
       const commit = await createCommit(snapshot);
       await forgetDraft(snapshot.type);
       baselineSnapshot = serializeFormValues(snapshot.values);
+      if (serializeFormValues(readValues()) !== baselineSnapshot) await saveDraft(false);
       setStatus("已创建 Commit；发布进度会显示在页面右下角。", "success");
       if (commit.html_url) {
         elements.result.href = commit.html_url;
@@ -723,7 +1220,9 @@
         const generated = slugify(translated.title);
         if (generated) elements.slug.value = generated;
       }
-      elements.english.open = true;
+      autoSize(elements.bodyEn);
+      selectLanguage("en");
+      handleChange();
       setStatus("英文译稿已生成，请检查后再提交。", "success");
     } catch (error) {
       if (error.name === "AbortError") setStatus("已取消翻译，中文稿保持不变。");
@@ -759,6 +1258,61 @@
   });
   elements.draft.addEventListener("click", () => saveDraft(true));
   elements.translate.addEventListener("click", translateChinese);
+  fields.zh.tab.addEventListener("click", () => selectLanguage("zh", true));
+  fields.en.tab.addEventListener("click", () => selectLanguage("en", true));
+
+  for (const language of ["zh", "en"]) {
+    fields[language].editor.addEventListener("click", (event) => {
+      const command = event.target.closest("[data-content-command]")?.dataset.contentCommand;
+      if (command && !busy) runEditorCommand(language, command);
+    });
+    fields[language].imageInput.addEventListener("change", () => addImages(language, fields[language].imageInput.files));
+    fields[language].body.addEventListener("paste", (event) => {
+      const files = Array.from(event.clipboardData?.items || [])
+        .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+        .map((item) => item.getAsFile())
+        .filter(Boolean);
+      if (!files.length) return;
+      event.preventDefault();
+      addImages(language, files);
+    });
+    fields[language].dropzone.addEventListener("dragenter", (event) => {
+      if (!Array.from(event.dataTransfer?.types || []).includes("Files")) return;
+      event.preventDefault();
+      fields[language].dropzone.dataset.dragging = "true";
+    });
+    fields[language].dropzone.addEventListener("dragover", (event) => {
+      if (!Array.from(event.dataTransfer?.types || []).includes("Files")) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+      fields[language].dropzone.dataset.dragging = "true";
+    });
+    fields[language].dropzone.addEventListener("dragleave", (event) => {
+      if (event.relatedTarget && fields[language].dropzone.contains(event.relatedTarget)) return;
+      delete fields[language].dropzone.dataset.dragging;
+    });
+    fields[language].dropzone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      delete fields[language].dropzone.dataset.dragging;
+      addImages(language, Array.from(event.dataTransfer?.files || []));
+    });
+    fields[language].body.addEventListener("input", () => {
+      autoSize(fields[language].body);
+      handleChange();
+    });
+    fields[language].title.addEventListener("input", handleChange);
+    fields[language].description.addEventListener("input", handleChange);
+  }
+
+  window.addEventListener("dragend", () => {
+    for (const language of ["zh", "en"]) delete fields[language].dropzone.dataset.dragging;
+  });
+
+  for (const control of root.querySelectorAll(".site-content-creator__settings input, .site-content-creator__settings textarea")) {
+    control.addEventListener("input", handleChange);
+    control.addEventListener("change", handleChange);
+  }
+
   elements.cover.addEventListener("change", () => {
     coverFile = elements.cover.files?.[0] || null;
     elements.coverName.textContent = coverFile ? `${coverFile.name} · ${(coverFile.size / 1024 / 1024).toFixed(2)} MB` : "未选择封面";

@@ -9,7 +9,7 @@
 >
   <header class="site-content-creator__header">
     <div>
-      <p>MAGIC · 中文优先</p>
+      <p>MAGIC · 原位创作</p>
       <h1
         id="site-content-creator-heading"
         data-heading-article="新建文章"
@@ -19,7 +19,7 @@
       >
         新建内容
       </h1>
-      <span id="site-content-creator-kind">内容</span>
+      <span id="site-content-creator-kind">中文优先 · 修改会自动加密保存</span>
     </div>
     <button id="site-content-creator-close" type="button" aria-label="关闭创作区" title="关闭创作区">
       <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -27,48 +27,114 @@
   </header>
 
   <p id="site-content-creator-status" class="site-content-creator__status" role="status" aria-live="polite">
-    中文写完即可创建；英文镜像可以留空，稍后再翻译。
+    直接开始写；中文完成后即可创建，英文镜像可以稍后补充。
   </p>
 
-  <div class="site-content-creator__paper">
+  <div class="site-spark-writer__language-tabs site-content-creator__language-tabs" role="tablist" aria-label="写作语言">
+    <button
+      id="site-content-creator-tab-zh"
+      type="button"
+      role="tab"
+      aria-selected="true"
+      aria-controls="site-content-creator-panel-zh"
+      data-content-language-tab="zh"
+    >
+      中文
+      <span id="site-content-creator-complete-zh" aria-hidden="true"></span>
+    </button>
+    <button
+      id="site-content-creator-tab-en"
+      type="button"
+      role="tab"
+      aria-selected="false"
+      aria-controls="site-content-creator-english"
+      data-content-language-tab="en"
+    >
+      English · 可选
+      <span id="site-content-creator-complete-en" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <div
+    id="site-content-creator-panel-zh"
+    class="site-content-creator__paper site-spark-writer__paper"
+    role="tabpanel"
+    aria-labelledby="site-content-creator-tab-zh"
+    data-content-language-panel="zh"
+  >
     <label class="sr-only" for="site-content-creator-title-zh">中文标题</label>
-    <input id="site-content-creator-title-zh" class="site-content-creator__title" type="text" placeholder="写下标题" autocomplete="off">
+    <input
+      id="site-content-creator-title-zh"
+      class="site-content-creator__title site-spark-writer__title"
+      type="text"
+      placeholder="写下标题"
+      autocomplete="off"
+    >
     <label class="sr-only" for="site-content-creator-description-zh">中文摘要</label>
     <input
       id="site-content-creator-description-zh"
-      class="site-content-creator__description"
+      class="site-content-creator__description site-spark-writer__summary"
       type="text"
       placeholder="一句话说明这是什么"
       autocomplete="off"
     >
-    <label class="sr-only" for="site-content-creator-body-zh">中文正文</label>
-    <textarea id="site-content-creator-body-zh" rows="14" placeholder="从这里开始写……" spellcheck="true"></textarea>
+    {%
+      include markdown-editor.liquid
+      mode='content'
+      language='zh'
+      body_id='site-content-creator-body-zh'
+      body_label='中文正文'
+      body_placeholder='从这里开始写……'
+      drop_label='松手插入图片'
+      media_label='这份内容的图片'
+      media_hint='可拖入、粘贴，或点击图片按钮'
+      character_unit='字'
+    %}
   </div>
 
-  <details id="site-content-creator-english" class="site-content-creator__english">
-    <summary>
-      <span>English · 可选</span>
-      <small>不填写也不会阻塞中文发布</small>
-    </summary>
-    <div class="site-content-creator__translation">
-      <button id="site-content-creator-translate" type="button"><i class="fa-solid fa-language" aria-hidden="true"></i> DeepSeek 翻译英文</button>
-      <span>翻译结果只会先进入本页，检查后再提交。</span>
-    </div>
-    <div class="site-content-creator__paper site-content-creator__paper--english" lang="en">
-      <label class="sr-only" for="site-content-creator-title-en">English title</label>
-      <input id="site-content-creator-title-en" class="site-content-creator__title" type="text" placeholder="English title" autocomplete="off">
-      <label class="sr-only" for="site-content-creator-description-en">English summary</label>
-      <input
-        id="site-content-creator-description-en"
-        class="site-content-creator__description"
-        type="text"
-        placeholder="English summary"
-        autocomplete="off"
-      >
-      <label class="sr-only" for="site-content-creator-body-en">English body</label>
-      <textarea id="site-content-creator-body-en" rows="10" placeholder="English body" spellcheck="true"></textarea>
-    </div>
-  </details>
+  <div class="site-content-creator__translation site-spark-writer__translation">
+    <button id="site-content-creator-translate" type="button"><i class="fa-solid fa-language" aria-hidden="true"></i> DeepSeek 翻译英文</button>
+    <span>译稿只进入当前加密草稿，检查后再创建。</span>
+  </div>
+
+  <div
+    id="site-content-creator-english"
+    class="site-content-creator__paper site-content-creator__paper--english site-spark-writer__paper"
+    role="tabpanel"
+    aria-labelledby="site-content-creator-tab-en"
+    data-content-language-panel="en"
+    lang="en"
+    hidden
+  >
+    <label class="sr-only" for="site-content-creator-title-en">English title</label>
+    <input
+      id="site-content-creator-title-en"
+      class="site-content-creator__title site-spark-writer__title"
+      type="text"
+      placeholder="English title"
+      autocomplete="off"
+    >
+    <label class="sr-only" for="site-content-creator-description-en">English summary</label>
+    <input
+      id="site-content-creator-description-en"
+      class="site-content-creator__description site-spark-writer__summary"
+      type="text"
+      placeholder="English summary"
+      autocomplete="off"
+    >
+    {%
+      include markdown-editor.liquid
+      mode='content'
+      language='en'
+      body_id='site-content-creator-body-en'
+      body_label='English body'
+      body_placeholder='Start writing here…'
+      drop_label='Release to insert the image'
+      media_label='Images in this content'
+      media_hint='Drag, paste, or use the image button'
+      character_unit='characters'
+    %}
+  </div>
 
   <details id="site-content-creator-settings" class="site-content-creator__settings">
     <summary><span id="site-content-creator-settings-label">发布设置</span></summary>
