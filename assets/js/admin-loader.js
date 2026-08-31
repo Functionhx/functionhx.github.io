@@ -164,7 +164,12 @@
   }
 
   async function restoreVerifiedOwner() {
-    if (document.documentElement.dataset.ownerRestore !== "true") return;
+    // The encrypted IndexedDB vault is authoritative. A localStorage hint can
+    // make the restoring layout stable, but losing that hint must not strand a
+    // trusted owner device without its pencil. English mirrors do not render
+    // owner controls, so they can skip this lookup entirely.
+    if (!document.getElementById("site-inline-editor-toggle")) return;
+    const hadRestoreHint = document.documentElement.dataset.ownerRestore === "true";
     try {
       await loadScript("github-auth-vault.js");
       const session = await window.functionhxGitHubAuth?.restore({ owner: "Functionhx", repository: "Functionhx/functionhx.github.io" });
@@ -172,7 +177,7 @@
         // A lazy restore can finish after another authoring surface has already
         // completed a fresh verification. Never let that stale empty result
         // revoke the newer owner state or collapse an active editing session.
-        if (document.documentElement.dataset.ownerVerified !== "true") {
+        if (hadRestoreHint && document.documentElement.dataset.ownerVerified !== "true") {
           window.functionhxOwnerUi?.setVerified?.(false);
         }
         return;

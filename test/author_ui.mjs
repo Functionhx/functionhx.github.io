@@ -432,15 +432,15 @@ try {
   await settingsRestorePage.goto(baseUrl, { waitUntil: "networkidle" });
   await seedEncryptedOwnerVault(settingsRestorePage, "settings-owner-token", { hint: false });
   await settingsRestorePage.reload({ waitUntil: "networkidle" });
-  assert.equal(settingsRestoreChecks, 0, "a vault without a restore hint must not create a visitor-time identity request");
-  assert.equal(await settingsRestorePage.locator("#site-inline-editor-toggle").isVisible(), false);
+  await settingsRestorePage.waitForFunction(() => document.documentElement.dataset.ownerVerified === "true");
+  assert.equal(settingsRestoreChecks, 1, "an encrypted owner vault must restore even when its localStorage hint is missing");
+  assert.equal(await settingsRestorePage.locator("#site-inline-editor-toggle").isVisible(), true);
+  assert.equal(await settingsRestorePage.evaluate(() => window.localStorage.getItem("functionhx:owner-ui:vault-hint")), "true");
   await settingsRestorePage.locator("#site-settings-toggle").click();
   await settingsRestorePage.locator("#site-settings-dialog").waitFor({ state: "visible" });
-  await settingsRestorePage.waitForFunction(() => document.documentElement.dataset.ownerVerified === "true");
-  assert.equal(settingsRestoreChecks, 1, "opening settings should verify a recovered encrypted owner session once");
+  assert.equal(settingsRestoreChecks, 1, "opening settings must reuse the page-level owner verification");
   assert.equal(await settingsRestorePage.locator("#site-inline-editor-toggle").isVisible(), true);
   assert.equal(await settingsRestorePage.locator("#site-settings-connect span").textContent(), "退出 @Functionhx");
-  assert.equal(await settingsRestorePage.evaluate(() => window.localStorage.getItem("functionhx:owner-ui:vault-hint")), "true");
   await settingsRestoreContext.close();
 
   for (const transientStatus of [403, 429, 503]) {
@@ -484,11 +484,13 @@ try {
     await transientSettingsPage.goto(baseUrl, { waitUntil: "networkidle" });
     await seedEncryptedOwnerVault(transientSettingsPage, `transient-settings-owner-token-${transientStatus}`, { hint: false });
     await transientSettingsPage.reload({ waitUntil: "networkidle" });
-    assert.equal(transientSettingsChecks, 0, "a vault without a hint should still avoid visitor-time GitHub requests");
+    await transientSettingsPage.waitForFunction(() => document.documentElement.dataset.ownerVerified === "true");
+    assert.equal(transientSettingsChecks, 1, "a trusted vault without a hint should still restore its pencil automatically");
+    assert.equal(await transientSettingsPage.locator("#site-inline-editor-toggle").isVisible(), true);
     await transientSettingsPage.locator("#site-settings-toggle").click();
     await transientSettingsPage.locator("#site-settings-dialog").waitFor({ state: "visible" });
     await transientSettingsPage.waitForFunction(() => document.querySelector("#site-settings-connect span")?.textContent === "退出 @Functionhx");
-    assert.equal(transientSettingsChecks, 1, `opening settings should refresh identity once after HTTP ${transientStatus}`);
+    assert.equal(transientSettingsChecks, 1, `opening settings should reuse the automatic restore after HTTP ${transientStatus}`);
     await transientSettingsPage.locator("#site-settings-close").click();
     await transientSettingsPage.locator("#site-settings-dialog").waitFor({ state: "hidden" });
     assert.equal(await transientSettingsPage.locator("html").getAttribute("data-owner-verified"), "true");
