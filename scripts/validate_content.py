@@ -25,6 +25,7 @@ LANGUAGES = {"zh", "en"}
 REQUIRED_ROUTES = {
     "home": {"/", "/en/"},
     "blog": {"/blog/", "/en/blog/"},
+    "paper-notes": {"/paper-notes/", "/en/paper-notes/"},
     "publications": {"/publications/", "/en/publications/"},
     "projects": {"/projects/", "/en/projects/"},
     "repositories": {"/repositories/", "/en/repositories/"},

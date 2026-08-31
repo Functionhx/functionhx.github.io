@@ -5,7 +5,7 @@ permalink: /tools/
 description: 在线工具与为 macOS 打造的原生应用。
 lang: zh
 translation_key: tools
-nav: true
+nav: false
 nav_order: 10
 ---
 

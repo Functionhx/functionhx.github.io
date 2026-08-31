@@ -15,6 +15,8 @@ EXPECTED_ROUTES = (
     "/en/",
     "/blog/",
     "/en/blog/",
+    "/paper-notes/",
+    "/en/paper-notes/",
     "/blog/2026/embodied-ai-control-story/",
     "/en/blog/2026/embodied-ai-control-story/",
     "/blog/2026/batch-lio/",
@@ -173,6 +175,8 @@ def main() -> int:
         rendered_html = path.read_text(encoding="utf-8")
         parser.feed(rendered_html)
         parsed_pages[route] = parser
+        if "data-navigation-fallback" not in rendered_html:
+            errors.append(f"{route}: no-JavaScript navigation fallback missing")
         if 'role="contentinfo"' in rendered_html:
             errors.append(f"{route}: removed global footer still renders")
 
@@ -280,8 +284,14 @@ def main() -> int:
             expected_active_key = "home"
         elif route_without_language.startswith("/blog/"):
             expected_active_key = "blog"
+        elif route_without_language.startswith("/paper-notes/"):
+            expected_active_key = "paper-notes"
         elif route_without_language.startswith("/tools/"):
-            expected_active_key = "tools"
+            expected_active_key = "more"
+        elif route_without_language.startswith("/news/"):
+            expected_active_key = "more"
+        elif route_without_language.startswith("/more/"):
+            expected_active_key = "more"
         elif route_without_language.startswith("/documents/"):
             expected_active_key = "documents"
         elif route_without_language.startswith("/spark/"):
@@ -739,10 +749,10 @@ def main() -> int:
             errors.append(f"/en/: navigation label {label!r} missing")
     if "ctrl k" in chinese_nav.lower() or "ctrl k" in english_nav.lower():
         errors.append("navigation must show only the compact search icon")
-    if "更多" in chinese_nav:
-        errors.append("/: collapsed more navigation must not render")
-    if "more" in english_nav:
-        errors.append("/en/: collapsed more navigation must not render")
+    if "更多" not in chinese_nav:
+        errors.append("/: accessible more navigation label is missing")
+    if "more" not in english_nav:
+        errors.append("/en/: accessible more navigation label is missing")
 
     for route in ("/projects/", "/en/projects/"):
         path = route_file(site, route)

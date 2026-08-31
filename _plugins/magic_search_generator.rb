@@ -15,6 +15,7 @@ module Functionhx
     SECTION_NAMES = {
       "zh" => {
         "posts" => "博客",
+        "paper-notes" => "论文札记",
         "spark" => "Spark",
         "projects" => "项目",
         "tools" => "工具",
@@ -24,6 +25,7 @@ module Functionhx
       },
       "en" => {
         "posts" => "Blog",
+        "paper-notes" => "Paper Notes",
         "spark" => "Spark",
         "projects" => "Projects",
         "tools" => "Tools",
@@ -180,6 +182,7 @@ module Functionhx
       def section_name(collection, data, language, title)
         if collection == "posts"
           return SECTION_NAMES.fetch(language).fetch("spark") if %w[note log].include?(data["kind"])
+          return SECTION_NAMES.fetch(language).fetch("paper-notes") if data["kind"] == "paper-note"
 
           return SECTION_NAMES.fetch(language).fetch("posts")
         end

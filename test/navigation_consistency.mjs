@@ -47,6 +47,7 @@ async function navigationState(route) {
         .filter((item) => item.classList.contains("active"))
         .map((item) => item.querySelector("[data-nav-translation-key]")?.dataset.navTranslationKey || ""),
       brandCount: navbar.querySelectorAll(".navbar-brand.title").length,
+      keys: items.map((item) => item.querySelector("[data-nav-translation-key]")?.dataset.navTranslationKey || "").filter(Boolean),
       geometry: items.map((item) => {
         const rect = item.getBoundingClientRect();
         const link = item.querySelector(".nav-link");
@@ -79,9 +80,14 @@ try {
   const chineseHome = await navigationState("/");
   assert.deepEqual(chineseHome.active, ["home"]);
   assert.equal(chineseHome.brandCount, 0);
+  assert.equal(chineseHome.keys.includes("tools"), false, "tools should not render as a primary navigation item");
+  assert.equal(chineseHome.keys.includes("more"), true, "the more menu should render in primary navigation");
   for (const [route, active] of [
     ["/blog/", "blog"],
-    ["/tools/", "tools"],
+    ["/paper-notes/", "paper-notes"],
+    ["/tools/", "more"],
+    ["/news/", "more"],
+    ["/more/", "more"],
     ["/documents/", "documents"],
     ["/spark/", "spark"],
   ]) {
@@ -93,9 +99,14 @@ try {
 
   const englishHome = await navigationState("/en/");
   assert.deepEqual(englishHome.active, ["home"]);
+  assert.equal(englishHome.keys.includes("tools"), false, "tools should not render as a primary navigation item");
+  assert.equal(englishHome.keys.includes("more"), true, "the more menu should render in primary navigation");
   for (const [route, active] of [
     ["/en/blog/", "blog"],
-    ["/en/tools/", "tools"],
+    ["/en/paper-notes/", "paper-notes"],
+    ["/en/tools/", "more"],
+    ["/en/news/", "more"],
+    ["/en/more/", "more"],
     ["/en/documents/", "documents"],
     ["/en/spark/", "spark"],
   ]) {
@@ -103,6 +114,18 @@ try {
     assert.deepEqual(state.active, [active], `${route} should change only its active item`);
     assertSameGeometry(state, englishHome, route);
   }
+
+  const noScriptContext = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+  const noScriptPage = await noScriptContext.newPage();
+  await noScriptPage.goto(baseUrl, { waitUntil: "load" });
+  assert.equal(await noScriptPage.locator("#navbarNav").isVisible(), true, "mobile navigation must remain visible without JavaScript");
+  assert.equal(
+    await noScriptPage.locator('[data-nav-translation-key="more"]').getAttribute("href"),
+    "/more/",
+    "the no-JavaScript more control must lead to its fallback index"
+  );
+  assert.equal(await noScriptPage.locator('.dropdown-menu a[href="/tools/"]').isVisible(), true, "tools must remain reachable without JavaScript");
+  await noScriptContext.close();
 
   console.log("Navigation consistency browser test passed.");
 } finally {

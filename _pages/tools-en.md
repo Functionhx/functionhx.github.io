@@ -5,7 +5,7 @@ permalink: /en/tools/
 description: Browser tools and native applications built for macOS.
 lang: en
 translation_key: tools
-nav: true
+nav: false
 nav_order: 10
 ---
 
