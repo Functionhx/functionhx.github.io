@@ -5,13 +5,18 @@ MIT-licensed [al-folio](https://github.com/alshedivat/al-folio) v1.1 starter.
 Chinese pages use the owner-approved `Function` identity and `ƒ` mark. The
 English presentation remains on the previous design for now.
 
-The Chinese homepage introduces the author, links to four collections, and
+The Chinese homepage opens with an illustrated portrait banner, links to four collections, and
 shows recent updates in a vertical timeline. `_data/home.yml` owns its entry
 labels and short update titles; dates and publication state come from the
 existing collections. `_pages/about-zh.md` remains the editable introduction.
-`assets/css/function.css` and `assets/js/function.js` apply the approved layout
+`assets/css/function.css`, `assets/css/function-home.css`, and `assets/js/function.js` apply the approved layout
 and motion only to Chinese pages, preserving the existing theme, search, owner
 controls, and contact interactions. Project details stay in their own sections.
+The anime portrait was generated from the owner's portrait and is labeled as an
+illustration. Responsive WebP versions live in `assets/img/function/`. The hero
+has restrained scroll movement on desktop, a separate mobile crop, and a static
+reduced-motion/no-JavaScript fallback. The original photograph remains in use
+on the English homepage.
 
 ## Local development
 

@@ -60,6 +60,9 @@
     {% endif %}
     {% if page_lang != 'en' %}
       <link rel="stylesheet" href="{{ '/assets/css/function.css' | relative_url | bust_file_cache }}">
+      {% if page.home %}
+        <link rel="stylesheet" href="{{ '/assets/css/function-home.css' | relative_url | bust_file_cache }}">
+      {% endif %}
       <noscript>
         <style>
           body.function-page {
@@ -166,7 +169,7 @@
     {% include deployment-monitor.liquid %}
 
     <!-- Content -->
-    <div class="container mt-5" role="main" id="main">
+    <div class="container{% if page_lang == 'en' %} mt-5{% endif %}" role="main" id="main">
       {% if editor_source_path and page_lang != 'en' %}
         {% include inline-editor.liquid source_path=editor_source_path %}
         {% include content-creator.liquid %}

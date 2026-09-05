@@ -1,127 +1,135 @@
 <div class="function-home">
   <section class="function-intro" aria-labelledby="function-name">
+    <figure class="function-portrait">
+      <img
+        src="{{ '/assets/img/function/portrait-hero-v2-1760.webp' | relative_url | bust_file_cache }}"
+        srcset="{{ '/assets/img/function/portrait-hero-v2-960.webp' | relative_url | bust_file_cache }} 960w, {{ '/assets/img/function/portrait-hero-v2-1760.webp' | relative_url | bust_file_cache }} 1760w"
+        sizes="(max-width: 700px) 1200px, (max-width: 1480px) 100vw, 1400px"
+        width="1760"
+        height="880"
+        alt="根据樊宇琛本人照片绘制的动漫风插画肖像"
+        loading="eager"
+        decoding="async"
+        fetchpriority="high"
+      >
+      <figcaption>插画肖像</figcaption>
+    </figure>
     <div class="function-intro-copy">
+      <p class="function-intro-alias" lang="en">Function</p>
       <h1 id="function-name">樊宇琛<span lang="en">Yuchen Fan</span></h1>
-      <div class="function-introduction">{{ content }}</div>
+      <p class="function-intro-role">
+        北京理工大学<br>
+        机器人工程本科生
+      </p>
       <div class="function-contact-links">
         <a href="#contact">联系我 <span aria-hidden="true">↓</span></a
         ><a href="{{ '/cv/' | relative_url }}">简历 <span aria-hidden="true">↗</span></a>
       </div>
     </div>
-    <figure class="function-portrait">
-      <img
-        src="{{ '/assets/img/prof_pic-480.webp' | relative_url | bust_file_cache }}"
-        srcset="{{ '/assets/img/prof_pic-480.webp' | relative_url | bust_file_cache }} 480w, {{ '/assets/img/prof_pic-800.webp' | relative_url | bust_file_cache }} 800w"
-        sizes="(max-width: 560px) 78px, 188px"
-        width="480"
-        height="480"
-        alt="{{ page.profile.image_alt }}"
-        loading="eager"
-        decoding="async"
-        fetchpriority="high"
-      >
-      <figcaption>北京 · 北京理工大学</figcaption>
-    </figure>
+    <a class="function-scroll-cue" href="#introduction">往下看看 <span aria-hidden="true">↓</span></a>
   </section>
-  <nav class="function-directory" aria-label="浏览本站">
-    {% for entry in site.data.home.directory %}
-      <a href="{{ entry.url | relative_url }}" class="function-directory-link"
-        ><span class="function-directory-title">
-          {{- entry.title -}}
-          <span aria-hidden="true">↗</span></span
-        ><span class="function-directory-note">{{ entry.note }}</span></a
-      >
-    {% endfor %}
-  </nav>
-  {% if page.announcements.enabled %}
-    {% assign updates = site.news | concat: site.posts | where: 'lang', 'zh' | sort: 'date' | reverse %}
-    {% assign update_count = 0 %}
-    {% assign previous_year = '' %}
-    {% for item in updates %}
-      {% assign show_update = false %}
-      {% if item.path contains '_news/' or item.announce == true %}{% assign show_update = true %}{% endif %}
-      {% if item.published == false or item.private == true or item.visibility == 'private' %}{% assign show_update = false %}{% endif %}
-      {% if show_update and update_count < page.announcements.limit %}
-        {% assign update_year = item.date | date: '%Y' %}
-        {% if update_year != previous_year %}
-          {% if update_count > 0 %}
-            </ol>
-            </section>
-          {% endif %}
-          <section class="function-timeline" aria-labelledby="updates-{{ update_year }}">
-            <div class="function-timeline-heading">
-              <h2 id="updates-{{ update_year }}">
-                <span>
-                  {{- update_year -}}
-                  <span class="sr-only"> · </span></span
-                >最近的更新
-              </h2>
-              <a href="{{ '/news/' | relative_url }}">全部动态 <span aria-hidden="true">↗</span></a>
-            </div>
-            <ol class="function-events">
-              {% assign previous_year = update_year %}
-        {% endif %}
-        {% assign update_count = update_count | plus: 1 %}
-        {% assign summary = site.data.home.updates[item.translation_key] %}
-        <li class="function-event">
-          <time datetime="{{ item.date | date: '%Y-%m-%d' }}">{{ item.date | date: '%m.%d' }}</time>
-          <div>
-            <h3>
-              <a href="{{ summary.url | default: item.url | relative_url }}">
-                {{- summary.title | default: item.title }}
-                <span aria-hidden="true">↗</span></a
-              >
-            </h3>
-            {% if item.path contains '_news/' %}
-              <button
-                type="button"
-                class="activity-feed__edit owner-only-control"
-                data-owner-context-control
-                data-author-action="source-edit"
-                data-source-path="{{ item.path | escape }}"
-                title="编辑动态：{{ item.title | escape }}"
-                aria-label="编辑动态：{{ item.title | escape }}"
-                hidden
-              >
-                <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
-              </button>
-            {% endif %}
-          </div>
-        </li>
-      {% endif %}
-    {% endfor %}
-    {% if update_count > 0 %}
-      </ol>
-      </section>
-    {% endif %}
-  {% endif %}
-  {% if page.social %}
-    <section class="social" id="contact" aria-labelledby="contact-heading">
-      <h2 id="contact-heading">联系我</h2>
-      <div class="contact-icons">{% social_links %}</div>
-      <p class="contact-note">{{ page.contact_note }}</p>
-      <p id="contact-copy-status" class="contact-copy-status" role="status" aria-live="polite" aria-atomic="true"></p>
-    </section>
-    <dialog id="wechat-qr-dialog" class="wechat-qr-dialog" aria-labelledby="wechat-qr-heading" aria-describedby="wechat-qr-description">
-      <form method="dialog">
-        <button class="wechat-qr-dialog__close" value="close" aria-label="关闭微信二维码"><span aria-hidden="true">×</span></button>
-      </form>
-      <div class="wechat-qr-dialog__body">
-        <h2 id="wechat-qr-heading">微信</h2>
-        <img
-          src="{{ '/assets/img/social/wechat-qr.png' | relative_url | bust_file_cache }}"
-          width="660"
-          height="660"
-          alt="樊宇琛的微信二维码"
-          loading="lazy"
-          decoding="async"
+  <div class="function-reading">
+    <section class="function-introduction" id="introduction" aria-label="关于我">{{ content }}</section>
+    <nav class="function-directory" aria-label="浏览本站">
+      {% for entry in site.data.home.directory %}
+        <a href="{{ entry.url | relative_url }}" class="function-directory-link"
+          ><span class="function-directory-title">
+            {{- entry.title -}}
+            <span aria-hidden="true">↗</span></span
+          ><span class="function-directory-note">{{ entry.note }}</span></a
         >
-        <p id="wechat-qr-description">扫码添加我为好友。</p>
-      </div>
-    </dialog>
-  {% endif %}
-  <div class="function-colophon">
-    <span>樊宇琛的个人主页</span><a href="https://github.com/Functionhx/magic-site-blueprint">本站源码 <span aria-hidden="true">↗</span></a
-    ><a href="#top">回到顶部 <span aria-hidden="true">↑</span></a>
+      {% endfor %}
+    </nav>
+    {% if page.announcements.enabled %}
+      {% assign updates = site.news | concat: site.posts | where: 'lang', 'zh' | sort: 'date' | reverse %}
+      {% assign update_count = 0 %}
+      {% assign previous_year = '' %}
+      {% for item in updates %}
+        {% assign show_update = false %}
+        {% if item.path contains '_news/' or item.announce == true %}{% assign show_update = true %}{% endif %}
+        {% if item.published == false or item.private == true or item.visibility == 'private' %}{% assign show_update = false %}{% endif %}
+        {% if show_update and update_count < page.announcements.limit %}
+          {% assign update_year = item.date | date: '%Y' %}
+          {% if update_year != previous_year %}
+            {% if update_count > 0 %}
+              </ol>
+              </section>
+            {% endif %}
+            <section class="function-timeline" aria-labelledby="updates-{{ update_year }}">
+              <div class="function-timeline-heading">
+                <h2 id="updates-{{ update_year }}">
+                  <span>
+                    {{- update_year -}}
+                    <span class="sr-only"> · </span></span
+                  >最近的更新
+                </h2>
+                <a href="{{ '/news/' | relative_url }}">全部动态 <span aria-hidden="true">↗</span></a>
+              </div>
+              <ol class="function-events">
+                {% assign previous_year = update_year %}
+          {% endif %}
+          {% assign update_count = update_count | plus: 1 %}
+          {% assign summary = site.data.home.updates[item.translation_key] %}
+          <li class="function-event">
+            <time datetime="{{ item.date | date: '%Y-%m-%d' }}">{{ item.date | date: '%m.%d' }}</time>
+            <div>
+              <h3>
+                <a href="{{ summary.url | default: item.url | relative_url }}">
+                  {{- summary.title | default: item.title }}
+                  <span aria-hidden="true">↗</span></a
+                >
+              </h3>
+              {% if item.path contains '_news/' %}
+                <button
+                  type="button"
+                  class="activity-feed__edit owner-only-control"
+                  data-owner-context-control
+                  data-author-action="source-edit"
+                  data-source-path="{{ item.path | escape }}"
+                  title="编辑动态：{{ item.title | escape }}"
+                  aria-label="编辑动态：{{ item.title | escape }}"
+                  hidden
+                >
+                  <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
+                </button>
+              {% endif %}
+            </div>
+          </li>
+        {% endif %}
+      {% endfor %}
+      {% if update_count > 0 %}
+        </ol>
+        </section>
+      {% endif %}
+    {% endif %}
+    {% if page.social %}
+      <section class="social" id="contact" aria-labelledby="contact-heading">
+        <h2 id="contact-heading">联系我</h2>
+        <p class="contact-note">{{ page.contact_note }}</p>
+        <div class="contact-icons">{% social_links %}</div>
+        <p id="contact-copy-status" class="contact-copy-status" role="status" aria-live="polite" aria-atomic="true"></p>
+      </section>
+      <dialog id="wechat-qr-dialog" class="wechat-qr-dialog" aria-labelledby="wechat-qr-heading" aria-describedby="wechat-qr-description">
+        <form method="dialog">
+          <button class="wechat-qr-dialog__close" value="close" aria-label="关闭微信二维码"><span aria-hidden="true">×</span></button>
+        </form>
+        <div class="wechat-qr-dialog__body">
+          <h2 id="wechat-qr-heading">微信</h2>
+          <img
+            src="{{ '/assets/img/social/wechat-qr.png' | relative_url | bust_file_cache }}"
+            width="660"
+            height="660"
+            alt="樊宇琛的微信二维码"
+            loading="lazy"
+            decoding="async"
+          >
+          <p id="wechat-qr-description">扫码添加我为好友。</p>
+        </div>
+      </dialog>
+    {% endif %}
+    <div class="function-colophon">
+      <span>樊宇琛的个人主页</span><a href="https://github.com/Functionhx/magic-site-blueprint">本站源码 <span aria-hidden="true">↗</span></a
+      ><a href="#top">回到顶部 <span aria-hidden="true">↑</span></a>
+    </div>
   </div>
 </div>

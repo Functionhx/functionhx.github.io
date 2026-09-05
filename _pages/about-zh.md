@@ -30,6 +30,6 @@ news_path: /news/
 contact_note: 如果想交流机器人、AI 工程或写作，QQ、Gmail、QQ 邮箱与 GitHub 都可以找到我。
 ---
 
-<p class="function-bio">我在<a href="https://www.bit.edu.cn/">北京理工大学</a>读机器人工程。<br>这里收录机器人项目、自己做的工具，以及写作。</p>
+<p class="function-bio">我在<a href="https://www.bit.edu.cn/">北京理工大学</a>读机器人工程。<br>这里收录我的<a href="/projects/">机器人项目</a>、<a href="/tools/">自己做的工具</a>，以及<a href="/blog/">写作</a>。</p>
 
 <p class="function-interest">目前关注自主系统、具身智能、三维场景智能与 AI 系统工程。</p>

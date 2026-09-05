@@ -339,8 +339,6 @@ def main() -> int:
         if "https://github.com/Functionhx/magic-site-blueprint" not in html:
             errors.append(f"{route}: public Magic site architecture link missing")
         for required_asset in (
-            "/assets/img/prof_pic-480.webp",
-            "/assets/img/prof_pic-800.webp",
             "/assets/css/home.css",
             "/assets/js/admin-loader.js",
             "/assets/js/navigation-performance.js",
@@ -351,6 +349,18 @@ def main() -> int:
         ):
             if required_asset not in html:
                 errors.append(f"{route}: missing optimized asset {required_asset}")
+        portrait_assets = (
+            ("/assets/img/prof_pic-480.webp", "/assets/img/prof_pic-800.webp")
+            if route == "/en/"
+            else (
+                "/assets/img/function/portrait-hero-v2-960.webp",
+                "/assets/img/function/portrait-hero-v2-1760.webp",
+                "/assets/css/function-home.css",
+            )
+        )
+        for portrait_asset in portrait_assets:
+            if portrait_asset not in html:
+                errors.append(f"{route}: missing optimized portrait asset {portrait_asset}")
         for eager_asset in (
             "/assets/img/prof_pic.jpg",
             "mathjax@",
@@ -375,6 +385,9 @@ def main() -> int:
             errors.append(f"/: approved homepage section missing: {home_marker}")
     if chinese_home.count('class="function-directory-link"') != 4:
         errors.append("/: homepage must keep its four collection entrances")
+    english_home = route_file(site, "/en/").read_text(encoding="utf-8")
+    if "/assets/css/function-home.css" in english_home or "portrait-hero-v2" in english_home:
+        errors.append("/en/: Chinese portrait design must not change the English homepage")
     for removed_home_asset in ("batch-results.png", "project-featured", "/assets/js/progress-bar.js"):
         if removed_home_asset in chinese_home:
             errors.append(f"/: removed prototype showcase or conflicting runtime: {removed_home_asset}")
