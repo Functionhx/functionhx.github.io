@@ -296,18 +296,21 @@ def main() -> int:
         elif route_without_language.startswith("/paper-notes/"):
             expected_active_key = "paper-notes"
         elif route_without_language.startswith("/tools/"):
-            expected_active_key = "more"
+            expected_active_key = "tools" if "tools" in expected_nav_keys else "more"
         elif route_without_language.startswith("/news/"):
-            expected_active_key = "more"
+            expected_active_key = "news" if "news" in expected_nav_keys else "more"
         elif route_without_language.startswith("/more/"):
             expected_active_key = "more"
         elif route_without_language.startswith("/documents/"):
             expected_active_key = "documents"
         elif route_without_language.startswith("/spark/"):
             expected_active_key = "spark"
-        if expected_active_key and parser.active_nav_translation_keys != [expected_active_key]:
+        expected_active_keys = (
+            [expected_active_key] if expected_active_key in expected_nav_keys else []
+        )
+        if expected_active_key and parser.active_nav_translation_keys != expected_active_keys:
             errors.append(
-                f"{route}: expected only {expected_active_key!r} to be active, "
+                f"{route}: expected active navigation {expected_active_keys!r} for the visible sections, "
                 f"found {parser.active_nav_translation_keys}"
             )
         expected_blog_source = {"/blog/": "_pages/blog-zh.md"}.get(route)
@@ -781,9 +784,9 @@ def main() -> int:
             errors.append(f"/en/: navigation label {label!r} missing")
     if "ctrl k" in chinese_nav.lower() or "ctrl k" in english_nav.lower():
         errors.append("navigation must show only the compact search icon")
-    if "更多" not in chinese_nav:
+    if parsed_pages.get("/", PageParser()).settings_visibility.get("more") and "更多" not in chinese_nav:
         errors.append("/: accessible more navigation label is missing")
-    if "more" not in english_nav:
+    if parsed_pages.get("/en/", PageParser()).settings_visibility.get("more") and "more" not in english_nav:
         errors.append("/en/: accessible more navigation label is missing")
 
     for route in ("/projects/", "/en/projects/"):

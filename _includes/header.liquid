@@ -271,13 +271,24 @@
 
           <!-- Other pages -->
           {% assign sorted_pages = site.pages | sort: 'nav_order' %}
+          {% assign active_direct_key = '' %}
+          {% for nav_page in sorted_pages %}
+            {% if nav_page.nav and nav_page.dropdown != true and nav_page.autogen == null and nav_page.lang == current_lang %}
+              {% assign direct_prefix = nav_page.permalink | remove: 'index.html' %}
+              {% if direct_prefix != '' and page.url contains direct_prefix %}
+                {% assign active_direct_key = nav_page.translation_key %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
           {% for p in sorted_pages %}
             {% if p.nav and p.autogen == null and p.lang == current_lang %}
               {% if p.dropdown %}
                 {% assign has_active_child = false %}
                 {% for child in p.children %}
-                  {% if page.title == child.title or page.url contains child.permalink %}
-                    {% assign has_active_child = true %}
+                  {% if active_direct_key == '' %}
+                    {% if page.title == child.title or page.url contains child.permalink %}
+                      {% assign has_active_child = true %}
+                    {% endif %}
                   {% endif %}
                 {% endfor %}
                 <li class="nav-item dropdown {% if page.title == p.title or has_active_child %}active{% endif %}">
