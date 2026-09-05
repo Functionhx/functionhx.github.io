@@ -1,0 +1,231 @@
+/* A compact reading feed for Function's Chinese writing. */
+.function-blog-page {
+  --writing-surface: var(--global-bg-color);
+  --writing-line: color-mix(in srgb, var(--global-divider-color) 55%, transparent);
+  background: color-mix(in srgb, var(--global-bg-color) 96%, var(--global-text-color));
+}
+.writing-page {
+  padding: 22px 0 40px;
+}
+.writing-heading {
+  margin: 0 0 26px;
+}
+.writing-heading h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+}
+.writing-heading p {
+  margin: 0;
+  color: var(--global-text-color-light);
+  font-size: 15px;
+}
+.writing-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 248px;
+  align-items: start;
+  gap: 24px;
+}
+.writing-feed,
+.writing-author {
+  background: var(--writing-surface);
+  border: 1px solid var(--writing-line);
+  border-radius: 10px;
+}
+.writing-feed-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 62px;
+  padding: 0 26px;
+  border-bottom: 1px solid var(--writing-line);
+}
+.writing-feed-heading h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+.writing-feed-heading h2 span {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 400;
+}
+.writing-feed-heading > span,
+.writing-feed-heading h2 span {
+  color: var(--global-text-color-light);
+  font-size: 13px;
+}
+.writing-item {
+  padding: 24px 26px 25px;
+}
+.writing-item + .writing-item {
+  border-top: 1px solid var(--writing-line);
+}
+.writing-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  color: var(--global-text-color-light);
+  font-size: 13px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+.writing-category {
+  color: var(--global-theme-color);
+  font-weight: 550;
+}
+.writing-item h3 {
+  margin: 0 0 12px;
+  font-size: 21px;
+  font-weight: 650;
+  line-height: 1.55;
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+}
+.writing-item h3 a {
+  color: var(--global-text-color);
+  text-decoration: none;
+}
+.writing-item h3 a:hover {
+  color: var(--global-theme-color);
+}
+.writing-summary {
+  margin: 0 0 17px;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.85;
+  color: var(--global-text-color-light);
+  overflow-wrap: anywhere;
+}
+.writing-item-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--global-text-color-light);
+}
+.writing-read {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  font-weight: 550;
+  color: var(--global-theme-color);
+}
+.writing-read span {
+  font-size: 20px;
+  line-height: 1;
+}
+.writing-tags {
+  margin-left: auto;
+}
+.writing-author {
+  padding: 26px 24px;
+}
+.writing-author-identity {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: var(--global-text-color);
+}
+.writing-author-identity:hover {
+  text-decoration: none;
+}
+.writing-author-mark {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  background: var(--function-wash);
+  border-radius: 8px;
+  color: var(--global-theme-color);
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 37px;
+  line-height: 1;
+}
+.writing-author-identity strong {
+  display: block;
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 650;
+}
+.writing-author-identity [lang] {
+  display: block;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--global-text-color-light);
+}
+.writing-author p {
+  margin: 19px 0 20px;
+  color: var(--global-text-color-light);
+  font-size: 14px;
+  line-height: 1.85;
+}
+.writing-author-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--writing-line);
+  padding-top: 15px;
+  font-size: 14px;
+  color: var(--global-theme-color);
+}
+.writing-sidebar-note {
+  margin: 16px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--global-text-color-light);
+}
+.writing-empty {
+  margin: 0;
+  padding: 30px 26px;
+  color: var(--global-text-color-light);
+}
+@media (max-width: 900px) {
+  .writing-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .writing-sidebar {
+    display: none;
+  }
+}
+@media (max-width: 575.98px) {
+  .writing-page {
+    padding-top: 12px;
+  }
+  .writing-heading {
+    margin-bottom: 20px;
+  }
+  .writing-heading h1 {
+    font-size: 27px;
+  }
+  .writing-heading p {
+    max-width: 23em;
+    font-size: 14px;
+  }
+  .writing-feed-heading {
+    min-height: 56px;
+    padding: 0 18px;
+  }
+  .writing-item {
+    padding: 21px 18px;
+  }
+  .writing-item h3 {
+    font-size: 19px;
+    line-height: 1.6;
+  }
+  .writing-summary {
+    font-size: 14px;
+  }
+  .writing-tags {
+    display: none;
+  }
+}

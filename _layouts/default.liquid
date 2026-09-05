@@ -65,6 +65,9 @@
       {% if page.home %}
         <link rel="stylesheet" href="{{ '/assets/css/function-home.css' | relative_url | bust_file_cache }}">
       {% endif %}
+      {% if page.translation_key == 'blog' %}
+        <link rel="stylesheet" href="{{ '/assets/css/blog-feed.css' | relative_url | bust_file_cache }}">
+      {% endif %}
       <noscript>
         <style>
           body.function-page {
@@ -130,7 +133,7 @@
 
   <!-- Body -->
   <body
-    class="{% if site.navbar_fixed %}fixed-top-nav{% endif %}{% if page_lang != 'en' %} function-page{% if page.home %} function-home-page{% endif %}{% endif %}"
+    class="{% if site.navbar_fixed %}fixed-top-nav{% endif %}{% if page_lang != 'en' %} function-page{% if page.translation_key == 'blog' %} function-blog-page{% endif %}{% if page.home %} function-home-page{% endif %}{% endif %}"
     data-page-language="{{ page_lang }}"
     id="top"
   >

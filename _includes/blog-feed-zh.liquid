@@ -1,0 +1,86 @@
+{% assign postlist = paginator.posts | where: 'lang', 'zh' %}
+<div class="writing-page">
+  <header class="writing-heading">
+    <h1>{{ page.blog_name }}</h1>
+    <p>{{ page.blog_description }}</p>
+  </header>
+
+  <div class="writing-layout">
+    <section class="writing-feed" aria-labelledby="writing-feed-title">
+      <div class="writing-feed-heading">
+        <h2 id="writing-feed-title">
+          全部文章 <span>{{ paginator.total_posts | default: postlist.size }}</span>
+        </h2>
+        <span>按发布时间</span>
+      </div>
+      {% for post in postlist %}
+        {% assign article_url = post.url | relative_url %}
+        {% assign external_article = false %}
+        {% if post.redirect contains '://' %}
+          {% assign article_url = post.redirect %}
+          {% assign external_article = true %}
+        {% elsif post.redirect != blank %}
+          {% assign article_url = post.redirect | relative_url %}
+        {% endif %}
+        {% assign post_text = post.content | strip_html | strip_newlines %}
+        {% assign read_time = post_text | size | divided_by: 500 | plus: 1 %}
+        <article class="writing-item">
+          <div class="writing-item-meta">
+            {% if post.categories.first -%}
+              <span class="writing-category">{{ post.categories.first | escape }}</span>
+            {%- endif %}
+            <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y-%m-%d' }}</time>
+          </div>
+          <h3>
+            <a
+              href="{{ article_url }}"
+              {% if external_article %}
+                target="_blank" rel="noopener noreferrer"
+              {% endif %}
+            >
+              {{- post.title | escape -}}
+              {% if external_article -%}
+                <span class="sr-only">（在新窗口打开外部文章）</span>
+              {%- endif %}
+            </a>
+          </h3>
+          <p class="writing-summary">{{ post.description | escape }}</p>
+          <div class="writing-item-footer">
+            <a
+              class="writing-read"
+              href="{{ article_url }}"
+              {% if external_article %}
+                target="_blank" rel="noopener noreferrer"
+              {% endif %}
+              aria-label="阅读全文：{{ post.title | escape }}{% if external_article %}（在新窗口打开）{% endif %}"
+            >
+              阅读全文 <span aria-hidden="true">›</span>
+            </a>
+            <span>约 {{ read_time }} 分钟</span>
+            {% if post.tags.size > 0 -%}
+              <span class="writing-tags">{{ post.tags | join: ' · ' | escape }}</span>
+            {%- endif %}
+          </div>
+        </article>
+      {% else %}
+        <p class="writing-empty">暂时还没有公开文章。</p>
+      {% endfor %}
+      {% include pagination.liquid %}
+    </section>
+
+    <aside class="writing-sidebar" aria-label="关于作者">
+      <div class="writing-author">
+        <a class="writing-author-identity" href="{{ '/' | relative_url }}">
+          <span class="writing-author-mark" aria-hidden="true">ƒ</span>
+          <span><strong>樊宇琛</strong><span lang="en">Function</span></span>
+        </a>
+        <p>
+          北京理工大学<br>
+          机器人工程本科生
+        </p>
+        <a class="writing-author-link" href="{{ '/#introduction' | relative_url }}">关于我 <span aria-hidden="true">→</span></a>
+      </div>
+      <p class="writing-sidebar-note">{{ page.blog_topics }}</p>
+    </aside>
+  </div>
+</div>

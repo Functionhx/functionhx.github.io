@@ -301,6 +301,16 @@ body.function-home-page {
   font-size: 15px;
   white-space: nowrap;
 }
+.function-event-description {
+  max-width: 34em;
+  margin: 9px 0 0;
+  color: var(--global-text-color-light);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
 .function-home .social {
   margin-top: 30px;
   padding: 72px 0 36px;
@@ -490,6 +500,11 @@ body.function-home-page {
   }
   .function-event time {
     font-size: 13px;
+  }
+  .function-event-description {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.8;
   }
   .function-home .social {
     margin-top: 15px;

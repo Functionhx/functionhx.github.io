@@ -79,6 +79,10 @@
                   <span aria-hidden="true">↗</span></a
                 >
               </h3>
+              {% assign update_description = summary.description | default: item.description %}
+              {% if update_description and update_description != empty %}
+                <p class="function-event-description">{{ update_description | escape }}</p>
+              {% endif %}
               {% if item.path contains '_news/' %}
                 <button
                   type="button"
