@@ -26,8 +26,8 @@
       scripts: ["deployment-monitor.js"],
     },
     settings: {
-      styles: ["deployment-monitor.css", "deepseek-translator.css", "site-settings.css"],
-      scripts: ["github-auth-vault.js", "deployment-monitor.js", "deepseek-translator.js", "site-settings.js"],
+      styles: ["deployment-monitor.css", "deepseek-translator.css", "site-settings.css", "owner-unlock.css"],
+      scripts: ["github-auth-vault.js", "owner-unlock.js", "deployment-monitor.js", "deepseek-translator.js", "site-settings.js"],
     },
     spark: {
       styles: ["deployment-monitor.css", "deepseek-translator.css"],
@@ -199,6 +199,8 @@
           "X-GitHub-Api-Version": "2022-11-28",
         },
       });
+      const currentSession = await window.functionhxGitHubAuth?.restore({ owner: "Functionhx", repository: "Functionhx/functionhx.github.io" });
+      if (currentSession?.token !== session.token) return;
       if (response.status === 401) {
         await window.functionhxGitHubAuth?.forget({ repository: "Functionhx/functionhx.github.io" });
         window.functionhxOwnerUi?.setVerified?.(false);

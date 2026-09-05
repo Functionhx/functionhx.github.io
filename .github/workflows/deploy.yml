@@ -52,6 +52,9 @@ jobs:
       - name: Check formatting
         run: npm run lint:prettier
 
+      - name: Check owner credential protection
+        run: npm run test:github-auth-vault
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 

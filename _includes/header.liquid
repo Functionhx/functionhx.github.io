@@ -1,14 +1,6 @@
 {% assign current_lang = page.lang | default: 'zh' %}
 {% assign home_page = site.pages | where: 'home', true | where: 'lang', current_lang | first %}
 {% assign search_page = site.pages | where: 'translation_key', 'search' | where: 'lang', current_lang | first %}
-{% assign translation_pool = site.pages
-  | concat: site.projects
-  | concat: site.posts
-  | concat: site.news
-  | concat: site.teachings
-  | concat: site.books
-%}
-{% assign translated_pages = translation_pool | where: 'translation_key', page.translation_key %}
 {% assign author_context = 'page' %}
 {% if page.home %}
   {% assign author_context = 'home' %}
@@ -40,8 +32,6 @@
   {% assign author_context = 'news-entry' %}
 {% endif %}
 {% if current_lang == 'en' %}
-  {% assign target_lang = 'zh' %}
-  {% assign language_label = '中' %}
   {% assign navigation_label = 'Toggle navigation' %}
   {% assign search_title = 'Search' %}
   {% assign search_label = 'Open search' %}
@@ -53,8 +43,6 @@
   {% assign theme_label = 'Click to change color theme; press and hold to toggle Turbo mode' %}
   {% assign turbo_hint = 'Hold for Turbo' %}
 {% else %}
-  {% assign target_lang = 'en' %}
-  {% assign language_label = 'EN' %}
   {% assign navigation_label = '展开导航' %}
   {% assign search_title = '搜索' %}
   {% assign search_label = '打开搜索' %}
@@ -66,10 +54,6 @@
   {% assign theme_label = '点击切换日间或夜间主题，长按启动或关闭 Turbo 模式' %}
   {% assign turbo_hint = '长按 Turbo' %}
 {% endif %}
-{% assign language_page = translated_pages | where: 'lang', target_lang | first %}
-{% unless language_page %}
-  {% assign language_page = site.pages | where: 'home', true | where: 'lang', target_lang | first %}
-{% endunless %}
 
 <style>
   :root {
@@ -357,9 +341,6 @@
             {% endif %}
           {% endfor %}
           {% if current_lang != 'en' %}
-            <li class="nav-item function-language">
-              <a class="nav-link" href="{{ language_page.url | relative_url }}" lang="en" aria-label="Read this page in English">EN</a>
-            </li>
             {% include function-nav-tools.liquid %}
           {% else %}
             <li class="nav-item">

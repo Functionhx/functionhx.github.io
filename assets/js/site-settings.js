@@ -77,6 +77,8 @@
     authConnect: document.getElementById("site-settings-auth-connect"),
     authRemember: document.getElementById("site-settings-auth-remember"),
     authStatus: document.getElementById("site-settings-auth-status"),
+    ownerAccess: document.getElementById("site-owner-access-toggle"),
+    ownerAccessNote: document.getElementById("site-owner-access-note"),
     clear: document.getElementById("site-settings-clear"),
     close: document.getElementById("site-settings-close"),
     commit: document.getElementById("site-settings-commit"),
@@ -110,7 +112,98 @@
   let pendingCommit = false;
   let slugIsAutomatic = true;
   let restorePromise = Promise.resolve(null);
+  let authVersion = 0;
+  let authAttempt = 0;
+  let ownerAccessVersion = 0;
+  let commitAuthorization = null;
+  let setupAfterConnect = false;
+  let protectionState = { enabled: false, locked: false };
   const disconnectedLabel = elements.connect.querySelector("span")?.textContent.trim() || "GitHub";
+
+  async function syncOwnerAccess() {
+    const operation = ++ownerAccessVersion;
+    const state = await window.functionhxGitHubAuth.protection({ owner, repository }).catch(() => ({ enabled: false, locked: false }));
+    if (operation !== ownerAccessVersion) return;
+    protectionState = state;
+    const locked = state.enabled && !activeToken;
+    elements.ownerAccess.textContent = state.enabled
+      ? activeToken
+        ? isEnglish
+          ? "Lock now"
+          : "立即锁定"
+        : isEnglish
+          ? "Unlock with Touch ID"
+          : "使用 Touch ID 解锁"
+      : isEnglish
+        ? "Set up Touch ID"
+        : "绑定 Touch ID";
+    elements.ownerAccessNote.textContent = state.enabled
+      ? locked
+        ? isEnglish
+          ? "Use your owner password and Touch ID to unlock this page."
+          : "输入站长密码，再通过 Touch ID 解锁本页。"
+        : isEnglish
+          ? "This page is unlocked. Refreshing or leaving the page locks it again."
+          : "本页已解锁；刷新或离开页面后会重新锁定。"
+      : isEnglish
+        ? "Connect GitHub once, then bind a password and Touch ID."
+        : "首次连接 GitHub 后，可绑定站长密码与 Touch ID。";
+    const label = elements.connect.querySelector("span");
+    if (label)
+      label.textContent = state.enabled
+        ? activeToken
+          ? isEnglish
+            ? "Lock now"
+            : "立即锁定"
+          : isEnglish
+            ? "Unlock owner access"
+            : "解锁站长"
+        : activeToken
+          ? strings.connected
+          : disconnectedLabel;
+  }
+
+  async function setupOwnerAccess(shouldCommit = false) {
+    const result = await window.functionhxOwnerUnlock.open({ owner, repository, setup: true });
+    await syncOwnerAccess();
+    if (result?.success) {
+      setStatus(isEnglish ? "Password and Touch ID are ready for this browser." : "已为当前浏览器绑定站长密码与 Touch ID。", "success");
+      if (shouldCommit) await commitSettings();
+    }
+  }
+
+  async function requestOwnerAccess(shouldCommit = false) {
+    await syncOwnerAccess();
+    if (!protectionState.enabled) {
+      openAuth(shouldCommit);
+      return;
+    }
+    const result = await window.functionhxOwnerUnlock.open({ owner, repository });
+    if (result?.reconnect) {
+      setupAfterConnect = true;
+      openAuth(shouldCommit);
+    } else if (result?.success) {
+      await restoreGitHubSession();
+      if (activeToken && shouldCommit) await commitSettings();
+      else if (activeToken) setStatus(isEnglish ? "Owner access is unlocked for this page." : "本页站长权限已解锁。", "success");
+    }
+  }
+
+  async function handleOwnerAccess() {
+    await restorePromise;
+    await syncOwnerAccess();
+    if (protectionState.enabled && activeToken) {
+      window.functionhxGitHubAuth.lock({ repository });
+      setStatus(isEnglish ? "Owner access is locked." : "站长权限已锁定。");
+    } else if (protectionState.enabled) {
+      await requestOwnerAccess();
+    } else if (activeToken) {
+      await setupOwnerAccess();
+    } else {
+      setupAfterConnect = true;
+      openAuth(false);
+    }
+  }
 
   function setStatus(message, state = "") {
     elements.status.textContent = message;
@@ -131,6 +224,7 @@
     elements.close.disabled = nextBusy;
     elements.commit.disabled = nextBusy;
     elements.connect.disabled = nextBusy;
+    elements.ownerAccess.disabled = nextBusy;
     elements.translate.disabled = nextBusy;
     sectionToggles.forEach((input) => {
       input.disabled = nextBusy;
@@ -155,6 +249,7 @@
     syncPersonalization();
     openDialog(dialog);
     toggle.setAttribute("aria-expanded", "true");
+    syncOwnerAccess();
   }
 
   function closeSettings() {
@@ -325,6 +420,10 @@
   }
 
   async function githubRequest(endpoint, options = {}) {
+    const write = options.method && options.method !== "GET";
+    if (write && (!commitAuthorization || commitAuthorization.version !== authVersion || commitAuthorization.token !== activeToken)) {
+      throw new DOMException("Owner access changed before this write.", "AbortError");
+    }
     const headers = {
       Accept: "application/vnd.github+json",
       "Content-Type": "application/json",
@@ -337,6 +436,7 @@
       cache: "no-store",
       headers,
       method: options.method || "GET",
+      signal: write ? commitAuthorization.controller.signal : undefined,
     });
     const payload = await response.json().catch(() => ({}));
     if (response.status === 404 && options.allowNotFound) return null;
@@ -499,6 +599,7 @@
   }
 
   function openAuth(shouldCommit = false) {
+    authAttempt += 1;
     pendingCommit = shouldCommit;
     setAuthStatus("");
     elements.token.value = "";
@@ -508,6 +609,7 @@
 
   function closeAuth() {
     pendingCommit = false;
+    setupAfterConnect = false;
     elements.token.value = "";
     closeDialog(authDialog);
   }
@@ -517,9 +619,11 @@
     const connectLabel = elements.connect.querySelector("span");
     if (connectLabel) connectLabel.textContent = activeToken ? strings.connected : disconnectedLabel;
     elements.connect.dataset.connected = String(Boolean(activeToken));
+    syncOwnerAccess();
   }
 
-  async function verifyRestoredOwner(session) {
+  async function verifyRestoredOwner(session, operation) {
+    if (operation !== authVersion) return null;
     if (!session?.token) {
       setConnection(null);
       return null;
@@ -542,6 +646,7 @@
 
     try {
       const user = await githubRequest("/user", { token: session.token });
+      if (operation !== authVersion) return null;
       if (String(user.login || "").toLowerCase() !== owner.toLowerCase()) {
         await window.functionhxGitHubAuth?.forget({ repository }).catch(() => undefined);
         setConnection(null);
@@ -550,6 +655,7 @@
       }
       return session;
     } catch (error) {
+      if (operation !== authVersion) return null;
       if (error.status === 401) {
         await window.functionhxGitHubAuth?.forget({ repository }).catch(() => undefined);
         setConnection(null);
@@ -565,13 +671,17 @@
   }
 
   async function restoreGitHubSession() {
+    const operation = ++authVersion;
     const session = await window.functionhxGitHubAuth?.restore({ owner, repository }).catch(() => null);
-    return verifyRestoredOwner(session);
+    return verifyRestoredOwner(session, operation);
   }
 
   async function saveGitHubSession(token) {
     const remember = elements.authRemember.checked;
     if (!window.functionhxGitHubAuth) return { failed: remember, remembered: false };
+    if (setupAfterConnect && protectionState.enabled && protectionState.locked) {
+      return window.functionhxGitHubAuth.save({ owner, remember: false, repository, token });
+    }
     try {
       return await window.functionhxGitHubAuth.save({ owner, remember, repository, token });
     } catch (_error) {
@@ -590,13 +700,16 @@
   async function handleConnectButton() {
     await restorePromise;
     if (activeToken) {
-      await disconnectGitHub(true);
+      if (protectionState.enabled) window.functionhxGitHubAuth.lock({ repository });
+      else await disconnectGitHub(true);
       return;
     }
-    openAuth(false);
+    await requestOwnerAccess(false);
   }
 
   async function connectGitHub() {
+    if (busy) return;
+    const attempt = authAttempt;
     const candidate = elements.token.value.trim();
     if (!candidate) {
       setAuthStatus(strings.authMissing, "error");
@@ -609,6 +722,7 @@
         githubRequest("/user", { token: candidate }),
         githubRequest(`/repos/${repository}`, { token: candidate }),
       ]);
+      if (!authDialog.open || attempt !== authAttempt) return;
       if (String(user.login).toLowerCase() !== owner.toLowerCase() || !repo.permissions?.push) {
         throw new Error("This token is not @Functionhx with repository write access.");
       }
@@ -616,12 +730,14 @@
       setConnection({ token: candidate });
       setAuthStatus(saved.failed ? strings.authRememberFailed : saved.remembered ? strings.authRemembered : strings.authSuccess, "success");
       const continueCommit = pendingCommit;
+      const continueSetup = setupAfterConnect;
       pendingCommit = false;
       window.clearTimeout(authCompletionTimer);
       authCompletionTimer = window.setTimeout(
         () => {
           closeAuth();
-          if (continueCommit) commitSettings();
+          if (continueSetup) setupOwnerAccess(continueCommit);
+          else if (continueCommit) commitSettings();
         },
         saved.failed ? 900 : 350
       );
@@ -646,11 +762,12 @@
       return;
     }
     if (!activeToken) {
-      openAuth(true);
+      await requestOwnerAccess(true);
       return;
     }
 
     setBusy(true);
+    commitAuthorization = { version: authVersion, token: activeToken, controller: new AbortController() };
     setStatus(window.functionhxSitePreferences?.getLoadingText?.() || strings.loading);
     elements.result.hidden = true;
     try {
@@ -684,6 +801,7 @@
       const message = error.message === strings.collision ? error.message : `${strings.commitFailed} ${error.message || ""}`.trim();
       setStatus(message, "error");
     } finally {
+      commitAuthorization = null;
       setBusy(false);
     }
   }
@@ -731,9 +849,11 @@
   elements.clear.addEventListener("click", clearNewSection);
   elements.translate.addEventListener("click", translateNewSection);
   elements.connect.addEventListener("click", handleConnectButton);
+  elements.ownerAccess.addEventListener("click", handleOwnerAccess);
   elements.commit.addEventListener("click", commitSettings);
   elements.authCancel.addEventListener("click", () => {
     pendingCommit = false;
+    setupAfterConnect = false;
     closeAuth();
   });
   elements.authConnect.addEventListener("click", connectGitHub);
@@ -741,13 +861,16 @@
     if (event.key === "Enter") connectGitHub();
   });
   authDialog.addEventListener("close", () => {
+    authAttempt += 1;
     window.clearTimeout(authCompletionTimer);
     authCompletionTimer = 0;
     pendingCommit = false;
+    setupAfterConnect = false;
     elements.token.value = "";
   });
   window.addEventListener("functionhx:github-auth-changed", (event) => {
     if (event.detail?.repository !== repository) return;
+    if (!event.detail.connected) commitAuthorization?.controller.abort();
     restorePromise = restoreGitHubSession();
   });
   restorePromise = restoreGitHubSession();

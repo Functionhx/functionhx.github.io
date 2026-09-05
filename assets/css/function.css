@@ -157,13 +157,6 @@ html[data-function-scrolled="true"] .function-page #navbar {
 .function-page #navbar .navbar-menu-list .nav-link:hover {
   color: var(--global-theme-color);
 }
-.function-page #navbar .function-language .nav-link {
-  justify-content: center;
-  min-width: 32px;
-  color: var(--global-text-color-light);
-  font-size: 12px;
-  letter-spacing: 0.025em;
-}
 .function-wordmark,
 .function-mobile-brand {
   display: inline-flex;
@@ -563,9 +556,6 @@ html[data-function-scrolled="true"] .function-page #navbar {
   }
   .function-page #navbar .toggle-container {
     padding: 8px 0;
-  }
-  .function-page #navbar .function-language .nav-link {
-    justify-content: flex-start;
   }
   .function-tools {
     grid-column: 1 / -1;

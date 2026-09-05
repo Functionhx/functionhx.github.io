@@ -1,0 +1,39 @@
+{% assign owner_unlock_en = false %}
+{% if page.lang == 'en' %}{% assign owner_unlock_en = true %}{% endif %}
+<dialog id="site-owner-unlock" class="site-owner-unlock" aria-labelledby="site-owner-unlock-heading" aria-describedby="site-owner-unlock-copy">
+  <form id="site-owner-unlock-form">
+    <header>
+      <span class="site-owner-unlock__brand"><span aria-hidden="true">ƒ</span> Function</span>
+      <button
+        id="site-owner-unlock-close"
+        class="site-settings__icon-button"
+        type="button"
+        aria-label="{% if owner_unlock_en %}Cancel unlock{% else %}取消解锁{% endif %}"
+      >
+        {% include function-icon.liquid name='close' %}
+      </button>
+    </header>
+    <h2 id="site-owner-unlock-heading">
+      {% if owner_unlock_en %}Unlock owner access{% else %}解锁站长{% endif %}
+    </h2>
+    <p id="site-owner-unlock-copy"></p>
+    <label for="site-owner-password">
+      {%- if owner_unlock_en %}Owner password{% else %}站长密码{% endif -%}
+    </label>
+    <input id="site-owner-password" name="owner-password" type="password" autocomplete="current-password" required maxlength="1024">
+    <div id="site-owner-password-confirmation" hidden>
+      <label for="site-owner-password-confirm">
+        {%- if owner_unlock_en %}Confirm password{% else %}再次输入密码{% endif -%}
+      </label>
+      <input id="site-owner-password-confirm" name="owner-password-confirm" type="password" autocomplete="new-password" maxlength="1024">
+    </div>
+    <p class="site-owner-unlock__device" id="site-owner-unlock-device"></p>
+    <p id="site-owner-unlock-status" class="site-owner-unlock__status" role="status" aria-live="polite"></p>
+    <button id="site-owner-unlock-submit" class="site-settings__button site-settings__button--primary" type="submit">
+      {% if owner_unlock_en %}Continue with Touch ID{% else %}继续验证 Touch ID{% endif %}
+    </button>
+    <button id="site-owner-unlock-reconnect" class="site-owner-unlock__reconnect" type="button">
+      {% if owner_unlock_en %}Reconnect GitHub to reset{% else %}重新连接 GitHub，重设解锁方式{% endif %}
+    </button>
+  </form>
+</dialog>

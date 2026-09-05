@@ -258,6 +258,23 @@
         <small>{{ settings_owner_note }}</small>
       </summary>
       <div class="site-settings__owner-content">
+        <section class="site-owner-access" aria-labelledby="site-owner-access-heading">
+          <div>
+            <h3 id="site-owner-access-heading">
+              {% if settings_lang == 'en' %}Owner unlock{% else %}站长解锁{% endif %}
+            </h3>
+            <p id="site-owner-access-note">
+              {% if settings_lang == 'en' -%}
+                Connect GitHub once, then bind a password and Touch ID.
+              {%- else -%}
+                首次连接 GitHub 后，可绑定站长密码与 Touch ID。
+              {%- endif %}
+            </p>
+          </div>
+          <button id="site-owner-access-toggle" class="site-settings__button site-settings__button--quiet" type="button">
+            {% if settings_lang == 'en' %}Set up Touch ID{% else %}绑定 Touch ID{% endif %}
+          </button>
+        </section>
         <section class="site-settings__section site-settings__layout" aria-labelledby="site-settings-layout-heading">
           <div class="site-settings__section-heading site-settings__layout-heading">
             <div>
@@ -460,6 +477,8 @@
     </details>
   </div>
 </dialog>
+
+{% include site-owner-unlock.liquid %}
 
 <dialog id="site-settings-auth" class="site-settings-auth" aria-labelledby="site-settings-auth-heading">
   <div>
