@@ -141,19 +141,27 @@ html[data-function-scrolled="true"] .function-page #navbar {
   margin-right: auto;
 }
 .function-page #navbar .navbar-menu-list .nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
   padding: 8px 0;
   font-size: 14px;
   color: var(--global-text-color);
   font-weight: 400;
   white-space: nowrap;
+  text-decoration: none;
+  transition: color 160ms ease;
 }
 .function-page #navbar .navbar-menu-list .active > .nav-link,
 .function-page #navbar .navbar-menu-list .nav-link:hover {
   color: var(--global-theme-color);
 }
 .function-page #navbar .function-language .nav-link {
+  justify-content: center;
+  min-width: 32px;
   color: var(--global-text-color-light);
   font-size: 12px;
+  letter-spacing: 0.025em;
 }
 .function-wordmark,
 .function-mobile-brand {
@@ -176,13 +184,222 @@ html[data-function-scrolled="true"] .function-page #navbar {
   display: none;
 }
 .function-page #navbar .dropdown-menu {
+  min-width: 196px;
+  padding: 6px;
+  margin-top: 8px;
   border: 1px solid var(--global-divider-color);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px #1d11240d;
+  border-radius: 14px;
+  background: var(--global-bg-color);
+  box-shadow:
+    0 12px 36px #17171c12,
+    0 2px 6px #17171c05;
+  text-align: left;
+  transform-origin: top right;
+}
+.function-page #navbar .dropdown-menu.show {
+  animation: function-menu-enter 170ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
 .function-page #navbar .dropdown-item {
-  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--global-text-color);
   font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  text-decoration: none;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+.function-page #navbar .function-menu-arrow {
+  color: var(--global-text-color-light);
+  font-size: 15px;
+}
+.function-page #navbar .dropdown-item:hover,
+.function-page #navbar .dropdown-item:focus-visible,
+.function-page #navbar .dropdown-item.active {
+  background: var(--function-wash);
+  color: var(--global-theme-color);
+}
+.function-page #navbar .dropdown-item:focus-visible {
+  outline-offset: -2px;
+}
+.function-page #navbar .dropdown-toggle {
+  gap: 4px;
+}
+.function-page #navbar .dropdown-toggle::after {
+  display: none;
+}
+.function-page #navbar .dropdown-toggle .function-icon {
+  width: 14px;
+  height: 14px;
+  transition: transform 160ms ease;
+}
+.function-page #navbar .dropdown-toggle[aria-expanded="true"] {
+  color: var(--global-theme-color);
+}
+.function-page #navbar .dropdown-toggle[aria-expanded="true"] .function-icon {
+  transform: rotate(180deg);
+}
+.function-icon {
+  display: block;
+  flex-shrink: 0;
+}
+.function-tools {
+  flex: 0 0 auto;
+}
+.function-tools-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 14px;
+  border-left: 1px solid var(--global-divider-color);
+}
+.function-page #navbar .function-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 10px;
+  appearance: none;
+  background: transparent;
+  box-shadow: none;
+  color: var(--global-text-color-light);
+  font: inherit;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+.function-page #navbar .function-control:hover,
+.function-page #navbar .function-control:focus-visible,
+.function-page #navbar .function-control[aria-expanded="true"] {
+  background: var(--function-wash);
+  color: var(--global-theme-color);
+}
+.function-page #navbar .function-control:focus-visible {
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+.function-control > span[id] {
+  color: inherit;
+  line-height: 0;
+}
+.function-control-label {
+  display: none;
+}
+.function-control-tip {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  z-index: 1;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: var(--global-text-color);
+  color: var(--global-bg-color);
+  font-size: 11px;
+  font-weight: 400;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, -3px);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease,
+    visibility 140ms ease;
+}
+.function-control:hover .function-control-tip,
+.function-control:focus-visible .function-control-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+  transition-delay: 300ms;
+}
+.function-control[aria-expanded="true"] .function-control-tip {
+  opacity: 0;
+  visibility: hidden;
+}
+.function-page #navbar .navbar-toggler-main {
+  display: none;
+  width: 42px;
+  height: 42px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 0;
+  transition: background 160ms ease;
+}
+.function-page #navbar .navbar-toggler-main:hover,
+.function-page #navbar .navbar-toggler-main:focus-visible {
+  background: var(--function-wash);
+}
+.function-page #navbar .navbar-toggler-main .icon-bar {
+  width: 20px;
+  height: 1.5px;
+  border-radius: 2px;
+}
+.function-page #site-inline-editor-toggle {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  border-color: var(--global-divider-color);
+  background: var(--global-bg-color);
+  box-shadow: 0 4px 16px #17171c0a;
+}
+.function-page #site-inline-editor-toggle:hover,
+.function-page #site-inline-editor-toggle[aria-expanded="true"] {
+  background: var(--function-wash);
+  box-shadow: 0 4px 16px #17171c0a;
+  color: var(--global-theme-color);
+  transform: none;
+}
+.function-page .site-author-menu {
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--global-bg-color);
+  box-shadow: 0 12px 36px #17171c12;
+}
+.function-page .site-author-menu > button,
+.function-page .site-author-menu > a {
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.function-page .site-author-menu > p {
+  padding: 8px 12px;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.function-page .site-settings__icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+@keyframes function-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .function-page #navbar:has(.navbar-collapse-main.show) {
   border-color: var(--global-divider-color);
@@ -306,7 +523,8 @@ html[data-function-scrolled="true"] .function-page #navbar {
     justify-content: space-between;
   }
   .function-page #navbar .navbar-toggler-main {
-    padding: 12px 0 12px 20px;
+    display: block;
+    padding: 10px;
   }
   .function-page #navbar .navbar-collapse-main {
     width: 100%;
@@ -331,14 +549,48 @@ html[data-function-scrolled="true"] .function-page #navbar {
   .function-page #navbar .dropdown-menu {
     position: static;
     border: 0;
-    padding: 0;
+    padding: 4px 0 0;
+    margin: 0;
+    min-width: 0;
     box-shadow: none;
+    animation: none;
   }
   .function-page #navbar .dropdown-item {
-    padding: 7px 0;
+    padding: 10px;
+    min-height: 44px;
   }
   .function-page #navbar .toggle-container {
     padding: 8px 0;
+  }
+  .function-page #navbar .function-language .nav-link {
+    justify-content: flex-start;
+  }
+  .function-tools {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-top: 10px;
+  }
+  .function-tools-group {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+    padding: 12px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--global-divider-color);
+  }
+  .function-page #navbar .function-control {
+    gap: 9px;
+    width: 100%;
+    height: 44px;
+  }
+  .function-control-label {
+    display: inline;
+    color: inherit;
+    font-size: 13px;
+  }
+  .function-control-tip {
+    display: none;
   }
 }
 @media (max-width: 560px) {
@@ -361,8 +613,17 @@ html[data-function-scrolled="true"] .function-page #navbar {
     scroll-behavior: auto;
   }
   .function-page #navbar,
-  .function-directory-title > span {
+  .function-directory-title > span,
+  .function-page #navbar .nav-link,
+  .function-page #navbar .function-control,
+  .function-page #navbar .dropdown-toggle .function-icon,
+  .function-page #navbar .navbar-toggler-main,
+  .function-page #navbar .dropdown-item,
+  .function-control-tip {
     transition: none;
+  }
+  .function-page #navbar .dropdown-menu.show {
+    animation: none;
   }
 }
 

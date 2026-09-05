@@ -307,7 +307,10 @@
                     aria-haspopup="true"
                     aria-expanded="false"
                   >
-                    {% if p.translation_key == 'more' %}
+                    {% if current_lang != 'en' %}
+                      {{- p.title -}}
+                      {%- include function-icon.liquid name='chevron' %}
+                    {% elsif p.translation_key == 'more' %}
                       <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
                       <span class="sr-only">{{ p.title }}</span>
                     {% else %}
@@ -327,6 +330,9 @@
                           href="{% if child.permalink contains '://' %}{{ child.permalink }}{% else %}{{ child.permalink | relative_url }}{% endif %}"
                         >
                           {{- child.title -}}
+                          {% if current_lang != 'en' -%}
+                            <span class="function-menu-arrow" aria-hidden="true">↗</span>
+                          {%- endif %}
                         </a>
                       {% endif %}
                     {% endfor %}
@@ -354,61 +360,63 @@
             <li class="nav-item function-language">
               <a class="nav-link" href="{{ language_page.url | relative_url }}" lang="en" aria-label="Read this page in English">EN</a>
             </li>
-          {% endif %}
-          <li class="nav-item">
-            <button
-              id="site-settings-toggle"
-              type="button"
-              title="{{ settings_title }}"
-              aria-label="{{ settings_label }}"
-              aria-controls="site-settings-dialog"
-              aria-expanded="false"
-            >
-              <span class="nav-link">
-                <i class="fa-solid fa-gear" aria-hidden="true"></i>
-                <span class="sr-only">{{ settings_title }}</span>
-              </span>
-            </button>
-            <noscript>
-              <style>
-                #site-settings-toggle {
-                  display: none;
-                }
-              </style>
-            </noscript>
-          </li>
-          {% if site.search_enabled %}
-            <!-- Search -->
+            {% include function-nav-tools.liquid %}
+          {% else %}
             <li class="nav-item">
-              <a
-                id="search-toggle"
-                href="{{ search_page.url | default: '/search/' | relative_url }}"
-                title="{{ search_title }}"
-                aria-label="{{ search_label }}"
-                aria-haspopup="dialog"
-                aria-controls="magic-search-dialog"
-              >
-                <span class="nav-link"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
-              </a>
-            </li>
-          {% endif %}
-          {% if site.enable_darkmode %}
-            <!-- Toggle theme mode -->
-            <li class="toggle-container">
               <button
-                id="light-toggle"
+                id="site-settings-toggle"
                 type="button"
-                title="{{ theme_title }}"
-                aria-label="{{ theme_label }}"
-                aria-keyshortcuts="Shift+T"
-                data-turbo-trigger
+                title="{{ settings_title }}"
+                aria-label="{{ settings_label }}"
+                aria-controls="site-settings-dialog"
+                aria-expanded="false"
               >
-                <i class="fa-half-sun-moon" id="light-toggle-system"></i>
-                <i class="fa-solid fa-moon" id="light-toggle-dark"></i>
-                <i class="fa-solid fa-sun" id="light-toggle-light"></i>
-                <span class="turbo-trigger-hint" aria-hidden="true">{{ turbo_hint }}</span>
+                <span class="nav-link">
+                  <i class="fa-solid fa-gear" aria-hidden="true"></i>
+                  <span class="sr-only">{{ settings_title }}</span>
+                </span>
               </button>
+              <noscript>
+                <style>
+                  #site-settings-toggle {
+                    display: none;
+                  }
+                </style>
+              </noscript>
             </li>
+            {% if site.search_enabled %}
+              <!-- Search -->
+              <li class="nav-item">
+                <a
+                  id="search-toggle"
+                  href="{{ search_page.url | default: '/search/' | relative_url }}"
+                  title="{{ search_title }}"
+                  aria-label="{{ search_label }}"
+                  aria-haspopup="dialog"
+                  aria-controls="magic-search-dialog"
+                >
+                  <span class="nav-link"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
+                </a>
+              </li>
+            {% endif %}
+            {% if site.enable_darkmode %}
+              <!-- Toggle theme mode -->
+              <li class="toggle-container">
+                <button
+                  id="light-toggle"
+                  type="button"
+                  title="{{ theme_title }}"
+                  aria-label="{{ theme_label }}"
+                  aria-keyshortcuts="Shift+T"
+                  data-turbo-trigger
+                >
+                  <i class="fa-half-sun-moon" id="light-toggle-system"></i>
+                  <i class="fa-solid fa-moon" id="light-toggle-dark"></i>
+                  <i class="fa-solid fa-sun" id="light-toggle-light"></i>
+                  <span class="turbo-trigger-hint" aria-hidden="true">{{ turbo_hint }}</span>
+                </button>
+              </li>
+            {% endif %}
           {% endif %}
         </ul>
       </div>
@@ -427,7 +435,7 @@
         aria-pressed="false"
         data-author-context="{{ author_context }}"
       >
-        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+        {% include function-icon.liquid name='edit' %}
         <span class="sr-only">{{ editor_title }}</span>
         <span id="site-inline-editor-drag-hint" class="sr-only"
           >可拖动并记住位置；也可按 Shift 加方向键移动，按 Shift 加 Home 恢复右上角；点按打开创作菜单</span

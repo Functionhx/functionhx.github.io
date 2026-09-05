@@ -1,0 +1,47 @@
+<li class="function-tools">
+  <div class="function-tools-group" role="group" aria-label="页面工具">
+    {% if site.search_enabled %}
+      <a
+        id="search-toggle"
+        class="function-control"
+        href="{{ search_page.url | default: '/search/' | relative_url }}"
+        aria-label="{{ search_label }}"
+        aria-haspopup="dialog"
+        aria-controls="magic-search-dialog"
+      >
+        {% include function-icon.liquid name='search' %}
+        <span class="function-control-label" aria-hidden="true">搜索</span>
+        <span class="function-control-tip" aria-hidden="true">搜索</span>
+      </a>
+    {% endif %}
+    {% if site.enable_darkmode %}
+      <button id="light-toggle" class="function-control" type="button" aria-label="{{ theme_label }}" aria-keyshortcuts="Shift+T" data-turbo-trigger>
+        <span id="light-toggle-system">{% include function-icon.liquid name='system' %}</span>
+        <span id="light-toggle-dark">{% include function-icon.liquid name='moon' %}</span>
+        <span id="light-toggle-light">{% include function-icon.liquid name='sun' %}</span>
+        <span class="function-control-label" aria-hidden="true">主题</span>
+        <span class="function-control-tip" aria-hidden="true">切换主题</span>
+      </button>
+    {% endif %}
+    <button
+      id="site-settings-toggle"
+      class="function-control"
+      type="button"
+      aria-label="{{ settings_label }}"
+      aria-controls="site-settings-dialog"
+      aria-expanded="false"
+    >
+      {% include function-icon.liquid name='settings' %}
+      <span class="function-control-label" aria-hidden="true">设置</span>
+      <span class="function-control-tip" aria-hidden="true">站点设置</span>
+    </button>
+  </div>
+  <noscript>
+    <style>
+      .function-page #navbar #site-settings-toggle,
+      .function-page #navbar #light-toggle {
+        display: none;
+      }
+    </style>
+  </noscript>
+</li>
