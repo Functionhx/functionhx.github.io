@@ -60,6 +60,7 @@ body.function-page {
   padding-top: 108px;
   font-family: var(--site-font-family);
   font-size: 16px;
+  font-weight: 400;
   line-height: 1.8;
   -webkit-font-smoothing: antialiased;
 }
@@ -147,7 +148,7 @@ html[data-function-scrolled="true"] .function-page #navbar {
   padding: 8px 0;
   font-size: 14px;
   color: var(--global-text-color);
-  font-weight: 400;
+  font-weight: 500;
   white-space: nowrap;
   text-decoration: none;
   transition: color 160ms ease;
@@ -301,6 +302,7 @@ html[data-function-scrolled="true"] .function-page #navbar {
   line-height: 0;
 }
 .function-control-label {
+  font-weight: 500;
   display: none;
 }
 .function-control-tip {

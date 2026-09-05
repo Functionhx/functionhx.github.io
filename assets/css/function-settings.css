@@ -1,0 +1,247 @@
+/* Chinese reading preferences; existing owner controls keep their behavior. */
+.function-page .site-settings-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-width: none;
+  height: fit-content;
+  max-height: calc(100dvh - 32px);
+  border: 1px solid var(--global-divider-color);
+  border-radius: 22px;
+  box-shadow: 0 24px 100px #17171c26;
+}
+.function-page .site-settings-dialog::backdrop {
+  background: #17171c52;
+  backdrop-filter: blur(5px);
+}
+.function-page .site-settings {
+  padding: 30px 32px 12px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.function-page .site-settings__header {
+  border: 0;
+  padding: 0 0 22px;
+}
+.function-page .site-settings__brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.function-page .site-settings__brand > span {
+  color: var(--global-theme-color);
+  font-family: Georgia, serif;
+  font-size: 28px;
+  font-style: italic;
+  font-weight: 500;
+}
+.function-page .site-settings__header h2 {
+  margin: 0 0 8px;
+  font-size: 32px;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  line-height: 1.3;
+}
+.function-page .site-settings__header h2 + p {
+  font-size: 14px;
+  line-height: 1.7;
+}
+.function-page .site-settings__icon-button {
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--global-text-color) 5%, transparent);
+  color: var(--global-text-color);
+}
+.function-page .site-settings__icon-button:hover {
+  background: var(--function-wash);
+  color: var(--global-theme-color);
+  outline: 0;
+}
+.function-page .site-settings__public,
+.function-page .site-settings__personalization {
+  border: 0;
+  padding: 0;
+}
+/* Sections remain named for assistive technology; the three rows need no repeated visible headings. */
+.function-page .site-settings__public > .site-settings__section-heading,
+.function-page .site-settings__personalization > .site-settings__section-heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.function-page .site-settings__preferences {
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+.function-page .site-settings__preference {
+  min-height: 88px;
+  padding: 18px 0;
+  gap: 20px;
+}
+.function-page .site-settings__personalization .site-settings__preference {
+  border-top: 1px solid color-mix(in srgb, var(--global-divider-color) 65%, transparent);
+}
+.function-page .site-settings__preference strong {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.function-page .site-settings__preference small {
+  margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.function-page .site-settings__segmented {
+  gap: 2px;
+  padding: 4px;
+  border-radius: 11px;
+}
+.function-page .site-settings__segmented a {
+  display: grid;
+  place-items: center;
+  min-height: 36px;
+  padding: 0 13px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.function-page .site-settings__segmented a[aria-current="page"] {
+  background: var(--global-theme-color);
+  color: var(--global-bg-color);
+  box-shadow: none;
+}
+.function-page .site-settings__select {
+  flex: 0 0 180px;
+  min-width: 0;
+  background: color-mix(in srgb, var(--global-text-color) 4%, var(--global-bg-color));
+  border-color: transparent;
+  border-radius: 10px;
+}
+.function-page .site-settings__select select {
+  min-height: 44px;
+  padding: 10px 34px 10px 14px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.function-page .site-settings__select:hover {
+  border-color: var(--global-divider-color);
+}
+.function-page .site-settings__owner {
+  border-top: 1px solid var(--global-divider-color);
+  border-bottom: 0;
+  margin-top: 16px;
+  padding: 0;
+}
+.function-page .site-settings__owner > summary {
+  min-height: 64px;
+  gap: 14px;
+}
+.function-page .site-settings__owner > summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.function-page .site-settings__owner > summary .function-icon {
+  color: var(--global-text-color-light);
+  width: 17px;
+  height: 17px;
+}
+.function-page .site-settings__owner > summary > small {
+  margin-left: auto;
+  font-size: 12px;
+}
+.function-page .site-settings__owner > summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  margin-right: 4px;
+}
+.function-page .site-settings__owner[open] > summary::after {
+  content: "";
+  transform: rotate(135deg);
+}
+.function-page .site-settings__owner > summary:focus-visible {
+  outline: 2px solid var(--global-theme-color);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+.function-page .site-settings__owner-content {
+  padding-bottom: 20px;
+}
+.function-page .site-settings__owner-content h3 {
+  font-weight: 600;
+}
+.function-page .site-settings__section-heading {
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.function-page .site-settings__footer {
+  align-items: stretch;
+  flex-direction: column;
+}
+@media (max-width: 575px) {
+  .function-page .site-settings-dialog {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    border-radius: 20px;
+  }
+  .function-page .site-settings {
+    padding: 24px 22px 8px;
+  }
+  .function-page .site-settings__header h2 {
+    font-size: 28px;
+  }
+  .function-page .site-settings__preference {
+    align-items: center;
+    flex-direction: row;
+    gap: 12px;
+  }
+  .function-page .site-settings__preference small {
+    max-width: 10em;
+    font-size: 12px;
+  }
+  .function-page .site-settings__select {
+    flex: 0 0 142px;
+    width: auto;
+  }
+  .function-page .site-settings__segmented {
+    align-self: center;
+  }
+  .function-page .site-settings__segmented a {
+    padding-inline: 10px;
+  }
+  .function-page .site-settings__owner > summary > small {
+    display: block;
+  }
+}
+@media (max-width: 360px) {
+  .function-page .site-settings {
+    padding-inline: 18px;
+  }
+  .function-page .site-settings__preference {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .function-page .site-settings__preference small {
+    max-width: none;
+  }
+  .function-page .site-settings__select {
+    flex-basis: auto;
+  }
+  .function-page .site-settings__segmented {
+    align-self: flex-start;
+  }
+}

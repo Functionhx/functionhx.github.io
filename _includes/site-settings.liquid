@@ -73,20 +73,20 @@
   {% assign settings_auth_cancel = 'Cancel' %}
   {% assign settings_auth_verify = 'Verify and connect' %}
 {% else %}
-  {% assign settings_heading = '站点设置' %}
-  {% assign settings_intro = '公开浏览偏好与仅站长可用的网站管理。' %}
+  {% assign settings_heading = '浏览偏好' %}
+  {% assign settings_intro = '字体与加载文案仅保存在当前浏览器。' %}
   {% assign settings_public = '通用' %}
   {% assign settings_public_note = '所有访客可用 · 只保存在当前浏览器' %}
   {% assign settings_language = '语言' %}
-  {% assign settings_language_note = '中文是主站，英文仅作为阅读镜像。' %}
+  {% assign settings_language_note = '选择浏览语言' %}
   {% assign settings_personalization = '个性化' %}
   {% assign settings_personalization_note = '字体与加载文案 · 只保存在当前浏览器' %}
-  {% assign settings_font = '网站字体' %}
-  {% assign settings_font_note = '统一应用于整个网站。' %}
+  {% assign settings_font = '阅读字体' %}
+  {% assign settings_font_note = '应用于所有页面' %}
   {% assign settings_loading_copy = '加载文案' %}
-  {% assign settings_loading_copy_note = '页面或站内工具准备时显示。' %}
-  {% assign settings_owner = '站长设置' %}
-  {% assign settings_owner_note = '导航、栏目与发布 · 仅 @Functionhx' %}
+  {% assign settings_loading_copy_note = '页面加载时显示' %}
+  {% assign settings_owner = '站长管理' %}
+  {% assign settings_owner_note = '栏目与发布' %}
   {% assign settings_existing = '栏目' %}
   {% assign settings_layout = '导航布局' %}
   {% assign settings_layout_intro = '选择桌面端导航的呼吸感，可即时预览并随设置一起发布。' %}
@@ -141,7 +141,11 @@
   >
     <header class="site-settings__header">
       <div>
-        <p class="site-settings__eyebrow">functionhx.github.io</p>
+        {% if settings_lang == 'en' %}
+          <p class="site-settings__eyebrow">functionhx.github.io</p>
+        {% else %}
+          <p class="site-settings__brand"><span aria-hidden="true">ƒ</span> Function</p>
+        {% endif %}
         <h2 id="site-settings-heading">{{ settings_heading }}</h2>
         <p>{{ settings_intro }}</p>
       </div>
@@ -152,7 +156,11 @@
         title="{{ settings_close }}"
         aria-label="{{ settings_close }}"
       >
-        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        {% if settings_lang == 'en' %}
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        {% else %}
+          {% include function-icon.liquid name='close' %}
+        {% endif %}
       </button>
     </header>
 
@@ -203,10 +211,17 @@
           <label class="site-settings__select site-settings__select--font">
             <span class="sr-only">{{ settings_font }}</span>
             <select id="site-settings-font" aria-label="{{ settings_font }}">
-              <option value="anthropic-serif">Anthropic Serif</option>
-              <option value="anthropic-sans">Anthropic Sans</option>
-              <option value="system">System</option>
-              <option value="dyslexic">Dyslexic friendly</option>
+              {% if settings_lang == 'en' %}
+                <option value="anthropic-serif">Anthropic Serif</option>
+                <option value="anthropic-sans">Anthropic Sans</option>
+                <option value="system">System</option>
+                <option value="dyslexic">Dyslexic friendly</option>
+              {% else %}
+                <option value="system">系统字体</option>
+                <option value="anthropic-serif">衬线字体</option>
+                <option value="anthropic-sans">无衬线字体</option>
+                <option value="dyslexic">易读字体</option>
+              {% endif %}
             </select>
             <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
           </label>
@@ -232,7 +247,14 @@
 
     <details id="site-settings-owner" class="site-settings__owner">
       <summary>
-        <span><i class="fa-solid fa-lock" aria-hidden="true"></i> {{ settings_owner }}</span>
+        <span>
+          {% if settings_lang == 'en' %}
+            <i class="fa-solid fa-lock" aria-hidden="true"></i>
+          {% else %}
+            {% include function-icon.liquid name='lock' %}
+          {% endif %}
+          {{ settings_owner }}
+        </span>
         <small>{{ settings_owner_note }}</small>
       </summary>
       <div class="site-settings__owner-content">
