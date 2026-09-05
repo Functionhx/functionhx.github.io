@@ -61,7 +61,7 @@
   {% assign settings_clear = 'Clear new section' %}
   {% assign settings_translate = 'Translate Chinese with DeepSeek' %}
   {% assign settings_connect = 'Connect GitHub' %}
-  {% assign settings_commit = 'Commit settings' %}
+  {% assign settings_commit = 'Save and publish' %}
   {% assign settings_close = 'Close settings' %}
   {% assign settings_idle = 'Changes stay in this panel until you commit them.' %}
   {% assign settings_auth_heading = 'Connect GitHub' %}
@@ -89,7 +89,7 @@
   {% assign settings_owner_note = '栏目与发布' %}
   {% assign settings_existing = '栏目' %}
   {% assign settings_layout = '导航布局' %}
-  {% assign settings_layout_intro = '选择桌面端导航的呼吸感，可即时预览并随设置一起发布。' %}
+  {% assign settings_layout_intro = '即时预览导航间距，保存并发布后对所有访客生效。' %}
   {% assign settings_density_auto = '自动' %}
   {% assign settings_density_auto_note = '根据可用宽度与栏目数量自动平衡。' %}
   {% assign settings_density_compact = '紧凑' %}
@@ -115,7 +115,7 @@
   {% assign settings_clear = '清空新栏目' %}
   {% assign settings_translate = 'DeepSeek 翻译英文' %}
   {% assign settings_connect = '连接 GitHub' %}
-  {% assign settings_commit = '提交设置' %}
+  {% assign settings_commit = '保存并发布' %}
   {% assign settings_close = '关闭设置' %}
   {% assign settings_idle = '修改暂时只保留在这个面板中，提交后才会更新站点。' %}
   {% assign settings_auth_heading = '连接 GitHub' %}
@@ -164,317 +164,364 @@
       </button>
     </header>
 
-    <section class="site-settings__section site-settings__public" aria-labelledby="site-settings-public-heading">
-      <div class="site-settings__section-heading">
-        <h3 id="site-settings-public-heading">{{ settings_public }}</h3>
-        <span>{{ settings_public_note }}</span>
-      </div>
-      <div class="site-settings__preferences">
-        <div class="site-settings__preference">
-          <div>
-            <strong>{{ settings_language }}</strong>
-            <small>{{ settings_language_note }}</small>
-          </div>
-          <div class="site-settings__segmented" aria-label="{{ settings_language }}">
-            <a
-              href="{{ settings_zh_page.url | relative_url }}"
-              lang="zh-CN"
-              {% if settings_lang == 'zh' %}
-                aria-current="page"
-              {% endif %}
-              >中文</a
-            >
-            <a
-              href="{{ settings_en_page.url | relative_url }}"
-              lang="en"
-              {% if settings_lang == 'en' %}
-                aria-current="page"
-              {% endif %}
-              >English</a
-            >
-          </div>
+    <div class="site-settings__body">
+      <section class="site-settings__section site-settings__public" aria-labelledby="site-settings-public-heading">
+        <div class="site-settings__section-heading">
+          <h3 id="site-settings-public-heading">{{ settings_public }}</h3>
+          <span>{{ settings_public_note }}</span>
         </div>
-      </div>
-    </section>
-
-    <section class="site-settings__section site-settings__personalization" aria-labelledby="site-settings-personalization-heading">
-      <div class="site-settings__section-heading">
-        <h3 id="site-settings-personalization-heading">{{ settings_personalization }}</h3>
-        <span>{{ settings_personalization_note }}</span>
-      </div>
-      <div class="site-settings__preferences">
-        <div class="site-settings__preference">
-          <div>
-            <strong>{{ settings_font }}</strong>
-            <small>{{ settings_font_note }}</small>
-          </div>
-          <label class="site-settings__select site-settings__select--font">
-            <span class="sr-only">{{ settings_font }}</span>
-            <select id="site-settings-font" aria-label="{{ settings_font }}">
-              {% if settings_lang == 'en' %}
-                <option value="anthropic-serif">Anthropic Serif</option>
-                <option value="anthropic-sans">Anthropic Sans</option>
-                <option value="system">System</option>
-                <option value="dyslexic">Dyslexic friendly</option>
-              {% else %}
-                <option value="system">系统字体</option>
-                <option value="anthropic-serif">衬线字体</option>
-                <option value="anthropic-sans">无衬线字体</option>
-                <option value="dyslexic">易读字体</option>
-              {% endif %}
-            </select>
-            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-          </label>
-        </div>
-        <div class="site-settings__preference">
-          <div>
-            <strong>{{ settings_loading_copy }}</strong>
-            <small>{{ settings_loading_copy_note }}</small>
-          </div>
-          <label class="site-settings__select">
-            <span class="sr-only">{{ settings_loading_copy }}</span>
-            <select id="site-settings-loading-copy" aria-label="{{ settings_loading_copy }}">
-              <option value="thinking">Thinking...</option>
-              <option value="loading">Loading...</option>
-              <option value="thinking-zh">正在思考...</option>
-              <option value="loading-zh">正在载入...</option>
-            </select>
-            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-          </label>
-        </div>
-      </div>
-    </section>
-
-    <details id="site-settings-owner" class="site-settings__owner">
-      <summary>
-        <span>
-          {% if settings_lang == 'en' %}
-            <i class="fa-solid fa-lock" aria-hidden="true"></i>
-          {% else %}
-            {% include function-icon.liquid name='lock' %}
-          {% endif %}
-          {{ settings_owner }}
-        </span>
-        <small>{{ settings_owner_note }}</small>
-      </summary>
-      <div class="site-settings__owner-content">
-        <section class="site-owner-access" aria-labelledby="site-owner-access-heading">
-          <div>
-            <h3 id="site-owner-access-heading">
-              {% if settings_lang == 'en' %}Owner unlock{% else %}站长解锁{% endif %}
-            </h3>
-            <p id="site-owner-access-note">
-              {% if settings_lang == 'en' -%}
-                Connect GitHub once, then bind a password and Touch ID.
-              {%- else -%}
-                首次连接 GitHub 后，可绑定站长密码与 Touch ID。
-              {%- endif %}
-            </p>
-          </div>
-          <button id="site-owner-access-toggle" class="site-settings__button site-settings__button--quiet" type="button">
-            {% if settings_lang == 'en' %}Set up Touch ID{% else %}绑定 Touch ID{% endif %}
-          </button>
-        </section>
-        <section class="site-settings__section site-settings__layout" aria-labelledby="site-settings-layout-heading">
-          <div class="site-settings__section-heading site-settings__layout-heading">
+        <div class="site-settings__preferences">
+          <div class="site-settings__preference">
             <div>
-              <h3 id="site-settings-layout-heading">{{ settings_layout }}</h3>
-              <p>{{ settings_layout_intro }}</p>
+              <strong>{{ settings_language }}</strong>
+              <small>{{ settings_language_note }}</small>
             </div>
-            <div class="site-settings__nav-preview" aria-hidden="true">
-              <span></span><span></span><span></span><span></span><span></span><span></span>
+            <div class="site-settings__segmented" aria-label="{{ settings_language }}">
+              <a
+                href="{{ settings_zh_page.url | relative_url }}"
+                lang="zh-CN"
+                {% if settings_lang == 'zh' %}
+                  aria-current="page"
+                {% endif %}
+                >中文</a
+              >
+              <a
+                href="{{ settings_en_page.url | relative_url }}"
+                lang="en"
+                {% if settings_lang == 'en' %}
+                  aria-current="page"
+                {% endif %}
+                >English</a
+              >
             </div>
           </div>
-          <fieldset class="site-settings__density" aria-labelledby="site-settings-layout-heading">
-            <legend class="sr-only">{{ settings_layout }}</legend>
-            <label>
-              <input
-                id="site-settings-density-auto"
-                type="radio"
-                name="site-settings-navigation-density"
-                value="auto"
-                data-navigation-density
-                {% if site.data.site_ui.navigation_density == 'auto' or site.data.site_ui.navigation_density == null %}
-                  checked
-                {% endif %}
-              >
-              <span
-                ><strong>{{ settings_density_auto }}</strong><small>{{ settings_density_auto_note }}</small></span
-              >
-            </label>
-            <label>
-              <input
-                id="site-settings-density-compact"
-                type="radio"
-                name="site-settings-navigation-density"
-                value="compact"
-                data-navigation-density
-                {% if site.data.site_ui.navigation_density == 'compact' %}
-                  checked
-                {% endif %}
-              >
-              <span
-                ><strong>{{ settings_density_compact }}</strong><small>{{ settings_density_compact_note }}</small></span
-              >
-            </label>
-            <label>
-              <input
-                id="site-settings-density-relaxed"
-                type="radio"
-                name="site-settings-navigation-density"
-                value="relaxed"
-                data-navigation-density
-                {% if site.data.site_ui.navigation_density == 'relaxed' %}
-                  checked
-                {% endif %}
-              >
-              <span
-                ><strong>{{ settings_density_relaxed }}</strong><small>{{ settings_density_relaxed_note }}</small></span
-              >
-            </label>
-          </fieldset>
-        </section>
+        </div>
+      </section>
 
-        <section class="site-settings__section" aria-labelledby="site-settings-existing-heading">
-          <div class="site-settings__section-heading">
-            <h3 id="site-settings-existing-heading">{{ settings_existing }}</h3>
-            <span>{{ settings_visible }}</span>
-          </div>
-          <ul id="site-settings-sections" class="site-settings__sections">
-            {% for section in settings_sections %}
-              {% assign settings_page_number = section.pagination_info.curr_page | default: 1 %}
-              {% if section.nav != null and settings_page_number == 1 %}
-                {% capture settings_key_marker %}|{{ section.translation_key }}|{% endcapture %}
-                {% unless settings_seen_keys contains settings_key_marker %}
-                  {% assign settings_seen_keys = settings_seen_keys | append: section.translation_key | append: '|' %}
-                  {% assign translations = site.pages | where: 'translation_key', section.translation_key %}
-                  {% assign english_section = translations | where: 'lang', 'en' | first %}
-                  {% assign section_source_stem = section.settings_file_stem | default: section.translation_key %}
-                  {% assign section_format = 'page' %}
-                  {% if section.layout == 'profiles' %}
-                    {% assign section_format = 'profiles' %}
-                  {% elsif section.translation_key == 'repositories' %}
-                    {% assign section_format = 'repositories' %}
-                  {% elsif section.translation_key == 'projects' or section.translation_key == 'tools' %}
-                    {% assign section_format = 'projects' %}
-                  {% elsif section.translation_key == 'blog' or section.kind %}
-                    {% assign section_format = 'posts' %}
-                  {% endif %}
-                  <li>
-                    <div>
-                      <strong>
-                        {% if settings_lang == 'en' %}
-                          {{ english_section.title }}
-                          <span lang="zh-CN">{{ section.title }}</span>
-                        {% else %}
-                          {{ section.title }}
-                          <span lang="en">{{ english_section.title }}</span>
-                        {% endif %}
-                      </strong>
-                      <small>
-                        {% case section_format %}
-                          {% when 'profiles' %}
-                            {{ settings_format_profiles }}
-                          {% when 'repositories' %}
-                            {{ settings_format_repositories }}
-                          {% when 'projects' %}
-                            {{ settings_format_projects }}
-                          {% when 'posts' %}
-                            {{ settings_format_posts }}
-                          {% else %}
-                            {{ settings_format_page }}
-                        {% endcase %}
-                        {% unless section.nav %} · {{ settings_hidden }}{% endunless %}
-                      </small>
-                    </div>
-                    <label class="site-settings__switch">
-                      <span class="sr-only">{{ settings_visible }}：{{ section.title }}</span>
-                      <input
-                        type="checkbox"
-                        data-section-toggle
-                        data-translation-key="{{ section.translation_key | escape }}"
-                        data-source-path-zh="_pages/{{ section_source_stem | escape }}-zh.md"
-                        data-source-path-en="_pages/{{ section_source_stem | escape }}-en.md"
-                        data-initial-visible="{% if section.nav %}true{% else %}false{% endif %}"
-                        {% if section.nav %}
-                          checked
-                        {% endif %}
-                      >
-                      <span aria-hidden="true"></span>
-                    </label>
-                  </li>
-                {% endunless %}
-              {% endif %}
-            {% endfor %}
-          </ul>
-        </section>
-
-        <details id="site-settings-new" class="site-settings__new">
-          <summary>{{ settings_new }}</summary>
-          <div class="site-settings__new-grid">
-            <label>
-              <span>{{ settings_title_zh }}</span>
-              <input id="site-settings-title-zh" type="text" autocomplete="off">
-            </label>
-            <label>
-              <span>{{ settings_title_en }}</span>
-              <input id="site-settings-title-en" type="text" autocomplete="off">
-            </label>
-            <label>
-              <span>{{ settings_description_zh }}</span>
-              <input id="site-settings-description-zh" type="text" autocomplete="off">
-            </label>
-            <label>
-              <span>{{ settings_description_en }}</span>
-              <input id="site-settings-description-en" type="text" autocomplete="off">
-            </label>
-            <label>
-              <span>{{ settings_slug }}</span>
-              <input id="site-settings-slug" type="text" inputmode="url" autocomplete="off" spellcheck="false">
-            </label>
-            <label>
-              <span>{{ settings_order }}</span>
-              <input id="site-settings-order" type="number" min="1" max="999" step="1" value="50">
-            </label>
-            <label>
-              <span>{{ settings_format }}</span>
-              <select id="site-settings-format">
-                <option value="page">{{ settings_format_page }}</option>
-                <option value="posts">{{ settings_format_posts }}</option>
-                <option value="projects">{{ settings_format_projects }}</option>
-                <option value="profiles">{{ settings_format_profiles }}</option>
-                <option value="repositories">{{ settings_format_repositories }}</option>
+      <section class="site-settings__section site-settings__personalization" aria-labelledby="site-settings-personalization-heading">
+        <div class="site-settings__section-heading">
+          <h3 id="site-settings-personalization-heading">{{ settings_personalization }}</h3>
+          <span>{{ settings_personalization_note }}</span>
+        </div>
+        <div class="site-settings__preferences">
+          <div class="site-settings__preference">
+            <div>
+              <strong>{{ settings_font }}</strong>
+              <small>{{ settings_font_note }}</small>
+            </div>
+            <label class="site-settings__select site-settings__select--font">
+              <span class="sr-only">{{ settings_font }}</span>
+              <select id="site-settings-font" aria-label="{{ settings_font }}">
+                {% if settings_lang == 'en' %}
+                  <option value="anthropic-serif">Anthropic Serif</option>
+                  <option value="anthropic-sans">Anthropic Sans</option>
+                  <option value="system">System</option>
+                  <option value="dyslexic">Dyslexic friendly</option>
+                {% else %}
+                  <option value="system">系统字体</option>
+                  <option value="anthropic-serif">衬线字体</option>
+                  <option value="anthropic-sans">无衬线字体</option>
+                  <option value="dyslexic">易读字体</option>
+                {% endif %}
               </select>
-            </label>
-            <label class="site-settings__new-visible">
-              <input id="site-settings-new-visible" type="checkbox" checked>
-              <span>{{ settings_new_visible }}</span>
+              <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
             </label>
           </div>
-          <div class="site-settings__new-actions">
-            <button id="site-settings-translate" class="site-settings__text-button site-settings__text-button--accent" type="button">
-              <i class="fa-solid fa-language" aria-hidden="true"></i>
-              {{ settings_translate }}
-            </button>
-            <button id="site-settings-clear" class="site-settings__text-button" type="button">{{ settings_clear }}</button>
+          <div class="site-settings__preference">
+            <div>
+              <strong>{{ settings_loading_copy }}</strong>
+              <small>{{ settings_loading_copy_note }}</small>
+            </div>
+            <label class="site-settings__select">
+              <span class="sr-only">{{ settings_loading_copy }}</span>
+              <select id="site-settings-loading-copy" aria-label="{{ settings_loading_copy }}">
+                <option value="thinking">Thinking...</option>
+                <option value="loading">Loading...</option>
+                <option value="thinking-zh">正在思考...</option>
+                <option value="loading-zh">正在载入...</option>
+              </select>
+              <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+            </label>
           </div>
-        </details>
+        </div>
+      </section>
 
-        <footer class="site-settings__footer">
-          <p id="site-settings-status" role="status" aria-live="polite">{{ settings_idle }}</p>
-          <div>
-            <button id="site-settings-connect" class="site-settings__button site-settings__button--quiet" type="button">
-              <i class="fa-brands fa-github" aria-hidden="true"></i>
-              <span>{{ settings_connect }}</span>
+      <p id="site-settings-preference-status" class="site-settings__preference-status" role="status" aria-live="polite" hidden></p>
+      <details id="site-settings-owner" class="site-settings__owner">
+        <summary>
+          <span>
+            {% if settings_lang == 'en' %}
+              <i class="fa-solid fa-lock" aria-hidden="true"></i>
+            {% else %}
+              {% include function-icon.liquid name='lock' %}
+            {% endif %}
+            {{ settings_owner }}
+          </span>
+          <small>{{ settings_owner_note }}</small>
+        </summary>
+        <div class="site-settings__owner-content">
+          <section class="site-owner-access" aria-labelledby="site-owner-access-heading">
+            <div>
+              <h3 id="site-owner-access-heading">
+                {% if settings_lang == 'en' %}Owner unlock{% else %}站长解锁{% endif %}
+              </h3>
+              <p id="site-owner-access-note">
+                {% if settings_lang == 'en' -%}
+                  Connect GitHub once, then bind a password and Touch ID.
+                {%- else -%}
+                  首次连接 GitHub 后，可绑定站长密码与 Touch ID。
+                {%- endif %}
+              </p>
+            </div>
+            <button id="site-owner-access-toggle" class="site-settings__button site-settings__button--quiet" type="button">
+              {% if settings_lang == 'en' %}Set up Touch ID{% else %}绑定 Touch ID{% endif %}
             </button>
-            <button id="site-settings-commit" class="site-settings__button site-settings__button--primary" type="button">
-              {{ settings_commit }}
-            </button>
-          </div>
-        </footer>
-        <a id="site-settings-result" class="site-settings__result" hidden target="_blank" rel="external noopener"></a>
+          </section>
+          <section class="site-settings__section site-settings__layout" aria-labelledby="site-settings-layout-heading">
+            <div class="site-settings__section-heading site-settings__layout-heading">
+              <div>
+                <h3 id="site-settings-layout-heading">{{ settings_layout }}</h3>
+                <p>{{ settings_layout_intro }}</p>
+              </div>
+              <div class="site-settings__nav-preview" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+            <fieldset class="site-settings__density" aria-labelledby="site-settings-layout-heading">
+              <legend class="sr-only">{{ settings_layout }}</legend>
+              <label>
+                <input
+                  id="site-settings-density-auto"
+                  type="radio"
+                  name="site-settings-navigation-density"
+                  value="auto"
+                  data-navigation-density
+                  {% if site.data.site_ui.navigation_density == 'auto' or site.data.site_ui.navigation_density == null %}
+                    checked
+                  {% endif %}
+                >
+                <span
+                  ><strong>{{ settings_density_auto }}</strong><small>{{ settings_density_auto_note }}</small></span
+                >
+              </label>
+              <label>
+                <input
+                  id="site-settings-density-compact"
+                  type="radio"
+                  name="site-settings-navigation-density"
+                  value="compact"
+                  data-navigation-density
+                  {% if site.data.site_ui.navigation_density == 'compact' %}
+                    checked
+                  {% endif %}
+                >
+                <span
+                  ><strong>{{ settings_density_compact }}</strong><small>{{ settings_density_compact_note }}</small></span
+                >
+              </label>
+              <label>
+                <input
+                  id="site-settings-density-relaxed"
+                  type="radio"
+                  name="site-settings-navigation-density"
+                  value="relaxed"
+                  data-navigation-density
+                  {% if site.data.site_ui.navigation_density == 'relaxed' %}
+                    checked
+                  {% endif %}
+                >
+                <span
+                  ><strong>{{ settings_density_relaxed }}</strong><small>{{ settings_density_relaxed_note }}</small></span
+                >
+              </label>
+            </fieldset>
+          </section>
+
+          <section class="site-settings__section" aria-labelledby="site-settings-existing-heading">
+            <div class="site-settings__section-heading">
+              <h3 id="site-settings-existing-heading">{{ settings_existing }}</h3>
+              <span>{{ settings_visible }}</span>
+            </div>
+            <label class="site-settings__filter">
+              <span class="sr-only">
+                {%- if settings_lang == 'en' %}Find a section{% else %}查找栏目{% endif -%}
+              </span>
+              <input
+                id="site-settings-filter"
+                type="search"
+                placeholder="{% if settings_lang == 'en' %}Find a section…{% else %}查找栏目…{% endif %}"
+                autocomplete="off"
+              >
+            </label>
+            <p id="site-settings-filter-empty" class="site-settings__empty" hidden>
+              {% if settings_lang == 'en' %}No matching sections. Try another name.{% else %}没有找到栏目，换个名称试试。{% endif %}
+            </p>
+            <ul id="site-settings-sections" class="site-settings__sections">
+              {% for section in settings_sections %}
+                {% assign settings_page_number = section.pagination_info.curr_page | default: 1 %}
+                {% if section.nav != null and settings_page_number == 1 %}
+                  {% capture settings_key_marker %}|{{ section.translation_key }}|{% endcapture %}
+                  {% unless settings_seen_keys contains settings_key_marker %}
+                    {% assign settings_seen_keys = settings_seen_keys | append: section.translation_key | append: '|' %}
+                    {% assign translations = site.pages | where: 'translation_key', section.translation_key %}
+                    {% assign english_section = translations | where: 'lang', 'en' | first %}
+                    {% assign section_source_stem = section.settings_file_stem | default: section.translation_key %}
+                    {% assign section_format = 'page' %}
+                    {% if section.layout == 'profiles' %}
+                      {% assign section_format = 'profiles' %}
+                    {% elsif section.translation_key == 'repositories' %}
+                      {% assign section_format = 'repositories' %}
+                    {% elsif section.translation_key == 'projects' or section.translation_key == 'tools' %}
+                      {% assign section_format = 'projects' %}
+                    {% elsif section.translation_key == 'blog' or section.kind %}
+                      {% assign section_format = 'posts' %}
+                    {% endif %}
+                    <li>
+                      <div>
+                        <strong>
+                          {% if settings_lang == 'en' %}
+                            {{ english_section.title }}
+                            <span lang="zh-CN">{{ section.title }}</span>
+                          {% else %}
+                            {{ section.title }}
+                            <span lang="en">{{ english_section.title }}</span>
+                          {% endif %}
+                        </strong>
+                        <small>
+                          {% case section_format %}
+                            {% when 'profiles' %}
+                              {{ settings_format_profiles }}
+                            {% when 'repositories' %}
+                              {{ settings_format_repositories }}
+                            {% when 'projects' %}
+                              {{ settings_format_projects }}
+                            {% when 'posts' %}
+                              {{ settings_format_posts }}
+                            {% else %}
+                              {{ settings_format_page }}
+                          {% endcase %}
+                          ·
+                          <span data-section-visibility>
+                            {%- unless section.nav %}{{ settings_hidden }}{% endunless -%}
+                          </span>
+                        </small>
+                      </div>
+                      <label class="site-settings__switch">
+                        <span class="sr-only">{{ settings_visible }}：{{ section.title }}</span>
+                        <input
+                          type="checkbox"
+                          data-section-toggle
+                          data-translation-key="{{ section.translation_key | escape }}"
+                          data-source-path-zh="_pages/{{ section_source_stem | escape }}-zh.md"
+                          data-source-path-en="_pages/{{ section_source_stem | escape }}-en.md"
+                          data-initial-visible="{% if section.nav %}true{% else %}false{% endif %}"
+                          {% if section.nav %}
+                            checked
+                          {% endif %}
+                        >
+                        <span aria-hidden="true"></span>
+                      </label>
+                    </li>
+                  {% endunless %}
+                {% endif %}
+              {% endfor %}
+            </ul>
+          </section>
+
+          <details id="site-settings-new" class="site-settings__new">
+            <summary>{{ settings_new }}</summary>
+            <div class="site-settings__new-grid">
+              <label>
+                <span>{{ settings_title_zh }}</span>
+                <input id="site-settings-title-zh" type="text" autocomplete="off">
+              </label>
+              <label>
+                <span>{{ settings_title_en }}</span>
+                <input id="site-settings-title-en" type="text" autocomplete="off">
+              </label>
+              <label>
+                <span>{{ settings_description_zh }}</span>
+                <input id="site-settings-description-zh" type="text" autocomplete="off">
+              </label>
+              <label>
+                <span>{{ settings_description_en }}</span>
+                <input id="site-settings-description-en" type="text" autocomplete="off">
+              </label>
+              <label>
+                <span>{{ settings_slug }}</span>
+                <input id="site-settings-slug" type="text" inputmode="url" autocomplete="off" spellcheck="false">
+              </label>
+              <label>
+                <span>{{ settings_order }}</span>
+                <input id="site-settings-order" type="number" min="1" max="999" step="1" value="50">
+              </label>
+              <label>
+                <span>{{ settings_format }}</span>
+                <select id="site-settings-format">
+                  <option value="page">{{ settings_format_page }}</option>
+                  <option value="posts">{{ settings_format_posts }}</option>
+                  <option value="projects">{{ settings_format_projects }}</option>
+                  <option value="profiles">{{ settings_format_profiles }}</option>
+                  <option value="repositories">{{ settings_format_repositories }}</option>
+                </select>
+              </label>
+              <label class="site-settings__new-visible">
+                <input id="site-settings-new-visible" type="checkbox" checked>
+                <span>{{ settings_new_visible }}</span>
+              </label>
+            </div>
+            <div class="site-settings__new-actions">
+              <button id="site-settings-translate" class="site-settings__text-button site-settings__text-button--accent" type="button">
+                <i class="fa-solid fa-language" aria-hidden="true"></i>
+                {{ settings_translate }}
+              </button>
+              <button id="site-settings-clear" class="site-settings__text-button" type="button">{{ settings_clear }}</button>
+            </div>
+          </details>
+        </div>
+      </details>
+    </div>
+    <footer id="site-settings-footer" class="site-settings__footer" hidden>
+      <div class="site-settings__save-summary">
+        <span id="site-settings-save-state" role="status" aria-live="polite"></span>
+        <button id="site-settings-reset" class="site-settings__text-button" type="button" hidden>
+          {% if settings_lang == 'en' %}Discard changes{% else %}放弃修改{% endif %}
+        </button>
       </div>
-    </details>
+      <p id="site-settings-status" role="status" aria-live="polite"></p>
+      <div class="site-settings__footer-actions">
+        <button id="site-settings-connect" class="site-settings__button site-settings__button--quiet" type="button">
+          <i class="fa-brands fa-github" aria-hidden="true"></i>
+          <span>{{ settings_connect }}</span>
+        </button>
+        <button id="site-settings-commit" class="site-settings__button site-settings__button--primary" type="button" disabled>
+          {{ settings_commit }}
+        </button>
+      </div>
+      <div class="site-settings__release-links">
+        <a id="site-settings-result" class="site-settings__result" hidden target="_blank" rel="external noopener"></a>
+        <button id="site-settings-refresh" class="site-settings__text-button site-settings__text-button--accent" type="button" hidden>
+          {% if settings_lang == 'en' %}Refresh to view{% else %}刷新查看{% endif %}
+        </button>
+      </div>
+    </footer>
+  </div>
+</dialog>
+
+<dialog
+  id="site-settings-confirm"
+  class="site-settings-confirm"
+  aria-labelledby="site-settings-confirm-heading"
+  aria-describedby="site-settings-confirm-copy"
+>
+  <h2 id="site-settings-confirm-heading"></h2>
+  <p id="site-settings-confirm-copy"></p>
+  <div class="site-settings-confirm__actions">
+    <button id="site-settings-confirm-stay" class="site-settings__button site-settings__button--primary" type="button" autofocus>
+      {% if settings_lang == 'en' %}Keep editing{% else %}继续编辑{% endif %}
+    </button>
+    <button id="site-settings-confirm-keep" class="site-settings__button site-settings__button--quiet" type="button"></button>
+    <button id="site-settings-confirm-discard" class="site-settings__text-button site-settings__text-button--danger" type="button"></button>
   </div>
 </dialog>
 

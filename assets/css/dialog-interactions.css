@@ -1,0 +1,24 @@
+html[data-site-dialog-open],
+html[data-site-dialog-open] body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+dialog {
+  overscroll-behavior: contain;
+}
+
+dialog :is(button, a, summary):focus-visible {
+  outline: 2px solid var(--global-theme-color);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog *,
+  dialog *::before,
+  dialog *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

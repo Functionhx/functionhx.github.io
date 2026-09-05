@@ -60,6 +60,7 @@
     }
     const error = new DOMException(strings.canceled, "AbortError");
     const reject = pending.reject;
+    pending.controller?.abort();
     pending = null;
     resetDialog();
     closeDialog();
@@ -78,7 +79,7 @@
     return translated;
   }
 
-  async function requestTranslation(apiKey, payload) {
+  async function requestTranslation(apiKey, payload, signal) {
     const response = await window.fetch(endpoint, {
       body: JSON.stringify({
         max_tokens: 32768,
@@ -104,6 +105,7 @@
         "Content-Type": "application/json",
       },
       method: "POST",
+      signal,
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.error?.message || `DeepSeek API ${response.status}`);
@@ -111,7 +113,8 @@
   }
 
   async function submitTranslation() {
-    if (!pending) return;
+    if (!pending || pending.controller) return;
+    const request = pending;
     let apiKey = keyInput.value.trim();
     if (!apiKey) {
       setStatus(strings.missingKey, "error");
@@ -119,19 +122,23 @@
     }
 
     keyInput.value = "";
+    request.controller = new AbortController();
     submit.disabled = true;
-    cancel.disabled = true;
+    cancel.disabled = false;
     setStatus(strings.busy);
     try {
-      const translated = await requestTranslation(apiKey, pending.payload);
+      const translated = await requestTranslation(apiKey, request.payload, request.controller.signal);
       apiKey = "";
-      const resolve = pending.resolve;
+      if (pending !== request) return;
+      const resolve = request.resolve;
       pending = null;
       resetDialog();
       closeDialog();
       resolve(translated);
     } catch (error) {
       apiKey = "";
+      if (pending !== request) return;
+      request.controller = null;
       submit.disabled = false;
       cancel.disabled = false;
       setStatus(`${strings.failed} ${error.message || ""}`.trim(), "error");
@@ -160,11 +167,17 @@
   cancel.addEventListener("click", cancelTranslation);
   submit.addEventListener("click", submitTranslation);
   keyInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") submitTranslation();
+    if (event.key === "Enter" && !event.isComposing) {
+      event.preventDefault();
+      submitTranslation();
+    }
   });
   dialog.addEventListener("cancel", (event) => {
     event.preventDefault();
     cancelTranslation();
+  });
+  dialog.addEventListener("close", () => {
+    if (pending && !dialog.open) cancelTranslation();
   });
 
   window.functionhxDeepSeek = Object.freeze({ translate });

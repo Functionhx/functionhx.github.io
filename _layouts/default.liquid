@@ -35,6 +35,7 @@
     {% endif %}
     {% include head.liquid %}
     {% include site-preferences.liquid %}
+    <link rel="stylesheet" href="{{ '/assets/css/dialog-interactions.css' | relative_url | bust_file_cache }}">
     {% include owner-ui.liquid %}
     <link rel="stylesheet" href="{{ '/assets/css/turbo-mode.css' | relative_url | bust_file_cache }}">
     {% if page.home %}
@@ -214,6 +215,7 @@
 
     <!-- JavaScripts -->
     <script src="{{ '/assets/js/site-preferences.js' | relative_url | bust_file_cache }}"></script>
+    <script src="{{ '/assets/js/dialog-interactions.js' | relative_url | bust_file_cache }}"></script>
     <script src="{{ '/assets/js/owner-ui.js' | relative_url | bust_file_cache }}"></script>
     {% include scripts.liquid %}
     <script src="{{ '/assets/js/turbo-mode.js' | relative_url | bust_file_cache }}"></script>

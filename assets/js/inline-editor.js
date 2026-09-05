@@ -970,7 +970,7 @@
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && document.body.classList.contains("site-inline-editor-active") && !authDialog.open) {
+    if (event.key === "Escape" && document.body.classList.contains("site-inline-editor-active") && !document.querySelector("dialog[open]")) {
       closeEditor();
     }
   });

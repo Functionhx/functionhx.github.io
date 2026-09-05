@@ -12,6 +12,7 @@
     "test:magic-search-ui": "node test/magic_search_ui.mjs",
     "test:site-settings": "node test/site_settings.mjs",
     "test:github-auth-vault": "node test/github_auth_vault.mjs",
+    "test:dialog-interactions": "node test/dialog_interactions.mjs && node test/translator_cancellation.mjs",
     "test:spark-writer": "node test/spark_writer.mjs",
     "test:spark-vault": "node test/spark_vault_worker.mjs",
     "test:spark-vault-server": "node test/spark_vault_server.mjs",

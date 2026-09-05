@@ -1729,6 +1729,7 @@
   });
 
   document.addEventListener("keydown", (event) => {
+    if (document.querySelector("dialog[open]")) return;
     if (event.key === "Escape" && !root.hidden && !authDialog?.open) closeWriter();
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !root.hidden) publishPair();
   });

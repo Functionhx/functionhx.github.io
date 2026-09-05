@@ -414,7 +414,7 @@
     });
 
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && !menu.hidden) closeMenu(true);
+      if (event.key === "Escape" && !menu.hidden && !document.querySelector("dialog[open]")) closeMenu(true);
     });
   }
 

@@ -1,4 +1,4 @@
-/* Chinese reading preferences; existing owner controls keep their behavior. */
+/* Chinese reading preferences and owner controls share a compact sheet. */
 .function-page .site-settings-dialog {
   width: min(560px, calc(100vw - 32px));
   max-width: none;
@@ -13,19 +13,25 @@
   backdrop-filter: blur(5px);
 }
 .function-page .site-settings {
-  padding: 30px 32px 12px;
+  padding: 0;
   overscroll-behavior: contain;
   scrollbar-width: thin;
 }
 .function-page .site-settings__header {
-  border: 0;
-  padding: 0 0 22px;
+  border-bottom: 1px solid var(--global-divider-color);
+  padding: 22px 28px 18px;
+}
+.function-page .site-settings__body {
+  padding: 0 28px 16px;
+}
+.function-page .site-settings__footer {
+  padding: 14px 28px 18px;
 }
 .function-page .site-settings__brand {
   display: flex;
   align-items: center;
   gap: 9px;
-  margin: 0 0 16px;
+  margin: 0 0 10px;
   font-size: 14px;
   font-weight: 600;
   line-height: 1.2;
@@ -198,7 +204,16 @@
     border-radius: 20px;
   }
   .function-page .site-settings {
-    padding: 24px 22px 8px;
+    padding: 0;
+  }
+  .function-page .site-settings__header {
+    padding: 18px 20px 14px;
+  }
+  .function-page .site-settings__body {
+    padding: 0 20px 12px;
+  }
+  .function-page .site-settings__footer {
+    padding: 12px 20px 16px;
   }
   .function-page .site-settings__header h2 {
     font-size: 28px;
@@ -227,8 +242,10 @@
   }
 }
 @media (max-width: 360px) {
-  .function-page .site-settings {
-    padding-inline: 18px;
+  .function-page .site-settings__header,
+  .function-page .site-settings__body,
+  .function-page .site-settings__footer {
+    padding-inline: 16px;
   }
   .function-page .site-settings__preference {
     align-items: stretch;

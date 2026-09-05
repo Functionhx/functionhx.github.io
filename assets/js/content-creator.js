@@ -1385,7 +1385,7 @@
   document.addEventListener(
     "keydown",
     (event) => {
-      if (event.key === "Escape" && !root.hidden) {
+      if (event.key === "Escape" && !root.hidden && !document.querySelector("dialog[open]")) {
         if (busy) {
           event.preventDefault();
           event.stopImmediatePropagation();
@@ -1394,7 +1394,7 @@
         }
         closeCreator();
       }
-      if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !root.hidden) {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !root.hidden && !document.querySelector("dialog[open]")) {
         event.preventDefault();
         commitContent();
       }

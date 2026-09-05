@@ -55,6 +55,9 @@ jobs:
       - name: Check owner credential protection
         run: npm run test:github-auth-vault
 
+      - name: Check dialog and cancellation behavior
+        run: npm run test:dialog-interactions
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 

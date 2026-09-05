@@ -51,6 +51,7 @@
   let pollErrors = 0;
   let pollGeneration = 0;
   let pollController = null;
+  let completedRecheckDeadline = 0;
 
   function readStored() {
     try {
@@ -108,6 +109,7 @@
     elements.progress.firstElementChild.style.width = `${progress}%`;
     updateSteps(stage);
     updateElapsed();
+    window.dispatchEvent(new CustomEvent("functionhx:deployment-changed", { detail: { sha: current?.sha, message, state, stage } }));
   }
 
   async function githubRuns(sha, signal) {
@@ -167,7 +169,7 @@
     if (!current) return;
     const sha = current.sha;
     if (!isCurrentPoll(generation, sha)) return;
-    if (Date.now() - current.startedAt > maxWait) {
+    if (Date.now() > Math.max(current.startedAt + maxWait, completedRecheckDeadline)) {
       render({ message: strings.timedOut, progress: 85, stage: "build", state: "failure" });
       clearTimers();
       return;
@@ -239,6 +241,7 @@
     const sha = String(commit?.sha || "").trim();
     if (!sha) return;
     pollGeneration += 1;
+    completedRecheckDeadline = 0;
     clearTimers();
     pollErrors = 0;
     saveStored({
@@ -266,6 +269,9 @@
       elements.run.hidden = false;
     }
     if (current.state === "success") {
+      // A completed release may be reopened much later. Give its fresh health
+      // check a full window instead of immediately labeling it a timeout.
+      completedRecheckDeadline = Date.now() + maxWait;
       current.state = "syncing";
       render({ message: strings.syncing, progress: 92, stage: "build" });
       elapsedTimer = window.setInterval(updateElapsed, 1000);

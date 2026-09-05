@@ -271,6 +271,36 @@ try {
   );
   await page.locator("#site-settings-owner > summary").click();
 
+  // All dismissal routes share the dirty-state guard, and retained drafts
+  // survive a new document without changing the published navigation.
+  assert.equal(await page.locator("#site-settings-commit").isDisabled(), true);
+  const draftToggle = page.locator('[data-section-toggle][data-translation-key="people"]');
+  await draftToggle.check();
+  await page.mouse.click(10, 10);
+  await page.locator("#site-settings-confirm").waitFor({ state: "visible" });
+  await page.keyboard.press("Escape");
+  assert.equal(await page.locator("#site-settings-dialog").isVisible(), true);
+  assert.equal(await draftToggle.isChecked(), true);
+  await page.locator("#site-settings-close").click();
+  await page.locator("#site-settings-confirm-keep").click();
+  assert.equal(await page.locator("#site-settings-dialog").isVisible(), false);
+  await page.locator("#site-settings-toggle").click();
+  assert.equal(await draftToggle.isChecked(), true);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.reload({ waitUntil: "networkidle" });
+  await page.locator("#site-settings-toggle").click();
+  assert.equal(await draftToggle.isChecked(), true);
+  assert.match(await page.locator("#site-settings-status").textContent(), /草稿/);
+  await page.locator("#site-settings-reset").click();
+  await page.locator("#site-settings-confirm-discard").click();
+  assert.equal(await draftToggle.isChecked(), false);
+  assert.equal(await page.locator("#site-settings-commit").isDisabled(), true);
+  await page.locator("#site-settings-filter").fill("no-matching-section");
+  assert.equal(await page.locator("#site-settings-filter-empty").isVisible(), true);
+  await page.locator("#site-settings-filter").fill("");
+  const closeBounds = await page.locator("#site-settings-close").boundingBox();
+  assert.ok(closeBounds.y >= 0 && closeBounds.y + closeBounds.height <= 900, "close control must stay in view while scrolling");
+
   const sectionKeys = await page.locator("[data-section-toggle]").evaluateAll((inputs) => inputs.map((input) => input.dataset.translationKey));
   assert.equal(new Set(sectionKeys).size, sectionKeys.length, "each section should appear only once");
   assert.ok(sectionKeys.includes("people") && sectionKeys.includes("repositories"));
@@ -348,6 +378,8 @@ try {
   await page.locator("#site-settings-auth-connect").click();
   await page.locator("#site-settings-auth").waitFor({ state: "hidden" });
   await page.locator("#site-settings-result").waitFor({ state: "visible" });
+  assert.equal(await page.locator("#site-settings-commit").isDisabled(), true);
+  assert.equal(await page.evaluate(() => window.sessionStorage.getItem("functionhx:settings-draft:Functionhx/functionhx.github.io")), null);
   await page.locator('#site-deployment-monitor[data-state="success"]').waitFor({ state: "visible" });
 
   assert.ok(treeRequest, "settings should create a Git tree");
@@ -384,6 +416,8 @@ try {
     "only the owner token may reach GitHub mutation endpoints"
   );
   assert.ok(deploymentPolls >= 3, "settings commits should expose deployment progress through success");
+  assert.match(await page.locator("#site-settings-status").textContent(), /已经上线/);
+  assert.equal(await page.locator("#site-settings-refresh").isVisible(), true);
 
   const browserStorage = await page.evaluate(() => JSON.stringify({ ...window.localStorage, ...window.sessionStorage }));
   assert.equal(browserStorage.includes(testToken), false, "the settings token must never enter browser storage");
