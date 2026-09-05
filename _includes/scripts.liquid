@@ -101,7 +101,7 @@
   {% include plugins/al_img_tools_scripts.liquid %}
 {% endif %}
 
-{% if site.enable_progressbar %}
+{% if site.enable_progressbar and page.lang == 'en' %}
   <script defer src="{{ '/assets/js/progress-bar.js' | relative_url | bust_file_cache }}" type="text/javascript"></script>
 {% endif %}
 
@@ -110,18 +110,20 @@
 {% endif %}
 
 {% if site.back_to_top %}
-  {% assign back_to_top_js = site.third_party_libraries['vanilla-back-to-top'].url.js
-    | default: 'https://cdn.jsdelivr.net/npm/vanilla-back-to-top@7.2.1/dist/vanilla-back-to-top.min.js'
-  %}
-  {% assign back_to_top_integrity = site.third_party_libraries['vanilla-back-to-top'].integrity.js %}
-  {% if back_to_top_integrity %}
-    <script src="{{ back_to_top_js }}" integrity="{{ back_to_top_integrity }}" crossorigin="anonymous"></script>
-  {% else %}
-    <script src="{{ back_to_top_js }}"></script>
-  {% endif %}
-  <script>
-    addBackToTop();
-  </script>
+  {% unless page.home and page.lang == 'zh' %}
+    {% assign back_to_top_js = site.third_party_libraries['vanilla-back-to-top'].url.js
+      | default: 'https://cdn.jsdelivr.net/npm/vanilla-back-to-top@7.2.1/dist/vanilla-back-to-top.min.js'
+    %}
+    {% assign back_to_top_integrity = site.third_party_libraries['vanilla-back-to-top'].integrity.js %}
+    {% if back_to_top_integrity %}
+      <script src="{{ back_to_top_js }}" integrity="{{ back_to_top_integrity }}" crossorigin="anonymous"></script>
+    {% else %}
+      <script src="{{ back_to_top_js }}"></script>
+    {% endif %}
+    <script>
+      addBackToTop();
+    </script>
+  {% endunless %}
 {% endif %}
 
 {% if site.search_enabled and site.magic_search.enabled %}

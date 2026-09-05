@@ -133,7 +133,11 @@
     "click",
     (event) => {
       const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
-      if (navigatesThisPage(anchor, event)) showLoading();
+      // Dropdowns and other in-page controls cancel navigation later in the
+      // event. Wait for their handlers before covering the page with a loader.
+      window.setTimeout(() => {
+        if (navigatesThisPage(anchor, event)) showLoading();
+      }, 0);
     },
     true
   );

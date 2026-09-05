@@ -1,15 +1,49 @@
 {% assign current_lang = page.lang | default: 'zh' %}
-<div class="projects">
-  {% for category in page.display_categories %}
-    <a id="{{ category }}" href=".#{{ category }}">
-      <h2 class="category">{{ category }}</h2>
-    </a>
-    {% assign categorized_projects = site.projects | where: 'lang', current_lang | where: 'category', category %}
-    {% assign sorted_projects = categorized_projects | sort: 'importance' %}
-    <div class="row row-cols-1 row-cols-md-3">
-      {% for project in sorted_projects %}
-        {% include projects.liquid %}
-      {% endfor %}
-    </div>
-  {% endfor %}
-</div>
+{% if current_lang == 'zh' %}
+  <div class="function-projects">
+    {% for category in page.display_categories %}
+      <section aria-labelledby="{{ category }}">
+        <h2 id="{{ category }}">
+          {% if category == 'work' %}研究与工程{% elsif category == 'fun' %}工具与实验{% else %}{{ category }}{% endif %}
+        </h2>
+        {% assign categorized_projects = site.projects | where: 'lang', current_lang | where: 'category', category %}
+        {% assign sorted_projects = categorized_projects | sort: 'importance' %}
+        <ul>
+          {% for project in sorted_projects %}
+            <li class="function-project">
+              <div>
+                <h3>
+                  <a href="{% if project.redirect %}{{ project.redirect }}{% else %}{{ project.url | relative_url }}{% endif %}">
+                    {{- project.title }}
+                    <span aria-hidden="true">↗</span></a
+                  >
+                </h3>
+                <p>{{ project.description }}</p>
+              </div>
+              {% if project.github -%}
+                <a class="function-project-source" href="{{ project.github }}" aria-label="{{ project.title | escape }} 的 GitHub 源码"
+                  >GitHub <span aria-hidden="true">↗</span></a
+                >
+              {%- endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="projects">
+    {% for category in page.display_categories %}
+      <a id="{{ category }}" href=".#{{ category }}">
+        <h2 class="category">{{ category }}</h2>
+      </a>
+      {% assign categorized_projects = site.projects | where: 'lang', current_lang | where: 'category', category %}
+      {% assign sorted_projects = categorized_projects | sort: 'importance' %}
+      <div class="row row-cols-1 row-cols-md-3">
+        {% for project in sorted_projects %}
+          {% include projects.liquid %}
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

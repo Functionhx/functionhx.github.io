@@ -249,6 +249,11 @@
   <!-- Nav Bar -->
   <nav id="navbar" class="navbar navbar-light navbar-expand-sm {% if site.navbar_fixed %}fixed-top{% else %}sticky-top{% endif %}" role="navigation">
     <div class="container navbar-container navbar-container-home navbar-container-stable">
+      {% if current_lang != 'en' %}
+        <a class="function-mobile-brand" href="{{ home_page.url | relative_url }}" aria-label="Function 首页"
+          ><span aria-hidden="true">ƒ</span> Function</a
+        >
+      {% endif %}
       <!-- Navbar Toggle -->
       <button
         class="navbar-toggler collapsed navbar-toggler-main"
@@ -269,7 +274,11 @@
           <!-- About -->
           <li class="nav-item {% if page.home %}active{% endif %}">
             <a class="nav-link" href="{{ home_page.url | relative_url }}" data-nav-translation-key="home">
-              {{- home_page.title }}
+              {% if current_lang != 'en' %}
+                <span class="function-wordmark"><span aria-hidden="true">ƒ</span> Function</span>
+              {% else %}
+                {{- home_page.title }}
+              {% endif %}
               {% if page.home %}
                 <span class="sr-only">(current)</span>
               {% endif %}
@@ -341,6 +350,11 @@
               {% endif %}
             {% endif %}
           {% endfor %}
+          {% if current_lang != 'en' %}
+            <li class="nav-item function-language">
+              <a class="nav-link" href="{{ language_page.url | relative_url }}" lang="en" aria-label="Read this page in English">EN</a>
+            </li>
+          {% endif %}
           <li class="nav-item">
             <button
               id="site-settings-toggle"
@@ -508,7 +522,7 @@
       </noscript>
     </div>
   {% endif %}
-  {% if site.enable_progressbar %}
+  {% if site.enable_progressbar and current_lang == 'en' %}
     <!-- Scrolling Progress Bar -->
     <progress id="progress" value="0">
       <div class="progress-container">

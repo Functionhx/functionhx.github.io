@@ -1,0 +1,25 @@
+# Chinese homepage presentation. Dates and publication state come from collections.
+directory:
+  - title: 项目
+    url: /projects/
+    note: 机器人与工程实践
+  - title: 工具
+    url: /tools/
+    note: 自己做的小工具
+  - title: 写作
+    url: /blog/
+    note: 文章、笔记与思考
+  - title: Spark
+    url: /spark/
+    note: 随手记与工作日志
+updates:
+  news-macapps:
+    title: 三个 Mac 应用加入工具合集
+    url: /tools/#macapp
+  news-rebuttal-reader:
+    title: 答辩录上线
+    url: /tools/rebuttal-reader/
+  post-batch-lio:
+    title: 公开 Batch-LIO
+  post-embodied-ai-control-story:
+    title: 写下对具身智能的看法

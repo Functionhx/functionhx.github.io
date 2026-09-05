@@ -2,8 +2,16 @@
 
 Bilingual research, projects, tools, writing, notes, and logs built on the
 MIT-licensed [al-folio](https://github.com/alshedivat/al-folio) v1.1 starter.
-The `Magic ✨` browser label and `ƒ` favicon provide a compact identity without
-replacing the author's bilingual name in the content.
+Chinese pages use the owner-approved `Function` identity and `ƒ` mark. The
+English presentation remains on the previous design for now.
+
+The Chinese homepage introduces the author, links to four collections, and
+shows recent updates in a vertical timeline. `_data/home.yml` owns its entry
+labels and short update titles; dates and publication state come from the
+existing collections. `_pages/about-zh.md` remains the editable introduction.
+`assets/css/function.css` and `assets/js/function.js` apply the approved layout
+and motion only to Chinese pages, preserving the existing theme, search, owner
+controls, and contact interactions. Project details stay in their own sections.
 
 ## Local development
 
@@ -25,8 +33,8 @@ Open `http://localhost:4000/` for Chinese and
 - Give every pair the same `translation_key` and set `lang: zh` or `lang: en`.
 - Keep external articles as canonical links until an owner-provided Markdown
   source or export is available.
-- Keep the public presentation faithful to al-folio v1.1. Upstream sample
-  records may remain where owner content is not yet available.
+- Keep the approved Chinese Function design; English retains al-folio v1.1.
+  Upstream sample records may remain where owner content is not yet available.
 
 ## Online editing
 

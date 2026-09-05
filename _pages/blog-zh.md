@@ -6,7 +6,7 @@ lang: zh
 translation_key: blog
 nav: true
 nav_order: 1
-blog_kicker: MAGIC · BLOG
+blog_kicker: FUNCTION · BLOG
 blog_name: 博客
 blog_description: 技术拆解、工程实践，以及不绕弯子的观点。
 blog_topics: 机器人 · 工程 · 观点

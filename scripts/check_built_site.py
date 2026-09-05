@@ -177,6 +177,13 @@ def main() -> int:
         parsed_pages[route] = parser
         if "data-navigation-fallback" not in rendered_html:
             errors.append(f"{route}: no-JavaScript navigation fallback missing")
+        function_styles = "/assets/css/function.css" in rendered_html
+        function_motion = "/assets/js/function.js" in rendered_html
+        if route.startswith("/en/"):
+            if function_styles or function_motion:
+                errors.append(f"{route}: Chinese redesign assets must not affect English pages")
+        elif not function_styles or not function_motion:
+            errors.append(f"{route}: Chinese Function design assets missing")
         if 'role="contentinfo"' in rendered_html:
             errors.append(f"{route}: removed global footer still renders")
 
@@ -195,14 +202,16 @@ def main() -> int:
         if parser.has_title_brand:
             errors.append(f"{route}: page-specific brand shifts the navigation layout")
         title = " ".join(" ".join(parser.title_text).split())
+        brand = "Magic" if expected_language == "en" else "Function"
         if route in {"/", "/en/"}:
-            if title != "Magic · In Progress":
+            expected_title = "Magic · In Progress" if route == "/en/" else "Function"
+            if title != expected_title:
                 errors.append(
-                    f"{route}: expected browser title 'Magic · In Progress', found {title!r}"
+                    f"{route}: expected browser title {expected_title!r}, found {title!r}"
                 )
-        elif not title.endswith("· Magic"):
+        elif not title.endswith(f"· {brand}"):
             errors.append(
-                f"{route}: browser title does not use the Magic identity: {title!r}"
+                f"{route}: browser title does not use the {brand} identity: {title!r}"
             )
         if "樊宇琛" in title or "Yuchen Fan" in title or "✨" in title:
             errors.append(f"{route}: browser title must stay brand-only: {title!r}")
@@ -309,7 +318,7 @@ def main() -> int:
             )
         if not {"zh-CN", "en", "x-default"}.issubset(parser.alternates):
             errors.append(f"{route}: incomplete hreflang alternates {parser.alternates}")
-        if expected_language == "zh-CN" and "Yuchen Fan" in rendered_html:
+        if expected_language == "zh-CN" and route != "/" and "Yuchen Fan" in rendered_html:
             errors.append(f"{route}: English identity leaked into the Chinese page")
 
     for route in ("/", "/en/"):
@@ -359,6 +368,16 @@ def main() -> int:
         for removed_home_content in ("精选论文", "selected publications", "555 your office number"):
             if removed_home_content in html:
                 errors.append(f"{route}: removed homepage content still renders: {removed_home_content!r}")
+
+    chinese_home = route_file(site, "/").read_text(encoding="utf-8")
+    for home_marker in ('class="function-intro"', 'class="function-directory"', 'class="function-events"', 'id="contact-heading"'):
+        if home_marker not in chinese_home:
+            errors.append(f"/: approved homepage section missing: {home_marker}")
+    if chinese_home.count('class="function-directory-link"') != 4:
+        errors.append("/: homepage must keep its four collection entrances")
+    for removed_home_asset in ("batch-results.png", "project-featured", "/assets/js/progress-bar.js"):
+        if removed_home_asset in chinese_home:
+            errors.append(f"/: removed prototype showcase or conflicting runtime: {removed_home_asset}")
 
     for route in ("/blog/2026/batch-lio/", "/en/blog/2026/batch-lio/"):
         html = route_file(site, route).read_text(encoding="utf-8")
@@ -741,7 +760,7 @@ def main() -> int:
 
     chinese_nav = " ".join(parsed_pages.get("/", PageParser()).nav_text)
     english_nav = " ".join(parsed_pages.get("/en/", PageParser()).nav_text)
-    for label in ("关于",):
+    for label in ("Function",):
         if label not in chinese_nav:
             errors.append(f"/: navigation label {label!r} missing")
     for label in ("about",):
@@ -758,8 +777,9 @@ def main() -> int:
         path = route_file(site, route)
         if path.is_file():
             html = path.read_text(encoding="utf-8")
-            if html.count("card h-100 hoverable") != 9:
-                errors.append(f"{route}: expected exactly nine original-style project cards")
+            project_marker = 'class="function-project"' if route == "/projects/" else "card h-100 hoverable"
+            if html.count(project_marker) != 9:
+                errors.append(f"{route}: expected all nine existing project entries")
 
     for route in ("/publications/", "/en/publications/"):
         path = route_file(site, route)
