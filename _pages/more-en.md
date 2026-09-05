@@ -5,7 +5,7 @@ permalink: /en/more/
 description: Public news, tools, and other sections kept outside the primary navigation.
 lang: en
 translation_key: more
-nav: true
+nav: false
 nav_order: 13
 dropdown: true
 children:

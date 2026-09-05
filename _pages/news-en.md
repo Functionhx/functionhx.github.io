@@ -4,7 +4,7 @@ title: news
 permalink: /en/news/
 lang: en
 translation_key: news
-nav: false
+nav: true
 nav_order: 9
 ---
 

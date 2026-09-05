@@ -5,7 +5,7 @@ permalink: /more/
 description: 动态、工具等不必常驻一级导航的公开内容入口。
 lang: zh
 translation_key: more
-nav: true
+nav: false
 nav_order: 13
 dropdown: true
 children:
