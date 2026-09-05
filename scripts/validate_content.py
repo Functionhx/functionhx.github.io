@@ -29,7 +29,6 @@ REQUIRED_ROUTES = {
     "publications": {"/publications/", "/en/publications/"},
     "projects": {"/projects/", "/en/projects/"},
     "repositories": {"/repositories/", "/en/repositories/"},
-    "cv": {"/cv/", "/en/cv/"},
     "teaching": {"/teaching/", "/en/teaching/"},
     "people": {"/people/", "/en/people/"},
     "more": {"/more/", "/en/more/"},

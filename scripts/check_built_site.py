@@ -28,8 +28,6 @@ EXPECTED_ROUTES = (
     "/en/projects/",
     "/repositories/",
     "/en/repositories/",
-    "/cv/",
-    "/en/cv/",
     "/teaching/",
     "/en/teaching/",
     "/people/",
@@ -56,6 +54,9 @@ EXPECTED_ROUTES = (
     "/en/search/",
 )
 SKIP_SCHEMES = {"mailto", "tel", "javascript", "data"}
+# No owner-approved resume is published. Removing a menu or search result alone
+# must never allow the retired starter CV to be shipped again at its old URL.
+RETIRED_ROUTES = {"/cv/", "/en/cv/"}
 
 
 class PageParser(HTMLParser):
@@ -166,6 +167,16 @@ def main() -> int:
     site = Path(sys.argv[1]).resolve()
     errors: list[str] = []
     parsed_pages: dict[str, PageParser] = {}
+
+    for route in RETIRED_ROUTES:
+        if route_file(site, route).exists() or (site / f"{route.strip('/')}.html").exists():
+            errors.append(f"{route}: retired template CV must not be generated")
+    sitemap = site / "sitemap.xml"
+    if sitemap.is_file():
+        sitemap_text = sitemap.read_text(encoding="utf-8")
+        for route in RETIRED_ROUTES:
+            if f"{route}</loc>" in sitemap_text:
+                errors.append(f"{route}: retired template CV remains in the sitemap")
 
     for route in EXPECTED_ROUTES:
         path = route_file(site, route)
@@ -726,6 +737,8 @@ def main() -> int:
             errors.append(f"/assets/search/index-{language}.json: visitor scope is missing")
         documents = index.get("documents", [])
         chunks = index.get("chunks", [])
+        if any(document.get("translation_key") == "cv" or document.get("url") in RETIRED_ROUTES for document in documents):
+            errors.append(f"/assets/search/index-{language}.json: retired template CV remains searchable")
         if not documents or len(chunks) < len(documents):
             errors.append(
                 f"/assets/search/index-{language}.json: incomplete public index "
@@ -850,6 +863,10 @@ def main() -> int:
         page_route = "/" + html_path.relative_to(site).as_posix()
         for href in parser.links:
             split = urlsplit(href)
+            if not split.netloc or split.hostname in {"functionhx.github.io", "fanyuchen.com.cn", "www.fanyuchen.com.cn"}:
+                normalized_route = unquote(split.path).removesuffix("index.html").rstrip("/") + "/"
+                if normalized_route in RETIRED_ROUTES:
+                    errors.append(f"{page_route}: link to retired template CV {href!r}")
             if split.scheme in SKIP_SCHEMES or split.netloc:
                 continue
             if not split.path or split.path.startswith("#"):
