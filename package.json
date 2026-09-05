@@ -19,7 +19,8 @@
     "test:spark-vault-unlock": "node test/spark_vault_unlock.mjs",
     "test:turbo-mode": "node test/turbo_mode.mjs",
     "test:visual": "playwright test --config test/visual/playwright.config.js",
-    "test:visual:update": "playwright test --config test/visual/playwright.config.js --update-snapshots"
+    "test:visual:update": "playwright test --config test/visual/playwright.config.js --update-snapshots",
+    "test:search-access": "bundle exec ruby test/search_access.rb && node test/search_owner.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

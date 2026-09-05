@@ -103,6 +103,14 @@
   outline: 1px solid var(--global-divider-color);
 }
 
+.magic-search__access {
+  margin: -4px 0 0;
+  padding: 0 1.25rem 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--global-text-color-light);
+}
+
 .magic-search__status {
   clip: rect(0, 0, 0, 0);
   clip-path: inset(50%);

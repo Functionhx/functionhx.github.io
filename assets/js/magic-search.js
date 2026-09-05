@@ -5,7 +5,12 @@ const loadingText = () => window.functionhxSitePreferences?.getLoadingText?.() |
 const COPY = {
   zh: {
     close: "关闭搜索",
-    placeholder: "搜索文章、Spark、项目、工具与页面…",
+    visitor: "访客搜索 · 公开栏目",
+    owner: "站长搜索 · 含隐藏栏目",
+    ownerLoading: "正在加载站长搜索…",
+    ownerFailed: "隐藏栏目暂未加载，当前仅搜索公开栏目。",
+    hiddenSection: "隐藏栏目",
+    placeholder: "搜索站内内容…",
     loading: "Thinking...",
     ready: "输入关键词开始搜索。",
     semantic: "语义检索已合并",
@@ -18,7 +23,12 @@ const COPY = {
   },
   en: {
     close: "Close search",
-    placeholder: "Search writing, Spark, projects, tools, and pages…",
+    visitor: "Visitor search · visible sections",
+    owner: "Owner search · includes hidden sections",
+    ownerLoading: "Loading owner search…",
+    ownerFailed: "Hidden sections are unavailable. Searching visible sections only.",
+    hiddenSection: "Hidden section",
+    placeholder: "Search site content…",
     loading: "Thinking...",
     ready: "Type to search.",
     semantic: "Semantic results merged",
@@ -119,12 +129,42 @@ const snippet = (value, rawQuery, limit = 132) => {
   return `${start > 0 ? "…" : ""}${text.slice(start, end).trim()}${end < text.length ? "…" : ""}`;
 };
 
+export function withOwnerRecords(publicIndex, records, label) {
+  const documents = [...publicIndex.documents];
+  const chunks = [...publicIndex.chunks];
+  for (const record of records) {
+    const document = { ...record, index: documents.length, kind: "pages", chain: [label, record.title], tags: [], categories: [] };
+    documents.push(document);
+    chunks.push({ ...document, document: document.index, chain: document.chain, text: record.text, excerpt: record.text.slice(0, 220) });
+  }
+  const postings = Object.fromEntries(Object.entries(publicIndex.postings).map(([token, entries]) => [token, [...entries]]));
+  for (let index = publicIndex.chunks.length; index < chunks.length; index += 1) {
+    const chunk = chunks[index];
+    const words = tokenize(`${chunk.title} ${chunk.text}`);
+    chunk.length = Math.max(words.length, 1);
+    for (const token of words) (postings[token] ||= []).push([index, 1]);
+  }
+  return { ...publicIndex, audience: "owner", documents, chunks, postings, document_count: documents.length, chunk_count: chunks.length };
+}
+
 class MagicSearch {
   constructor(config) {
     this.config = config;
     this.copy = COPY[config.language];
     this.index = null;
     this.indexPromise = null;
+    this.publicIndex = null;
+    this.ownerRequest = null;
+    this.accessRevision = 0;
+    this.ownerLoaded = false;
+    this.onAuthChanged = (event) => {
+      if (event.detail?.repository?.toLowerCase() !== "functionhx/functionhx.github.io") return;
+      this.clearOwnerIndex({ clearQuery: event.detail.connected !== true });
+      if (this.dialog.open && event.detail.connected === true) this.loadOwnerIndex();
+    };
+    this.onPageHide = () => this.clearOwnerIndex({ clearQuery: true });
+    window.addEventListener("functionhx:github-auth-changed", this.onAuthChanged);
+    window.addEventListener("pagehide", this.onPageHide);
     this.lexicalResults = [];
     this.semanticResults = [];
     this.semanticTimer = 0;
@@ -161,13 +201,16 @@ class MagicSearch {
     this.results = element("ol", "magic-search__results");
     this.results.setAttribute("aria-label", this.copy.resultCount(0));
 
-    shell.append(searchRow, this.status, this.results);
+    this.access = element("p", "magic-search__access", this.copy.visitor);
+    this.access.setAttribute("aria-live", "polite");
+    shell.append(searchRow, this.access, this.status, this.results);
     this.dialog.append(shell);
     this.dialog.addEventListener("click", (event) => {
       if (event.target === this.dialog) this.dialog.close();
     });
     this.dialog.addEventListener("close", () => {
-      this.semanticRequest?.abort();
+      this.clearOwnerIndex({ clearQuery: true });
+      this.results.replaceChildren();
       this.activeResult = -1;
     });
     document.body.append(this.dialog);
@@ -184,6 +227,8 @@ class MagicSearch {
           if (index.version !== 1 || index.language !== this.config.language) {
             throw new Error("incompatible search index");
           }
+          if (index.audience !== "visitor") throw new Error("unscoped search index");
+          this.publicIndex = index;
           this.index = index;
           return index;
         });
@@ -199,7 +244,63 @@ class MagicSearch {
     this.dialog.classList.remove("has-results");
     this.status.textContent = loadingText();
     await this.loadIndex();
+    if (!this.dialog.open) return;
     this.handleInput();
+    this.loadOwnerIndex();
+  }
+
+  clearOwnerIndex({ clearQuery = false } = {}) {
+    if (clearQuery) this.input.value = "";
+    this.accessRevision += 1;
+    this.ownerRequest?.abort();
+    this.ownerRequest = null;
+    this.semanticRequest?.abort();
+    window.clearTimeout(this.semanticTimer);
+    this.ownerLoaded = false;
+    this.index = this.publicIndex;
+    this.access.textContent = this.copy.visitor;
+    this.lexicalResults = [];
+    this.semanticResults = [];
+    if (this.dialog.open && this.index) this.handleInput();
+  }
+
+  async loadOwnerIndex() {
+    if (!this.publicIndex || !this.dialog.open || !window.functionhxGitHubAuth) return;
+    this.ownerRequest?.abort();
+    const controller = new AbortController();
+    this.ownerRequest = controller;
+    const revision = ++this.accessRevision;
+    this.semanticRequest?.abort();
+    window.clearTimeout(this.semanticTimer);
+    const ownerHint = document.documentElement.dataset.ownerVerified === "true";
+    if (ownerHint) this.access.textContent = this.copy.ownerLoading;
+    try {
+      const moduleUrl = new URL("./magic-search-owner.js", import.meta.url);
+      moduleUrl.search = new URL(import.meta.url).search;
+      const { loadOwnerRecords } = await import(moduleUrl.href);
+      const records = await loadOwnerRecords({
+        language: this.config.language,
+        signal: controller.signal,
+        publicKeys: new Set(this.publicIndex.documents.map((record) => record.translation_key)),
+      });
+      if (controller.signal.aborted || revision !== this.accessRevision || !this.dialog.open || !records) return;
+      this.index = withOwnerRecords(this.publicIndex, records, this.copy.hiddenSection);
+      this.ownerLoaded = true;
+      this.access.textContent = this.copy.owner;
+      this.handleInput();
+    } catch (error) {
+      if (error.name !== "AbortError" && revision === this.accessRevision && this.dialog.open) this.access.textContent = this.copy.ownerFailed;
+    } finally {
+      if (this.ownerRequest === controller) this.ownerRequest = null;
+    }
+  }
+
+  destroy() {
+    if (this.dialog.open) this.dialog.close();
+    this.clearOwnerIndex({ clearQuery: true });
+    window.removeEventListener("functionhx:github-auth-changed", this.onAuthChanged);
+    window.removeEventListener("pagehide", this.onPageHide);
+    this.dialog.remove();
   }
 
   handleInput() {
@@ -211,7 +312,14 @@ class MagicSearch {
     this.renderCurrent();
 
     const query = normalize(this.input.value);
-    if (query.length < 2 || !this.index.semantic_endpoint) return;
+    if (
+      this.ownerLoaded ||
+      this.ownerRequest ||
+      query.length < 2 ||
+      (/^[a-z0-9]+$/i.test(query) && query.length < 3) ||
+      !this.index.semantic_endpoint
+    )
+      return;
     this.semanticTimer = window.setTimeout(() => this.searchSemantically(query), 320);
   }
 
@@ -260,6 +368,7 @@ class MagicSearch {
   async searchSemantically(query) {
     const controller = new AbortController();
     this.semanticRequest = controller;
+    const revision = this.accessRevision;
     const timeout = window.setTimeout(() => controller.abort(), 3500);
     try {
       const response = await fetch(this.index.semantic_endpoint, {
@@ -271,6 +380,7 @@ class MagicSearch {
       });
       if (!response.ok) throw new Error(`semantic search ${response.status}`);
       const payload = await response.json();
+      if (controller.signal.aborted || revision !== this.accessRevision || !this.dialog.open || normalize(this.input.value) !== query) return;
       const lookup = new Map(this.index.chunks.map((chunk, index) => [chunk.id, index]));
       this.semanticResults = (payload.results || [])
         .map((result) => ({ chunkIndex: lookup.get(result.id), score: Number(result.score) || 0 }))
@@ -385,6 +495,11 @@ class MagicSearch {
   }
 
   handleKeys(event) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      this.dialog.close();
+      return;
+    }
     const links = [...this.results.querySelectorAll("a[data-result-index]")];
     if (!links.length) return;
     if (event.key === "ArrowDown") {
@@ -407,7 +522,7 @@ class MagicSearch {
 
 export async function open(config, initialQuery = "") {
   if (!instance || instance.config.language !== config.language) {
-    instance?.dialog.remove();
+    instance?.destroy();
     instance = new MagicSearch(config);
   }
   await instance.show(initialQuery);

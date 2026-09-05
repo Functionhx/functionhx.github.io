@@ -1,18 +1,12 @@
 {% assign search_lang = include.lang | default: page.lang | default: 'zh' %}
 {% if search_lang == 'en' %}
   {% assign search_button = 'Open Magic Search' %}
-  {% assign search_help = 'Search every public article, Spark entry, project, tool, update, and page. Each result includes its exact source path.' %}
-  {% assign fallback_heading = 'Browse all public content' %}
-  {% assign blog_heading = 'Blog and Spark' %}
-  {% assign projects_heading = 'Projects and tools' %}
-  {% assign pages_heading = 'Pages and updates' %}
+  {% assign search_help = 'Search published content in visible sections. Hidden sections are available in owner search after verification.' %}
+  {% assign fallback_heading = 'Browse visible public content' %}
 {% else %}
   {% assign search_button = '打开 Magic Search' %}
-  {% assign search_help = '检索所有公开文章、Spark、项目、工具、动态与页面；每条结果都会标出精确来源链路。' %}
-  {% assign fallback_heading = '浏览全部公开内容' %}
-  {% assign blog_heading = '博客与 Spark' %}
-  {% assign projects_heading = '项目与工具' %}
-  {% assign pages_heading = '页面与动态' %}
+  {% assign search_help = '检索首页与已显示栏目的公开内容；验证站长身份后，可额外检索隐藏栏目。' %}
+  {% assign fallback_heading = '浏览公开栏目' %}
 {% endif %}
 
 <div class="magic-search-fallback" data-magic-search-autostart>
@@ -26,45 +20,17 @@
   <section aria-labelledby="search-fallback-heading">
     <h2 id="search-fallback-heading">{{ fallback_heading }}</h2>
 
-    <h3>{{ blog_heading }}</h3>
-    <ul>
-      {% assign localized_posts = site.posts | where: 'lang', search_lang %}
-      {% for item in localized_posts %}
-        <li>
-          <a href="{{ item.url | relative_url }}">{{ item.title }}</a>
-          {% if item.description %}— {{ item.description }}{% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-
-    <h3>{{ projects_heading }}</h3>
-    <ul>
-      {% assign localized_projects = site.projects | where: 'lang', search_lang %}
-      {% for item in localized_projects %}
-        <li>
-          <a href="{{ item.url | relative_url }}">{{ item.title }}</a>
-          {% if item.description %}— {{ item.description }}{% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-
-    <h3>{{ pages_heading }}</h3>
-    <ul>
-      {% assign localized_news = site.news | where: 'lang', search_lang %}
-      {% for item in localized_news %}
-        <li>
-          <a href="{{ item.url | relative_url }}">{{ item.title }}</a>
-        </li>
-      {% endfor %}
-      {% assign localized_pages = site.pages | where: 'lang', search_lang %}
-      {% for item in localized_pages %}
-        {% unless item.search_exclude or item.autogen %}
+    {% assign fallback_documents = site.data.public_search_documents[search_lang] | group_by: 'section' %}
+    {% for section in fallback_documents %}
+      <h3>{{ section.name | escape }}</h3>
+      <ul>
+        {% for item in section.items %}
           <li>
-            <a href="{{ item.url | relative_url }}">{{ item.title }}</a>
-            {% if item.description %}— {{ item.description }}{% endif %}
+            <a href="{{ item.url | relative_url }}">{{ item.title | escape }}</a>
+            {% if item.description != empty %}— {{ item.description | escape }}{% endif %}
           </li>
-        {% endunless %}
-      {% endfor %}
-    </ul>
+        {% endfor %}
+      </ul>
+    {% endfor %}
   </section>
 </noscript>

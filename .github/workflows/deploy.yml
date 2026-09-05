@@ -58,6 +58,9 @@ jobs:
       - name: Check dialog and cancellation behavior
         run: npm run test:dialog-interactions
 
+      - name: Check visitor and owner search boundaries
+        run: npm run test:search-access
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 

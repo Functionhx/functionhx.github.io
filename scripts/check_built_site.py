@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from html.parser import HTMLParser
 import json
+import re
 from pathlib import Path
 import sys
 from urllib.parse import unquote, urlsplit
@@ -721,9 +722,11 @@ def main() -> int:
         search_indexes[language] = index
         if index.get("version") != 1 or index.get("language") != language:
             errors.append(f"/assets/search/index-{language}.json: incompatible metadata")
+        if index.get("audience") != "visitor":
+            errors.append(f"/assets/search/index-{language}.json: visitor scope is missing")
         documents = index.get("documents", [])
         chunks = index.get("chunks", [])
-        if len(documents) < 30 or len(chunks) < len(documents):
+        if not documents or len(chunks) < len(documents):
             errors.append(
                 f"/assets/search/index-{language}.json: incomplete public index "
                 f"({len(documents)} documents, {len(chunks)} chunks)"
@@ -773,6 +776,17 @@ def main() -> int:
         html = route_file(site, route).read_text(encoding="utf-8")
         if "data-magic-search-autostart" not in html or "<noscript>" not in html:
             errors.append(f"{route}: interactive search or no-JavaScript fallback missing")
+        language = "en" if route.startswith("/en/") else "zh"
+        fallback = "".join(re.findall(r"<noscript>(.*?)</noscript>", html, re.DOTALL))
+        for document in search_indexes.get(language, {}).get("documents", []):
+            if f'href="{document["url"]}"' not in fallback:
+                errors.append(f"{route}: no-JavaScript search is missing {document['url']}")
+        for hidden_route in ("/books/", "/repositories/", "/tools/"):
+            visible_keys = parsed_pages.get("/", PageParser()).settings_visibility
+            if not visible_keys.get(hidden_route.strip("/"), False):
+                prefix = "/en" if language == "en" else ""
+                if f'href="{prefix}{hidden_route}' in fallback:
+                    errors.append(f"{route}: hidden section leaked through the no-JavaScript fallback")
 
     chinese_nav = " ".join(parsed_pages.get("/", PageParser()).nav_text)
     english_nav = " ".join(parsed_pages.get("/en/", PageParser()).nav_text)

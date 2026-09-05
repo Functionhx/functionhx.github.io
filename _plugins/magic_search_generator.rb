@@ -71,9 +71,16 @@ module Functionhx
 
         @site = site
         @markdown = site.find_converter_instance(Jekyll::Converters::Markdown)
+        # Chinese navigation is the owner's source of truth for discovery in
+        # both languages. A hidden menu item is still a public URL, but is not
+        # offered by visitor search. Confidential content belongs in the vault.
+        @visible_sections = site.pages.select { |page| page.data["lang"] == "zh" && page.data["nav"] == true }
+          .map { |page| page.data["translation_key"] }.to_set
+        site.data["public_search_documents"] = {}
 
         LANGUAGES.each do |language|
           payload = build_index(language, config)
+          site.data["public_search_documents"][language] = JSON.parse(JSON.generate(payload[:documents]))
           site.pages << JsonPage.new(site, language, payload)
           Jekyll.logger.info(
             "Magic Search:",
@@ -123,6 +130,7 @@ module Functionhx
 
         {
           version: VERSION,
+          audience: "visitor",
           language: language,
           semantic_endpoint: config["semantic_endpoint"].to_s,
           document_count: documents.length,
@@ -144,11 +152,31 @@ module Functionhx
             data["published"] != false &&
             data["private"] != true &&
             data["visibility"] != "private" &&
+            !%w[owner draft unlisted].include?(data["visibility"]) &&
             data["search_exclude"] != true &&
             data["translation_key"] != "search" &&
             data["autogen"].nil? &&
-            !record.url.to_s.empty?
+            !record.url.to_s.empty? &&
+            visitor_discoverable?(record)
         end
+      end
+
+      def visitor_discoverable?(record)
+        data = record.data
+        return false if data["translation_key"].to_s.start_with?("demo-")
+        return true if data["home"] == true
+
+        collection = record.respond_to?(:collection) && record.collection ? record.collection.label : "pages"
+        section = case collection
+                  when "posts"
+                    { "note" => %w[spark notes], "log" => %w[spark logs], "paper-note" => "paper-notes" }.fetch(data["kind"], "blog")
+                  when "projects"
+                    data["kind"] == "tool" ? "tools" : "projects"
+                  when "teachings" then "teaching"
+                  when "pages" then data["translation_key"]
+                  else collection
+                  end
+        Array(section).any? { |key| @visible_sections.include?(key) }
       end
 
       def document_metadata(record, language, index)
