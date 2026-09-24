@@ -138,7 +138,8 @@ Before any push:
 
 - `bundle exec jekyll build` succeeds for both configs; a link check over both
   `_site` outputs finds no broken internal links or missing assets.
-- Local preview checked at desktop and phone width, light and dark, en and zh.
+- Local preview checked at desktop and phone width, en and zh (the academic
+  template has a single light theme; light and dark apply to the blog changes).
 - Blog: `python3 scripts/validate_content.py`, `bundle exec jekyll build`,
   `python3 scripts/check_built_site.py _site`, and `npm run lint:prettier` pass.
 
