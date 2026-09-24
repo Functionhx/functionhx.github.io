@@ -1,0 +1,6 @@
+{% assign academic = site.data.academic[current_lang] | default: site.data.academic.zh %}
+<li class="nav-item">
+  <a class="nav-link" id="academic-nav-link" href="{{ academic.href }}" data-academic-github="{{ academic.github }}">
+    {{- academic.label -}}
+  </a>
+</li>

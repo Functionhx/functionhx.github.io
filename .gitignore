@@ -21,3 +21,6 @@ spark-vault/wrangler.toml
 # Python bytecode from bin/ helper scripts
 __pycache__/
 *.pyc
+
+# Superpowers scratch (plan ledgers, briefs)
+.superpowers/

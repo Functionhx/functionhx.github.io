@@ -159,6 +159,22 @@ def route_file(site: Path, route: str) -> Path:
     return candidate / "index.html"
 
 
+def check_academic_link(site: Path) -> list[str]:
+    """Every page must offer the academic homepage, and work without JavaScript."""
+    expected = {
+        "index.html": ("https://scholar.fanyuchen.com.cn/zh/", "/academic/zh/"),
+        "en/index.html": ("https://scholar.fanyuchen.com.cn/", "/academic/"),
+    }
+    problems = []
+    for rel, (href, gh) in expected.items():
+        text = (site / rel).read_text(encoding="utf-8")
+        if f'id="academic-nav-link" href="{href}"' not in text:
+            problems.append(f"{rel}: academic nav link missing or wrong (want {href})")
+        if f'data-academic-github="{gh}"' not in text:
+            problems.append(f"{rel}: academic github.io path missing (want {gh})")
+    return problems
+
+
 def main() -> int:
     if len(sys.argv) != 2:
         print("usage: check_built_site.py SITE_DIRECTORY", file=sys.stderr)
@@ -904,6 +920,8 @@ def main() -> int:
             errors.append(f"built asset missing: {cover}")
         elif cover_file.stat().st_size > 200_000:
             errors.append(f"built tool cover is unexpectedly large: {cover}")
+
+    errors.extend(check_academic_link(site))
 
     if errors:
         print("Built-site validation failed:", file=sys.stderr)

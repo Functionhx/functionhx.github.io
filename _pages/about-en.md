@@ -30,7 +30,7 @@ news_path: /en/news/
 contact_note: QQ, Gmail, QQ Mail, and GitHub are the easiest ways to reach me about robotics, AI engineering, or writing.
 ---
 
-I am Yuchen Fan, a Robotics Engineering undergraduate. This is a living home for my [projects](/en/projects/), [tools](/en/tools/), [writing](/en/blog/), and [Spark](/en/spark/), where thoughts and work logs come together.
+I am Yuchen Fan, a Robotics Engineering undergraduate. This is a living home for my [projects](/en/projects/), [tools](/en/tools/), [writing](/en/blog/), and [Spark](/en/spark/), where thoughts and work logs come together. For research and publications, see my [academic homepage](https://scholar.fanyuchen.com.cn/).
 
 My current interests span robotics, autonomous systems, embodied AI, 3D scene intelligence, and AI systems engineering.
 
