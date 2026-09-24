@@ -91,6 +91,19 @@ Sections, in order, each reachable from the masthead:
    matching blog project page. Candidates: Batch-LIO, 3D Scene Intelligence,
    Formula Student Driverless, RoboAccel. The owner selects the final list.
 
+Known publications (as of 2026-09-24):
+
+- **SinD 2.0: A Multi-City UAV Dataset with Semantic Risk Annotations for
+  SOTIF-Oriented Safety Validation at Signalized Intersections.** 19 authors,
+  Yuchen Fan 5th; arXiv:2607.16943 (v2, 2026-08-11), cs.RO. Links: arXiv, PDF,
+  dataset (github.com/SOTIF-AVLab/SinD). Full author list rendered from the
+  arXiv record; teaser taken from the paper or dataset README.
+- One submission (the decision, under review). Its project page and code are
+  anonymous, so during review it is not listed under Publications and its
+  anonymous page is not linked. Research carries a high-level item on
+  3DGS-based instance image goal navigation (under review) without the paper
+  title. The full entry is added after the decision.
+
 Content integrity rule (inherited from the blog): no invented publications,
 metrics, outcomes, affiliations, or contributions. Anything unknown stays out
 of the page rather than being filled with placeholders.
@@ -133,8 +146,8 @@ After deploy:
 
 ## Owner Inputs Needed
 
-- Publications: title, author order, venue, status, links or BibTeX, and one
-  teaser figure each.
+- SinD 2.0: the owner's contribution, in one sentence, for the Research or
+  News wording (not inferred from the author position).
 - Google Scholar profile URL and ORCID iD (not found on the GitHub profile).
 - Final Research project list and approval of About/News wording.
 - The DNSPod record for `scholar`.
