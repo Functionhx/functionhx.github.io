@@ -97,7 +97,12 @@ Known publications (as of 2026-09-24):
   SOTIF-Oriented Safety Validation at Signalized Intersections.** 19 authors,
   Yuchen Fan 5th; arXiv:2607.16943 (v2, 2026-08-11), cs.RO. Links: arXiv, PDF,
   dataset (github.com/SOTIF-AVLab/SinD). Full author list rendered from the
-  arXiv record; teaser taken from the paper or dataset README.
+  arXiv record. Owner's contribution (confirmed by the owner): data annotation
+  and the auxiliary 3DGS-based visual simulation extension (Sec. VI-G: BEV map
+  prior -> feed-forward 3DGS scene -> DiFix3D enhancement -> vehicle asset
+  insertion for egocentric rendering). Shown as a one-line "My contribution"
+  note under the entry. Teaser: Fig. 19 (the 3DGS pipeline), cropped from the
+  arXiv PDF, which ties the thumbnail to the owner's part of the paper.
 - One submission (the decision, under review). Its project page and code are
   anonymous, so during review it is not listed under Publications and its
   anonymous page is not linked. Research carries a high-level item on
@@ -146,8 +151,6 @@ After deploy:
 
 ## Owner Inputs Needed
 
-- SinD 2.0: the owner's contribution, in one sentence, for the Research or
-  News wording (not inferred from the author position).
 - Google Scholar profile URL and ORCID iD (not found on the GitHub profile).
 - Final Research project list and approval of About/News wording.
 - The DNSPod record for `scholar`.
