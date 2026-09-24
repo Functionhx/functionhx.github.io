@@ -103,11 +103,11 @@ Known publications (as of 2026-09-24):
   insertion for egocentric rendering). Shown as a one-line "My contribution"
   note under the entry. Teaser: Fig. 19 (the 3DGS pipeline), cropped from the
   arXiv PDF, which ties the thumbnail to the owner's part of the paper.
-- One submission (the decision, under review). Its project page and code are
-  anonymous, so during review it is not listed under Publications and its
-  anonymous page is not linked. Research carries a high-level item on
-  3DGS-based instance image goal navigation (under review) without the paper
-  title. The full entry is added after the decision.
+- One submission is under anonymous review. While review is open it is not
+  listed under Publications, its title is not written down here, and its
+  anonymised project page is not linked. Research carries only a high-level,
+  title-free item marked "under review". The full entry is added after the
+  decision.
 
 Content integrity rule (inherited from the blog): no invented publications,
 metrics, outcomes, affiliations, or contributions. Anything unknown stays out

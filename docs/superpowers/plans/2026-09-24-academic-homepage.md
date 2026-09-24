@@ -20,7 +20,7 @@ check script, GitHub Actions, nginx + certbot on Ubuntu (Tencent CVM).
 ## Global Constraints
 
 - No invented publications, metrics, outcomes, affiliations, or contributions. Unknown items stay off the page; no placeholder links.
-- The paper under anonymous review stays out of Publications and its anonymous page is never linked until the decision.
+- The paper under anonymous review stays out of Publications; its title, venue and anonymised page are never written down until the decision.
 - SinD 2.0 contribution text is exactly: data annotation and the 3DGS-based visual simulation extension (Sec. VI-G).
 - Keep the acad-homepage MIT `LICENSE` and a footer credit to the template.
 - English at `/`, Chinese at `/zh/`; every asset/link must work under baseurl `/academic` and under empty baseurl.
