@@ -55,7 +55,7 @@ workflow property (Task 5), or an explicit manual check step (Tasks 4, 8, 9).
 
 - Produces: `python3 scripts/check_site.py <site_dir> --baseurl <prefix>` exits 0 when clean, 1 with one line per problem. Later tasks extend its `REQUIRED_PAGES` and checks.
 
-- [ ] **Step 1: Copy template and init repo**
+- [x] **Step 1: Copy template and init repo**
 
 ```bash
 cd ~/Documents
@@ -65,7 +65,7 @@ rm -rf google_scholar_crawler .github/workflows/google_scholar_crawler.yaml .git
   _includes/fetch_google_scholar_stats.html run_server.sh docs
 ```
 
-- [ ] **Step 2: Write the site check (the test)**
+- [x] **Step 2: Write the site check (the test)**
 
 `scripts/check_site.py`:
 
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-- [ ] **Step 3: Replace the Gemfile with plain Jekyll 4**
+- [x] **Step 3: Replace the Gemfile with plain Jekyll 4**
 
 ```ruby
 source "https://rubygems.org"
@@ -190,12 +190,12 @@ delete `whitelist:`, `google_scholar_stats_use_cdn`, `repository`, and the
 Run: `rm -f Gemfile.lock && bundle install`
 Expected: `Bundle complete!`
 
-- [ ] **Step 4: Build under /academic and watch the check fail**
+- [x] **Step 4: Build under /academic and watch the check fail**
 
 Run: `bundle exec jekyll build -d _site && python3 scripts/check_site.py _site --baseurl /academic`
 Expected: FAIL, including `leftover template text 'Lorem ipsum'`, `leftover template text '500x300.png'`, and `broken local ref /#-news` (root-absolute nav links fall outside `/academic`).
 
-- [ ] **Step 5: Make every asset and nav path baseurl-safe**
+- [x] **Step 5: Make every asset and nav path baseurl-safe**
 
 Apply these exact replacements:
 
@@ -207,7 +207,7 @@ Apply these exact replacements:
 - `_pages/about.md`: replace the whole body with `<span class='anchor' id='about-me'></span>` and one line: `I am Yuchen Fan, a Robotics Engineering undergraduate at Beijing Institute of Technology.` (verified on the GitHub profile).
 - Delete `images/500x300.png`.
 
-- [ ] **Step 6: Rebuild; check passes**
+- [x] **Step 6: Rebuild; check passes**
 
 Run: `bundle exec jekyll build -d _site && python3 scripts/check_site.py _site --baseurl /academic`
 Expected: `OK: 0 problem(s)`
@@ -215,7 +215,7 @@ Expected: `OK: 0 problem(s)`
 Also run with empty baseurl: `bundle exec jekyll build -d _site_t --baseurl "" && python3 scripts/check_site.py _site_t`
 Expected: `OK: 0 problem(s)`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 printf '_site/\n_site_t/\n.jekyll-cache/\n.sass-cache/\n.DS_Store\n' >> .gitignore
@@ -238,7 +238,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Consumes: `scripts/check_site.py` from Task 1.
 - Produces: page front matter keys `lang` (`en`|`zh`) and `author` (`en`|`zh`); `site.links.blog_en`, `site.links.blog_zh` (absolute URLs, set per host config); `site.data.i18n[lang]` strings `home`, `about`, `news`, `publications`, `research`, `tech_blog`, `switch_label`, `switch_url`.
 
-- [ ] **Step 1: Extend the check (test first)**
+- [x] **Step 1: Extend the check (test first)**
 
 In `scripts/check_site.py` set:
 
@@ -261,7 +261,7 @@ and inside the per-page loop, after computing `c`:
 Run: `bundle exec jekyll build -d _site && python3 scripts/check_site.py _site --baseurl /academic`
 Expected: FAIL with `missing page: zh/index.html` and missing anchors.
 
-- [ ] **Step 2: Config and data**
+- [x] **Step 2: Config and data**
 
 Append to `_config.yml`:
 
@@ -328,7 +328,7 @@ zh:
 Delete `_data/navigation.yml` (nav now comes from i18n).
 Remove the `author:` block from `_config.yml` (authors.yml replaces it).
 
-- [ ] **Step 3: Layout and includes**
+- [x] **Step 3: Layout and includes**
 
 `_layouts/default.html`: `<html lang="en" class="no-js">` → `<html lang="{{ page.lang | default: 'en' }}" class="no-js">`; after `{% include scripts.html %}` add
 `<footer class="page__footer-credit"><small>Template: <a href="https://github.com/RayeRen/acad-homepage.github.io">acad-homepage</a> (MIT)</small></footer>`.
@@ -377,7 +377,7 @@ Remove the `author:` block from `_config.yml` (authors.yml replaces it).
 
 Remove `{% if site.description %}` block (it printed the site-wide description in the sidebar).
 
-- [ ] **Step 4: Page stubs with explicit anchors**
+- [x] **Step 4: Page stubs with explicit anchors**
 
 `_pages/about.md` front matter: `permalink: /`, `lang: en`, `author_profile: true`, `title: ""`. Body:
 
@@ -402,13 +402,13 @@ I am Yuchen Fan, a Robotics Engineering undergraduate at Beijing Institute of Te
 `_pages/about-zh.md`: same shape with `permalink: /zh/`, `lang: zh`, text
 `我是樊宇琛，北京理工大学机器人工程专业本科生。`, headings `# 🔥 动态`, `# 📝 论文`, `# 🔬 研究`.
 
-- [ ] **Step 5: Avatar**
+- [x] **Step 5: Avatar**
 
 ```bash
 magick ~/Documents/blog/assets/img/prof_pic-800.jpg -resize 400x400^ -gravity center -extent 400x400 -quality 85 images/avatar.jpg
 ```
 
-- [ ] **Step 6: Both builds pass**
+- [x] **Step 6: Both builds pass**
 
 ```bash
 bundle exec jekyll build -d _site && python3 scripts/check_site.py _site --baseurl /academic
@@ -419,7 +419,7 @@ grep -o 'href="https://functionhx.github.io/[^"]*"' _site/index.html | sort -u
 
 Expected: both `OK: 0 problem(s)`; Tencent zh page links `https://fanyuchen.com.cn/`; github en page links `https://functionhx.github.io/en/`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A && git commit -q -m "feat: bilingual layout, per-language sidebar, nav, and blog cross-links
@@ -441,7 +441,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Consumes: anchors and layout from Task 2.
 - Produces: the English content blocks that Task 4 translates one-to-one.
 
-- [ ] **Step 1: Extract the SinD 2.0 teaser (Fig. 19)**
+- [x] **Step 1: Extract the SinD 2.0 teaser (Fig. 19)**
 
 ```bash
 S=/private/tmp/claude-501/-Users-chen-Documents/5c867625-3e6c-4ef2-93a8-4891d73c4e81/scratchpad
@@ -459,7 +459,7 @@ magick $S/p-<PAGE>.png -crop <W>x<H>+<X>+<Y> +repage -resize 1000x -quality 85 i
 
 Read `images/sind2-teaser.jpg` to confirm it shows only the Fig. 19 pipeline (BEV map → 3DGS → DiFix3D → simulation), no caption text.
 
-- [ ] **Step 2: Gather public facts for Research**
+- [x] **Step 2: Gather public facts for Research**
 
 ```bash
 for r in Batch-LIO RoboAccel; do gh api repos/Functionhx/$r/readme -q .content | base64 -d | head -60; done
@@ -469,7 +469,7 @@ Confirm the Step 3 sentences still match the READMEs (they were drafted from
 them on 2026-09-24; Batch-LIO is a reproduction built on Point-LIO and must stay
 described that way). The owner's role and status wording are confirmed in Task 4 Step 4.
 
-- [ ] **Step 3: Write the English body**
+- [x] **Step 3: Write the English body**
 
 Replace the body of `_pages/about.md` (keep front matter):
 
@@ -514,7 +514,7 @@ _arXiv preprint_, 2026 · [**arXiv**](https://arxiv.org/abs/2607.16943) · [**PD
 - **Formula Student Driverless**. Autonomous-system integration and track engineering. [Engineering details →]({{ site.links.blog_en }}projects/formula-student-driverless/)
 ```
 
-- [ ] **Step 4: Build, check, and grep for leftovers**
+- [x] **Step 4: Build, check, and grep for leftovers**
 
 ```bash
 bundle exec jekyll build -d _site && python3 scripts/check_site.py _site --baseurl /academic
@@ -523,7 +523,7 @@ grep -n 'TODO\|TBD\|Lorem' _pages/about.md; echo "leftover-grep exit=$?"
 
 Expected: `OK: 0 problem(s)` and `leftover-grep exit=1` (no matches).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -q -m "feat: English academic content with SinD 2.0 and research overview
@@ -539,7 +539,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 - Modify: `_pages/about-zh.md`, possibly `_pages/about.md` (owner edits)
 
-- [ ] **Step 1: Translate Task 3's body into `_pages/about-zh.md`**
+- [x] **Step 1: Translate Task 3's body into `_pages/about-zh.md`**
 
 Same structure and anchors; the paper title, authors, and venue stay in
 English; prose is Chinese. Blog links use `{{ site.links.blog_zh }}` with the
@@ -547,7 +547,7 @@ zh permalinks: `projects/batch-lio/`, `research/3d-scene-intelligence/`,
 `projects/formula-student-driverless/`. Contribution line:
 `- 我的贡献：数据标注，以及基于 3DGS 的视觉仿真扩展（论文 VI-G 节）。`
 
-- [ ] **Step 2: Build and check both configs**
+- [x] **Step 2: Build and check both configs**
 
 ```bash
 bundle exec jekyll build -d _site && python3 scripts/check_site.py _site --baseurl /academic
@@ -556,7 +556,7 @@ bundle exec jekyll build -d _site_t --config _config.yml,_config.tencent.yml && 
 
 Expected: both `OK: 0 problem(s)`.
 
-- [ ] **Step 3: Serve and visually check (Review Focus 1, 2, 4)**
+- [x] **Step 3: Serve and visually check (Review Focus 1, 2, 4)**
 
 Run in background: `bundle exec jekyll serve --port 4001 --baseurl /academic`
 Open `http://localhost:4001/academic/` and `http://localhost:4001/academic/zh/`
@@ -564,14 +564,14 @@ directly. Check at desktop width and at 375px width: CSS loaded, avatar and
 teaser visible, nav anchors scroll within the page, language switch works,
 Tech Blog button target is correct, no horizontal scroll.
 
-- [ ] **Step 4: Owner review gate**
+- [x] **Step 4: Owner review gate**
 
 Ask the owner to read both pages and confirm or edit: About wording, research
 interests, which Research items stay, each item's description and the owner's
 role, and the News list. Apply edits, rebuild, re-run the check. Do not
 continue until the owner approves the content.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -q -m "feat: Chinese academic page and owner-approved content
@@ -592,7 +592,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Consumes: `_config.tencent.yml`, `scripts/check_site.py`.
 - Produces: repo secrets it expects: `TENCENT_SSH_KEY`, `TENCENT_KNOWN_HOSTS` (created in Task 6).
 
-- [ ] **Step 1: Write the workflow**
+- [x] **Step 1: Write the workflow**
 
 `.ruby-version`: `3.3.5`
 
@@ -702,12 +702,12 @@ jobs:
 
 The `concurrency.group` is `pages` per repo, so it does not interact with the blog repo's group.
 
-- [ ] **Step 2: Validate the YAML locally**
+- [x] **Step 2: Validate the YAML locally**
 
 Run: `ruby -ryaml -e 'YAML.load_file(".github/workflows/deploy.yml"); puts "yaml ok"'`
 Expected: `yaml ok`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add -A && git commit -q -m "ci: build twice and deploy to GitHub Pages and Tencent mirror
@@ -724,7 +724,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Create: `/var/www/academic/releases/` (owner `site-deploy`), `/etc/nginx/sites-available/academic`, symlink in `sites-enabled`
 - Modify: `~site-deploy/.ssh/authorized_keys` (append one `restrict` key)
 
-- [ ] **Step 1: New deploy key (local, never committed)**
+- [x] **Step 1: New deploy key (local, never committed)**
 
 ```bash
 S=/private/tmp/claude-501/-Users-chen-Documents/5c867625-3e6c-4ef2-93a8-4891d73c4e81/scratchpad
@@ -735,13 +735,13 @@ ssh -i $S/academic_deploy -o IdentitiesOnly=yes site-deploy@82.157.7.183 'ls -ld
 
 Expected: the last command prints a `drwxr-xr-x ... site-deploy` line.
 
-- [ ] **Step 2: Owner adds DNS**
+- [x] **Step 2: Owner adds DNS**
 
 Tell the owner, in plain steps: DNSPod console → `fanyuchen.com.cn` → 添加记录 →
 主机记录 `scholar`, 记录类型 `A`, 记录值 `82.157.7.183`, TTL default → 保存.
 Verify: `dig +short scholar.fanyuchen.com.cn @119.29.29.29` prints `82.157.7.183`.
 
-- [ ] **Step 3: Certificate via the existing ACME webroot**
+- [x] **Step 3: Certificate via the existing ACME webroot**
 
 The port-80 default server already serves `/.well-known/acme-challenge/` from `/var/www/acme` for any host.
 
@@ -751,7 +751,7 @@ ssh ubuntu@82.157.7.183 'sudo certbot certonly --webroot -w /var/www/acme -d sch
 
 Expected: `Successfully received certificate.`
 
-- [ ] **Step 4: nginx site**
+- [x] **Step 4: nginx site**
 
 `/etc/nginx/sites-available/academic`:
 
@@ -806,7 +806,7 @@ ssh ubuntu@82.157.7.183 'sudo ln -sfn /etc/nginx/sites-available/academic /etc/n
 Expected: `syntax is ok`, `test is successful`. Blog still up:
 `curl -sI https://fanyuchen.com.cn | head -1` → `HTTP/2 200`.
 
-- [ ] **Step 5: Renewal dry run**
+- [x] **Step 5: Renewal dry run**
 
 Run: `ssh ubuntu@82.157.7.183 'sudo certbot renew --dry-run --cert-name scholar.fanyuchen.com.cn'`
 Expected: `Congratulations, all simulated renewals succeeded`.
@@ -815,11 +815,11 @@ Expected: `Congratulations, all simulated renewals succeeded`.
 
 ### Task 7: Create the GitHub repo, secrets, Pages, first deploy
 
-- [ ] **Step 1: Owner go-ahead**
+- [x] **Step 1: Owner go-ahead**
 
 Confirm in chat that the owner approves creating the public repo and pushing (this publishes the site).
 
-- [ ] **Step 2: Repo, secrets, Pages source**
+- [x] **Step 2: Repo, secrets, Pages source**
 
 ```bash
 cd ~/Documents/academic
@@ -832,12 +832,12 @@ git push -u origin main
 rm -f $S/academic_deploy
 ```
 
-- [ ] **Step 3: Watch the run**
+- [x] **Step 3: Watch the run**
 
 Run: `gh run watch -R Functionhx/academic --exit-status $(gh run list -R Functionhx/academic -L1 --json databaseId -q '.[0].databaseId')`
 Expected: build, deploy, deploy-tencent all succeed.
 
-- [ ] **Step 4: Verify both hosts serve the commit**
+- [x] **Step 4: Verify both hosts serve the commit**
 
 ```bash
 sha=$(git rev-parse HEAD)
@@ -860,7 +860,7 @@ Expected: `2`.
 
 - Produces: every blog page has `<a id="academic-nav-link" data-academic-github="…">`.
 
-- [ ] **Step 1: Failing check**
+- [x] **Step 1: Failing check**
 
 In `scripts/check_built_site.py`, add a function called from its main check
 loop for the two homepages `index.html` and `en/index.html`:
@@ -885,7 +885,7 @@ Wire it the same way the file's other checks append to its problem list.
 Run: `bundle exec jekyll build && python3 scripts/check_built_site.py _site`
 Expected: FAIL naming both pages.
 
-- [ ] **Step 2: Implement**
+- [x] **Step 2: Implement**
 
 `_data/academic.yml`:
 
@@ -931,7 +931,7 @@ One sentence per homepage, appended to the first paragraph block:
 - `_pages/about-zh.md`: `学术方面的介绍和论文见[学术主页](https://scholar.fanyuchen.com.cn/zh/)。`
 - `_pages/about-en.md`: `For research and publications, see my [academic homepage](https://scholar.fanyuchen.com.cn/).`
 
-- [ ] **Step 3: Full blog validation**
+- [x] **Step 3: Full blog validation**
 
 ```bash
 cd ~/Documents/blog
@@ -945,13 +945,13 @@ npm run test:navigation
 Expected: all pass. If `test:navigation` asserts an exact nav item list, add
 the academic item to its expectation rather than weakening the test.
 
-- [ ] **Step 4: Visual check (Review Focus 3)**
+- [x] **Step 4: Visual check (Review Focus 3)**
 
 With the running blog preview at `http://localhost:4000/`, confirm the nav item
 appears in zh and en, light and dark, desktop and mobile menus. Disable
 JavaScript in the browser: the link still points to `scholar.fanyuchen.com.cn`.
 
-- [ ] **Step 5: Commit, then push only after owner go-ahead**
+- [x] **Step 5: Commit, then push only after owner go-ahead**
 
 ```bash
 git add -A && git commit -q -m "feat: link the academic homepage from the blog nav and homepages
@@ -965,7 +965,7 @@ Ask the owner before `git push` (the push also publishes the spec/plan docs comm
 
 ### Task 9: End-to-end verification
 
-- [ ] **Step 1: Hosts and TLS**
+- [x] **Step 1: Hosts and TLS**
 
 ```bash
 for u in https://functionhx.github.io/academic/ https://functionhx.github.io/academic/zh/ \
@@ -976,7 +976,7 @@ for u in https://functionhx.github.io/academic/ https://functionhx.github.io/aca
 
 Expected: four `200`, and the `http://` line `301 https://scholar.fanyuchen.com.cn/`.
 
-- [ ] **Step 2: Four-direction cross-links**
+- [x] **Step 2: Four-direction cross-links**
 
 ```bash
 curl -s https://scholar.fanyuchen.com.cn/zh/ | grep -o 'id="tech-blog-link" class="btn btn--primary" href="[^"]*"'
@@ -988,12 +988,12 @@ curl -s https://fanyuchen.com.cn/en/ | grep -o 'id="academic-nav-link" href="[^"
 Expected: `fanyuchen.com.cn/`, `functionhx.github.io/en/`, `scholar.fanyuchen.com.cn/zh/`, `scholar.fanyuchen.com.cn/`.
 Then in a browser on `https://functionhx.github.io/`, click the Academic link: lands on `/academic/zh/`.
 
-- [ ] **Step 3: Owner acceptance**
+- [x] **Step 3: Owner acceptance**
 
 Send the owner the four URLs and ask them to open `scholar.fanyuchen.com.cn` on a
 phone with mobile data (no proxy) to confirm domestic access.
 
-- [ ] **Step 4: Update memory**
+- [x] **Step 4: Update memory**
 
 Update `fanyuchen-personal-site` memory with: academic repo `Functionhx/academic`
 at `~/Documents/academic`, hosts, `/var/www/academic`, separate deploy key.
