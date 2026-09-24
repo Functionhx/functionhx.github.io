@@ -9,7 +9,8 @@ require "unicode_normalize/normalize"
 module Functionhx
   module MagicSearch
     VERSION = 1
-    LANGUAGES = %w[zh en].freeze
+    # The site is Chinese-only (owner decision 2026-09-24); no English index.
+    LANGUAGES = %w[zh].freeze
     MAX_CHUNK_CHARACTERS = 900
 
     SECTION_NAMES = {

@@ -67,7 +67,6 @@ class SemanticSearchEngineTest(unittest.TestCase):
             indexes = root / "indexes"
             indexes.mkdir()
             write_index(indexes, "zh")
-            write_index(indexes, "en")
             embedder = FakeEmbedder()
             engine = SERVER.SemanticSearchEngine(
                 indexes,
@@ -79,6 +78,14 @@ class SemanticSearchEngineTest(unittest.TestCase):
 
             loaded = engine.ensure_loaded("zh")
             self.assertEqual(len(loaded.chunks), 2)
+            self.assertEqual(sum(len(batch) for batch in embedder.batches), 2)
+
+            # Chinese-only site: no English index exists, and warm-up and
+            # health must not try to load one.
+            engine.warm()
+            self.assertEqual(set(engine.health()["indexes"]), {"zh"})
+            with self.assertRaises(ValueError):
+                engine.search("robot control", "en", 2)
             self.assertEqual(sum(len(batch) for batch in embedder.batches), 2)
 
             engine.ensure_loaded("zh")

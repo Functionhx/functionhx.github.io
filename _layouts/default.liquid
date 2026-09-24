@@ -109,26 +109,6 @@
         }
       }
     </style>
-
-    {% assign translation_pool = site.pages
-      | concat: site.projects
-      | concat: site.posts
-      | concat: site.news
-      | concat: site.teachings
-      | concat: site.books
-    %}
-    {% assign translated_pages = translation_pool | where: 'translation_key', page.translation_key %}
-    {% for translated_page in translated_pages %}
-      <link
-        rel="alternate"
-        hreflang="{% if translated_page.lang == 'en' %}en{% else %}zh-CN{% endif %}"
-        href="{{ translated_page.url | absolute_url }}"
-      >
-    {% endfor %}
-    {% assign default_translation = translated_pages | where: 'lang', 'zh' | first %}
-    {% if default_translation %}
-      <link rel="alternate" hreflang="x-default" href="{{ default_translation.url | absolute_url }}">
-    {% endif %}
   </head>
 
   <!-- Body -->

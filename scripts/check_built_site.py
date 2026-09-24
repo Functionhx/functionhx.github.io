@@ -13,48 +13,26 @@ from urllib.parse import unquote, urlsplit
 
 EXPECTED_ROUTES = (
     "/",
-    "/en/",
     "/blog/",
-    "/en/blog/",
     "/paper-notes/",
-    "/en/paper-notes/",
     "/blog/2026/embodied-ai-control-story/",
-    "/en/blog/2026/embodied-ai-control-story/",
     "/blog/2026/batch-lio/",
-    "/en/blog/2026/batch-lio/",
     "/publications/",
-    "/en/publications/",
     "/projects/",
-    "/en/projects/",
     "/repositories/",
-    "/en/repositories/",
     "/teaching/",
-    "/en/teaching/",
     "/people/",
-    "/en/people/",
     "/more/",
-    "/en/more/",
     "/books/",
-    "/en/books/",
     "/tools/",
-    "/en/tools/",
     "/documents/",
-    "/en/documents/",
     "/tools/kaggle-agent/",
-    "/en/tools/kaggle-agent/",
     "/tools/usage-agent/",
-    "/en/tools/usage-agent/",
     "/notes/",
-    "/en/notes/",
     "/logs/",
-    "/en/logs/",
     "/spark/",
-    "/en/spark/",
     "/news/",
-    "/en/news/",
-    "/search/",
-    "/en/search/",
-)
+    "/search/",)
 SKIP_SCHEMES = {"mailto", "tel", "javascript", "data"}
 # No owner-approved resume is published. Removing a menu or search result alone
 # must never allow the retired starter CV to be shipped again at its old URL.
@@ -165,7 +143,6 @@ def check_academic_link(site: Path) -> list[str]:
     """Every page must offer the academic homepage, and work without JavaScript."""
     expected = {
         "index.html": ("https://scholar.fanyuchen.com.cn/zh/", "/academic/zh/"),
-        "en/index.html": ("https://scholar.fanyuchen.com.cn/", "/academic/"),
     }
     problems = []
     for rel, (href, gh) in expected.items():
@@ -196,6 +173,15 @@ def main() -> int:
             if f"{route}</loc>" in sitemap_text:
                 errors.append(f"{route}: retired template CV remains in the sitemap")
 
+    # Owner decision 2026-09-24: the English site was removed; its URLs 404.
+    english_outputs = sorted(
+        path.relative_to(site).as_posix() for path in (site / "en").rglob("*") if path.is_file()
+    ) if (site / "en").exists() else []
+    if english_outputs:
+        errors.append(f"/en/: removed English site still generates {english_outputs[:5]}")
+    if sitemap.is_file() and "/en/" in sitemap.read_text(encoding="utf-8"):
+        errors.append("sitemap.xml: removed English URLs are still listed")
+
     for route in EXPECTED_ROUTES:
         path = route_file(site, route)
         if not path.is_file():
@@ -209,15 +195,12 @@ def main() -> int:
             errors.append(f"{route}: no-JavaScript navigation fallback missing")
         function_styles = "/assets/css/function.css" in rendered_html
         function_motion = "/assets/js/function.js" in rendered_html
-        if route.startswith("/en/"):
-            if function_styles or function_motion:
-                errors.append(f"{route}: Chinese redesign assets must not affect English pages")
-        elif not function_styles or not function_motion:
+        if not function_styles or not function_motion:
             errors.append(f"{route}: Chinese Function design assets missing")
         if 'role="contentinfo"' in rendered_html:
             errors.append(f"{route}: removed global footer still renders")
 
-        expected_language = "en" if route.startswith("/en/") else "zh-CN"
+        expected_language = "zh-CN"
         if parser.html_lang != expected_language:
             errors.append(
                 f"{route}: expected html lang {expected_language!r}, "
@@ -232,9 +215,9 @@ def main() -> int:
         if parser.has_title_brand:
             errors.append(f"{route}: page-specific brand shifts the navigation layout")
         title = " ".join(" ".join(parser.title_text).split())
-        brand = "Magic" if expected_language == "en" else "Function"
-        if route in {"/", "/en/"}:
-            expected_title = "Magic · In Progress" if route == "/en/" else "Function"
+        brand = "Function"
+        if route == "/":
+            expected_title = "Function"
             if title != expected_title:
                 errors.append(
                     f"{route}: expected browser title {expected_title!r}, found {title!r}"
@@ -255,15 +238,12 @@ def main() -> int:
         ):
             if required_id not in parser.ids:
                 errors.append(f"{route}: missing required control #{required_id}")
-        if expected_language == "zh-CN":
-            if "site-inline-editor-toggle" not in parser.ids:
-                errors.append(f"{route}: Chinese source editor control missing")
-            if 'site-author-nav owner-only-control' not in rendered_html:
-                errors.append(f"{route}: author launcher must stay hidden until verified")
-            if 'nav-item site-author-nav' in rendered_html:
-                errors.append(f"{route}: author launcher must not consume a navigation item")
-        elif "site-inline-editor-toggle" in parser.ids:
-            errors.append(f"{route}: English reading mirror must not expose source editing")
+        if "site-inline-editor-toggle" not in parser.ids:
+            errors.append(f"{route}: Chinese source editor control missing")
+        if 'site-author-nav owner-only-control' not in rendered_html:
+            errors.append(f"{route}: author launcher must stay hidden until verified")
+        if 'nav-item site-author-nav' in rendered_html:
+            errors.append(f"{route}: author launcher must not consume a navigation item")
         for settings_id in (
             "site-settings-toggle",
             "site-settings-dialog",
@@ -349,17 +329,17 @@ def main() -> int:
                 f"{route}: expected inline editor source {expected_blog_source!r}, "
                 f"found {parser.inline_editor_source_path!r}"
             )
-        if not {"zh-CN", "en", "x-default"}.issubset(parser.alternates):
-            errors.append(f"{route}: incomplete hreflang alternates {parser.alternates}")
-        if expected_language == "zh-CN" and route != "/" and "Yuchen Fan" in rendered_html:
+        if parser.alternates:
+            errors.append(f"{route}: single-language site must not declare hreflang alternates {parser.alternates}")
+        if route != "/" and "Yuchen Fan" in rendered_html:
             errors.append(f"{route}: English identity leaked into the Chinese page")
 
-    for route in ("/", "/en/"):
+    for route in ("/",):
         parser = parsed_pages.get(route)
         if not parser:
             continue
         heading = " ".join(" ".join(parser.h1_text).split())
-        expected_identity = "Yuchen Fan" if route == "/en/" else "樊宇琛"
+        expected_identity = "樊宇琛"
         if expected_identity not in heading:
             errors.append(
                 f"{route}: expected identity heading {expected_identity!r}, found {heading!r}"
@@ -389,13 +369,9 @@ def main() -> int:
             if required_asset not in html:
                 errors.append(f"{route}: missing optimized asset {required_asset}")
         portrait_assets = (
-            ("/assets/img/prof_pic-480.webp", "/assets/img/prof_pic-800.webp")
-            if route == "/en/"
-            else (
-                "/assets/img/function/portrait-hero-v2-960.webp",
-                "/assets/img/function/portrait-hero-v2-1760.webp",
-                "/assets/css/function-home.css",
-            )
+            "/assets/img/function/portrait-hero-v2-960.webp",
+            "/assets/img/function/portrait-hero-v2-1760.webp",
+            "/assets/css/function-home.css",
         )
         for portrait_asset in portrait_assets:
             if portrait_asset not in html:
@@ -424,27 +400,21 @@ def main() -> int:
             errors.append(f"/: approved homepage section missing: {home_marker}")
     if chinese_home.count('class="function-directory-link"') != 4:
         errors.append("/: homepage must keep its four collection entrances")
-    english_home = route_file(site, "/en/").read_text(encoding="utf-8")
-    if "/assets/css/function-home.css" in english_home or "portrait-hero-v2" in english_home:
-        errors.append("/en/: Chinese portrait design must not change the English homepage")
     for removed_home_asset in ("batch-results.png", "project-featured", "/assets/js/progress-bar.js"):
         if removed_home_asset in chinese_home:
             errors.append(f"/: removed prototype showcase or conflicting runtime: {removed_home_asset}")
 
-    for route in ("/blog/2026/batch-lio/", "/en/blog/2026/batch-lio/"):
+    for route in ("/blog/2026/batch-lio/",):
         html = route_file(site, route).read_text(encoding="utf-8")
         if 'id="MathJax-script"' not in html:
             errors.append(f"{route}: math article is missing MathJax")
 
-    for route in (
-        "/blog/2026/embodied-ai-control-story/",
-        "/en/blog/2026/embodied-ai-control-story/",
-    ):
+    for route in ("/blog/2026/embodied-ai-control-story/",):
         html = route_file(site, route).read_text(encoding="utf-8")
         if 'id="MathJax-script"' in html:
             errors.append(f"{route}: non-math article loads MathJax")
 
-    for route in ("/tools/kaggle-agent/", "/en/tools/kaggle-agent/"):
+    for route in ("/tools/kaggle-agent/",):
         parser = parsed_pages.get(route)
         if not parser:
             continue
@@ -469,7 +439,7 @@ def main() -> int:
     # 区别：kaggle 那段在页面缺失时 `continue`（路由不存在就静默跳过）。这里**严格要求
     # 页面存在** —— 否则把 _projects/usage-agent-*.md 删掉、或 permalink 写错，检查会
     # 一声不吭地通过，那这条断言就白写了。
-    for route in ("/tools/usage-agent/", "/en/tools/usage-agent/"):
+    for route in ("/tools/usage-agent/",):
         parser = parsed_pages.get(route)
         if not parser:
             errors.append(f"{route}: usage monitor page is missing")
@@ -492,7 +462,7 @@ def main() -> int:
 
     arc_agi_2_cover = "/assets/img/tools/kaggle-agent-arc-agi-cover.webp"
     arc_agi_2_remote_cover = "https://arcprize.org/media/images/blog/arc-agi-task-1ae2feb7.png?v=2"
-    for route in ("/tools/", "/en/tools/"):
+    for route in ("/tools/",):
         html = route_file(site, route).read_text(encoding="utf-8")
         if arc_agi_2_cover not in html:
             errors.append(f"{route}: Kaggle Agent ARC-AGI-2 cover missing")
@@ -500,8 +470,7 @@ def main() -> int:
             errors.append(f"{route}: Kaggle Agent cover must be served locally")
 
     documents_zh = route_file(site, "/documents/").read_text(encoding="utf-8")
-    documents_en = route_file(site, "/en/documents/").read_text(encoding="utf-8")
-    for route, html in (("/documents/", documents_zh), ("/en/documents/", documents_en)):
+    for route, html in (("/documents/", documents_zh),):
         for required_id in (
             "feishu-public-library",
             "feishu-public-list",
@@ -538,10 +507,6 @@ def main() -> int:
         errors.append("/documents/: contextual pencil must not expose generic page editing")
     if "/assets/js/feishu-documents.js" in documents_zh:
         errors.append("/documents/: Feishu creation code must load only after owner intent")
-    if 'id="feishu-document-dialog"' in documents_en:
-        errors.append("/en/documents/: English reading mirror must not expose Feishu creation")
-    if "read-only mirror" not in documents_en:
-        errors.append("/en/documents/: English reading-mirror explanation is missing")
 
     feishu_client_path = site.parent / "assets" / "js" / "feishu-documents.js"
     feishu_client_text = (
@@ -616,25 +581,11 @@ def main() -> int:
                 f"{route}: direct Spark writer controls missing "
                 f"{sorted(missing_writer_ids)}"
             )
-    english_spark = parsed_pages.get("/en/spark/")
-    if english_spark and {
-        "site-spark-create",
-        "site-spark-drafts",
-        "site-spark-writer",
-    }.intersection(english_spark.ids):
-        errors.append("/en/spark/: English reading mirror must not expose Spark authoring")
-
     article_sources = {
         "/blog/2026/embodied-ai-control-story/": (
             "https://zhuanlan.zhihu.com/p/2048053637985859286"
         ),
-        "/en/blog/2026/embodied-ai-control-story/": (
-            "https://zhuanlan.zhihu.com/p/2048053637985859286"
-        ),
         "/blog/2026/batch-lio/": (
-            "https://bbs.robomaster.com/article/1936372?source=1"
-        ),
-        "/en/blog/2026/batch-lio/": (
             "https://bbs.robomaster.com/article/1936372?source=1"
         ),
     }
@@ -645,18 +596,12 @@ def main() -> int:
         if not parser:
             continue
         html = route_file(site, route).read_text(encoding="utf-8")
-        if route.startswith("/en/"):
-            if "Created on" not in html:
-                errors.append(f"{route}: English publication date label missing")
-            expected_comment_language = "en"
-            expected_comment_heading = ">Comments</h2>"
-        else:
-            if "发布于" not in html:
-                errors.append(f"{route}: Chinese publication date label missing")
-            if "Created on" in html:
-                errors.append(f"{route}: English publication date label leaked")
-            expected_comment_language = "zh-CN"
-            expected_comment_heading = ">评论</h2>"
+        if "发布于" not in html:
+            errors.append(f"{route}: Chinese publication date label missing")
+        if "Created on" in html:
+            errors.append(f"{route}: English publication date label leaked")
+        expected_comment_language = "zh-CN"
+        expected_comment_heading = ">评论</h2>"
         for expected_comment_markup in (
             '"Functionhx/functionhx.github.io"',
             f"'data-lang': \"{expected_comment_language}\"",
@@ -677,7 +622,7 @@ def main() -> int:
         "https://huggingface.co/Func-nano",
         "/assets/img/social/wechat-qr.png",
     }
-    for route in ("/", "/en/"):
+    for route in ("/",):
         parser = parsed_pages.get(route)
         if not parser:
             continue
@@ -770,7 +715,7 @@ def main() -> int:
             errors.append(f"/{asset}: authoring asset missing")
 
     search_indexes = {}
-    for language in ("zh", "en"):
+    for language in ("zh",):
         index_path = site / "assets" / "search" / f"index-{language}.json"
         if not index_path.is_file():
             errors.append(f"/assets/search/index-{language}.json: search index missing")
@@ -815,19 +760,10 @@ def main() -> int:
                     f"{chunk.get('id', 'unknown')}"
                 )
                 break
-    if set(search_indexes) == {"zh", "en"}:
-        chinese_keys = {
-            document.get("translation_key")
-            for document in search_indexes["zh"].get("documents", [])
-        }
-        english_keys = {
-            document.get("translation_key")
-            for document in search_indexes["en"].get("documents", [])
-        }
-        if chinese_keys != english_keys:
-            errors.append("search indexes do not contain matching bilingual documents")
+    if (site / "assets" / "search" / "index-en.json").exists():
+        errors.append("/assets/search/index-en.json: removed English site is still indexed")
 
-    for route in ("/", "/en/"):
+    for route in ("/",):
         html = route_file(site, route).read_text(encoding="utf-8")
         if "/assets/js/magic-search-loader.js" not in html:
             errors.append(f"{route}: lazy Magic Search loader missing")
@@ -835,11 +771,11 @@ def main() -> int:
             if eager_search_asset in html:
                 errors.append(f"{route}: legacy search loads eagerly: {eager_search_asset}")
 
-    for route in ("/search/", "/en/search/"):
+    for route in ("/search/",):
         html = route_file(site, route).read_text(encoding="utf-8")
         if "data-magic-search-autostart" not in html or "<noscript>" not in html:
             errors.append(f"{route}: interactive search or no-JavaScript fallback missing")
-        language = "en" if route.startswith("/en/") else "zh"
+        language = "zh"
         fallback = "".join(re.findall(r"<noscript>(.*?)</noscript>", html, re.DOTALL))
         for document in search_indexes.get(language, {}).get("documents", []):
             if f'href="{document["url"]}"' not in fallback:
@@ -847,36 +783,29 @@ def main() -> int:
         for hidden_route in ("/books/", "/repositories/", "/tools/"):
             visible_keys = parsed_pages.get("/", PageParser()).settings_visibility
             if not visible_keys.get(hidden_route.strip("/"), False):
-                prefix = "/en" if language == "en" else ""
-                if f'href="{prefix}{hidden_route}' in fallback:
+                if f'href="{hidden_route}' in fallback:
                     errors.append(f"{route}: hidden section leaked through the no-JavaScript fallback")
 
     chinese_nav = " ".join(parsed_pages.get("/", PageParser()).nav_text)
-    english_nav = " ".join(parsed_pages.get("/en/", PageParser()).nav_text)
     for label in ("Function",):
         if label not in chinese_nav:
             errors.append(f"/: navigation label {label!r} missing")
-    for label in ("about",):
-        if label not in english_nav:
-            errors.append(f"/en/: navigation label {label!r} missing")
-    if "ctrl k" in chinese_nav.lower() or "ctrl k" in english_nav.lower():
+    if "ctrl k" in chinese_nav.lower():
         errors.append("navigation must show only the compact search icon")
     if parsed_pages.get("/", PageParser()).settings_visibility.get("more") and "更多" not in chinese_nav:
         errors.append("/: accessible more navigation label is missing")
-    if parsed_pages.get("/en/", PageParser()).settings_visibility.get("more") and "more" not in english_nav:
-        errors.append("/en/: accessible more navigation label is missing")
 
-    for route in ("/projects/", "/en/projects/"):
+    for route in ("/projects/",):
         path = route_file(site, route)
         if path.is_file():
             html = path.read_text(encoding="utf-8")
-            project_marker = 'class="function-project"' if route == "/projects/" else "card h-100 hoverable"
+            project_marker = 'class="function-project"'
             # 这个数字随 _projects/ 里新增条目而变。加 usage-agent 时从 9 提到 10 ——
             # 是刻意的（确实多了一个项目），不是为了让测试变绿。
             if html.count(project_marker) != 10:
                 errors.append(f"{route}: expected all ten existing project entries")
 
-    for route in ("/publications/", "/en/publications/"):
+    for route in ("/publications/",):
         path = route_file(site, route)
         if path.is_file():
             html = path.read_text(encoding="utf-8")
@@ -900,7 +829,7 @@ def main() -> int:
             if phrase.lower() in html:
                 errors.append(f"{route}: editorial phrase {phrase!r} leaked into HTML")
 
-    for route, locale in (("/repositories/", "cn"), ("/en/repositories/", "en")):
+    for route, locale in (("/repositories/", "cn"),):
         path = route_file(site, route)
         if path.is_file():
             html = path.read_text(encoding="utf-8")
@@ -938,7 +867,7 @@ def main() -> int:
     rebuttal_remote_cover = (
         "https://raw.githubusercontent.com/Functionhx/rebuttal-reader/main/public/og.png?raw=1"
     )
-    for route in ("/tools/", "/en/tools/"):
+    for route in ("/tools/",):
         parser = parsed_pages.get(route)
         if parser and rebuttal_url not in parser.links:
             errors.append(f"{route}: Rebuttal Reader link missing")

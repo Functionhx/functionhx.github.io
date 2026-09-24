@@ -478,15 +478,12 @@
           </button>
         {% endif %}
         {% if author_context == 'spark-entry' %}
-          {% assign spark_zh_page = translated_pages | where: 'lang', 'zh' | first %}
-          {% assign spark_en_page = translated_pages | where: 'lang', 'en' | first %}
           <button
             type="button"
             role="menuitem"
             data-author-action="spark-edit"
             data-translation-key="{{ page.translation_key | escape }}"
-            data-source-path-zh="{{ spark_zh_page.path | escape }}"
-            data-source-path-en="{{ spark_en_page.path | escape }}"
+            data-source-path-zh="{{ page.path | escape }}"
           >
             <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i><span>编辑当前 Spark</span>
           </button>

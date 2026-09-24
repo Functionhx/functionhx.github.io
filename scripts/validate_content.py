@@ -21,26 +21,28 @@ CONTENT_DIRECTORIES = (
     "_teachings",
     "_books",
 )
-LANGUAGES = {"zh", "en"}
+# Owner decision 2026-09-24: the site is Chinese-only; English pages were
+# removed and must not return (their old /en/ URLs deliberately 404).
+LANGUAGES = {"zh"}
 REQUIRED_ROUTES = {
-    "home": {"/", "/en/"},
-    "blog": {"/blog/", "/en/blog/"},
-    "paper-notes": {"/paper-notes/", "/en/paper-notes/"},
-    "publications": {"/publications/", "/en/publications/"},
-    "projects": {"/projects/", "/en/projects/"},
-    "repositories": {"/repositories/", "/en/repositories/"},
-    "teaching": {"/teaching/", "/en/teaching/"},
-    "people": {"/people/", "/en/people/"},
-    "more": {"/more/", "/en/more/"},
-    "books": {"/books/", "/en/books/"},
-    "tools": {"/tools/", "/en/tools/"},
-    "documents": {"/documents/", "/en/documents/"},
-    "notes": {"/notes/", "/en/notes/"},
-    "logs": {"/logs/", "/en/logs/"},
-    "spark": {"/spark/", "/en/spark/"},
-    "news": {"/news/", "/en/news/"},
-    "search": {"/search/", "/en/search/"},
-    "not-found": {"/404.html", "/en/404/"},
+    "home": {"/"},
+    "blog": {"/blog/"},
+    "paper-notes": {"/paper-notes/"},
+    "publications": {"/publications/"},
+    "projects": {"/projects/"},
+    "repositories": {"/repositories/"},
+    "teaching": {"/teaching/"},
+    "people": {"/people/"},
+    "more": {"/more/"},
+    "books": {"/books/"},
+    "tools": {"/tools/"},
+    "documents": {"/documents/"},
+    "notes": {"/notes/"},
+    "logs": {"/logs/"},
+    "spark": {"/spark/"},
+    "news": {"/news/"},
+    "search": {"/search/"},
+    "not-found": {"/404.html"},
 }
 
 
@@ -79,7 +81,7 @@ def main() -> int:
         language = data.get("lang")
         key = data.get("translation_key")
         if language not in LANGUAGES:
-            errors.append(f"{relative}: lang must be one of {sorted(LANGUAGES)}")
+            errors.append(f"{relative}: lang must be zh; the site is Chinese-only")
         if not isinstance(key, str) or not key.strip():
             errors.append(f"{relative}: translation_key is required")
             continue
@@ -106,7 +108,7 @@ def main() -> int:
         if set(languages) != LANGUAGES or len(languages) != len(LANGUAGES):
             locations = ", ".join(str(path.relative_to(ROOT)) for path, _ in items)
             errors.append(
-                f"{collection}/{key}: expected exactly zh and en; "
+                f"{collection}/{key}: expected exactly one zh record; "
                 f"found {languages} in {locations}"
             )
 
@@ -674,8 +676,8 @@ def main() -> int:
         return 1
 
     print(
-        f"Source validation passed: {len(records)} bilingual records, "
-        f"{len(groups)} translation pairs."
+        f"Source validation passed: {len(records)} Chinese records, "
+        f"{len(groups)} unique keys."
     )
     return 0
 

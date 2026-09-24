@@ -25,7 +25,9 @@ from typing import Callable, Iterable, Sequence
 
 
 LOGGER = logging.getLogger("functionhx.magic_search")
-SUPPORTED_LANGUAGES = {"zh", "en"}
+# Chinese-only site (owner decision 2026-09-24): the English index no longer exists,
+# and loading it at warm-up or in /health would fail.
+SUPPORTED_LANGUAGES = {"zh"}
 DEFAULT_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 MAX_BODY_BYTES = 8 * 1024
 MAX_QUERY_CHARACTERS = 512

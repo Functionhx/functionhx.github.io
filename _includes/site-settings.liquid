@@ -1,30 +1,10 @@
 {% assign settings_lang = page.lang | default: 'zh' %}
 {% assign settings_sections = site.pages | where: 'lang', 'zh' | sort: 'nav_order' %}
 {% assign settings_seen_keys = '|' %}
-{% assign settings_translation_pool = site.pages
-  | concat: site.projects
-  | concat: site.posts
-  | concat: site.news
-  | concat: site.teachings
-  | concat: site.books
-%}
-{% assign settings_translations = settings_translation_pool | where: 'translation_key', page.translation_key %}
-{% assign settings_zh_page = settings_translations | where: 'lang', 'zh' | first %}
-{% assign settings_en_page = settings_translations | where: 'lang', 'en' | first %}
-{% unless settings_zh_page %}
-  {% assign settings_zh_page = site.pages | where: 'home', true | where: 'lang', 'zh' | first %}
-{% endunless %}
-{% unless settings_en_page %}
-  {% assign settings_en_page = site.pages | where: 'home', true | where: 'lang', 'en' | first %}
-{% endunless %}
 
 {% if settings_lang == 'en' %}
   {% assign settings_heading = 'Site settings' %}
   {% assign settings_intro = 'Public preferences and owner-only site administration.' %}
-  {% assign settings_public = 'General' %}
-  {% assign settings_public_note = 'Available to everyone · saved only in this browser' %}
-  {% assign settings_language = 'Language' %}
-  {% assign settings_language_note = 'Chinese is the primary site; English is a reading mirror.' %}
   {% assign settings_personalization = 'Personalization' %}
   {% assign settings_personalization_note = 'Font and loading message · saved only in this browser' %}
   {% assign settings_font = 'Font' %}
@@ -75,10 +55,6 @@
 {% else %}
   {% assign settings_heading = '浏览偏好' %}
   {% assign settings_intro = '字体与加载文案仅保存在当前浏览器。' %}
-  {% assign settings_public = '通用' %}
-  {% assign settings_public_note = '所有访客可用 · 只保存在当前浏览器' %}
-  {% assign settings_language = '语言' %}
-  {% assign settings_language_note = '选择浏览语言' %}
   {% assign settings_personalization = '个性化' %}
   {% assign settings_personalization_note = '字体与加载文案 · 只保存在当前浏览器' %}
   {% assign settings_font = '阅读字体' %}
@@ -165,39 +141,6 @@
     </header>
 
     <div class="site-settings__body">
-      <section class="site-settings__section site-settings__public" aria-labelledby="site-settings-public-heading">
-        <div class="site-settings__section-heading">
-          <h3 id="site-settings-public-heading">{{ settings_public }}</h3>
-          <span>{{ settings_public_note }}</span>
-        </div>
-        <div class="site-settings__preferences">
-          <div class="site-settings__preference">
-            <div>
-              <strong>{{ settings_language }}</strong>
-              <small>{{ settings_language_note }}</small>
-            </div>
-            <div class="site-settings__segmented" aria-label="{{ settings_language }}">
-              <a
-                href="{{ settings_zh_page.url | relative_url }}"
-                lang="zh-CN"
-                {% if settings_lang == 'zh' %}
-                  aria-current="page"
-                {% endif %}
-                >中文</a
-              >
-              <a
-                href="{{ settings_en_page.url | relative_url }}"
-                lang="en"
-                {% if settings_lang == 'en' %}
-                  aria-current="page"
-                {% endif %}
-                >English</a
-              >
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section class="site-settings__section site-settings__personalization" aria-labelledby="site-settings-personalization-heading">
         <div class="site-settings__section-heading">
           <h3 id="site-settings-personalization-heading">{{ settings_personalization }}</h3>
