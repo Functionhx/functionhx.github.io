@@ -52,7 +52,9 @@
           <td class="text-right" id="um-trend" aria-hidden="true">--</td>
         </tr>
         <tr>
-          <th scope="row">Tokens</th>
+          <th scope="row">
+            {% if current_lang == 'en' %}Total tokens{% else %}Token 总量{% endif %}
+          </th>
           <td class="text-right" id="um-tokens">--</td>
         </tr>
         <tr>
@@ -145,7 +147,11 @@
           }),
         );
 
-        // 跨机器按日期合并
+        // 跨机器按日期合并。
+        // 取 tokensInclCache 而不是 tokens —— 后者不含 cache read，而 cache read
+        // 是真实处理过的 token（只是单价低）。只报不含 cache 的数会让人以为自己
+        // 用少了，实际能差一个数量级。缺字段时按 tokens + cacheRead 兜底。
+        const inclCache = (o) => Number(o.tokensInclCache) || (Number(o.tokens) || 0) + (Number(o.cacheRead) || 0);
         const byDate = new Map();
         let totalCost = 0;
         let totalTokens = 0;
@@ -155,10 +161,10 @@
           for (const day of payload.days || []) {
             const current = byDate.get(day.date) || { cost: 0, tokens: 0 };
             current.cost += Number(day.cost) || 0;
-            current.tokens += Number(day.tokens) || 0;
+            current.tokens += inclCache(day);
             byDate.set(day.date, current);
             totalCost += Number(day.cost) || 0;
-            totalTokens += Number(day.tokens) || 0;
+            totalTokens += inclCache(day);
           }
         }
         const dates = [...byDate.keys()].sort();
