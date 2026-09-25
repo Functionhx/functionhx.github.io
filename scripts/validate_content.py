@@ -529,6 +529,23 @@ def main() -> int:
     if "5 * 60 * 1000" not in kaggle_text:
         errors.append("_includes/kaggle-monitor.liquid: five-minute refresh contract missing")
 
+    usage_path = ROOT / "_includes" / "usage-monitor.liquid"
+    usage_text = usage_path.read_text(encoding="utf-8") if usage_path.exists() else ""
+    for contract in (
+        "https://functionhx.github.io/usage-agent/data/hosts.json",
+        "https://functionhx.github.io/usage-agent/data/",
+    ):
+        if contract not in usage_text:
+            errors.append(
+                f"_includes/usage-monitor.liquid: canonical data endpoint {contract!r} missing"
+            )
+    if "5 * 60 * 1000" not in usage_text:
+        errors.append("_includes/usage-monitor.liquid: five-minute refresh contract missing")
+    # 数据按 UTC+8 的日历日切分，所以页面判断"今天"必须也按 UTC+8。
+    # 用浏览器本地日期会在非 UTC+8 的时区取错日期；这条守住那个偏移量。
+    if "8 * 3600 * 1000" not in usage_text:
+        errors.append("_includes/usage-monitor.liquid: UTC+8 day boundary contract missing")
+
     video_path = ROOT / "_includes" / "video.liquid"
     video_text = video_path.read_text(encoding="utf-8") if video_path.exists() else ""
     for contract in (

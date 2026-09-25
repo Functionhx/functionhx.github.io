@@ -42,6 +42,8 @@ EXPECTED_ROUTES = (
     "/en/documents/",
     "/tools/kaggle-agent/",
     "/en/tools/kaggle-agent/",
+    "/tools/usage-agent/",
+    "/en/tools/usage-agent/",
     "/notes/",
     "/en/notes/",
     "/logs/",
@@ -367,6 +369,12 @@ def main() -> int:
             errors.append(f"{route}: Kaggle monitor must not render on the homepage")
         if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" in html:
             errors.append(f"{route}: Kaggle monitor script must not load on the homepage")
+        # 与 kaggle 同一条约束：监控卡片只出现在项目页，不上首页。
+        # 首页是身份与导航，不该被定时抓取的数据拖慢或引入失败面。
+        if "usage-mini-card" in html:
+            errors.append(f"{route}: usage monitor must not render on the homepage")
+        if "https://functionhx.github.io/usage-agent/data/" in html:
+            errors.append(f"{route}: usage monitor script must not load on the homepage")
         if "https://github.com/Functionhx/magic-site-blueprint" not in html:
             errors.append(f"{route}: public Magic site architecture link missing")
         for required_asset in (
@@ -455,6 +463,32 @@ def main() -> int:
         html = route_file(site, route).read_text(encoding="utf-8")
         if "https://functionhx.github.io/kaggle-agent/data/dashboard.json" not in html:
             errors.append(f"{route}: Kaggle data endpoint missing from generated HTML")
+
+    # 与上面对 kaggle 的检查对称。
+    #
+    # 区别：kaggle 那段在页面缺失时 `continue`（路由不存在就静默跳过）。这里**严格要求
+    # 页面存在** —— 否则把 _projects/usage-agent-*.md 删掉、或 permalink 写错，检查会
+    # 一声不吭地通过，那这条断言就白写了。
+    for route in ("/tools/usage-agent/", "/en/tools/usage-agent/"):
+        parser = parsed_pages.get(route)
+        if not parser:
+            errors.append(f"{route}: usage monitor page is missing")
+            continue
+        for required_id in (
+            "usage-mini-card",
+            "um-today",
+            "um-week",
+            "um-total",
+            "um-trend",
+            "um-tokens",
+            "um-time",
+            "um-alert",
+        ):
+            if required_id not in parser.ids:
+                errors.append(f"{route}: missing usage element #{required_id}")
+        html = route_file(site, route).read_text(encoding="utf-8")
+        if "https://functionhx.github.io/usage-agent/data/hosts.json" not in html:
+            errors.append(f"{route}: usage data endpoint missing from generated HTML")
 
     arc_agi_2_cover = "/assets/img/tools/kaggle-agent-arc-agi-cover.webp"
     arc_agi_2_remote_cover = "https://arcprize.org/media/images/blog/arc-agi-task-1ae2feb7.png?v=2"
@@ -837,8 +871,10 @@ def main() -> int:
         if path.is_file():
             html = path.read_text(encoding="utf-8")
             project_marker = 'class="function-project"' if route == "/projects/" else "card h-100 hoverable"
-            if html.count(project_marker) != 9:
-                errors.append(f"{route}: expected all nine existing project entries")
+            # 这个数字随 _projects/ 里新增条目而变。加 usage-agent 时从 9 提到 10 ——
+            # 是刻意的（确实多了一个项目），不是为了让测试变绿。
+            if html.count(project_marker) != 10:
+                errors.append(f"{route}: expected all ten existing project entries")
 
     for route in ("/publications/", "/en/publications/"):
         path = route_file(site, route)

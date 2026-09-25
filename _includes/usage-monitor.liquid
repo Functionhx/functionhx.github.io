@@ -1,0 +1,224 @@
+{% assign current_lang = page.lang | default: 'zh' %}
+<style>
+  #usage-mini-card .table,
+  #usage-mini-card .table th,
+  #usage-mini-card .table td {
+    color: var(--global-text-color, currentColor);
+    background-color: transparent;
+  }
+
+  #usage-mini-card #um-time {
+    color: var(--global-text-color-light, currentColor);
+  }
+
+  #usage-mini-card .um-bar {
+    display: inline-block;
+    height: 0.55em;
+    min-width: 2px;
+    border-radius: 2px;
+    background-color: var(--global-theme-color, currentColor);
+    vertical-align: middle;
+  }
+</style>
+<section id="usage-mini-card" aria-labelledby="um-heading">
+  <h2 id="um-heading">
+    {% if current_lang == 'en' %}token usage{% else %}用量监控{% endif %}
+  </h2>
+  <div class="table-responsive">
+    <table class="table table-sm table-borderless">
+      <tbody>
+        <tr>
+          <th scope="row">
+            {% if current_lang == 'en' %}Today{% else %}今日{% endif %}
+          </th>
+          <td class="text-right" id="um-today">--</td>
+        </tr>
+        <tr>
+          <th scope="row">
+            {% if current_lang == 'en' %}Last 7 days{% else %}最近 7 天{% endif %}
+          </th>
+          <td class="text-right" id="um-week">--</td>
+        </tr>
+        <tr>
+          <th scope="row">
+            {% if current_lang == 'en' %}All time{% else %}累计{% endif %}
+          </th>
+          <td class="text-right" id="um-total">--</td>
+        </tr>
+        <tr>
+          <th scope="row">
+            {% if current_lang == 'en' %}Last 7 days trend{% else %}近 7 日趋势{% endif %}
+          </th>
+          <td class="text-right" id="um-trend" aria-hidden="true">--</td>
+        </tr>
+        <tr>
+          <th scope="row">Tokens</th>
+          <td class="text-right" id="um-tokens">--</td>
+        </tr>
+        <tr>
+          <th scope="row" id="um-source">Usage</th>
+          <td class="text-right" id="um-time" data-loading-placeholder>
+            {% if current_lang == 'en' %}Thinking...{% else %}加载中…{% endif %}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p id="um-alert" role="status" style="display: none"></p>
+  <p class="text-right">
+    <a href="https://functionhx.github.io/usage-agent/" target="_blank" rel="noopener noreferrer">
+      {% if current_lang == 'en' %}Open the full dashboard →{% else %}查看完整图表 →{% endif %}
+    </a>
+  </p>
+</section>
+
+<script>
+  (() => {
+    // 下面两个常量被 scripts/validate_content.py 以字面量断言，改动需同步改校验器。
+    const manifestEndpoint = 'https://functionhx.github.io/usage-agent/data/hosts.json';
+    const dataBase = 'https://functionhx.github.io/usage-agent/data/';
+    const refreshInterval = 5 * 60 * 1000;
+
+    const language = {{ current_lang | jsonify }};
+    const labels =
+      language === 'en'
+        ? {
+            updated: 'Updated',
+            unavailable: 'Data unavailable',
+            hosts: (n) => `${n} machine${n === 1 ? '' : 's'}`,
+            partial: 'Includes today so far',
+          }
+        : {
+            updated: '更新',
+            unavailable: '数据暂不可用',
+            hosts: (n) => `${n} 台机器`,
+            partial: '含今日至今',
+          };
+
+    const element = (id) => document.getElementById(id);
+    const usd = (value) => {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return '--';
+      if (n >= 1000) return '$' + Math.round(n).toLocaleString('en-US');
+      return '$' + n.toFixed(2);
+    };
+    const tokens = (value) => {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return '--';
+      if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+      if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+      if (n >= 1e3) return Math.round(n / 1e3) + 'k';
+      return String(n);
+    };
+    // 数据按 UTC+8 的日历日切分，所以"今天"必须按 UTC+8 算，
+    // 不能用浏览器本地日期——用户在别的时区打开页面时会取错日期。
+    const utc8Today = () => {
+      const shifted = new Date(Date.now() + 8 * 3600 * 1000);
+      return shifted.toISOString().slice(0, 10);
+    };
+
+    const setUnavailable = (message) => {
+      const time = element('um-time');
+      time.removeAttribute('data-loading-placeholder');
+      time.textContent = message || labels.unavailable;
+      ['um-today', 'um-week', 'um-total', 'um-trend', 'um-tokens'].forEach((id) => {
+        element(id).textContent = '--';
+      });
+      element('um-alert').style.display = 'none';
+    };
+
+    const update = async () => {
+      try {
+        const manifestResponse = await fetch(manifestEndpoint, { cache: 'no-cache' });
+        if (!manifestResponse.ok) throw new Error(`HTTP ${manifestResponse.status}`);
+        const hosts = await manifestResponse.json();
+        if (!Array.isArray(hosts) || hosts.length === 0) {
+          setUnavailable();
+          return;
+        }
+
+        const payloads = await Promise.all(
+          hosts.map(async (host) => {
+            const response = await fetch(dataBase + encodeURIComponent(host) + '.json', { cache: 'no-cache' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+          }),
+        );
+
+        // 跨机器按日期合并
+        const byDate = new Map();
+        let totalCost = 0;
+        let totalTokens = 0;
+        let latest = '';
+        for (const payload of payloads) {
+          if (payload.updatedAt && payload.updatedAt > latest) latest = payload.updatedAt;
+          for (const day of payload.days || []) {
+            const current = byDate.get(day.date) || { cost: 0, tokens: 0 };
+            current.cost += Number(day.cost) || 0;
+            current.tokens += Number(day.tokens) || 0;
+            byDate.set(day.date, current);
+            totalCost += Number(day.cost) || 0;
+            totalTokens += Number(day.tokens) || 0;
+          }
+        }
+        const dates = [...byDate.keys()].sort();
+        if (dates.length === 0) {
+          setUnavailable();
+          return;
+        }
+
+        const today = utc8Today();
+        const todayEntry = byDate.get(today);
+        const week = dates.slice(-7).reduce((sum, date) => sum + byDate.get(date).cost, 0);
+
+        element('um-today').textContent = todayEntry ? usd(todayEntry.cost) : '--';
+        element('um-week').textContent = usd(week);
+        element('um-total').textContent = usd(totalCost);
+        element('um-tokens').textContent = tokens(totalTokens);
+
+        // 近 7 日趋势：用纯 CSS 宽度画柱，不引任何图表库
+        const recent = dates.slice(-7).map((date) => byDate.get(date).cost);
+        const max = Math.max(...recent, 1e-9);
+        element('um-trend').replaceChildren(
+          ...recent.map((cost) => {
+            const bar = document.createElement('span');
+            bar.className = 'um-bar';
+            bar.style.width = Math.max(2, Math.round((cost / max) * 26)) + 'px';
+            bar.style.marginLeft = '2px';
+            bar.title = usd(cost);
+            return bar;
+          }),
+        );
+
+        element('um-source').textContent = labels.hosts(hosts.length);
+        const time = element('um-time');
+        time.removeAttribute('data-loading-placeholder');
+        const updated = latest ? new Date(latest) : null;
+        time.textContent =
+          updated && !Number.isNaN(updated.getTime())
+            ? `${labels.updated} ${updated.toLocaleString(language === 'en' ? 'en' : 'zh-CN', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}`
+            : labels.unavailable;
+
+        // 今日数字还是进行中的值，必须说明，否则会被当成完整的一天
+        const hasToday = Boolean(todayEntry);
+        element('um-alert').style.display = hasToday ? 'block' : 'none';
+        element('um-alert').textContent = hasToday ? labels.partial : '';
+      } catch (error) {
+        setUnavailable();
+      } finally {
+        window.setTimeout(update, refreshInterval);
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', update);
+    } else {
+      update();
+    }
+  })();
+</script>
