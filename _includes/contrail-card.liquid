@@ -1,0 +1,35 @@
+{% comment %}
+  首页的航迹云（Contrail）摘要。数据来自独立仓库 Functionhx/contrail 发布的静态 JSON，
+  只在卡片接近视口时才加载；读不到数据时保留占位符和详情链接，不影响首页其它部分。
+{% endcomment %}
+{% assign contrail_url = 'https://functionhx.github.io/contrail/' %}
+<section class="function-contrail" aria-labelledby="contrail-heading" data-contrail-card data-contrail-base="{{ contrail_url }}">
+  <div class="function-contrail-heading">
+    <h2 id="contrail-heading"><span class="function-contrail-total" data-contrail-field="total">—</span>AI 编程用量</h2>
+    <p class="function-contrail-lede">航迹云：Claude Code、Codex、OpenCode 的累计 token（含缓存），每天自动更新。</p>
+    <a class="function-contrail-link" href="{{ contrail_url }}">查看详情 <span aria-hidden="true">↗</span></a>
+  </div>
+  <div class="function-contrail-body">
+    <dl class="function-contrail-stats">
+      <div>
+        <dt>近 7 天 token</dt>
+        <dd data-contrail-field="week-tokens">—</dd>
+      </div>
+      <div>
+        <dt>近 7 天估算花费</dt>
+        <dd data-contrail-field="week-cost">—</dd>
+      </div>
+      <div>
+        <dt>累计估算花费</dt>
+        <dd data-contrail-field="total-cost">—</dd>
+      </div>
+      <div>
+        <dt>活跃天数</dt>
+        <dd data-contrail-field="active-days">—</dd>
+      </div>
+    </dl>
+    <div class="function-contrail-chart" data-contrail-chart aria-hidden="true"></div>
+    <p class="function-contrail-meta" data-contrail-field="meta" role="status">近 30 天每日 token</p>
+  </div>
+</section>
+<script src="{{ '/assets/js/contrail-card.js' | relative_url | bust_file_cache }}" defer></script>

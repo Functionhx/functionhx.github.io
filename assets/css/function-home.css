@@ -311,6 +311,173 @@ body.function-home-page {
   overflow-wrap: anywhere;
   text-wrap: pretty;
 }
+.function-contrail {
+  position: relative;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 80px;
+  border-top: 1px solid var(--global-divider-color);
+  padding: 68px 0 72px;
+}
+.function-contrail-heading h2 {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.function-contrail-total {
+  display: block;
+  margin-bottom: 20px;
+  color: var(--global-theme-color);
+  font-family: "Avenir Next", var(--site-font-family);
+  font-size: 82px;
+  font-weight: 500;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.function-contrail-total small {
+  margin-left: 0.18em;
+  font-size: 0.26em;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.function-contrail-lede {
+  margin: 14px 0 0;
+  color: var(--global-text-color-light);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.function-contrail-link {
+  display: inline-block;
+  margin-top: 22px;
+  color: var(--global-text-color-light);
+  font-size: 13px;
+}
+/* 整张卡片都可以点击，但只保留一个真正的链接。 */
+.function-contrail-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.function-contrail-link:focus-visible {
+  outline: none;
+}
+.function-contrail-link:focus-visible::after {
+  outline: 2px solid var(--global-theme-color);
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+.function-contrail:hover .function-contrail-link {
+  color: var(--global-theme-color);
+}
+.function-contrail-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  margin: 6px 0 0;
+}
+.function-contrail-stats > div {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--global-divider-color);
+  transition: border-color 200ms ease;
+}
+.function-contrail:hover .function-contrail-stats > div {
+  border-color: var(--global-theme-color);
+}
+.function-contrail-stats dt {
+  color: var(--global-text-color-light);
+  font-size: 13px;
+  font-weight: 400;
+}
+.function-contrail-stats dd {
+  margin: 6px 0 0;
+  font-family: "Avenir Next", var(--site-font-family);
+  font-size: 27px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.function-contrail-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 120px;
+  margin-top: 40px;
+}
+.function-contrail-bar {
+  flex: 1 1 0;
+  height: calc(var(--bar, 0) * 100%);
+  min-height: 1px;
+  border-radius: 2px 2px 0 0;
+  background: var(--function-mark);
+  transform-origin: bottom;
+  animation: function-contrail-grow 520ms ease both;
+}
+.function-contrail-bar.is-latest {
+  background: var(--global-theme-color);
+}
+@keyframes function-contrail-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+.function-contrail-meta {
+  margin: 12px 0 0;
+  color: var(--global-text-color-light);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: -0.02em;
+}
+@media (max-width: 991.98px) {
+  .function-contrail {
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 40px;
+  }
+  .function-contrail-total {
+    font-size: 58px;
+  }
+  .function-contrail-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .function-contrail {
+    display: block;
+    padding: 38px 0 46px;
+  }
+  .function-contrail-heading h2 {
+    font-size: 20px;
+  }
+  .function-contrail-total {
+    margin-bottom: 12px;
+    font-size: 49px;
+  }
+  .function-contrail-stats {
+    gap: 8px 24px;
+    margin-top: 28px;
+  }
+  .function-contrail-stats > div {
+    padding: 12px 0;
+  }
+  .function-contrail-stats dd {
+    font-size: 22px;
+  }
+  .function-contrail-chart {
+    height: 88px;
+    gap: 3px;
+    margin-top: 28px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .function-contrail-bar {
+    animation: none;
+  }
+  .function-contrail-stats > div {
+    transition: none;
+  }
+}
 .function-home .social {
   margin-top: 30px;
   padding: 72px 0 36px;

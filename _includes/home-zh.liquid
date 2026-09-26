@@ -39,6 +39,7 @@
         >
       {% endfor %}
     </nav>
+    {% include contrail-card.liquid %}
     {% if page.announcements.enabled %}
       {% assign updates = site.news | concat: site.posts | where: 'lang', 'zh' | sort: 'date' | reverse %}
       {% assign update_count = 0 %}
