@@ -355,6 +355,12 @@ def main() -> int:
             errors.append(f"{route}: Kaggle monitor script must not load on the homepage")
         # 与 kaggle 同一条约束：监控卡片只出现在项目页，不上首页。
         # 首页是身份与导航，不该被定时抓取的数据拖慢或引入失败面。
+        # 唯一的例外是航迹云摘要（2026-09-26 站长决定）：它只在接近视口时由
+        # contrail-card.js 读取数据，读不到时保留占位符，所以首屏既不发请求也不会失败。
+        if 'data-contrail-card' not in html or "/assets/js/contrail-card.js" not in html:
+            errors.append(f"{route}: Contrail summary card or its lazy loader is missing")
+        if "contrail/data/" in html:
+            errors.append(f"{route}: Contrail data must load lazily from contrail-card.js, not the page")
         if "usage-mini-card" in html:
             errors.append(f"{route}: usage monitor must not render on the homepage")
         if "https://functionhx.github.io/usage-agent/data/" in html:
