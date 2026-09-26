@@ -408,16 +408,16 @@ html[data-function-scrolled="true"] .function-page #navbar {
   color: var(--global-theme-color);
 }
 /* Inner pages share the type hierarchy while keeping their existing content and controls. */
-.function-page .post-header {
+.function-page .post-header:not(.post-hero) {
   padding-top: 36px;
   margin-bottom: 38px;
 }
-.function-page .post-header .post-title {
+.function-page .post-header:not(.post-hero) .post-title {
   font-size: clamp(34px, 4.5vw, 52px);
   font-weight: 650;
   letter-spacing: -0.04em;
 }
-.function-page .post-header .post-description {
+.function-page .post-header:not(.post-hero) .post-description {
   max-width: 740px;
   font-size: 17px;
   line-height: 1.85;
@@ -460,33 +460,6 @@ html[data-function-scrolled="true"] .function-page #navbar {
   margin-bottom: 26px;
 }
 .function-page .blog-feature__number {
-  display: none;
-}
-.function-page .post--article .post-title {
-  font-family: var(--site-font-family);
-  font-size: clamp(30px, 4.2vw, 49px);
-  line-height: 1.5;
-  letter-spacing: -0.035em;
-  font-weight: 650;
-}
-.function-page .post--article #markdown-content :is(h2, h3, h4),
-.function-page .post-footer-nav a {
-  font-family: var(--site-font-family);
-  font-weight: 600;
-}
-.function-page .post-hero__layout {
-  display: block;
-}
-.function-page .post-trajectory {
-  display: none;
-}
-.function-page .post-back-link {
-  margin-bottom: 30px;
-}
-.function-page .post-reading-progress {
-  top: 0;
-}
-.function-page .post--article #markdown-content h2::before {
   display: none;
 }
 .function-page .projects .card {
@@ -593,11 +566,8 @@ html[data-function-scrolled="true"] .function-page #navbar {
     width: calc(100% - 40px);
     margin-bottom: 30px !important;
   }
-  .function-page .post-header {
+  .function-page .post-header:not(.post-hero) {
     padding-top: 25px;
-  }
-  .function-page .post--article .post-title {
-    font-size: 29px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

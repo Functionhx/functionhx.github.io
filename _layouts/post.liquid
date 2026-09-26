@@ -1,42 +1,43 @@
 ---
 layout: default
 ---
-{% assign year = page.date | date: '%Y' %}
+{% comment %}
+  Article layout after claude.dev/blog (owner request 2026-09-26): a hero
+  aligned to the text column, a sticky left rail with the section tree and
+  reading progress, and the article on columns 5-12 of a full-width grid.
+  The tree is built here from the rendered headings so it works without
+  JavaScript; assets/js/post.js only adds progress and the active section.
+{% endcomment %}
 {% assign tags = page.tags | join: '' %}
-{% assign categories = page.categories | join: '' %}
-{% assign url_beginning = page.url | slice: 0, 6 %}
 {% assign post_text = content | strip_html | strip_newlines %}
-{% if page.lang == 'en' %}
-  {% assign reading_time = post_text | number_of_words | divided_by: 220 | plus: 1 %}
-  {% assign back_label = 'All writing' %}
-  {% assign article_label = 'Article' %}
-  {% assign reading_label = 'min read' %}
-  {% assign back_path = '/en/blog/' %}
-  {% if page.kind == 'note' %}
-    {% assign back_label = 'All notes' %}
-    {% assign article_label = 'Note' %}
-    {% assign back_path = '/en/notes/' %}
-  {% elsif page.kind == 'log' %}
-    {% assign back_label = 'All logs' %}
-    {% assign article_label = 'Log' %}
-    {% assign back_path = '/en/logs/' %}
-  {% endif %}
-{% else %}
-  {% assign reading_time = post_text | size | divided_by: 500 | plus: 1 %}
-  {% assign back_label = '全部文章' %}
-  {% assign article_label = '文章' %}
-  {% assign reading_label = '分钟阅读' %}
-  {% assign back_path = '/blog/' %}
-  {% if page.kind == 'note' %}
-    {% assign back_label = '全部笔记' %}
-    {% assign article_label = '笔记' %}
-    {% assign back_path = '/notes/' %}
-  {% elsif page.kind == 'log' %}
-    {% assign back_label = '全部日志' %}
-    {% assign article_label = '日志' %}
-    {% assign back_path = '/logs/' %}
-  {% endif %}
+{% assign reading_time = post_text | size | divided_by: 500 | plus: 1 %}
+{% assign back_label = '全部文章' %}
+{% assign article_label = '文章' %}
+{% assign back_path = '/blog/' %}
+{% if page.kind == 'note' %}
+  {% assign back_label = '全部笔记' %}
+  {% assign article_label = '笔记' %}
+  {% assign back_path = '/notes/' %}
+{% elsif page.kind == 'log' %}
+  {% assign back_label = '全部日志' %}
+  {% assign article_label = '日志' %}
+  {% assign back_path = '/logs/' %}
 {% endif %}
+{% assign chip_label = page.categories | first | default: article_label %}
+{% assign last_date = page.last_modified_at | default: page.last_updated %}
+
+{% comment %}
+  Section tree: the h2s. An essay with a single h2 puts its real sections in
+  h3, so then h2 and h3 are listed together in document order.
+{% endcomment %}
+{% assign tree_source = content %}
+{% assign h2_count = content | split: '<h2 id="' | size | minus: 1 %}
+{% if h2_count < 2 %}
+  {% assign tree_source = content | replace: '<h3 id="', '<h2 id="' | replace: '</h3>', '</h2>' %}
+{% endif %}
+{% assign tree_close = '</h2>' %}
+{% assign tree_chunks = tree_source | split: '<h2 id="' %}
+{% assign ordinals = '一、|二、|三、|四、|五、|六、|七、|八、|九、|十、' | split: '|' %}
 
 {% if page._styles %}
   <!-- Page/Post style -->
@@ -47,123 +48,140 @@ layout: default
 
 <div class="post post--article">
   <div class="post-reading-progress" aria-hidden="true"></div>
-  {% if page.lang != 'en' %}
-    {% if page.kind == 'note' or page.kind == 'log' %}
-      {% include spark-writer.liquid mode='edit' %}
-    {% endif %}
+  {% if page.kind == 'note' or page.kind == 'log' %}
+    {% include spark-writer.liquid mode='edit' %}
   {% endif %}
+
   <header class="post-header post-hero">
-    <a class="post-back-link" href="{{ back_path | relative_url }}">
-      <span aria-hidden="true">←</span>
-      {{ back_label }}
-    </a>
+    <div class="post-hero__content">
+      <span class="post-chip" data-post-reveal>{{ chip_label }}</span>
+      <h1 class="post-title" data-post-reveal>{{ page.title }}</h1>
+      {% if page.description %}
+        <p class="post-description" data-post-reveal style="--post-reveal-delay: 0.1s">{{ page.description }}</p>
+      {% endif %}
 
-    <div class="post-hero__layout">
-      <div class="post-trajectory" aria-hidden="true">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-      <div class="post-hero__content">
-        <p class="post-kicker">
-          <span>{{ article_label }}</span>
-          {% if categories != '' %}
-            <span aria-hidden="true">/</span>
-            <span>{{ page.categories | first }}</span>
-          {% endif %}
-        </p>
-        <h1 class="post-title">{{ page.title }}</h1>
-        {% if page.description %}
-          <p class="post-description">{{ page.description }}</p>
-        {% endif %}
-
-        <div class="post-meta" aria-label="{% if page.lang == 'en' %}Article details{% else %}文章信息{% endif %}">
-          <span>
-            {% if page.lang == 'zh' %}
-              发布于 <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: '%Y-%m-%d' }}</time>
-            {% else %}
-              Created on <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: '%B %d, %Y' }}</time>
-            {% endif %}
-          </span>
-          {% if page.author %}
-            <span>{{ page.author }}</span>
-          {% endif %}
-          <span>
-            {{- reading_time }}
-            {{ reading_label -}}
-          </span>
-          {% assign last_date = page.last_modified_at | default: page.last_updated %}
-          {% if last_date %}
-            <span>
-              {% if page.lang == 'zh' %}
-                更新于 <time datetime="{{ last_date | date_to_xmlschema }}">{{ last_date | date: '%Y-%m-%d' }}</time>
-              {% else %}
-                Updated <time datetime="{{ last_date | date_to_xmlschema }}">{{ last_date | date: '%B %d, %Y' }}</time>
-              {% endif %}
-            </span>
-          {% endif %}
-          {% if page.meta -%}
-            <span>{{ page.meta }}</span>
-          {%- endif %}
+      <dl class="post-meta" aria-label="文章信息" data-post-reveal style="--post-reveal-delay: 0.16s">
+        <div>
+          <dt>作者</dt>
+          <dd>{{ page.author | default: '樊宇琛' }}</dd>
         </div>
-
-        {% if tags != '' %}
-          <nav class="post-tags" aria-label="{% if page.lang == 'en' %}Topics{% else %}文章主题{% endif %}">
-            {% for tag in page.tags %}
-              {% if url_beginning == '/blog/' %}
-                <a href="{{ tag | slugify | prepend: '/blog/tag/' | relative_url }}">#{{ tag }}</a>
-              {% else %}
-                <span>#{{ tag }}</span>
-              {% endif %}
-            {% endfor %}
-          </nav>
+        <div>
+          <dt>发布于</dt>
+          <dd>
+            <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: '%Y-%m-%d' }}</time>
+          </dd>
+        </div>
+        {% if last_date %}
+          <div>
+            <dt>更新于</dt>
+            <dd>
+              <time datetime="{{ last_date | date_to_xmlschema }}">{{ last_date | date: '%Y-%m-%d' }}</time>
+            </dd>
+          </div>
         {% endif %}
-      </div>
+        <div>
+          <dt>阅读时长</dt>
+          <dd>{{ reading_time }} 分钟</dd>
+        </div>
+        {% if tags != '' %}
+          <div>
+            <dt>标签</dt>
+            <dd class="post-tags">
+              {%- for tag in page.tags -%}
+                {%- if page.url contains '/blog/' -%}
+                  <a href="{{ tag | slugify | prepend: '/blog/tag/' | relative_url }}">{{ tag }}</a>
+                {%- else -%}
+                  <span>{{ tag }}</span>
+                {%- endif -%}
+                {%- unless forloop.last -%}
+                  <span aria-hidden="true"> · </span>
+                {%- endunless -%}
+              {%- endfor -%}
+            </dd>
+          </div>
+        {% endif %}
+        {% if page.meta %}
+          <div>
+            <dt>备注</dt>
+            <dd>{{ page.meta }}</dd>
+          </div>
+        {% endif %}
+      </dl>
     </div>
   </header>
 
-  <article class="post-content">
-    {% if page.toc and page.toc.beginning %}
-      <div id="table-of-contents">
-        {% toc %}
+  <div class="post-body">
+    <aside class="post-rail" aria-label="目录" data-post-reveal style="--post-reveal-delay: 0.2s">
+      <div class="post-rail__title" id="post-rail-title" aria-hidden="true">{{ page.title }}</div>
+      {% if tree_chunks.size > 1 %}
+        <p class="post-rail__label">目录</p>
+        <nav id="post-tree" class="post-tree" aria-label="文章目录">
+          {%- for chunk in tree_chunks offset: 1 -%}
+            {%- assign heading_id = chunk | split: '"' | first -%}
+            {%- capture heading_prefix %}{{ heading_id }}">{% endcapture -%}
+            {%- assign heading_text = chunk | split: tree_close | first | remove_first: heading_prefix | strip_html | strip -%}
+            {%- for ordinal in ordinals -%}
+              {%- assign heading_text = heading_text | remove_first: ordinal -%}
+            {%- endfor %}
+            <a href="#{{ heading_id }}" title="{{ heading_text | escape }}"
+              ><span class="post-tree__branch" aria-hidden="true">└</span>{{ heading_text -}}
+            </a>
+          {%- endfor %}
+        </nav>
+        <div class="post-rail__progress" id="post-rail-progress" aria-hidden="true" hidden>
+          <b></b><span></span><span class="post-rail__pct">00%</span>
+        </div>
+        <p class="post-rail__hint">按 ↑ / ↓ 滚动</p>
+      {% endif %}
+      <div class="post-rail__share">
+        <p class="post-rail__label">分享</p>
+        <button type="button" id="post-copy-link" hidden>复制链接</button>
+        <a href="{{ back_path | relative_url }}">{{ back_label }}</a>
       </div>
-      <hr>
-    {% endif %}
-    <div id="markdown-content">
-      {{ content }}
+    </aside>
+
+    <div class="post-column">
+      <article class="post-content">
+        {% if page.toc and page.toc.beginning %}
+          <div id="table-of-contents">
+            {% toc %}
+          </div>
+          <hr>
+        {% endif %}
+        <div id="markdown-content">
+          {{ content }}
+        </div>
+      </article>
+
+      {% if page.citation %}
+        {% include citation.liquid %}
+      {% endif %}
+
+      {% if page.related_publications %}
+        <h2>参考文献</h2>
+        <div class="publications">
+          {% bibliography --group_by none --cited_in_order %}
+        </div>
+      {% endif %}
+
+      {% if site.related_blog_posts and site.related_blog_posts.enabled %}
+        {% if page.related_posts == null or page.related_posts %}
+          {% include related_posts.liquid %}
+        {% endif %}
+      {% endif %}
+
+      <footer class="post-footer-nav">
+        <p>继续浏览</p>
+        <a href="{{ back_path | relative_url }}">
+          <span aria-hidden="true">←</span>
+          {{ back_label }}
+        </a>
+      </footer>
+
+      {% if page.giscus_comments %}
+        {% include giscus-comments.liquid %}
+      {% endif %}
     </div>
-  </article>
-
-  {% if page.citation %}
-    {% include citation.liquid %}
-  {% endif %}
-
-  {% if page.related_publications %}
-    <h2>
-      {% if page.lang == 'zh' %}参考文献{% else %}References{% endif %}
-    </h2>
-    <div class="publications">
-      {% bibliography --group_by none --cited_in_order %}
-    </div>
-  {% endif %}
-
-  {% if site.related_blog_posts and site.related_blog_posts.enabled %}
-    {% if page.related_posts == null or page.related_posts %}
-      {% include related_posts.liquid %}
-    {% endif %}
-  {% endif %}
-
-  <footer class="post-footer-nav">
-    <p>
-      {% if page.lang == 'en' %}Continue exploring{% else %}继续浏览{% endif %}
-    </p>
-    <a href="{{ back_path | relative_url }}">
-      <span aria-hidden="true">←</span>
-      {{ back_label }}
-    </a>
-  </footer>
-
-  {% if page.giscus_comments %}
-    {% include giscus-comments.liquid %}
-  {% endif %}
+  </div>
 </div>
+<script src="{{ '/assets/js/post.js' | relative_url | bust_file_cache }}" defer></script>

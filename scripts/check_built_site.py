@@ -609,6 +609,11 @@ def main() -> int:
         html = route_file(site, route).read_text(encoding="utf-8")
         if "发布于" not in html:
             errors.append(f"{route}: Chinese publication date label missing")
+        # The rail tree is rendered by the layout so it works without JavaScript.
+        if 'id="post-tree"' not in html or 'class="post-tree__branch"' not in html:
+            errors.append(f"{route}: article section tree missing")
+        if "/assets/js/post.js" not in html:
+            errors.append(f"{route}: article rail script missing")
         if "Created on" in html:
             errors.append(f"{route}: English publication date label leaked")
         expected_comment_language = "zh-CN"

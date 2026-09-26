@@ -1,492 +1,729 @@
-.post--article {
-  --post-ink: var(--global-text-color);
-  --post-muted: var(--global-text-color-light);
-  --post-line: var(--global-divider-color);
-  --post-accent: var(--global-theme-color);
-  --post-surface: color-mix(in srgb, var(--global-text-color) 3%, var(--global-bg-color));
-  --post-accent-soft: color-mix(in srgb, var(--global-theme-color) 9%, var(--global-bg-color));
-  margin: 0 auto;
-  max-width: 68rem;
-  padding-bottom: clamp(3rem, 7vw, 6rem);
+/*
+ * Article pages, after claude.dev/blog (owner request 2026-09-26).
+ * Sizes are claude.dev's measured values at its 18px root, written in px so
+ * the site's 16px root and navigation stay untouched.
+ */
+
+/* ---------- palette: warm paper, near-black ink ---------- */
+html[lang="zh-CN"]:has(.post--article) {
+  --global-bg-color: #faf9f5;
+  --global-card-bg-color: #faf9f5;
+  --global-text-color: #141413;
+  --global-text-color-light: #4c4b45;
+  --global-divider-color: #e3e1da;
+  --global-code-bg-color: #f1efe8;
+  --post-ink-rgb: 20, 20, 19;
+  --post-ink: #141413;
+  --post-ink-2: #4c4b45;
+  --post-ink-3: #7b7a72;
+  --post-ink-4: #a8a69d;
+  --post-line: #14141338;
+  --post-line-soft: #1414131c;
+  overflow-x: clip;
+}
+html[lang="zh-CN"][data-theme="dark"]:has(.post--article) {
+  --global-bg-color: #141413;
+  --global-card-bg-color: #141413;
+  --global-text-color: #faf9f5;
+  --global-text-color-light: #b0aea5;
+  --global-divider-color: #2e2d2a;
+  --global-code-bg-color: #1a1a18;
+  --post-ink-rgb: 250, 249, 245;
+  --post-ink: #faf9f5;
+  --post-ink-2: #b0aea5;
+  --post-ink-3: #87867f;
+  --post-ink-4: #5e5d59;
+  --post-line: #faf9f529;
+  --post-line-soft: #faf9f517;
+}
+@media (prefers-color-scheme: dark) {
+  html[lang="zh-CN"]:not([data-theme]):has(.post--article) {
+    --global-bg-color: #141413;
+    --global-card-bg-color: #141413;
+    --global-text-color: #faf9f5;
+    --global-text-color-light: #b0aea5;
+    --global-divider-color: #2e2d2a;
+    --global-code-bg-color: #1a1a18;
+    --post-ink-rgb: 250, 249, 245;
+    --post-ink: #faf9f5;
+    --post-ink-2: #b0aea5;
+    --post-ink-3: #87867f;
+    --post-ink-4: #5e5d59;
+    --post-line: #faf9f529;
+    --post-line-soft: #faf9f517;
+  }
 }
 
+/* ---------- navigation scrolls away, as on claude.dev ----------
+   Elsewhere the site bar is fixed and turns into a floating capsule once the
+   page scrolls; over an article that capsule covers the text and the rail. */
+html[lang="zh-CN"]:has(.post--article) {
+  scroll-padding-top: 36px;
+}
+html:has(.post--article) .function-page #navbar,
+html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding-inline: 0;
+  position: absolute;
+  transition: none;
+  width: min(1060px, calc(100% - 96px));
+}
+
+/* ---------- frame: break out of the 1060px container ---------- */
+.post--article {
+  --post-sans: var(--site-font-family, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif);
+  --post-mono: "SF Mono", ui-monospace, Menlo, Consolas, "PingFang SC", "Microsoft YaHei", monospace;
+  --post-gutter: 36px;
+  --post-ease: cubic-bezier(0.19, 1, 0.22, 1);
+  --post-rail-top: 36px;
+  color: var(--post-ink);
+  font-family: var(--post-sans);
+  margin-left: calc(50% - 50vw);
+  padding: 0 var(--post-gutter) 96px;
+  width: 100vw;
+}
+
+/* 1px ink hairline at the very top, driven by the scroll timeline */
 .post-reading-progress {
   display: none;
 }
-
 @supports (animation-timeline: scroll()) {
   .post-reading-progress {
     animation: post-reading-progress linear both;
     animation-timeline: scroll(root block);
-    background: var(--post-accent);
+    background: var(--post-ink);
     display: block;
-    height: 0.18rem;
+    height: 1px;
     left: 0;
     position: fixed;
     right: 0;
-    top: 57px;
+    top: 0;
     transform: scaleX(0);
     transform-origin: left center;
-    z-index: 1029;
+    z-index: 1200;
   }
 }
-
 @keyframes post-reading-progress {
   to {
     transform: scaleX(1);
   }
 }
 
+/* ---------- hero ---------- */
 .post-hero {
-  margin: 0 auto;
-  max-width: 59rem;
-  padding: clamp(1rem, 3vw, 2.5rem) 0 clamp(2.8rem, 7vw, 5.75rem);
-}
-
-.post-back-link {
-  align-items: center;
-  color: var(--post-muted);
-  display: inline-flex;
-  font-size: 0.82rem;
-  font-weight: 600;
-  gap: 0.55rem;
-  letter-spacing: 0.025em;
-  margin-bottom: clamp(2.5rem, 7vw, 5.25rem);
-  text-decoration: none;
-}
-
-.post-back-link span {
-  color: var(--post-accent);
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  transition: transform 160ms ease;
-}
-
-.post-back-link:hover,
-.post-back-link:focus-visible {
-  color: var(--post-accent);
-  text-decoration: none;
-}
-
-.post-back-link:hover span,
-.post-back-link:focus-visible span {
-  transform: translateX(-0.2rem);
-}
-
-.post-hero__layout {
   display: grid;
-  gap: clamp(1.2rem, 3vw, 2.35rem);
-  grid-template-columns: 1rem minmax(0, 1fr);
-}
-
-.post-trajectory {
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  margin: 0.35rem 0 0.65rem;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  padding: 56px 0 72px;
   position: relative;
 }
-
-.post-trajectory::before {
-  background: linear-gradient(to bottom, var(--post-accent), color-mix(in srgb, var(--post-accent) 18%, var(--post-line)));
+.post-hero::after {
+  background: color-mix(in srgb, rgb(var(--post-ink-rgb)) 9%, var(--global-bg-color));
+  bottom: 0;
   content: "";
-  inset: 0.25rem auto;
+  height: 1px;
+  left: 50%;
   position: absolute;
-  width: 1px;
+  transform: translateX(-50%);
+  width: 100vw;
 }
-
-.post-trajectory span {
-  background: var(--global-bg-color);
-  border: 1px solid var(--post-accent);
-  border-radius: 50%;
-  height: 0.52rem;
-  position: relative;
-  width: 0.52rem;
-  z-index: 1;
+.post-hero__content {
+  grid-column: 5 / 13;
 }
-
-.post-trajectory span:first-child {
-  background: var(--post-accent);
-  box-shadow: 0 0 0 0.26rem var(--post-accent-soft);
+.post-chip {
+  border: 1px solid var(--post-line-soft);
+  color: var(--post-ink-3);
+  display: inline-block;
+  font-family: var(--post-mono);
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  margin-bottom: 14px;
+  padding: 2px 8px;
 }
-
-.post-kicker {
-  align-items: center;
-  color: var(--post-accent);
-  display: flex;
-  flex-wrap: wrap;
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  font-size: 0.74rem;
-  font-weight: 700;
-  gap: 0.55rem;
-  letter-spacing: 0.13em;
-  margin: 0 0 1.15rem;
-  text-transform: uppercase;
-}
-
 .post--article .post-title {
   color: var(--post-ink);
-  font-family: "Roboto Slab", "Iowan Old Style", "Songti SC", STSong, serif;
-  font-size: clamp(2.25rem, 5.7vw, 4.65rem);
+  font-family: var(--post-sans);
+  font-size: clamp(27px, 19.8px + 1vw, 36px);
   font-weight: 500;
-  letter-spacing: -0.047em;
-  line-height: 1.11;
+  letter-spacing: 0;
+  line-height: 1.3;
   margin: 0;
-  max-width: 56rem;
+  max-width: 720px;
   text-wrap: balance;
 }
-
 .post--article .post-description {
-  color: var(--post-muted);
-  font-size: clamp(1.05rem, 2vw, 1.3rem);
-  line-height: 1.72;
-  margin: clamp(1.4rem, 3vw, 2rem) 0 0;
-  max-width: 47rem;
-  text-wrap: pretty;
-}
-
-.post--article .post-meta {
-  align-items: center;
-  color: var(--post-muted);
-  display: flex;
-  flex-wrap: wrap;
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  font-size: 0.74rem;
-  gap: 0.55rem 0;
+  color: var(--post-ink-2);
+  font-size: 18px;
   line-height: 1.6;
-  margin-top: 1.6rem;
+  margin: 13.5px 0 0;
+  max-width: 720px;
+  text-wrap: balance;
 }
-
-.post--article .post-meta > span {
-  color: inherit;
+.post--article .post-meta {
+  display: grid;
+  font-family: var(--post-mono);
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  margin: 30px 0 0;
 }
-
-.post--article .post-meta > span:not(:last-child)::after {
-  color: color-mix(in srgb, var(--post-muted) 48%, transparent);
-  content: "·";
-  padding: 0 0.7rem;
+.post--article .post-meta > div {
+  grid-column: span 2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding-right: 18px;
 }
-
-.post--article .post-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  margin: 1.15rem 0 0;
-  padding: 0;
+.post--article .post-meta dt {
+  color: var(--post-ink-3);
+  font-size: 13.5px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: normal;
+  margin-bottom: 7px;
 }
-
-.post--article .post-tags a,
-.post--article .post-tags span {
-  background: var(--post-surface);
-  border: 1px solid var(--post-line);
-  border-radius: 999px;
-  color: var(--post-muted);
-  font-size: 0.75rem;
-  line-height: 1;
-  padding: 0.42rem 0.68rem;
-  text-decoration: none;
-}
-
-.post--article .post-tags a:hover,
-.post--article .post-tags a:focus-visible {
-  background: var(--post-accent-soft);
-  border-color: color-mix(in srgb, var(--post-accent) 42%, var(--post-line));
-  color: var(--post-accent);
-  text-decoration: none;
-}
-
-.post--article .post-content,
-.post--article > .publications,
-.post--article > h2,
-.post--article > .related-posts,
-.post--article > #giscus_thread,
-.post-footer-nav {
-  margin-left: auto;
-  margin-right: auto;
-  max-width: 48rem;
-}
-
-.post--article #markdown-content {
+.post--article .post-meta dd {
   color: var(--post-ink);
-  font-size: 1.075rem;
-  line-height: 1.86;
-}
-
-.post--article #markdown-content > :first-child {
-  margin-top: 0;
-}
-
-.post--article #markdown-content p {
-  margin-bottom: 1.4rem;
-  text-wrap: pretty;
-}
-
-.post--article #markdown-content h2,
-.post--article #markdown-content h3,
-.post--article #markdown-content h4 {
-  color: var(--post-ink);
-  font-family: "Roboto Slab", "Iowan Old Style", "Songti SC", STSong, serif;
-  font-weight: 500;
-  letter-spacing: -0.025em;
-  line-height: 1.35;
-  position: relative;
-  scroll-margin-top: 5rem;
-}
-
-.post--article #markdown-content h2 {
-  font-size: clamp(1.65rem, 3vw, 2.15rem);
-  margin: clamp(3.5rem, 7vw, 5.25rem) 0 1.35rem;
-}
-
-.post--article #markdown-content h2::before {
-  background: var(--post-accent);
-  border-radius: 50%;
-  box-shadow: 0 0 0 0.24rem var(--post-accent-soft);
-  content: "";
-  height: 0.42rem;
-  left: -1.65rem;
-  position: absolute;
-  top: 0.67em;
-  width: 0.42rem;
-}
-
-.post--article #markdown-content h3 {
-  font-size: clamp(1.3rem, 2.35vw, 1.58rem);
-  margin: 2.8rem 0 1rem;
-}
-
-.post--article #markdown-content h4 {
-  font-size: 1.12rem;
-  margin: 2.25rem 0 0.8rem;
-}
-
-.post--article #markdown-content ul,
-.post--article #markdown-content ol {
-  margin-bottom: 1.5rem;
-  padding-left: 1.45rem;
-}
-
-.post--article #markdown-content li {
-  margin-bottom: 0.45rem;
-  padding-left: 0.25rem;
-}
-
-.post--article #markdown-content li::marker {
-  color: var(--post-accent);
-}
-
-.post--article #markdown-content a {
-  text-decoration-color: color-mix(in srgb, var(--post-accent) 45%, transparent);
-  text-decoration-thickness: 0.08em;
-  text-underline-offset: 0.19em;
-}
-
-.post--article #markdown-content a:hover,
-.post--article #markdown-content a:focus-visible {
-  text-decoration-color: var(--post-accent);
-}
-
-.post--article #markdown-content blockquote {
-  background: var(--post-accent-soft);
-  border: 0;
-  border-left: 0.22rem solid var(--post-accent);
-  border-radius: 0 0.65rem 0.65rem 0;
-  color: var(--post-ink);
-  font-size: 1.06rem;
-  line-height: 1.75;
-  margin: 2.25rem 0;
-  padding: 1.15rem 1.35rem;
-}
-
-.post--article #markdown-content blockquote p:last-child {
-  margin-bottom: 0;
-}
-
-.post--article #markdown-content :not(pre) > code {
-  background: var(--post-surface);
-  border: 1px solid var(--post-line);
-  border-radius: 0.28rem;
-  color: var(--post-ink);
-  font-size: 0.87em;
-  padding: 0.12em 0.34em;
-}
-
-.post--article #markdown-content figure.highlight,
-.post--article #markdown-content div.highlight {
-  border: 1px solid var(--post-line);
-  border-radius: 0.65rem;
-  margin: 1.85rem 0;
-  overflow: hidden;
-}
-
-.post--article #markdown-content figure.highlight pre,
-.post--article #markdown-content div.highlight pre {
-  border-radius: 0;
+  font-family: var(--post-sans);
+  font-size: 15.75px;
+  line-height: 1.5;
   margin: 0;
-  padding: 1.15rem 1.25rem;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+.post--article .post-meta dd::before {
+  color: var(--post-ink-4);
+  content: "└ ";
+  display: inline-block;
+  font-family: var(--post-mono);
+  text-indent: 0;
+  width: 1.2em;
+}
+.post--article .post-tags a {
+  color: inherit;
+  text-decoration: none;
+}
+.post--article .post-tags a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
-.post--article #markdown-content table:not(.table) {
-  border-bottom: 1px solid var(--post-line);
+/* ---------- body: rail on 1-4, article on 5-12 ---------- */
+.post-body {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  padding-top: 72px;
+}
+.post-rail {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--post-mono);
+  grid-column: 1 / 5;
+  margin: -2px 32px 0 0;
+  min-height: calc(100dvh - var(--post-rail-top) - 36px);
+  position: sticky;
+  top: var(--post-rail-top);
+}
+.post-rail__title {
+  font-family: var(--post-sans);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.5;
+  margin-right: -32px;
+  max-height: 0;
+  max-width: 40ch;
+  opacity: 0;
+  overflow: hidden;
+  text-wrap: balance;
+  transform: translateY(8px);
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s var(--post-ease),
+    max-height 0.4s ease,
+    margin 0.4s ease;
+}
+.post-rail__title.is-on {
+  margin-bottom: 24px;
+  max-height: 240px;
+  opacity: 1;
+  transform: none;
+}
+.post-rail__label {
+  color: var(--post-ink-3);
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  line-height: normal;
+  margin: 0 0 12px;
+}
+.post-tree a {
+  color: var(--post-ink-2);
   display: block;
-  font-size: 0.94rem;
-  margin: 2rem 0;
-  max-width: 100%;
-  overflow-x: auto;
-  width: max-content;
-}
-
-.post--article #markdown-content table:not(.table) th {
-  background: var(--post-surface);
-  color: var(--post-ink);
-  font-weight: 650;
+  font-size: 13.5px;
+  line-height: 1.45;
+  overflow: hidden;
+  padding: 2px 0;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  transition:
+    color 0.15s,
+    transform 0.25s var(--post-ease);
   white-space: nowrap;
 }
-
-.post--article #markdown-content table:not(.table) td,
-.post--article #markdown-content table:not(.table) th {
-  padding: 0.7rem 1rem;
+.post-tree__branch {
+  color: var(--post-ink-4);
+  margin-right: 10px;
 }
-
-.post--article #markdown-content img {
-  border-radius: 0.65rem;
-  box-shadow: 0 0 0 1px var(--post-line);
+.post-tree a:hover,
+.post-tree a.is-active {
+  color: var(--post-ink);
 }
-
-.post--article #markdown-content figcaption {
-  color: var(--post-muted);
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  font-size: 0.74rem;
-  line-height: 1.55;
-  margin-top: 0.7rem;
-  text-align: center;
+.post-tree a:hover {
+  transform: translateX(3px);
 }
-
-.post--article #table-of-contents {
-  background: var(--post-surface);
-  border: 1px solid var(--post-line);
-  border-radius: 0.65rem;
-  margin-bottom: 2.5rem;
-  padding: 1.2rem 1.35rem;
+.post-tree a.is-active .post-tree__branch {
+  color: var(--post-ink-2);
 }
-
-.post--article #table-of-contents + hr {
+.post-rail__progress {
+  color: var(--post-ink-4);
+  font-size: 15.75px;
+  margin-top: 26px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.post-rail__progress b {
+  color: var(--post-ink);
+  font-weight: 400;
+}
+.post-rail__pct {
+  color: var(--post-ink-2);
+  margin-left: 8px;
+}
+.post-rail__hint {
+  color: var(--post-ink-3);
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  margin: 12px 0 0;
+}
+.post-rail__share {
+  margin-top: auto;
+  padding-top: 26px;
+}
+.post-rail__share a,
+.post-rail__share button {
+  background: none;
+  border: 0;
+  color: var(--post-ink-2);
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.45;
+  padding: 2px 0;
+  text-align: left;
+  text-decoration: none;
+}
+.post-rail__share a::before,
+.post-rail__share button::before {
+  color: var(--post-ink-4);
+  content: "└ ";
+}
+.post-rail__share a:hover,
+.post-rail__share button:hover {
+  color: var(--post-ink);
+}
+.post-rail__share [hidden] {
   display: none;
 }
 
-.post-footer-nav {
-  border-top: 1px solid var(--post-line);
-  margin-top: clamp(4rem, 8vw, 6rem);
-  padding-top: 1.25rem;
+.post-column {
+  grid-column: 5 / 13;
+  margin-left: -32px;
+  max-width: 732px;
+  min-width: 0;
+  padding-left: 32px;
 }
 
-.post-footer-nav p {
-  color: var(--post-muted);
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
-  margin: 0 0 0.55rem;
+/* ---------- prose ---------- */
+.post--article #markdown-content {
+  color: var(--post-ink-2);
+  font-size: 18px;
+  line-height: 1.7;
+}
+.post--article #markdown-content > :first-child {
+  margin-top: -2px;
+}
+.post--article #markdown-content :is(p, li) {
+  color: var(--post-ink-2);
+}
+.post--article #markdown-content p {
+  margin: 0 0 14px;
+  max-width: 660px;
+}
+.post--article #markdown-content :is(h2, h3, h4) {
+  color: var(--post-ink);
+  font-family: var(--post-mono);
+  font-size: 15.75px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  margin: 54px 0 20px;
+  scroll-margin-top: var(--post-rail-top);
   text-transform: uppercase;
 }
-
-.post-footer-nav a {
-  align-items: center;
+.post--article #markdown-content > :is(h2, h3):first-child {
+  margin-top: -2px;
+}
+.post--article #markdown-content h3 {
+  margin-top: 36px;
+}
+.post--article #markdown-content h2 + h3 {
+  margin-top: 0;
+}
+.post--article #markdown-content h4 {
+  font-size: 13.5px;
+  margin: 31.5px 0 12px;
+}
+.post--article #markdown-content strong {
   color: var(--post-ink);
-  display: inline-flex;
-  font-family: "Roboto Slab", "Iowan Old Style", "Songti SC", STSong, serif;
-  font-size: 1.35rem;
   font-weight: 500;
-  gap: 0.65rem;
+}
+.post--article #markdown-content a {
+  color: inherit;
+  overflow-wrap: break-word;
+  text-decoration: underline;
+  text-decoration-color: var(--post-ink-3);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  transition: color 0.15s;
+}
+.post--article #markdown-content a:hover {
+  color: var(--post-ink);
+}
+.post--article #markdown-content :is(ul, ol) {
+  list-style-position: outside;
+  margin: 0 0 14px;
+  max-width: 660px;
+  padding-left: 1.25em;
+}
+.post--article #markdown-content li {
+  margin: 0 0 6px;
+}
+.post--article #markdown-content li::marker {
+  color: var(--post-ink-3);
+}
+.post--article #markdown-content blockquote {
+  border-left: 1px solid var(--post-line);
+  margin: 31.5px 0;
+  padding: 0 0 0 22.5px;
+}
+.post--article #markdown-content blockquote p {
+  color: var(--post-ink-2);
+  margin: 0;
+}
+.post--article #markdown-content :not(pre) > code {
+  background: rgba(var(--post-ink-rgb), 0.05);
+  border-radius: 0;
+  color: var(--post-ink);
+  font-family: var(--post-mono);
+  font-size: 0.875em;
+  padding: 0.0625em 0.25em;
+}
+
+/* code: claude.dev's bordered card, header added by post.js */
+.post--article #markdown-content div.highlighter-rouge {
+  position: relative;
+  background: none;
+  border: 1px solid var(--post-line-soft);
+  margin: 26px 0;
+  max-width: 660px;
+}
+.post--article #markdown-content div.highlight,
+.post--article #markdown-content .code-display-wrapper {
+  background: none;
+  border: 0;
+  margin: 0;
+  position: static;
+}
+.post--article #markdown-content pre.highlight {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  color: var(--post-ink-2);
+  font-family: var(--post-mono);
+  font-size: 13.5px;
+  line-height: 1.75;
+  margin: 0;
+  overflow-x: auto;
+  padding: 16px;
+}
+.post--article #markdown-content pre.highlight code {
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  padding: 0;
+}
+.post-code__head {
+  align-items: center;
+  border-bottom: 1px solid var(--post-line-soft);
+  color: var(--post-ink-3);
+  display: flex;
+  font-family: var(--post-mono);
+  font-size: 11.25px;
+  justify-content: space-between;
+  letter-spacing: 0.02em;
+  padding: 8px 14px;
+  text-transform: uppercase;
+}
+.post--article #markdown-content div.highlighter-rouge .copy {
+  background: none;
+  border: 0;
+  color: var(--post-ink-3);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  opacity: 1;
+  padding: 0;
+  position: absolute;
+  right: 14px;
+  top: 10px;
+}
+.post--article #markdown-content div.highlighter-rouge .copy:hover {
+  color: var(--post-ink);
+}
+
+/* tables: mono header, hairline rules */
+/* The theme adds Bootstrap's .table and sometimes a .table-responsive
+   wrapper; the outermost of the two carries the spacing. */
+.post--article #markdown-content .table-responsive {
+  margin: 26px 0;
+  max-width: 660px;
+}
+.post--article #markdown-content table {
+  --bs-table-bg: transparent;
+  --bs-table-hover-bg: transparent;
+  background: none;
+  border-collapse: collapse;
+  color: var(--post-ink-2);
+  font-size: 15.75px;
+  font-variant-numeric: tabular-nums;
+  margin: 26px 0;
+  max-width: 660px;
+  width: 100%;
+}
+.post--article #markdown-content .table-responsive > table {
+  margin: 0;
+}
+.post--article #markdown-content table :is(th, td) {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: inherit;
+  border-bottom: 1px solid var(--post-line-soft);
+  padding: 10px 14px 10px 0;
+}
+.post--article #markdown-content table th {
+  border-bottom: 1px solid var(--post-line);
+  color: var(--post-ink-3);
+  font-family: var(--post-mono);
+  font-size: 13.5px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  padding-top: 0;
+  white-space: nowrap;
+}
+.post--article #markdown-content table td:first-child {
+  color: var(--post-ink);
+  font-family: var(--post-mono);
+  font-size: 14.5px;
+}
+.post--article #markdown-content table :is(th, td)[style*="right"] {
+  padding-left: 14px;
+  padding-right: 0;
+}
+
+.post--article #markdown-content mjx-container[display="true"] {
+  margin: 22px 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.post--article #markdown-content img {
+  display: block;
+  height: auto;
+  margin: 26px 0;
+  max-width: 100%;
+}
+.post--article #markdown-content figcaption {
+  color: var(--post-ink-3);
+  font-size: 15.75px;
+  margin-top: 10px;
+}
+.post--article #markdown-content .post-refs {
+  font-size: 15.75px;
+  line-height: 1.65;
+  margin-bottom: 8px;
+  padding-left: 2.2em;
+  text-indent: -2.2em;
+}
+.post--article #markdown-content > hr {
+  border: 0;
+  border-top: 1px solid var(--post-line-soft);
+  margin: 72px 0 22px;
+  max-width: 660px;
+}
+.post--article #markdown-content > hr ~ p {
+  color: var(--post-ink-3);
+  font-family: var(--post-mono);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.post--article #table-of-contents {
+  display: none;
+}
+
+/* ---------- footer, comments ---------- */
+.post-footer-nav {
+  border-top: 1px solid var(--post-line-soft);
+  font-family: var(--post-mono);
+  margin-top: 72px;
+  max-width: 660px;
+  padding-top: 22px;
+}
+.post-footer-nav p {
+  color: var(--post-ink-3);
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  margin: 0 0 6px;
+}
+.post-footer-nav a {
+  color: var(--post-ink-2);
+  font-size: 13.5px;
   text-decoration: none;
 }
-
-.post-footer-nav a span {
-  color: var(--post-accent);
+.post-footer-nav a:hover {
+  color: var(--post-ink);
+}
+.post--article .comments {
+  margin-top: 72px;
+  max-width: 660px;
+}
+.post--article .comments > h2 {
+  color: var(--post-ink);
+  font-family: var(--post-mono);
+  font-size: 15.75px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+.post--article a:focus-visible,
+.post--article button:focus-visible {
+  outline: 1px solid var(--post-ink);
+  outline-offset: 3px;
 }
 
-.post-footer-nav a:hover,
-.post-footer-nav a:focus-visible {
-  color: var(--post-accent);
-  text-decoration: none;
+/* ---------- motion ---------- */
+@keyframes post-reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+.post--article [data-post-reveal] {
+  animation: post-reveal-up 0.7s var(--post-ease) var(--post-reveal-delay, 0s) backwards;
 }
 
-.post--article #giscus_thread {
-  border-top: 1px solid var(--post-line);
-  margin-top: 3.5rem;
-  padding-top: 2rem;
-}
-
-.post--article a:focus-visible {
-  border-radius: 0.18rem;
-  outline: 2px solid color-mix(in srgb, var(--post-accent) 58%, transparent);
-  outline-offset: 0.22rem;
-}
-
-html[data-site-font="dyslexic"] .post--article .post-title,
-html[data-site-font="dyslexic"] .post--article #markdown-content h2,
-html[data-site-font="dyslexic"] .post--article #markdown-content h3,
-html[data-site-font="dyslexic"] .post--article #markdown-content h4,
-html[data-site-font="dyslexic"] .post-footer-nav a {
+/* The reading-preference fonts replace the sans voice everywhere. */
+html[data-site-font="dyslexic"] .post--article :is(.post-title, .post-description, #markdown-content) {
   font-family: var(--site-font-family);
 }
 
-@media (max-width: 767.98px) {
-  .post-hero {
-    padding-top: 0.25rem;
+/* ---------- responsive ---------- */
+@media (max-width: 1100px) {
+  .post-hero__content,
+  .post-column {
+    grid-column: 4 / 13;
   }
-
-  .post-back-link {
-    margin-bottom: 2.75rem;
-  }
-
-  .post--article .post-title {
-    font-size: clamp(2.15rem, 10.4vw, 3.45rem);
-    letter-spacing: -0.04em;
-  }
-
-  .post--article #markdown-content h2::before {
-    left: -1rem;
+  .post-rail {
+    grid-column: 1 / 4;
+    margin-right: 16px;
   }
 }
-
-@media (max-width: 575.98px) {
-  .post-hero__layout {
-    gap: 0.85rem;
-    grid-template-columns: 0.45rem minmax(0, 1fr);
+@media (max-width: 820px) {
+  .post--article {
+    --post-gutter: 20px;
   }
-
-  .post-trajectory span {
-    height: 0.4rem;
-    width: 0.4rem;
+  .post-hero {
+    display: block;
+    padding: 24px 0 48px;
   }
-
+  .post--article .post-title {
+    font-size: 30px;
+    line-height: 1.4;
+  }
   .post--article .post-description {
-    font-size: 1rem;
-    line-height: 1.68;
+    font-size: 17px;
   }
-
-  .post--article #markdown-content {
-    font-size: 1rem;
-    line-height: 1.8;
+  .post--article .post-meta {
+    align-items: baseline;
+    gap: 8px 16px;
+    grid-template-columns: max-content minmax(0, 1fr);
   }
-
-  .post--article #markdown-content h2::before {
+  .post--article .post-meta > div {
+    display: contents;
+  }
+  .post--article .post-meta dt {
+    margin: 0;
+  }
+  .post--article .post-meta dd {
+    padding-left: 0;
+    text-indent: 0;
+  }
+  .post--article .post-meta dd::before {
+    content: none;
+  }
+  .post-body {
+    display: flex;
+    flex-direction: column;
+    padding-top: 40px;
+  }
+  .post-column {
+    margin-left: 0;
+    max-width: none;
+    order: 1;
+    padding-left: 0;
+  }
+  .post-rail {
+    margin: 40px 0 0;
+    min-height: 0;
+    order: 2;
+    position: static;
+  }
+  .post-rail__title,
+  .post-rail > .post-rail__label,
+  .post-tree,
+  .post-rail__progress,
+  .post-rail__hint {
     display: none;
   }
-
-  .post--article #markdown-content table:not(.table) td,
-  .post--article #markdown-content table:not(.table) th {
-    padding: 0.62rem 0.75rem;
+  .post--article #markdown-content {
+    font-size: 17px;
+  }
+  /* Without the theme's scroll wrapper a wide table must scroll by itself. */
+  .post--article #markdown-content table {
+    display: block;
+    overflow-x: auto;
   }
 }
-
 @media (prefers-reduced-motion: reduce) {
   .post-reading-progress {
     animation: none;
     display: none;
   }
-
-  .post-back-link span {
+  .post--article [data-post-reveal] {
+    animation: none;
+  }
+  .post-rail__title,
+  .post-tree a {
     transition: none;
   }
 }
