@@ -2,10 +2,15 @@
  * Article pages, after claude.dev/blog (owner request 2026-09-26).
  * Sizes are claude.dev's measured values at its 18px root, written in px so
  * the site's 16px root and navigation stay untouched.
+ *
+ * The same rules dress the editor previews: .post-paper carries the palette,
+ * .post-paper__title / __summary the hero type, and .post-prose the body, so
+ * what the owner sees while writing is what the article page renders.
  */
 
 /* ---------- palette: warm paper, near-black ink ---------- */
-html[lang="zh-CN"]:has(.post--article) {
+html[lang="zh-CN"]:has(.post--article),
+.post-paper {
   --global-bg-color: #faf9f5;
   --global-card-bg-color: #faf9f5;
   --global-text-color: #141413;
@@ -19,9 +24,9 @@ html[lang="zh-CN"]:has(.post--article) {
   --post-ink-4: #a8a69d;
   --post-line: #14141338;
   --post-line-soft: #1414131c;
-  overflow-x: clip;
 }
-html[lang="zh-CN"][data-theme="dark"]:has(.post--article) {
+html[lang="zh-CN"][data-theme="dark"]:has(.post--article),
+html[data-theme="dark"] .post-paper {
   --global-bg-color: #141413;
   --global-card-bg-color: #141413;
   --global-text-color: #faf9f5;
@@ -37,7 +42,8 @@ html[lang="zh-CN"][data-theme="dark"]:has(.post--article) {
   --post-line-soft: #faf9f517;
 }
 @media (prefers-color-scheme: dark) {
-  html[lang="zh-CN"]:not([data-theme]):has(.post--article) {
+  html[lang="zh-CN"]:not([data-theme]):has(.post--article),
+  html:not([data-theme]) .post-paper {
     --global-bg-color: #141413;
     --global-card-bg-color: #141413;
     --global-text-color: #faf9f5;
@@ -58,6 +64,7 @@ html[lang="zh-CN"][data-theme="dark"]:has(.post--article) {
    Elsewhere the site bar is fixed and turns into a floating capsule once the
    page scrolls; over an article that capsule covers the text and the rail. */
 html[lang="zh-CN"]:has(.post--article) {
+  overflow-x: clip;
   scroll-padding-top: 36px;
 }
 html:has(.post--article) .function-page #navbar,
@@ -71,13 +78,22 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   width: min(1060px, calc(100% - 96px));
 }
 
-/* ---------- frame: break out of the 1060px container ---------- */
-.post--article {
+.post--article,
+.post-paper {
   --post-sans: var(--site-font-family, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif);
   --post-mono: "SF Mono", ui-monospace, Menlo, Consolas, "PingFang SC", "Microsoft YaHei", monospace;
-  --post-gutter: 36px;
   --post-ease: cubic-bezier(0.19, 1, 0.22, 1);
   --post-rail-top: 36px;
+}
+.post-paper {
+  background: var(--global-bg-color);
+  color: var(--post-ink);
+  font-family: var(--post-sans);
+}
+
+/* ---------- frame: break out of the 1060px container ---------- */
+.post--article {
+  --post-gutter: 36px;
   color: var(--post-ink);
   font-family: var(--post-sans);
   margin-left: calc(50% - 50vw);
@@ -142,7 +158,7 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   margin-bottom: 14px;
   padding: 2px 8px;
 }
-.post--article .post-title {
+:is(.post--article .post-title, .post-paper__title) {
   color: var(--post-ink);
   font-family: var(--post-sans);
   font-size: clamp(27px, 19.8px + 1vw, 36px);
@@ -153,7 +169,7 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   max-width: 720px;
   text-wrap: balance;
 }
-.post--article .post-description {
+:is(.post--article .post-description, .post-paper__summary) {
   color: var(--post-ink-2);
   font-size: 18px;
   line-height: 1.6;
@@ -344,22 +360,22 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
 }
 
 /* ---------- prose ---------- */
-.post--article #markdown-content {
+:is(.post--article #markdown-content, .post-prose) {
   color: var(--post-ink-2);
   font-size: 18px;
   line-height: 1.7;
 }
-.post--article #markdown-content > :first-child {
+:is(.post--article #markdown-content, .post-prose) > :first-child {
   margin-top: -2px;
 }
-.post--article #markdown-content :is(p, li) {
+:is(.post--article #markdown-content, .post-prose) :is(p, li) {
   color: var(--post-ink-2);
 }
-.post--article #markdown-content p {
+:is(.post--article #markdown-content, .post-prose) p {
   margin: 0 0 14px;
   max-width: 660px;
 }
-.post--article #markdown-content :is(h2, h3, h4) {
+:is(.post--article #markdown-content, .post-prose) :is(h2, h3, h4) {
   color: var(--post-ink);
   font-family: var(--post-mono);
   font-size: 15.75px;
@@ -370,24 +386,24 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   scroll-margin-top: var(--post-rail-top);
   text-transform: uppercase;
 }
-.post--article #markdown-content > :is(h2, h3):first-child {
+:is(.post--article #markdown-content, .post-prose) > :is(h2, h3):first-child {
   margin-top: -2px;
 }
-.post--article #markdown-content h3 {
+:is(.post--article #markdown-content, .post-prose) h3 {
   margin-top: 36px;
 }
-.post--article #markdown-content h2 + h3 {
+:is(.post--article #markdown-content, .post-prose) h2 + h3 {
   margin-top: 0;
 }
-.post--article #markdown-content h4 {
+:is(.post--article #markdown-content, .post-prose) h4 {
   font-size: 13.5px;
   margin: 31.5px 0 12px;
 }
-.post--article #markdown-content strong {
+:is(.post--article #markdown-content, .post-prose) strong {
   color: var(--post-ink);
   font-weight: 500;
 }
-.post--article #markdown-content a {
+:is(.post--article #markdown-content, .post-prose) a {
   color: inherit;
   overflow-wrap: break-word;
   text-decoration: underline;
@@ -396,31 +412,31 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   text-underline-offset: 0.2em;
   transition: color 0.15s;
 }
-.post--article #markdown-content a:hover {
+:is(.post--article #markdown-content, .post-prose) a:hover {
   color: var(--post-ink);
 }
-.post--article #markdown-content :is(ul, ol) {
+:is(.post--article #markdown-content, .post-prose) :is(ul, ol) {
   list-style-position: outside;
   margin: 0 0 14px;
   max-width: 660px;
   padding-left: 1.25em;
 }
-.post--article #markdown-content li {
+:is(.post--article #markdown-content, .post-prose) li {
   margin: 0 0 6px;
 }
-.post--article #markdown-content li::marker {
+:is(.post--article #markdown-content, .post-prose) li::marker {
   color: var(--post-ink-3);
 }
-.post--article #markdown-content blockquote {
+:is(.post--article #markdown-content, .post-prose) blockquote {
   border-left: 1px solid var(--post-line);
   margin: 31.5px 0;
   padding: 0 0 0 22.5px;
 }
-.post--article #markdown-content blockquote p {
+:is(.post--article #markdown-content, .post-prose) blockquote p {
   color: var(--post-ink-2);
   margin: 0;
 }
-.post--article #markdown-content :not(pre) > code {
+:is(.post--article #markdown-content, .post-prose) :not(pre) > code {
   background: rgba(var(--post-ink-rgb), 0.05);
   border-radius: 0;
   color: var(--post-ink);
@@ -430,21 +446,21 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
 }
 
 /* code: claude.dev's bordered card, header added by post.js */
-.post--article #markdown-content div.highlighter-rouge {
+:is(.post--article #markdown-content, .post-prose) div.highlighter-rouge {
   position: relative;
   background: none;
   border: 1px solid var(--post-line-soft);
   margin: 26px 0;
   max-width: 660px;
 }
-.post--article #markdown-content div.highlight,
-.post--article #markdown-content .code-display-wrapper {
+:is(.post--article #markdown-content, .post-prose) div.highlight,
+:is(.post--article #markdown-content, .post-prose) .code-display-wrapper {
   background: none;
   border: 0;
   margin: 0;
   position: static;
 }
-.post--article #markdown-content pre.highlight {
+:is(.post--article #markdown-content, .post-prose) pre.highlight {
   background: none;
   border: 0;
   border-radius: 0;
@@ -456,7 +472,7 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   overflow-x: auto;
   padding: 16px;
 }
-.post--article #markdown-content pre.highlight code {
+:is(.post--article #markdown-content, .post-prose) pre.highlight code {
   background: none;
   color: inherit;
   font-size: inherit;
@@ -474,7 +490,7 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   padding: 8px 14px;
   text-transform: uppercase;
 }
-.post--article #markdown-content div.highlighter-rouge .copy {
+:is(.post--article #markdown-content, .post-prose) div.highlighter-rouge .copy {
   background: none;
   border: 0;
   color: var(--post-ink-3);
@@ -487,18 +503,61 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   right: 14px;
   top: 10px;
 }
-.post--article #markdown-content div.highlighter-rouge .copy:hover {
+:is(.post--article #markdown-content, .post-prose) div.highlighter-rouge .copy:hover {
   color: var(--post-ink);
+}
+
+/* The editor preview renders plain <pre> blocks; same card, the language
+   label comes from data-lang instead of a header element. */
+.post-prose pre:not(.highlight) {
+  background: none;
+  border: 1px solid var(--post-line-soft);
+  border-radius: 0;
+  color: var(--post-ink-2);
+  font-family: var(--post-mono);
+  font-size: 13.5px;
+  line-height: 1.75;
+  margin: 26px 0;
+  max-width: 660px;
+  overflow-x: auto;
+  padding: 0;
+}
+.post-prose pre:not(.highlight)::before {
+  border-bottom: 1px solid var(--post-line-soft);
+  color: var(--post-ink-3);
+  content: attr(data-lang);
+  display: block;
+  font-size: 11.25px;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  padding: 8px 14px;
+  text-transform: uppercase;
+}
+.post-prose pre:not(.highlight) > code {
+  background: none;
+  color: inherit;
+  display: block;
+  font-size: inherit;
+  padding: 16px;
+}
+.post-prose .site-markdown-preview__table-wrap {
+  margin: 26px 0;
+  max-width: 660px;
+  overflow-x: auto;
+}
+/* Same specificity as the shared table rule it overrides. */
+:is(.post--article #markdown-content, .post-prose) .site-markdown-preview__table-wrap > table {
+  margin: 0;
 }
 
 /* tables: mono header, hairline rules */
 /* The theme adds Bootstrap's .table and sometimes a .table-responsive
    wrapper; the outermost of the two carries the spacing. */
-.post--article #markdown-content .table-responsive {
+:is(.post--article #markdown-content, .post-prose) .table-responsive {
   margin: 26px 0;
   max-width: 660px;
 }
-.post--article #markdown-content table {
+:is(.post--article #markdown-content, .post-prose) table {
   --bs-table-bg: transparent;
   --bs-table-hover-bg: transparent;
   background: none;
@@ -510,10 +569,10 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   max-width: 660px;
   width: 100%;
 }
-.post--article #markdown-content .table-responsive > table {
+:is(.post--article #markdown-content, .post-prose) .table-responsive > table {
   margin: 0;
 }
-.post--article #markdown-content table :is(th, td) {
+:is(.post--article #markdown-content, .post-prose) table :is(th, td) {
   background: none;
   border: 0;
   box-shadow: none;
@@ -521,7 +580,7 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   border-bottom: 1px solid var(--post-line-soft);
   padding: 10px 14px 10px 0;
 }
-.post--article #markdown-content table th {
+:is(.post--article #markdown-content, .post-prose) table th {
   border-bottom: 1px solid var(--post-line);
   color: var(--post-ink-3);
   font-family: var(--post-mono);
@@ -531,46 +590,46 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   padding-top: 0;
   white-space: nowrap;
 }
-.post--article #markdown-content table td:first-child {
+:is(.post--article #markdown-content, .post-prose) table td:first-child {
   color: var(--post-ink);
   font-family: var(--post-mono);
   font-size: 14.5px;
 }
-.post--article #markdown-content table :is(th, td)[style*="right"] {
+:is(.post--article #markdown-content, .post-prose) table :is(th, td)[style*="right"] {
   padding-left: 14px;
   padding-right: 0;
 }
 
-.post--article #markdown-content mjx-container[display="true"] {
+:is(.post--article #markdown-content, .post-prose) mjx-container[display="true"] {
   margin: 22px 0 !important;
   overflow-x: auto;
   overflow-y: hidden;
 }
-.post--article #markdown-content img {
+:is(.post--article #markdown-content, .post-prose) img {
   display: block;
   height: auto;
   margin: 26px 0;
   max-width: 100%;
 }
-.post--article #markdown-content figcaption {
+:is(.post--article #markdown-content, .post-prose) figcaption {
   color: var(--post-ink-3);
   font-size: 15.75px;
   margin-top: 10px;
 }
-.post--article #markdown-content .post-refs {
+:is(.post--article #markdown-content, .post-prose) .post-refs {
   font-size: 15.75px;
   line-height: 1.65;
   margin-bottom: 8px;
   padding-left: 2.2em;
   text-indent: -2.2em;
 }
-.post--article #markdown-content > hr {
+:is(.post--article #markdown-content, .post-prose) > hr {
   border: 0;
   border-top: 1px solid var(--post-line-soft);
   margin: 72px 0 22px;
   max-width: 660px;
 }
-.post--article #markdown-content > hr ~ p {
+:is(.post--article #markdown-content, .post-prose) > hr ~ p {
   color: var(--post-ink-3);
   font-family: var(--post-mono);
   font-size: 13.5px;
@@ -578,6 +637,25 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
 }
 .post--article #table-of-contents {
   display: none;
+}
+
+/* ---------- editor preview paper ---------- */
+.post-paper__title {
+  margin: 0;
+}
+.post-paper__summary {
+  margin: 13.5px 0 0;
+}
+/* The article hero ends in a hairline before the body; so does the paper. */
+.post-paper > .post-prose {
+  border-top: 1px solid var(--post-line-soft);
+  margin-top: 36px;
+  padding-top: 36px;
+}
+.post-paper > .post-prose:empty {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 0;
 }
 
 /* ---------- footer, comments ---------- */
@@ -633,7 +711,9 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
 }
 
 /* The reading-preference fonts replace the sans voice everywhere. */
-html[data-site-font="dyslexic"] .post--article :is(.post-title, .post-description, #markdown-content) {
+html[data-site-font="dyslexic"]
+  :is(.post--article, .post-paper)
+  :is(.post-title, .post-description, #markdown-content, .post-paper__title, .post-paper__summary, .post-prose) {
   font-family: var(--site-font-family);
 }
 
@@ -656,11 +736,11 @@ html[data-site-font="dyslexic"] .post--article :is(.post-title, .post-descriptio
     display: block;
     padding: 24px 0 48px;
   }
-  .post--article .post-title {
+  :is(.post--article .post-title, .post-paper__title) {
     font-size: 30px;
     line-height: 1.4;
   }
-  .post--article .post-description {
+  :is(.post--article .post-description, .post-paper__summary) {
     font-size: 17px;
   }
   .post--article .post-meta {
@@ -705,11 +785,11 @@ html[data-site-font="dyslexic"] .post--article :is(.post-title, .post-descriptio
   .post-rail__hint {
     display: none;
   }
-  .post--article #markdown-content {
+  :is(.post--article #markdown-content, .post-prose) {
     font-size: 17px;
   }
   /* Without the theme's scroll wrapper a wide table must scroll by itself. */
-  .post--article #markdown-content table {
+  :is(.post--article #markdown-content, .post-prose) table {
     display: block;
     overflow-x: auto;
   }

@@ -280,24 +280,6 @@ body.site-inline-editor-active > .container[role="main"] {
   padding: clamp(1rem, 3vw, 2rem);
 }
 
-.site-inline-editor__preview article > h1 {
-  font-size: clamp(1.6rem, 3vw, 2.35rem);
-  margin: 0 0 1.5rem;
-}
-
-.site-inline-editor__preview pre {
-  background: var(--global-code-bg-color, rgba(127, 127, 127, 0.1));
-  border-radius: 0.35rem;
-  overflow-x: auto;
-  padding: 0.8rem;
-}
-
-.site-inline-editor__preview blockquote {
-  border-left: 3px solid var(--global-theme-color);
-  color: var(--global-text-color-light);
-  padding-left: 0.8rem;
-}
-
 .site-inline-editor__commit-message {
   grid-template-columns: auto minmax(0, 1fr);
   margin-top: 1rem;

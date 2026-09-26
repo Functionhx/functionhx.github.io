@@ -100,6 +100,7 @@
     path: document.getElementById("site-inline-editor-path"),
     previewBody: document.getElementById("site-inline-editor-preview-body"),
     previewTitle: document.getElementById("site-inline-editor-preview-title"),
+    previewSummary: document.getElementById("site-inline-editor-preview-summary"),
     published: document.getElementById("site-inline-editor-published"),
     result: document.getElementById("site-inline-editor-result"),
     save: document.getElementById("site-inline-editor-save"),
@@ -418,7 +419,13 @@
 
   function updatePreview() {
     elements.previewTitle.textContent = elements.title.value || strings.untitled;
-    elements.previewBody.innerHTML = renderMarkdown(elements.body.value);
+    const summary = elements.description.value.trim();
+    elements.previewSummary.textContent = summary;
+    elements.previewSummary.hidden = !summary;
+    // The shared renderer also handles tables and images; the local one stays
+    // as a fallback when markdown-preview.js failed to load.
+    const shared = window.functionhxMarkdownPreview;
+    elements.previewBody.innerHTML = shared?.render ? shared.render(elements.body.value) : renderMarkdown(elements.body.value);
     if (window.MathJax && typeof window.MathJax.typesetPromise === "function") {
       window.MathJax.typesetPromise([elements.previewBody]).catch(() => {});
     }

@@ -358,110 +358,6 @@
   padding: clamp(1.1rem, 2.8vw, 1.8rem);
 }
 
-.site-markdown-editor__preview article > h2 {
-  font-size: clamp(1.45rem, 2.8vw, 2rem);
-  letter-spacing: -0.02em;
-  line-height: 1.22;
-  margin: 0 0 0.55rem;
-}
-
-.site-markdown-editor__preview-summary {
-  color: var(--global-text-color-light);
-  font-size: 0.82rem;
-  line-height: 1.6;
-  margin: 0 0 1.5rem;
-}
-
-.site-markdown-editor__preview-body {
-  font-size: 0.92rem;
-  line-height: 1.75;
-}
-
-.site-markdown-editor__preview-body > :first-child {
-  margin-top: 0;
-}
-
-.site-markdown-editor__preview-body > :last-child {
-  margin-bottom: 0;
-}
-
-.site-markdown-editor__preview-body h1,
-.site-markdown-editor__preview-body h2,
-.site-markdown-editor__preview-body h3,
-.site-markdown-editor__preview-body h4,
-.site-markdown-editor__preview-body h5,
-.site-markdown-editor__preview-body h6 {
-  line-height: 1.35;
-  margin: 1.55em 0 0.65em;
-}
-
-.site-markdown-editor__preview-body h1 {
-  font-size: 1.55rem;
-}
-
-.site-markdown-editor__preview-body h2 {
-  font-size: 1.3rem;
-}
-
-.site-markdown-editor__preview-body h3 {
-  font-size: 1.08rem;
-}
-
-.site-markdown-editor__preview-body p,
-.site-markdown-editor__preview-body ul,
-.site-markdown-editor__preview-body ol,
-.site-markdown-editor__preview-body blockquote,
-.site-markdown-editor__preview-body pre,
-.site-markdown-editor__preview-body hr,
-.site-markdown-editor__preview-body .site-markdown-preview__table-wrap {
-  margin: 0 0 1.05rem;
-}
-
-.site-markdown-editor__preview-body ul,
-.site-markdown-editor__preview-body ol {
-  padding-left: 1.35rem;
-}
-
-.site-markdown-editor__preview-body blockquote {
-  border-left: 3px solid var(--global-theme-color);
-  color: var(--global-text-color-light);
-  padding-left: 0.85rem;
-}
-
-.site-markdown-editor__preview-body blockquote p {
-  margin: 0;
-}
-
-.site-markdown-editor__preview-body code {
-  background: var(--global-code-bg-color, color-mix(in srgb, var(--global-text-color) 7%, var(--global-bg-color)));
-  border-radius: 0.24rem;
-  font-family: var(--global-code-font, "SFMono-Regular", Consolas, "Liberation Mono", monospace);
-  font-size: 0.82em;
-  padding: 0.12em 0.3em;
-}
-
-.site-markdown-editor__preview-body pre {
-  background: var(--global-code-bg-color, color-mix(in srgb, var(--global-text-color) 7%, var(--global-bg-color)));
-  border-radius: 0.35rem;
-  overflow-x: auto;
-  padding: 0.8rem;
-}
-
-.site-markdown-editor__preview-body pre code {
-  background: transparent;
-  padding: 0;
-}
-
-.site-markdown-editor__preview-body img {
-  border: 1px solid var(--global-divider-color);
-  display: block;
-  height: auto;
-  margin: 1.15rem 0;
-  max-height: 28rem;
-  object-fit: contain;
-  width: 100%;
-}
-
 .site-markdown-preview__missing-image {
   border: 1px dashed var(--global-divider-color);
   color: var(--global-text-color-light);
@@ -470,27 +366,6 @@
   margin: 1rem 0;
   padding: 1.25rem;
   text-align: center;
-}
-
-.site-markdown-preview__table-wrap {
-  overflow-x: auto;
-}
-
-.site-markdown-editor__preview-body table {
-  border-collapse: collapse;
-  font-size: 0.78rem;
-  width: 100%;
-}
-
-.site-markdown-editor__preview-body th,
-.site-markdown-editor__preview-body td {
-  border: 1px solid var(--global-divider-color);
-  padding: 0.45rem 0.55rem;
-  text-align: left;
-}
-
-.site-markdown-editor__preview-body th {
-  background: color-mix(in srgb, var(--global-divider-color) 36%, var(--global-bg-color));
 }
 
 .site-markdown-editor__preview-empty {

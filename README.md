@@ -44,7 +44,10 @@ Open `http://localhost:4000/`.
 The pencil icon turns the current public page into an inline Markdown editor
 without navigating away from the site. Title, summary, publication state,
 comments, front matter, and body can be edited alongside a live preview.
-Drafts autosave only in that browser.
+Drafts autosave only in that browser. Every editor preview (page editor, content
+creator, Spark writer) is set in the article layout from `assets/css/post.css`,
+so the preview reads like the published article; only the line length differs,
+because the preview shares the width with the source column.
 
 Spark uses a lighter direct-writing flow. Choose `New Spark` on the Spark index
 and write in the page itself; there is no separate editor route or split

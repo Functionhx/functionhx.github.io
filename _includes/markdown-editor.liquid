@@ -201,13 +201,18 @@
         <span><i aria-hidden="true"></i>{{ markdown_preview_live }}</span>
       </header>
       <article
+        class="post-paper"
         data-{{ markdown_hook }}-preview="{{ markdown_language }}"
         data-untitled="{{ markdown_preview_untitled }}"
         data-image-unavailable="{{ markdown_image_unavailable }}"
       >
-        <h2 data-{{ markdown_hook }}-preview-title="{{ markdown_language }}" hidden></h2>
-        <p class="site-markdown-editor__preview-summary" data-{{ markdown_hook }}-preview-summary="{{ markdown_language }}" hidden></p>
-        <div class="site-markdown-editor__preview-body" data-{{ markdown_hook }}-preview-body="{{ markdown_language }}"></div>
+        <h2 class="post-paper__title" data-{{ markdown_hook }}-preview-title="{{ markdown_language }}" hidden></h2>
+        <p
+          class="site-markdown-editor__preview-summary post-paper__summary"
+          data-{{ markdown_hook }}-preview-summary="{{ markdown_language }}"
+          hidden
+        ></p>
+        <div class="site-markdown-editor__preview-body post-prose" data-{{ markdown_hook }}-preview-body="{{ markdown_language }}"></div>
         <p class="site-markdown-editor__preview-empty" data-{{ markdown_hook }}-preview-empty="{{ markdown_language }}">
           {{ markdown_preview_empty }}
         </p>
