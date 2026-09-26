@@ -337,8 +337,9 @@ body.function-home-page {
   white-space: nowrap;
 }
 .function-contrail-total small {
-  margin-left: 0.18em;
-  font-size: 0.26em;
+  display: block;
+  margin-top: 10px;
+  font-size: 0.24em;
   font-weight: 500;
   letter-spacing: 0;
 }
@@ -399,36 +400,133 @@ body.function-home-page {
   line-height: 1.3;
   white-space: nowrap;
 }
-.function-contrail-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 120px;
-  margin-top: 40px;
+.function-contrail-stats dd small {
+  margin-left: 0.25em;
+  font-size: 0.56em;
+  font-weight: 500;
+  letter-spacing: 0;
 }
-.function-contrail-bar {
-  flex: 1 1 0;
-  height: calc(var(--bar, 0) * 100%);
-  min-height: 1px;
-  border-radius: 2px 2px 0 0;
-  background: var(--function-mark);
-  transform-origin: bottom;
-  animation: function-contrail-grow 520ms ease both;
+/* 仿 GitHub 贡献图：一列一周、一格一天，颜色按当年用量的四分位分级。 */
+.function-contrail {
+  --contrail-level-0: #ebedf0;
+  --contrail-level-1: #9be9a8;
+  --contrail-level-2: #40c463;
+  --contrail-level-3: #30a14e;
+  --contrail-level-4: #216e39;
+  --contrail-cell-edge: rgba(27, 31, 35, 0.06);
 }
-.function-contrail-bar.is-latest {
-  background: var(--global-theme-color);
+html[lang="zh-CN"][data-theme="dark"] .function-contrail {
+  --contrail-level-0: #2a2a30;
+  --contrail-level-1: #0e4429;
+  --contrail-level-2: #006d32;
+  --contrail-level-3: #26a641;
+  --contrail-level-4: #39d353;
+  --contrail-cell-edge: rgba(255, 255, 255, 0.05);
 }
-@keyframes function-contrail-grow {
-  from {
-    transform: scaleY(0);
+@media (prefers-color-scheme: dark) {
+  html[lang="zh-CN"]:not([data-theme]) .function-contrail {
+    --contrail-level-0: #2a2a30;
+    --contrail-level-1: #0e4429;
+    --contrail-level-2: #006d32;
+    --contrail-level-3: #26a641;
+    --contrail-level-4: #39d353;
+    --contrail-cell-edge: rgba(255, 255, 255, 0.05);
   }
 }
+.function-contrail-heatmap {
+  position: relative;
+  z-index: 1;
+  margin-top: 40px;
+  overflow-x: auto;
+  cursor: pointer;
+  scrollbar-width: none;
+}
+.function-contrail-heatmap::-webkit-scrollbar {
+  display: none;
+}
+.function-contrail-grid {
+  display: grid;
+  grid-template-columns: auto repeat(var(--contrail-weeks, 53), minmax(0, 1fr));
+  gap: 3px;
+  min-width: 0;
+}
+.function-contrail-month,
+.function-contrail-weekday {
+  color: var(--global-text-color-light);
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.function-contrail-month {
+  padding-bottom: 4px;
+}
+.function-contrail-weekday {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding-right: 6px;
+  background: var(--global-bg-color);
+  box-shadow:
+    3px 0 0 var(--global-bg-color),
+    0 3px 0 var(--global-bg-color),
+    3px 3px 0 var(--global-bg-color);
+}
+.function-contrail-cell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--contrail-level-0);
+  outline: 1px solid var(--contrail-cell-edge);
+  outline-offset: -1px;
+}
+.function-contrail-cell[data-level="1"] {
+  background: var(--contrail-level-1);
+}
+.function-contrail-cell[data-level="2"] {
+  background: var(--contrail-level-2);
+}
+.function-contrail-cell[data-level="3"] {
+  background: var(--contrail-level-3);
+}
+.function-contrail-cell[data-level="4"] {
+  background: var(--contrail-level-4);
+}
+.function-contrail-cell:hover {
+  outline: 1px solid var(--global-text-color);
+}
+.function-contrail-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 20px;
+  margin-top: 12px;
+}
 .function-contrail-meta {
-  margin: 12px 0 0;
+  margin: 0;
   color: var(--global-text-color-light);
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 12px;
   letter-spacing: -0.02em;
+}
+.function-contrail-legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin: 0;
+  color: var(--global-text-color-light);
+  font-size: 11px;
+}
+.function-contrail-legend span:first-child {
+  margin-right: 4px;
+}
+.function-contrail-legend span:last-child {
+  margin-left: 4px;
+}
+.function-contrail-legend .function-contrail-cell {
+  width: 11px;
 }
 @media (max-width: 991.98px) {
   .function-contrail {
@@ -440,6 +538,11 @@ body.function-home-page {
   }
   .function-contrail-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* 窄屏放不下一整年：格子保持可辨认的大小，横向滚动，默认停在最近几周。 */
+  .function-contrail-grid {
+    grid-template-columns: auto repeat(var(--contrail-weeks, 53), 11px);
+    width: max-content;
   }
 }
 @media (max-width: 700px) {
@@ -464,16 +567,11 @@ body.function-home-page {
   .function-contrail-stats dd {
     font-size: 22px;
   }
-  .function-contrail-chart {
-    height: 88px;
-    gap: 3px;
+  .function-contrail-heatmap {
     margin-top: 28px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .function-contrail-bar {
-    animation: none;
-  }
   .function-contrail-stats > div {
     transition: none;
   }

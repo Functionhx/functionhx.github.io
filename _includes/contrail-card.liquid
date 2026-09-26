@@ -28,8 +28,17 @@
         <dd data-contrail-field="active-days">—</dd>
       </div>
     </dl>
-    <div class="function-contrail-chart" data-contrail-chart aria-hidden="true"></div>
-    <p class="function-contrail-meta" data-contrail-field="meta" role="status">近 30 天每日 token</p>
+    <div class="function-contrail-heatmap" data-contrail-heatmap aria-hidden="true">
+      <div class="function-contrail-grid" data-contrail-grid></div>
+    </div>
+    <div class="function-contrail-footer">
+      <p class="function-contrail-meta" data-contrail-field="meta" role="status">过去一年每日 token</p>
+      <p class="function-contrail-legend" aria-hidden="true">
+        <span>少</span><i class="function-contrail-cell" data-level="0"></i><i class="function-contrail-cell" data-level="1"></i
+        ><i class="function-contrail-cell" data-level="2"></i><i class="function-contrail-cell" data-level="3"></i
+        ><i class="function-contrail-cell" data-level="4"></i><span>多</span>
+      </p>
+    </div>
   </div>
 </section>
 <script src="{{ '/assets/js/contrail-card.js' | relative_url | bust_file_cache }}" defer></script>

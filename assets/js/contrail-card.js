@@ -5,8 +5,10 @@
   if (!card) return;
 
   const base = card.getAttribute("data-contrail-base");
-  const chart = card.querySelector("[data-contrail-chart]");
-  const CHART_DAYS = 30;
+  const heatmap = card.querySelector("[data-contrail-heatmap]");
+  const grid = card.querySelector("[data-contrail-grid]");
+  const link = card.querySelector(".function-contrail-link");
+  const HEATMAP_WEEKS = 53;
   const WEEK_DAYS = 7;
 
   const field = (name) => card.querySelector(`[data-contrail-field="${name}"]`);
@@ -31,8 +33,13 @@
   };
 
   function formatTokens(value) {
-    if (value >= 1e8) return { number: (value / 1e8).toFixed(value >= 1e10 ? 0 : 1), unit: "亿" };
-    if (value >= 1e4) return { number: (value / 1e4).toFixed(value >= 1e6 ? 0 : 1), unit: "万" };
+    const scaled = (divisor) => {
+      const number = value / divisor;
+      return number.toFixed(number >= 10 ? 1 : 2);
+    };
+    if (value >= 1e9) return { number: scaled(1e9), unit: "billion" };
+    if (value >= 1e6) return { number: scaled(1e6), unit: "million" };
+    if (value >= 1e3) return { number: scaled(1e3), unit: "thousand" };
     return { number: String(Math.round(value)), unit: "" };
   }
 
@@ -67,33 +74,79 @@
     return { byDay, updatedAt };
   }
 
-  function renderTotal(value) {
-    const node = field("total");
+  // 数字用大字、单位用小字，例如「155.7」+「billion tokens」。
+  function setTokens(name, value, suffix = "") {
+    const node = field(name);
     if (!node) return;
     const { number, unit } = formatTokens(value);
     const unitNode = document.createElement("small");
-    unitNode.textContent = unit ? `${unit} tokens` : "tokens";
+    unitNode.textContent = [unit, suffix].filter(Boolean).join(" ");
     node.replaceChildren(document.createTextNode(number), unitNode);
   }
 
-  function renderChart(byDay, today) {
-    if (!chart) return;
+  // 周一为每列第一天（Date.getUTCDay 的周日是 0）。
+  const weekdayIndex = (day) => (new Date(`${day}T00:00:00Z`).getUTCDay() + 6) % 7;
+
+  // 四分位分级：只看有用量的日子，这样少数几天的峰值不会把其它日子都压成最浅一档。
+  function levelScale(values) {
+    const sorted = values.filter((value) => value > 0).sort((a, b) => a - b);
+    if (!sorted.length) return () => 0;
+    const at = (q) => sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))];
+    const cuts = [at(0.25), at(0.5), at(0.75)];
+    return (value) => {
+      if (value <= 0) return 0;
+      return 1 + cuts.filter((cut) => value > cut).length;
+    };
+  }
+
+  function gridItem(className, column, row, text) {
+    const node = document.createElement(text === undefined ? "i" : "span");
+    node.className = className;
+    node.style.gridColumn = String(column);
+    node.style.gridRow = String(row);
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function renderHeatmap(byDay, today) {
+    if (!grid) return;
+    const start = shiftDay(today, -(weekdayIndex(today) + (HEATMAP_WEEKS - 1) * WEEK_DAYS));
     const days = [];
-    for (let offset = CHART_DAYS - 1; offset >= 0; offset -= 1) {
-      const key = shiftDay(today, -offset);
-      days.push({ key, tokens: byDay.get(key)?.tokens || 0 });
+    for (let day = start; day <= today; day = shiftDay(day, 1)) {
+      const entry = byDay.get(day);
+      days.push({ day, tokens: entry?.tokens || 0, cost: entry?.cost || 0 });
     }
-    const peak = Math.max(...days.map((day) => day.tokens), 1);
-    const bars = days.map((day, index) => {
-      const bar = document.createElement("span");
-      bar.className = "function-contrail-bar";
-      if (index === days.length - 1) bar.classList.add("is-latest");
-      const ratio = day.tokens / peak;
-      bar.style.setProperty("--bar", day.tokens ? Math.max(ratio, 0.03).toFixed(4) : "0");
-      bar.title = `${day.key.slice(5).replace("-", ".")} · ${tokensText(day.tokens)} tokens`;
-      return bar;
+    const level = levelScale(days.map((item) => item.tokens));
+
+    const nodes = [];
+    // 左侧整列都是 sticky 底色（空标签也画出来），窄屏横向滚动时格子不会从标签下面透出来。
+    ["", "一", "", "三", "", "五", "", ""].forEach((label, index) => nodes.push(gridItem("function-contrail-weekday", 1, index + 1, label)));
+
+    let lastMonthColumn = -Infinity;
+    days.forEach((item, index) => {
+      const week = Math.floor(index / WEEK_DAYS);
+      const column = week + 2;
+      const weekday = index % WEEK_DAYS;
+      // 月份标在该月第一个完整出现的周上方；两个标签至少隔 3 列，避免挤在一起。
+      if (weekday === 0) {
+        const month = Number(item.day.slice(5, 7));
+        const previousMonth = week > 0 ? Number(days[index - WEEK_DAYS].day.slice(5, 7)) : null;
+        if (month !== previousMonth && column - lastMonthColumn >= 3 && week < HEATMAP_WEEKS - 1) {
+          nodes.push(gridItem("function-contrail-month", column, 1, `${month}月`));
+          lastMonthColumn = column;
+        }
+      }
+      const cell = gridItem("function-contrail-cell", column, weekday + 2);
+      cell.dataset.level = String(level(item.tokens));
+      const date = item.day.replaceAll("-", ".");
+      cell.title = item.tokens ? `${date} · ${tokensText(item.tokens)} tokens · ${usd(item.cost)}` : `${date} · 无用量`;
+      nodes.push(cell);
     });
-    chart.replaceChildren(...bars);
+
+    grid.style.setProperty("--contrail-weeks", String(HEATMAP_WEEKS));
+    grid.replaceChildren(...nodes);
+    // 窄屏横向滚动时，默认停在最近几周。
+    if (heatmap) heatmap.scrollLeft = heatmap.scrollWidth;
   }
 
   function render({ byDay, updatedAt }) {
@@ -115,14 +168,14 @@
       weekCost += entry.cost;
     }
 
-    renderTotal(totalTokens);
-    setField("week-tokens", tokensText(weekTokens));
+    setTokens("total", totalTokens, "tokens");
+    setTokens("week-tokens", weekTokens);
     setField("week-cost", usd(weekCost));
     setField("total-cost", usd(totalCost));
     setField("active-days", `${activeDays} 天`);
-    renderChart(byDay, today);
+    renderHeatmap(byDay, today);
 
-    let meta = "近 30 天每日 token";
+    let meta = "过去一年每日 token";
     if (updatedAt) {
       const stamp = new Intl.DateTimeFormat("zh-CN", {
         timeZone: "Asia/Shanghai",
@@ -149,6 +202,9 @@
         setField("meta", "暂时读不到用量数据，可以直接打开详情页查看。");
       });
   }
+
+  // 热力图盖在整卡链接之上（为了让格子的悬停提示可用），点它同样进入详情页。
+  if (heatmap && link) heatmap.addEventListener("click", () => link.click());
 
   // 首页首屏不为这张卡片发请求：接近视口时再加载数据。
   if (!("IntersectionObserver" in window)) {
