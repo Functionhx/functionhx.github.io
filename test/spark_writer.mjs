@@ -76,6 +76,7 @@ const privateValues = {
   },
 };
 
+const githubContentReads = [];
 let staticServer = null;
 let baseUrl = process.env.SPARK_WRITER_TEST_URL || "";
 if (!baseUrl) {
@@ -409,11 +410,8 @@ await page.route(`${vaultOrigin}/**`, async (route) => {
     next.updatedAt = new Date(1_900_000_000_000 + publicCounter).toISOString();
     next.public = next.published
       ? {
-          paths: existing.public?.paths || {
-            en: `_posts/${existing.values.date.slice(0, 10)}-${id}-en.md`,
-            zh: `_posts/${existing.values.date.slice(0, 10)}-${id}-zh.md`,
-          },
-          shas: { en: sha(`public-en-${publicCounter}`), zh: sha(`public-zh-${publicCounter}`) },
+          paths: { zh: existing.public?.paths?.zh || `_posts/${existing.values.date.slice(0, 10)}-${id}-zh.md` },
+          shas: { zh: sha(`public-zh-${publicCounter}`) },
         }
       : null;
     vaultNotes.set(id, next);
@@ -473,6 +471,7 @@ await page.route("https://api.github.com/**", async (route) => {
   const contentsPrefix = "/repos/Functionhx/functionhx.github.io/contents/";
   if (pathname.startsWith(contentsPrefix)) {
     const sourcePath = pathname.slice(contentsPrefix.length);
+    githubContentReads.push(sourcePath);
     const fixture =
       sourcePath === editPaths.zh
         ? { source: editSources.zh, sha: sha("existing-zh") }
@@ -581,7 +580,9 @@ try {
   await page.locator("#site-spark-writer-close").click();
   await page.locator("#site-spark-create").click();
   await page.waitForFunction(() => document.querySelector("#site-spark-writer-title-zh").value === "只写中文的草稿");
-  assert.equal(await page.locator("#site-spark-writer-title-en").inputValue(), "");
+  for (const removed of ["#site-spark-writer-title-en", "#site-spark-writer-body-en", "#site-spark-writer-tab-en", "#site-spark-writer-translate"]) {
+    assert.equal(await page.locator(removed).count(), 0, `the Chinese-only writer must not render ${removed}`);
+  }
 
   await page.evaluate(() => {
     window.__sparkCancelNextUnlock = true;
@@ -683,25 +684,7 @@ try {
   assert.equal(publicChanges[0].values.media.length, 1, "publishing must carry the encrypted draft image into the public commit flow");
   assert.equal(publicChanges[0].values.media[0].data, testImageBase64);
 
-  await page.locator("#site-spark-writer-translate").click();
-  await page.locator("#deepseek-translator-dialog").waitFor({ state: "visible" });
-  await page.locator("#deepseek-translator-key").fill(testDeepSeekKey);
-  await page.locator("#deepseek-translator-submit").click();
-  await page.locator("#deepseek-translator-dialog").waitFor({ state: "hidden" });
-  assert.equal(await page.locator("#site-spark-writer-title-en").inputValue(), "Chinese First Draft");
-  assert.equal(await page.locator("#site-spark-writer-slug").inputValue(), "chinese-first", "saved slugs must remain stable");
-
-  await page.locator("#site-spark-writer-publish").click();
-  await page.locator("#site-spark-writer-result").waitFor({ state: "visible" });
-  await page.locator('#site-deployment-monitor[data-state="success"]').waitFor({ state: "visible" });
-  assert.equal(publicChanges.length, 2);
-  assert.equal(publicChanges[1].action, "publish");
-  assert.equal(publicChanges[1].values.en.title, "Chinese First Draft");
-  assert.equal(translationRequests.length, 1);
-  assert.equal(translationAuthorizations[0], `Bearer ${testDeepSeekKey}`);
-  assert.equal(translationRequests[0].model, "deepseek-v4-pro");
-  assert.deepEqual(translationRequests[0].response_format, { type: "json_object" });
-  assert.match(translationRequests[0].messages[1].content, /只写中文的草稿/);
+  assert.equal(translationRequests.length, 0, "the Chinese-only writer never calls DeepSeek");
 
   await page.locator("#site-spark-writer-close").click();
   await page.evaluate(
@@ -712,7 +695,6 @@ try {
       trigger.dataset.sparkEdit = "";
       trigger.dataset.translationKey = "spark-existing-spark";
       trigger.dataset.sourcePathZh = editPaths.zh;
-      trigger.dataset.sourcePathEn = editPaths.en;
       trigger.id = "spark-edit-fixture";
       document.querySelector(".post-list").prepend(trigger);
     },
@@ -720,27 +702,25 @@ try {
   );
   await page.locator("#spark-edit-fixture").click();
   await page.waitForFunction(() => document.querySelector("#site-spark-writer-title-zh").value === "已有 Spark");
-  assert.equal(await page.locator("#site-spark-writer-title-en").inputValue(), "Existing Spark");
   assert.equal(await page.locator("#site-spark-writer-slug").isEditable(), false, "an existing entry keeps its stable URL");
 
   await page.locator("#site-spark-writer-body-zh").fill("原位修改后的中文正文。");
-  await page.locator("#site-spark-writer-tab-en").click();
-  await page.locator("#site-spark-writer-body-en").fill("English body edited in place.");
   await page.locator("#site-spark-writer-publish").click();
   await page.locator("#site-spark-writer-result").waitFor({ state: "visible" });
   await page.waitForFunction(() => document.querySelector("#site-spark-writer-status").textContent.includes("中文公开版本已保存"));
   const migrationWrite = vaultWrites.find((write) => write.id === "existing-spark");
   assert.ok(migrationWrite?.public, "the first edit of a public Spark must adopt its paths and SHAs into the vault");
-  assert.deepEqual(migrationWrite.public.paths, editPaths);
+  assert.deepEqual(migrationWrite.public.paths, { zh: editPaths.zh }, "adoption reads and records only the Chinese source");
+  assert.equal(githubContentReads.includes(editPaths.en), false, "the English source must never be fetched");
   assert.equal(publicChanges.at(-1).id, "existing-spark");
   assert.match(publicChanges.at(-1).values.zh.body, /原位修改后的中文正文/);
-  assert.match(publicChanges.at(-1).values.en.body, /English body edited in place/);
+  assert.equal(publicChanges.at(-1).values.en.body, "", "a public Spark gains no English text");
 
   await page.locator("#site-spark-writer-published").uncheck();
   failNextNoteList = true;
   await page.locator("#site-spark-writer-publish").click();
   await page.waitForFunction(() => document.querySelector("#site-spark-writer-status").textContent.includes("私密稿"));
-  assert.equal(publicChanges.at(-1).action, "unpublish", "making a Spark private must remove both public files through the vault");
+  assert.equal(publicChanges.at(-1).action, "unpublish", "making a Spark private must remove its public file through the vault");
   await page.locator("#site-spark-writer").waitFor({ state: "hidden" });
   await page.waitForFunction(() => document.querySelector("#site-spark-drafts-status").textContent.includes("暂时无法刷新其余私密稿"));
   assert.equal(
@@ -749,16 +729,26 @@ try {
     "a refresh failure must preserve the known private drafts and the newly private Spark"
   );
 
+  // A private record written before the site became Chinese-only keeps its
+  // English text: it is hidden, never edited, and carried through unchanged.
+  await page.locator("#site-spark-drafts-list li").filter({ hasText: "私密 Spark" }).locator(".site-spark-draft-open").click();
+  await page.waitForFunction(() => document.querySelector("#site-spark-writer-title-zh").value === "私密 Spark");
+  await page.locator("#site-spark-writer-body-zh").fill("修改后的私密中文正文。");
+  await page.locator("#site-spark-writer-published").check();
+  await page.locator("#site-spark-writer-publish").click();
+  await page.waitForFunction(() => document.querySelector("#site-spark-writer-status").textContent.includes("中文公开版本已保存"));
+  assert.equal(publicChanges.at(-1).id, "private-spark");
+  assert.match(publicChanges.at(-1).values.zh.body, /修改后的私密中文正文/);
+  assert.deepEqual(publicChanges.at(-1).values.en, privateValues.en, "stored English text must survive a Chinese-only edit");
+
   assert.deepEqual(githubMutationRequests, [], "browser JavaScript must never write private Sparks directly to the public GitHub API");
   assert.deepEqual(githubAuthorizations, [], "the Spark browser must never expose a GitHub access token to public-source reads");
   assert.ok(vaultAuthorizations.every((value) => value === `Bearer ${vaultToken}`));
 
   const browserStorage = await page.evaluate(() => JSON.stringify({ ...window.localStorage, ...window.sessionStorage }));
   assert.equal(browserStorage.includes(vaultToken), false, "the opaque session must not enter ordinary browser storage");
-  assert.equal(browserStorage.includes(testDeepSeekKey), false, "the DeepSeek key must never enter browser storage");
   const finalDeviceRecords = await encryptedDeviceRecords();
   assert.equal(JSON.stringify(finalDeviceRecords).includes(vaultToken), false, "the device vault must store only session ciphertext");
-  assert.equal(JSON.stringify(finalDeviceRecords).includes(testDeepSeekKey), false);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator("#site-spark-create").click();

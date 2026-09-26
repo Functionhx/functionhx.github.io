@@ -9,7 +9,7 @@ const repositoryRoot = new URL("../", import.meta.url);
 const testToken = "not-a-real-settings-token";
 const testDeepSeekKey = "not-a-real-deepseek-settings-key";
 const testIntruderToken = "not-a-real-helper-github-token";
-const managedPaths = ["_pages/blog-zh.md", "_pages/blog-en.md", "_pages/people-zh.md", "_pages/people-en.md", "_data/site_ui.yml"];
+const managedPaths = ["_pages/blog-zh.md", "_pages/people-zh.md", "_data/site_ui.yml"];
 const managedSources = Object.fromEntries(
   await Promise.all(managedPaths.map(async (path) => [path, await readFile(new URL(path, repositoryRoot), "utf8")]))
 );
@@ -332,26 +332,10 @@ try {
   await page.locator("#site-settings-new summary").click();
   await page.locator("#site-settings-title-zh").fill("实验札记");
   await page.locator("#site-settings-description-zh").fill("记录实验中的想法与结果。");
-  await page.locator("#site-settings-translate").click();
-  await page.locator("#deepseek-translator-dialog").waitFor({ state: "visible" });
-  await page.locator("#deepseek-translator-cancel").click();
-  await page.locator("#deepseek-translator-dialog").waitFor({ state: "hidden" });
-  assert.equal(await page.locator("#site-settings-title-en").inputValue(), "");
-  assert.match(await page.locator("#site-settings-status").textContent(), /取消/);
-
-  await page.locator("#site-settings-translate").click();
-  await page.locator("#deepseek-translator-dialog").waitFor({ state: "visible" });
-  await page.locator("#deepseek-translator-key").fill(testDeepSeekKey);
-  await page.locator("#deepseek-translator-submit").click();
-  await page.locator("#deepseek-translator-dialog").waitFor({ state: "hidden" });
-
-  assert.equal(await page.locator("#site-settings-title-en").inputValue(), "Lab Notes");
-  assert.equal(await page.locator("#site-settings-description-en").inputValue(), "Ideas and results from experiments.");
-  assert.equal(await page.locator("#site-settings-slug").inputValue(), "lab-notes");
-  assert.equal(translationAuthorization, `Bearer ${testDeepSeekKey}`);
-  assert.equal(translationRequest.model, "deepseek-v4-pro");
-  assert.deepEqual(translationRequest.response_format, { type: "json_object" });
-  assert.match(translationRequest.messages[0].content, /Never add facts/);
+  for (const removed of ["#site-settings-title-en", "#site-settings-description-en", "#site-settings-translate"]) {
+    assert.equal(await page.locator(removed).count(), 0, `the Chinese-only section manager must not render ${removed}`);
+  }
+  await page.locator("#site-settings-slug").fill("lab-notes");
   await page.locator("#site-settings-format").selectOption("posts");
   await page.locator("#site-settings-order").fill("12");
 
@@ -384,26 +368,26 @@ try {
 
   assert.ok(treeRequest, "settings should create a Git tree");
   assert.equal(treeRequest.base_tree, "base-settings-tree");
-  assert.equal(treeRequest.tree.length, 7, "layout, two changed pairs, and one new pair should share one commit");
+  assert.equal(treeRequest.tree.length, 4, "layout, two changed sections, and one new section should share one commit");
+  assert.equal(
+    treeRequest.tree.some((item) => item.path.endsWith("-en.md")),
+    false,
+    "the Chinese-only section manager never reads or writes English pages"
+  );
   const byPath = Object.fromEntries(treeRequest.tree.map((item) => [item.path, item.content]));
   assert.match(byPath["_data/site_ui.yml"], new RegExp(`^navigation_density: ${targetNavigationDensity}$`, "m"));
   assert.match(byPath["_pages/people-zh.md"], /^nav: true$/m);
-  assert.match(byPath["_pages/people-en.md"], /^nav: true$/m);
   assert.match(byPath["_pages/blog-zh.md"], /^nav: false$/m);
-  assert.match(byPath["_pages/blog-en.md"], /^nav: false$/m);
 
   const newZh = byPath["_pages/lab-notes-zh.md"];
-  const newEn = byPath["_pages/lab-notes-en.md"];
-  assert.ok(newZh && newEn, "new sections must be created as a bilingual pair");
+  assert.ok(newZh, "a new section is created as one Chinese page");
   assert.match(newZh, /title: "实验札记"/);
-  assert.match(newEn, /title: "Lab Notes"/);
+  assert.match(newZh, /^lang: zh$/m);
   assert.match(newZh, /translation_key: section-lab-notes/);
-  assert.match(newEn, /translation_key: section-lab-notes/);
   assert.match(newZh, /settings_file_stem: lab-notes/);
   assert.match(newZh, /kind: lab-notes/);
   assert.match(newZh, /{% include post-lane\.liquid %}/);
   assert.match(newZh, /permalink: \/lab-notes\//);
-  assert.match(newEn, /permalink: \/en\/lab-notes\//);
   assert.equal(commitRequest.parents[0], "head-settings");
   assert.deepEqual(refUpdate, { force: false, sha: "settings-commit" });
   assert.ok(authorizations.includes(`Bearer ${testIntruderToken}`));
@@ -422,7 +406,6 @@ try {
   const browserStorage = await page.evaluate(() => JSON.stringify({ ...window.localStorage, ...window.sessionStorage }));
   assert.equal(browserStorage.includes(testToken), false, "the settings token must never enter browser storage");
   assert.equal(browserStorage.includes(testIntruderToken), false, "a rejected token must never enter browser storage");
-  assert.equal(browserStorage.includes(testDeepSeekKey), false, "the DeepSeek key must never enter browser storage");
 
   await page.locator("#site-settings-close").click();
   await page.evaluate(() => window.localStorage.setItem("theme", "dark"));

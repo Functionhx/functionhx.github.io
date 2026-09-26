@@ -254,7 +254,6 @@ def main() -> int:
         "/git/trees",
         'method: "PATCH"',
         'announce: ${values.announce ? "true" : "false"}',
-        "English translation pending",
     ):
         if contract not in content_creator_text:
             errors.append(
@@ -385,7 +384,6 @@ def main() -> int:
         'method: "POST"',
         'method: "PATCH"',
         "force: false",
-        "window.functionhxDeepSeek.translate",
         "window.functionhxGitHubAuth",
         "window.functionhxDeployment",
         "setNavigationVisibility",
@@ -485,42 +483,6 @@ def main() -> int:
         if contract not in deployment_text:
             errors.append(
                 f"assets/js/deployment-monitor.js: deployment contract "
-                f"{contract!r} missing"
-            )
-
-    deepseek_path = ROOT / "assets" / "js" / "deepseek-translator.js"
-    deepseek_text = (
-        deepseek_path.read_text(encoding="utf-8") if deepseek_path.exists() else ""
-    )
-    for contract in (
-        'response_format: { type: "json_object" }',
-        "Authorization",
-        "Never add facts",
-    ):
-        if contract not in deepseek_text:
-            errors.append(
-                f"assets/js/deepseek-translator.js: integration contract "
-                f"{contract!r} missing"
-            )
-    for forbidden_storage in ("localStorage", "sessionStorage"):
-        if forbidden_storage in deepseek_text:
-            errors.append(
-                "assets/js/deepseek-translator.js: DeepSeek credentials must "
-                f"not use {forbidden_storage}"
-            )
-    deepseek_include_path = ROOT / "_includes" / "deepseek-translator.liquid"
-    deepseek_include_text = (
-        deepseek_include_path.read_text(encoding="utf-8")
-        if deepseek_include_path.exists()
-        else ""
-    )
-    for contract in (
-        "https://api.deepseek.com/chat/completions",
-        "deepseek-v4-pro",
-    ):
-        if contract not in deepseek_include_text:
-            errors.append(
-                f"_includes/deepseek-translator.liquid: integration contract "
                 f"{contract!r} missing"
             )
 

@@ -210,7 +210,7 @@ async function waitForCreatorStatus(expectedText) {
 
 try {
   await page.goto(baseUrl, { waitUntil: "networkidle" });
-  await assertPageMetadata("Magic · In Progress");
+  await assertPageMetadata("Function");
   assert.equal(await page.locator("#site-inline-editor-toggle").isVisible(), false, "author controls must stay private before verification");
   await connectOwner();
   assert.equal(await page.locator("#site-inline-editor-toggle").isVisible(), true, "author controls should appear after owner verification");
@@ -232,10 +232,9 @@ try {
     "desktop writing should reserve a useful column for source and preview"
   );
   assert.ok(desktopWorkspace.previewLeft >= desktopWorkspace.sourceRight - 1, "the page preview should sit to the right of the Markdown source");
-  assert.equal(await page.locator("#site-content-creator-english").isHidden(), true);
-  await page.locator("#site-content-creator-tab-en").click();
-  assert.equal(await page.locator("#site-content-creator-english").isVisible(), true, "the English draft should use a dedicated writing tab");
-  await page.locator("#site-content-creator-tab-zh").click();
+  for (const removed of ["#site-content-creator-english", "#site-content-creator-tab-en", "#site-content-creator-translate"]) {
+    assert.equal(await page.locator(removed).count(), 0, `the Chinese-only creator must not render ${removed}`);
+  }
   await page.locator("#site-content-creator-title-zh").fill("中文优先的新文章");
   await page.locator("#site-content-creator-description-zh").fill("只写中文也能创建公开文章。");
   await page.locator("#site-content-creator-body-zh").fill("工具栏");
@@ -306,8 +305,9 @@ try {
   assert.doesNotMatch(articleZh.content, /不应进入 Commit/);
   assert.match(articleZh.content, /这是中文正文/);
   assert.match(articleZh.content, /\/assets\/img\/posts\/chinese-first-article\/[a-f0-9]{16}\.png/);
-  assert.match(articleEn.content, /English translation pending/);
-  assert.match(articleEn.content, /translation_key: post-chinese-first-article/);
+  assert.equal(articleEn, undefined, "the Chinese-only site creates no English article");
+  assert.match(articleZh.content, /^lang: zh$/m);
+  assert.match(articleZh.content, /translation_key: post-chinese-first-article/);
   assert.ok(
     articleEntries.some(
       (entry) => /^assets\/img\/posts\/chinese-first-article\/[a-f0-9]{16}\.png$/.test(entry.path) && entry.sha === "cover-blob-sha"
@@ -354,7 +354,12 @@ try {
   assert.match(toolZh.content, /img: assets\/img\/tools\/minimal-tool-cover\.png/);
   assert.match(toolZh.content, /redirect: https:\/\/example\.com\/minimal-tool/);
   assert.match(toolZh.content, /github: https:\/\/github\.com\/Functionhx\/minimal-tool/);
-  assert.match(toolEn.content, /English translation pending/);
+  assert.equal(toolEn, undefined, "the Chinese-only site creates no English tool card");
+  assert.equal(
+    toolEntries.some((entry) => entry.path.endsWith("-en.md")),
+    false,
+    "no English file of any kind may enter the commit"
+  );
   assert.ok(
     toolEntries.some((entry) => entry.path.includes("minimal-tool-launched-zh.md")),
     "new tools should optionally add an activity item"
@@ -372,8 +377,6 @@ try {
     );
     assert.equal(await page.locator('[data-content-dropzone="zh"]').isVisible(), true, `${type} creation should accept inline images`);
     assert.equal(await page.locator('[data-content-preview="zh"]').isVisible(), true, `${type} creation should include a live preview`);
-    await page.locator("#site-content-creator-tab-en").click();
-    assert.equal(await page.locator("#site-content-creator-english").isVisible(), true, `${type} creation should expose the English writing tab`);
     await page.locator("#site-content-creator-close").click();
   }
 
@@ -388,8 +391,6 @@ try {
   );
   assert.equal(await page.locator('[data-content-dropzone="zh"]').isVisible(), true, "project creation should accept inline images");
   assert.equal(await page.locator('[data-content-preview="zh"]').isVisible(), true, "project creation should include a live preview");
-  await page.locator("#site-content-creator-tab-en").click();
-  assert.equal(await page.locator("#site-content-creator-english").isVisible(), true, "project creation should expose the English writing tab");
   await page.locator("#site-content-creator-close").click();
   await page.goto(baseUrl, { waitUntil: "networkidle" });
   await page.locator("#site-inline-editor-toggle").waitFor({ state: "visible" });
@@ -414,11 +415,7 @@ try {
   assert.equal(storage.includes(testToken), false, "the creator must not expose the GitHub token in ordinary storage");
 
   await page.goto(`${baseUrl}blog/`, { waitUntil: "domcontentloaded" });
-  await assertPageMetadata("博客 · Magic");
-  await page.goto(`${baseUrl}en/`, { waitUntil: "domcontentloaded" });
-  await assertPageMetadata("Magic · In Progress");
-  await page.goto(`${baseUrl}en/blog/`, { waitUntil: "domcontentloaded" });
-  await assertPageMetadata("blog · Magic");
+  await assertPageMetadata("博客 · Function");
   console.log("Context-aware content creator browser test passed.");
 } finally {
   await browser.close();

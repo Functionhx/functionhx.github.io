@@ -248,7 +248,6 @@ def main() -> int:
             "site-settings-toggle",
             "site-settings-dialog",
             "site-settings-format",
-            "site-settings-translate",
             "site-settings-commit",
             "site-settings-auth-remember",
             "site-settings-density-auto",
@@ -259,13 +258,18 @@ def main() -> int:
         ):
             if settings_id not in parser.ids:
                 errors.append(f"{route}: missing settings control #{settings_id}")
-        for translator_id in (
+        retired_translation_ids = {
             "deepseek-translator-dialog",
-            "deepseek-translator-key",
-            "deepseek-translator-submit",
-        ):
-            if translator_id not in parser.ids:
-                errors.append(f"{route}: missing translation control #{translator_id}")
+            "site-settings-translate",
+            "site-settings-title-en",
+            "site-content-creator-translate",
+            "site-content-creator-title-en",
+        }.intersection(parser.ids)
+        if retired_translation_ids:
+            errors.append(
+                f"{route}: Chinese-only site still renders translation controls "
+                f"{sorted(retired_translation_ids)}"
+            )
         for deployment_id in (
             "site-deployment-monitor",
             "site-deployment-monitor-progress",
@@ -568,10 +572,7 @@ def main() -> int:
             "site-spark-drafts-panel",
             "site-spark-writer",
             "site-spark-writer-title-zh",
-            "site-spark-writer-title-en",
             "site-spark-writer-body-zh",
-            "site-spark-writer-body-en",
-            "site-spark-writer-translate",
             "site-spark-writer-announce",
             "site-spark-writer-published",
             "site-spark-writer-publish",
@@ -580,6 +581,16 @@ def main() -> int:
             errors.append(
                 f"{route}: direct Spark writer controls missing "
                 f"{sorted(missing_writer_ids)}"
+            )
+        retired_writer_ids = {
+            "site-spark-writer-title-en",
+            "site-spark-writer-body-en",
+            "site-spark-writer-translate",
+        }.intersection(parser.ids)
+        if retired_writer_ids:
+            errors.append(
+                f"{route}: Chinese-only Spark writer still renders English controls "
+                f"{sorted(retired_writer_ids)}"
             )
     article_sources = {
         "/blog/2026/embodied-ai-control-story/": (
@@ -695,8 +706,6 @@ def main() -> int:
         "assets/js/spark-writer.js",
         "assets/css/site-settings.css",
         "assets/js/site-settings.js",
-        "assets/css/deepseek-translator.css",
-        "assets/js/deepseek-translator.js",
         "assets/css/deployment-monitor.css",
         "assets/js/deployment-monitor.js",
         "assets/js/github-auth-vault.js",

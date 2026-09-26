@@ -26,7 +26,6 @@
   const elements = {
     announce: document.getElementById("site-content-creator-announce"),
     announceField: document.getElementById("site-content-creator-announce-field"),
-    bodyEn: document.getElementById("site-content-creator-body-en"),
     bodyZh: document.getElementById("site-content-creator-body-zh"),
     category: document.getElementById("site-content-creator-category"),
     categoryField: document.getElementById("site-content-creator-category-field"),
@@ -39,10 +38,8 @@
     coverField: document.getElementById("site-content-creator-cover-field"),
     coverName: document.getElementById("site-content-creator-cover-name"),
     date: document.getElementById("site-content-creator-date"),
-    descriptionEn: document.getElementById("site-content-creator-description-en"),
     descriptionZh: document.getElementById("site-content-creator-description-zh"),
     draft: document.getElementById("site-content-creator-draft"),
-    english: document.getElementById("site-content-creator-english"),
     github: document.getElementById("site-content-creator-github"),
     githubField: document.getElementById("site-content-creator-github-field"),
     heading: document.getElementById("site-content-creator-heading"),
@@ -53,13 +50,9 @@
     settingsLabel: document.getElementById("site-content-creator-settings-label"),
     slug: document.getElementById("site-content-creator-slug"),
     status: document.getElementById("site-content-creator-status"),
-    tabEn: document.getElementById("site-content-creator-tab-en"),
-    tabZh: document.getElementById("site-content-creator-tab-zh"),
     tags: document.getElementById("site-content-creator-tags"),
     tagsField: document.getElementById("site-content-creator-tags-field"),
-    titleEn: document.getElementById("site-content-creator-title-en"),
     titleZh: document.getElementById("site-content-creator-title-zh"),
-    translate: document.getElementById("site-content-creator-translate"),
     url: document.getElementById("site-content-creator-url"),
     urlField: document.getElementById("site-content-creator-url-field"),
   };
@@ -68,7 +61,6 @@
     zh: {
       body: elements.bodyZh,
       characterCount: root.querySelector('[data-content-character-count="zh"]'),
-      complete: document.getElementById("site-content-creator-complete-zh"),
       description: elements.descriptionZh,
       dropzone: root.querySelector('[data-content-dropzone="zh"]'),
       editor: root.querySelector('[data-content-editor="zh"]'),
@@ -82,28 +74,7 @@
       previewEmpty: root.querySelector('[data-content-preview-empty="zh"]'),
       previewSummary: root.querySelector('[data-content-preview-summary="zh"]'),
       previewTitle: root.querySelector('[data-content-preview-title="zh"]'),
-      tab: document.getElementById("site-content-creator-tab-zh"),
       title: elements.titleZh,
-    },
-    en: {
-      body: elements.bodyEn,
-      characterCount: root.querySelector('[data-content-character-count="en"]'),
-      complete: document.getElementById("site-content-creator-complete-en"),
-      description: elements.descriptionEn,
-      dropzone: root.querySelector('[data-content-dropzone="en"]'),
-      editor: root.querySelector('[data-content-editor="en"]'),
-      imageInput: root.querySelector('[data-content-image-input="en"]'),
-      mediaList: root.querySelector('[data-content-media-list="en"]'),
-      mediaSection: root.querySelector('[data-content-media-section="en"]'),
-      mediaTotal: root.querySelector('[data-content-media-total="en"]'),
-      panel: document.getElementById("site-content-creator-english"),
-      preview: root.querySelector('[data-content-preview="en"]'),
-      previewBody: root.querySelector('[data-content-preview-body="en"]'),
-      previewEmpty: root.querySelector('[data-content-preview-empty="en"]'),
-      previewSummary: root.querySelector('[data-content-preview-summary="en"]'),
-      previewTitle: root.querySelector('[data-content-preview-title="en"]'),
-      tab: document.getElementById("site-content-creator-tab-en"),
-      title: elements.titleEn,
     },
   };
 
@@ -132,7 +103,9 @@
   let baselineSnapshot = "";
   let busy = false;
   let coverFile = null;
-  let currentLanguage = "zh";
+  // Chinese-only site (owner decision 2026-09-24): new content is written and
+  // published in Chinese only.
+  const EDITOR_LANGUAGES = ["zh"];
   let currentType = "article";
   let draftTimer = 0;
   let draftWritePromise = Promise.resolve();
@@ -172,8 +145,8 @@
   function setBusy(nextBusy) {
     busy = nextBusy;
     root.setAttribute("aria-busy", String(nextBusy));
-    for (const element of [elements.close, elements.commit, elements.connect, elements.draft, elements.translate]) element.disabled = nextBusy;
-    for (const language of ["zh", "en"]) {
+    for (const element of [elements.close, elements.commit, elements.connect, elements.draft]) element.disabled = nextBusy;
+    for (const language of EDITOR_LANGUAGES) {
       fields[language].imageInput.disabled = nextBusy;
       for (const button of fields[language].editor.querySelectorAll("[data-content-command], .site-spark-writer__media-remove")) {
         button.disabled = nextBusy;
@@ -259,7 +232,7 @@
   }
 
   function updateEditorMeta() {
-    for (const language of ["zh", "en"]) fields[language].characterCount.textContent = String(characterCount(fields[language].body.value));
+    for (const language of EDITOR_LANGUAGES) fields[language].characterCount.textContent = String(characterCount(fields[language].body.value));
   }
 
   function resolvePreviewImage(source) {
@@ -294,7 +267,7 @@
   }
 
   function updatePreviews() {
-    for (const language of ["zh", "en"]) updatePreview(language);
+    for (const language of EDITOR_LANGUAGES) updatePreview(language);
   }
 
   function languageComplete(language) {
@@ -307,7 +280,6 @@
   }
 
   function updateCompletion() {
-    for (const language of ["zh", "en"]) fields[language].complete.dataset.complete = String(languageComplete(language));
     updateEditorMeta();
     updatePreviews();
   }
@@ -368,10 +340,9 @@
       updateEditorMeta();
       return;
     }
-    const isEnglish = language === "en";
     if (command === "heading") prefixSelectedLines(textarea, "## ");
-    else if (command === "bold") wrapSelection(textarea, "**", "**", isEnglish ? "bold text" : "加粗文字");
-    else if (command === "italic") wrapSelection(textarea, "_", "_", isEnglish ? "italic text" : "斜体文字");
+    else if (command === "bold") wrapSelection(textarea, "**", "**", "加粗文字");
+    else if (command === "italic") wrapSelection(textarea, "_", "_", "斜体文字");
     else if (command === "bullet-list") prefixSelectedLines(textarea, "- ");
     else if (command === "numbered-list") prefixSelectedLines(textarea, "1. ");
     else if (command === "quote") prefixSelectedLines(textarea, "> ");
@@ -379,10 +350,10 @@
     else if (command === "code") {
       const selected = textarea.value.slice(textarea.selectionStart ?? 0, textarea.selectionEnd ?? 0);
       if (selected.includes("\n")) wrapSelection(textarea, "```\n", "\n```", selected);
-      else wrapSelection(textarea, "`", "`", isEnglish ? "code" : "代码");
+      else wrapSelection(textarea, "`", "`", "代码");
     } else if (command === "link") {
       const start = textarea.selectionStart ?? 0;
-      const selected = textarea.value.slice(start, textarea.selectionEnd ?? start) || (isEnglish ? "link text" : "链接文字");
+      const selected = textarea.value.slice(start, textarea.selectionEnd ?? start) || "链接文字";
       const inserted = `[${selected}](https://)`;
       textarea.setRangeText(inserted, start, textarea.selectionEnd ?? start, "end");
       textarea.focus();
@@ -390,7 +361,7 @@
       textarea.setSelectionRange(urlStart, urlStart + 8);
       textarea.dispatchEvent(new Event("input", { bubbles: true }));
     } else if (command === "table") {
-      insertText(textarea, `| ${isEnglish ? "Column 1" : "列 1"} | ${isEnglish ? "Column 2" : "列 2"} |\n| --- | --- |\n|  |  |`, { block: true });
+      insertText(textarea, `| 列 1 | 列 2 |\n| --- | --- |\n|  |  |`, { block: true });
     }
   }
 
@@ -412,7 +383,7 @@
     if (!window.confirm("从中英文草稿中移除这张图片？")) return;
     const markerPattern = new RegExp(`!?\\[[^\\]]*\\]\\(content-media:\\/\\/${item.id}\\)`, "g");
     media = media.filter((candidate) => candidate.id !== item.id);
-    for (const language of ["zh", "en"]) {
+    for (const language of EDITOR_LANGUAGES) {
       const textarea = fields[language].body;
       textarea.value = textarea.value.replace(markerPattern, "").replace(/\n{3,}/g, "\n\n");
       autoSize(textarea);
@@ -423,7 +394,7 @@
 
   function renderMedia() {
     const total = `${media.length} 张 · ${formatBytes(mediaSize())}`;
-    for (const language of ["zh", "en"]) {
+    for (const language of EDITOR_LANGUAGES) {
       fields[language].mediaList.replaceChildren();
       fields[language].mediaSection.hidden = media.length === 0;
       fields[language].mediaTotal.textContent = total;
@@ -578,14 +549,8 @@
     }
   }
 
-  function selectLanguage(language, focus = false) {
-    currentLanguage = language === "en" ? "en" : "zh";
-    for (const candidate of ["zh", "en"]) {
-      const selected = candidate === currentLanguage;
-      fields[candidate].tab.setAttribute("aria-selected", String(selected));
-      fields[candidate].panel.hidden = !selected;
-    }
-    if (focus) fields[currentLanguage].title.focus();
+  function selectLanguage(_language = "zh", focus = false) {
+    if (focus) fields.zh.title.focus();
   }
 
   function draftStorageId(type = currentType) {
@@ -595,19 +560,16 @@
   function readValues() {
     return {
       announce: elements.announce.checked,
-      bodyEn: elements.bodyEn.value,
       bodyZh: elements.bodyZh.value,
       category: elements.category.value,
       comments: elements.comments.checked,
       date: elements.date.value,
-      descriptionEn: elements.descriptionEn.value,
       descriptionZh: elements.descriptionZh.value,
       github: elements.github.value,
       media: media.map((item) => ({ ...item })),
       message: elements.message.value,
       slug: elements.slug.value,
       tags: elements.tags.value,
-      titleEn: elements.titleEn.value,
       titleZh: elements.titleZh.value,
       type: currentType,
       url: elements.url.value,
@@ -617,19 +579,16 @@
   function formValues(values) {
     return {
       announce: values.announce,
-      bodyEn: values.bodyEn,
       bodyZh: values.bodyZh,
       category: values.category,
       comments: values.comments,
       date: values.date,
-      descriptionEn: values.descriptionEn,
       descriptionZh: values.descriptionZh,
       github: values.github,
       media: normalizedMedia(values.media),
       message: values.message,
       slug: values.slug,
       tags: values.tags,
-      titleEn: values.titleEn,
       titleZh: values.titleZh,
       type: values.type,
       url: values.url,
@@ -643,21 +602,18 @@
   function writeValues(values) {
     media = normalizedMedia(values.media);
     elements.announce.checked = values.announce !== false;
-    elements.bodyEn.value = values.bodyEn || "";
     elements.bodyZh.value = values.bodyZh || "";
     elements.category.value = values.category || (currentType === "tool" ? "fun" : currentType === "project" ? "work" : "");
     elements.comments.checked = values.comments !== false;
     elements.date.value = values.date || localDateTime();
-    elements.descriptionEn.value = values.descriptionEn || "";
     elements.descriptionZh.value = values.descriptionZh || "";
     elements.github.value = values.github || "";
     elements.message.value = values.message || `content: add ${currentType}`;
     elements.slug.value = values.slug || defaultSlug(currentType);
     elements.tags.value = values.tags || "";
-    elements.titleEn.value = values.titleEn || "";
     elements.titleZh.value = values.titleZh || "";
     elements.url.value = values.url || "";
-    for (const language of ["zh", "en"]) autoSize(fields[language].body);
+    for (const language of EDITOR_LANGUAGES) autoSize(fields[language].body);
     renderMedia();
     updateCompletion();
   }
@@ -843,7 +799,7 @@
       return false;
     }
     const mediaIds = new Set(values.media.map((item) => item.id));
-    const referencedIds = [...`${values.bodyZh}\n${values.bodyEn}`.matchAll(/content-media:\/\/([a-f0-9]{16})/g)].map((match) => match[1]);
+    const referencedIds = [...String(values.bodyZh).matchAll(/content-media:\/\/([a-f0-9]{16})/g)].map((match) => match[1]);
     if (referencedIds.some((id) => !mediaIds.has(id))) {
       setStatus("正文引用了一张已经移除的图片，请重新插入。", "error");
       return false;
@@ -854,23 +810,6 @@
   function dateParts(value) {
     const date = value.slice(0, 10);
     return { date, year: date.slice(0, 4), jekyll: `${value.replace("T", " ")}:00 +0800` };
-  }
-
-  function englishLocalization(values, targetPath, options = {}) {
-    const body = values.bodyEn.trim() || (options.allowDescriptionBody ? values.descriptionEn.trim() : "");
-    const complete = values.titleEn.trim() && body;
-    if (complete) {
-      return {
-        body,
-        description: values.descriptionEn.trim() || plainSummary(values.bodyEn),
-        title: values.titleEn.trim(),
-      };
-    }
-    return {
-      body: `> English translation pending. [Read the Chinese source](${targetPath}).`,
-      description: "English translation pending. Read the Chinese source.",
-      title: `Translation pending · ${values.titleZh.trim()}`,
-    };
   }
 
   function sourceBlock(frontMatter, body) {
@@ -892,15 +831,11 @@
     return rendered;
   }
 
-  function composeArticle(language, values) {
+  function composeArticle(values) {
     const parts = dateParts(values.date);
-    const zhPath = `/blog/${parts.year}/${values.slug}/`;
-    const localized =
-      language === "zh"
-        ? { body: values.bodyZh.trim(), description: values.descriptionZh.trim(), title: values.titleZh.trim() }
-        : englishLocalization(values, zhPath);
+    const permalink = `/blog/${parts.year}/${values.slug}/`;
+    const localized = { body: values.bodyZh.trim(), description: values.descriptionZh.trim(), title: values.titleZh.trim() };
     localized.body = renderMediaMarkers(localized.body, "article", values.slug);
-    const permalink = language === "zh" ? zhPath : `/en/blog/${parts.year}/${values.slug}/`;
     return sourceBlock(
       [
         "layout: post",
@@ -911,8 +846,8 @@
         `announce: ${values.announce ? "true" : "false"}`,
         `description: ${JSON.stringify(localized.description)}`,
         `permalink: ${permalink}`,
-        `lang: ${language}`,
-        `locale: ${language}`,
+        "lang: zh",
+        "locale: zh",
         `translation_key: post-${values.slug}`,
         "kind: writing",
         `tags: ${JSON.stringify(parseList(values.tags))}`,
@@ -924,30 +859,27 @@
     );
   }
 
-  function composeCard(language, values, coverPath, type) {
+  function composeCard(values, coverPath, type) {
     const isTool = type === "tool";
     const zhPath = `/${isTool ? "tools" : "projects"}/${values.slug}/`;
-    const localized =
-      language === "zh"
-        ? {
-            body: values.bodyZh.trim() || values.descriptionZh.trim(),
-            description: values.descriptionZh.trim(),
-            title: values.titleZh.trim(),
-          }
-        : englishLocalization(values, zhPath, { allowDescriptionBody: true });
+    const localized = {
+      body: values.bodyZh.trim() || values.descriptionZh.trim(),
+      description: values.descriptionZh.trim(),
+      title: values.titleZh.trim(),
+    };
     localized.body = renderMediaMarkers(localized.body, type, values.slug);
     const frontMatter = [
       "layout: page",
       `title: ${JSON.stringify(localized.title)}`,
       `description: ${JSON.stringify(localized.description)}`,
-      `permalink: ${language === "zh" ? zhPath : `/en${zhPath}`}`,
+      `permalink: ${zhPath}`,
     ];
     const url = normalizedUrl(values.url, "产品网址");
     const github = normalizedUrl(values.github, "GitHub 网址");
     if (url) frontMatter.push(`redirect: ${url}`);
     if (github) frontMatter.push(`github: ${github}`);
     frontMatter.push(
-      `lang: ${language}`,
+      "lang: zh",
       `translation_key: ${values.slug}`,
       `kind: ${type}`,
       "importance: 99",
@@ -957,18 +889,9 @@
     return sourceBlock(frontMatter, localized.body);
   }
 
-  function composeActivity(language, values, options = {}) {
+  function composeActivity(values, options = {}) {
     const parts = dateParts(values.date);
-    const zhPath = options.link || `/news/${values.slug}/`;
-    const localized =
-      language === "zh"
-        ? { body: options.zhBody || values.bodyZh.trim(), title: options.zhTitle || values.titleZh.trim() }
-        : values.titleEn.trim() && values.bodyEn.trim()
-          ? { body: options.enBody || values.bodyEn.trim(), title: options.enTitle || values.titleEn.trim() }
-          : {
-              body: options.enBody || `English translation pending. [Read the Chinese update](${zhPath}).`,
-              title: options.enTitle || `Translation pending · ${values.titleZh.trim()}`,
-            };
+    const localized = { body: options.zhBody || values.bodyZh.trim(), title: options.zhTitle || values.titleZh.trim() };
     localized.body = renderMediaMarkers(localized.body, "activity", values.slug);
     return sourceBlock(
       [
@@ -977,9 +900,9 @@
         `date: ${parts.date}`,
         "inline: true",
         "related_posts: false",
-        `lang: ${language}`,
+        "lang: zh",
         `translation_key: news-${options.key || values.slug}`,
-        `permalink: ${language === "zh" ? `/news/${options.key || values.slug}/` : `/en/news/${options.key || values.slug}/`}`,
+        `permalink: /news/${options.key || values.slug}/`,
       ],
       localized.body
     );
@@ -989,49 +912,28 @@
     const parts = dateParts(values.date);
     if (type === "article") {
       const prefix = `_posts/${parts.date}-${values.slug}`;
-      return [
-        { content: composeArticle("zh", values), path: `${prefix}-zh.md` },
-        { content: composeArticle("en", values), path: `${prefix}-en.md` },
-      ];
+      return [{ content: composeArticle(values), path: `${prefix}-zh.md` }];
     }
     if (type === "activity") {
       const prefix = `_news/${parts.date}-${values.slug}`;
-      return [
-        { content: composeActivity("zh", values), path: `${prefix}-zh.md` },
-        { content: composeActivity("en", values), path: `${prefix}-en.md` },
-      ];
+      return [{ content: composeActivity(values), path: `${prefix}-zh.md` }];
     }
 
-    const entries = [
-      { content: composeCard("zh", values, coverPath, type), path: `_projects/${values.slug}-zh.md` },
-      { content: composeCard("en", values, coverPath, type), path: `_projects/${values.slug}-en.md` },
-    ];
+    const entries = [{ content: composeCard(values, coverPath, type), path: `_projects/${values.slug}-zh.md` }];
     if (values.announce) {
       const destination = `/${type === "tool" ? "tools" : "projects"}/${values.slug}/`;
       const key = `${values.slug}-launched`;
       const zhLabel = type === "tool" ? "工具" : "项目";
-      const enLabel = type === "tool" ? "tool" : "project";
       const newsPrefix = `_news/${parts.date}-${key}`;
-      entries.push(
-        {
-          content: composeActivity("zh", values, {
-            key,
-            link: destination,
-            zhBody: `[${values.titleZh.trim()}](${destination}) 已加入${zhLabel}页。`,
-            zhTitle: `${values.titleZh.trim()}上线`,
-          }),
-          path: `${newsPrefix}-zh.md`,
-        },
-        {
-          content: composeActivity("en", values, {
-            enBody: `[${values.titleEn.trim() || values.titleZh.trim()}](/en${destination}) is now listed on the ${enLabel} page.`,
-            enTitle: `${values.titleEn.trim() || values.titleZh.trim()} is live`,
-            key,
-            link: destination,
-          }),
-          path: `${newsPrefix}-en.md`,
-        }
-      );
+      entries.push({
+        content: composeActivity(values, {
+          key,
+          link: destination,
+          zhBody: `[${values.titleZh.trim()}](${destination}) 已加入${zhLabel}页。`,
+          zhTitle: `${values.titleZh.trim()}上线`,
+        }),
+        path: `${newsPrefix}-zh.md`,
+      });
     }
     return entries;
   }
@@ -1234,50 +1136,6 @@
     }
   }
 
-  async function translateChinese() {
-    if (!elements.titleZh.value.trim() || !elements.bodyZh.value.trim()) {
-      setStatus("请先填写中文标题和正文。", "error");
-      elements.titleZh.focus();
-      return;
-    }
-    if (
-      (elements.titleEn.value.trim() || elements.descriptionEn.value.trim() || elements.bodyEn.value.trim()) &&
-      !window.confirm("用新的 DeepSeek 翻译覆盖当前英文稿？")
-    ) {
-      return;
-    }
-    if (!window.functionhxDeepSeek?.translate) {
-      setStatus("翻译工具尚未载入。", "error");
-      return;
-    }
-
-    elements.translate.disabled = true;
-    setStatus("正在等待 DeepSeek 翻译中文稿…");
-    try {
-      const translated = await window.functionhxDeepSeek.translate({
-        body: elements.bodyZh.value,
-        summary: elements.descriptionZh.value,
-        title: elements.titleZh.value,
-      });
-      elements.titleEn.value = translated.title;
-      elements.descriptionEn.value = translated.summary;
-      elements.bodyEn.value = translated.body;
-      if (slugIsAutomatic) {
-        const generated = slugify(translated.title);
-        if (generated) elements.slug.value = generated;
-      }
-      autoSize(elements.bodyEn);
-      selectLanguage("en");
-      handleChange();
-      setStatus("英文译稿已生成，请检查后再提交。", "success");
-    } catch (error) {
-      if (error.name === "AbortError") setStatus("已取消翻译，中文稿保持不变。");
-      else setStatus(`无法生成英文译稿。${error.message || ""}`, "error");
-    } finally {
-      elements.translate.disabled = false;
-    }
-  }
-
   document.addEventListener(
     "click",
     (event) => {
@@ -1303,11 +1161,8 @@
     else openConnection();
   });
   elements.draft.addEventListener("click", () => saveDraft(true));
-  elements.translate.addEventListener("click", translateChinese);
-  fields.zh.tab.addEventListener("click", () => selectLanguage("zh", true));
-  fields.en.tab.addEventListener("click", () => selectLanguage("en", true));
 
-  for (const language of ["zh", "en"]) {
+  for (const language of EDITOR_LANGUAGES) {
     fields[language].editor.addEventListener("click", (event) => {
       const command = event.target.closest("[data-content-command]")?.dataset.contentCommand;
       if (command && !busy) runEditorCommand(language, command);
@@ -1351,7 +1206,7 @@
   }
 
   window.addEventListener("dragend", () => {
-    for (const language of ["zh", "en"]) delete fields[language].dropzone.dataset.dragging;
+    for (const language of EDITOR_LANGUAGES) delete fields[language].dropzone.dataset.dragging;
   });
 
   for (const control of root.querySelectorAll(".site-content-creator__settings input, .site-content-creator__settings textarea")) {
@@ -1374,11 +1229,6 @@
   elements.titleZh.addEventListener("input", () => {
     if (!slugIsAutomatic) return;
     const generated = slugify(elements.titleZh.value);
-    if (generated) elements.slug.value = generated;
-  });
-  elements.titleEn.addEventListener("input", () => {
-    if (!slugIsAutomatic) return;
-    const generated = slugify(elements.titleEn.value);
     if (generated) elements.slug.value = generated;
   });
 

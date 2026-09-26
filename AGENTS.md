@@ -2,13 +2,14 @@
 
 ## Site identity
 
-This repository is the bilingual personal site of Yuchen Fan (樊宇琛), a
+This repository is the Chinese-only personal site of Yuchen Fan (樊宇琛), a
 Robotics Engineering undergraduate at Beijing Institute of Technology. It
 collects research, engineering projects, useful tools, writing, notes, and work
 logs.
 
-Chinese content is the source of truth. Every public page or collection record
-must have an English counterpart with the same `translation_key`. Do not invent
+The site is Chinese-only (owner decision 2026-09-24). Do not add English
+pages, `lang: en` records, `/en/` routes, hreflang alternates, or translation
+tooling. Do not invent
 publications, metrics, project outcomes, affiliations, or individual
 contributions. Ongoing and pre-disclosure work must stay accurately labeled and
 high-level.
@@ -20,12 +21,12 @@ runtime theme is provided by the pinned `al_folio_core` and companion gems in
 `Gemfile.lock`.
 
 - `_config.yml` owns site and feature configuration.
-- `_pages/` owns bilingual top-level pages.
-- `_projects/` owns bilingual projects and tools.
+- `_pages/` owns top-level pages.
+- `_projects/` owns projects and tools.
 - `_posts/` owns writing, notes, and logs.
-- `_news/` owns short bilingual announcements.
+- `_news/` owns short announcements.
 - `_data/` owns social and supporting data.
-- `_includes/` and `_layouts/` contain only bilingual compatibility overrides.
+- `_includes/` and `_layouts/` contain only site-specific overrides of the theme.
 
 Preserve the upstream al-folio visual language. Do not redesign its typography,
 spacing, cards, navigation, search, or theme system unless the owner explicitly
@@ -47,7 +48,7 @@ bundle exec jekyll build
 python3 scripts/check_built_site.py _site
 ```
 
-The public site must support Chinese and English, light and dark themes,
+The public site must support light and dark themes,
 desktop and mobile layouts, keyboard navigation, and a readable no-JavaScript
 fallback. Browser JavaScript remains dependency-free.
 

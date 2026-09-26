@@ -32,14 +32,8 @@
         invalidOrder: "Navigation order must be a number from 1 to 999.",
         invalidSlug: "The URL slug may contain only lowercase letters, numbers, and hyphens.",
         loading: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
-        missingChinese: "Add a Chinese title or description before translating.",
         noChanges: "No unpublished changes.",
         pending: "Changes are not published yet.",
-        translationCanceled: "Translation canceled; the Chinese fields are unchanged.",
-        translationFailed: "The English fields could not be translated.",
-        translationReady: "English fields are ready for review. Nothing has been published.",
-        translating: "Waiting for DeepSeek to translate the Chinese fields…",
-        overwriteTranslation: "Replace the current English fields with a new DeepSeek translation?",
         verify: "Verifying this token and repository access…",
         viewCommit: "View the commit on GitHub →",
       }
@@ -60,14 +54,8 @@
         invalidOrder: "导航顺序必须是 1 到 999 之间的数字。",
         invalidSlug: "网址短名只能包含小写字母、数字和连字符。",
         loading: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
-        missingChinese: "请先填写中文名称或中文简介。",
         noChanges: "没有待发布的修改。",
         pending: "修改尚未发布。",
-        translationCanceled: "已取消翻译，中文内容保持不变。",
-        translationFailed: "无法生成英文翻译。",
-        translationReady: "英文内容已经生成，请检查后再提交；目前尚未发布。",
-        translating: "正在等待 DeepSeek 翻译中文内容…",
-        overwriteTranslation: "用新的 DeepSeek 翻译覆盖当前英文内容？",
         verify: "正在验证令牌和仓库权限…",
         viewCommit: "在 GitHub 查看 Commit →",
       };
@@ -100,7 +88,6 @@
     close: document.getElementById("site-settings-close"),
     commit: document.getElementById("site-settings-commit"),
     connect: document.getElementById("site-settings-connect"),
-    descriptionEn: document.getElementById("site-settings-description-en"),
     descriptionZh: document.getElementById("site-settings-description-zh"),
     format: document.getElementById("site-settings-format"),
     font: document.getElementById("site-settings-font"),
@@ -111,10 +98,8 @@
     result: document.getElementById("site-settings-result"),
     slug: document.getElementById("site-settings-slug"),
     status: document.getElementById("site-settings-status"),
-    titleEn: document.getElementById("site-settings-title-en"),
     titleZh: document.getElementById("site-settings-title-zh"),
     token: document.getElementById("site-settings-token"),
-    translate: document.getElementById("site-settings-translate"),
   };
   const sectionToggles = [...document.querySelectorAll("[data-section-toggle]")];
   const navigationDensityInputs = [...document.querySelectorAll("[data-navigation-density]")];
@@ -131,16 +116,7 @@
   let draftStored = true;
   let authController = null;
   const commitLabel = elements.commit.textContent.trim();
-  const newSectionInputs = [
-    elements.titleZh,
-    elements.titleEn,
-    elements.descriptionZh,
-    elements.descriptionEn,
-    elements.slug,
-    elements.order,
-    elements.format,
-    elements.newVisible,
-  ];
+  const newSectionInputs = [elements.titleZh, elements.descriptionZh, elements.slug, elements.order, elements.format, elements.newVisible];
   let activeToken = "";
   let authCompletionTimer = 0;
   let busy = false;
@@ -266,7 +242,6 @@
     });
     elements.connect.disabled = nextBusy;
     elements.ownerAccess.disabled = nextBusy;
-    elements.translate.disabled = nextBusy;
     sectionToggles.forEach((input) => {
       input.disabled = nextBusy;
     });
@@ -406,9 +381,7 @@
       newSection: {
         ...values,
         titleZh: elements.titleZh.value,
-        titleEn: elements.titleEn.value,
         descriptionZh: elements.descriptionZh.value,
-        descriptionEn: elements.descriptionEn.value,
         order: elements.order.value,
       },
       slugIsAutomatic,
@@ -439,7 +412,7 @@
         if (input && typeof change.value === "boolean") input.checked = change.value;
       }
       const values = draft.newSection || {};
-      for (const key of ["titleZh", "titleEn", "descriptionZh", "descriptionEn", "slug", "order", "format"]) {
+      for (const key of ["titleZh", "descriptionZh", "slug", "order", "format"]) {
         if (typeof values[key] === "string") elements[key].value = values[key];
       }
       if (typeof values.visible === "boolean") elements.newVisible.checked = values.visible;
@@ -575,12 +548,10 @@
 
   function readNewSection() {
     return {
-      descriptionEn: elements.descriptionEn.value.trim(),
       descriptionZh: elements.descriptionZh.value.trim(),
       format: elements.format.value,
       order: Number(elements.order.value),
       slug: elements.slug.value.trim(),
-      titleEn: elements.titleEn.value.trim(),
       titleZh: elements.titleZh.value.trim(),
       visible: elements.newVisible.checked,
     };
@@ -588,14 +559,7 @@
 
   function hasNewSection(values = readNewSection()) {
     return Boolean(
-      values.titleZh ||
-      values.titleEn ||
-      values.descriptionZh ||
-      values.descriptionEn ||
-      values.slug ||
-      values.format !== "page" ||
-      values.order !== 50 ||
-      values.visible !== true
+      values.titleZh || values.descriptionZh || values.slug || values.format !== "page" || values.order !== 50 || values.visible !== true
     );
   }
 
@@ -628,62 +592,13 @@
 
   function clearNewSection() {
     elements.titleZh.value = "";
-    elements.titleEn.value = "";
     elements.descriptionZh.value = "";
-    elements.descriptionEn.value = "";
     elements.slug.value = "";
     elements.order.value = "50";
     elements.format.value = "page";
     elements.newVisible.checked = true;
     slugIsAutomatic = true;
     settingsChanged();
-  }
-
-  async function translateNewSection() {
-    const title = elements.titleZh.value.trim();
-    const summary = elements.descriptionZh.value.trim();
-    if (!title && !summary) {
-      elements.newDetails.open = true;
-      setStatus(strings.missingChinese, "error");
-      elements.titleZh.focus();
-      return;
-    }
-    if (elements.titleEn.value.trim() || elements.descriptionEn.value.trim()) {
-      const choice = await askConfirmation({
-        heading: strings.overwriteTranslation,
-        copy: isEnglish ? "The Chinese source will stay unchanged." : "中文原文不变。",
-        keep: isEnglish ? "Translate again" : "重新翻译",
-        stay: isEnglish ? "Cancel" : "取消",
-      });
-      if (choice !== "keep") return;
-    }
-    if (!window.functionhxDeepSeek?.translate) {
-      setStatus(strings.translationFailed, "error");
-      return;
-    }
-
-    elements.translate.disabled = true;
-    setStatus(strings.translating);
-    try {
-      const translated = await window.functionhxDeepSeek.translate({
-        body: "",
-        summary,
-        title,
-      });
-      elements.titleEn.value = translated.title;
-      elements.descriptionEn.value = translated.summary;
-      if (slugIsAutomatic) elements.slug.value = slugify(translated.title);
-      settingsChanged();
-      setStatus(strings.translationReady, "success");
-    } catch (error) {
-      if (error.name === "AbortError") {
-        setStatus(strings.translationCanceled);
-      } else {
-        setStatus(`${strings.translationFailed} ${error.message || ""}`.trim(), "error");
-      }
-    } finally {
-      elements.translate.disabled = false;
-    }
   }
 
   function encodePath(path) {
@@ -743,9 +658,9 @@
     return `${source.trimEnd()}\n${replacement}\n`;
   }
 
-  function projectGridBody(language, slug) {
+  function projectGridBody(slug) {
     return `<div class="projects">
-  {% assign localized_projects = site.projects | where: "lang", "${language}" | where: "section_key", "${slug}" | sort: "importance" %}
+  {% assign localized_projects = site.projects | where: "lang", "zh" | where: "section_key", "${slug}" | sort: "importance" %}
   <div class="row row-cols-1 row-cols-md-3">
     {% for project in localized_projects %}
       {% include projects.liquid %}
@@ -755,40 +670,32 @@
 `;
   }
 
-  function createPageSource(language, values) {
-    const isEn = language === "en";
-    const translationPending = isEn && !values.titleEn;
-    const title = isEn ? values.titleEn || values.titleZh : values.titleZh;
-    const description = isEn ? values.descriptionEn || "English translation pending. Read the Chinese source." : values.descriptionZh;
-    const permalink = isEn ? `/en/${values.slug}/` : `/${values.slug}/`;
+  function createPageSource(values) {
     const layout = values.format === "profiles" ? "profiles" : "page";
     const frontMatter = [
       "---",
       `layout: ${layout}`,
-      `title: ${JSON.stringify(title)}`,
-      `permalink: ${permalink}`,
-      `description: ${JSON.stringify(description)}`,
-      `lang: ${language}`,
+      `title: ${JSON.stringify(values.titleZh)}`,
+      `permalink: /${values.slug}/`,
+      `description: ${JSON.stringify(values.descriptionZh)}`,
+      "lang: zh",
       `translation_key: section-${values.slug}`,
       `settings_file_stem: ${values.slug}`,
       `nav: ${values.visible ? "true" : "false"}`,
       `nav_order: ${values.order}`,
     ];
-    if (translationPending) frontMatter.push("translation_pending: true");
 
     let body = "";
     if (values.format === "posts") {
       frontMatter.push(`kind: ${values.slug}`);
-      frontMatter.push(`empty_text: ${JSON.stringify(isEn ? "No entries yet." : "暂无内容。")}`);
+      frontMatter.push(`empty_text: ${JSON.stringify("暂无内容。")}`);
       body = "{% include post-lane.liquid %}\n";
     } else if (values.format === "projects") {
-      body = projectGridBody(language, values.slug);
+      body = projectGridBody(values.slug);
     } else if (values.format === "profiles") {
       frontMatter.push("profiles: []");
     } else if (values.format === "repositories") {
       body = "{% include repositories-index.liquid %}\n";
-    } else if (translationPending) {
-      body = `> English translation pending. [Read the Chinese page](/${values.slug}/).\n`;
     }
 
     frontMatter.push("---", "");
@@ -805,19 +712,17 @@
 
   async function prepareTreeEntries(headSha, sectionChanges, newSection, navigationDensity) {
     const existingEntries = await Promise.all(
-      sectionChanges.flatMap((input) =>
-        ["zh", "en"].map(async (language) => {
-          const path = input.dataset[`sourcePath${language === "zh" ? "Zh" : "En"}`];
-          if (!path) throw new Error(`Missing ${language} source for ${input.dataset.translationKey}`);
-          const source = await fetchFileAt(path, headSha);
-          return {
-            content: setNavigationVisibility(source, input.checked),
-            mode: "100644",
-            path,
-            type: "blob",
-          };
-        })
-      )
+      sectionChanges.map(async (input) => {
+        const path = input.dataset.sourcePathZh;
+        if (!path) throw new Error(`Missing source for ${input.dataset.translationKey}`);
+        const source = await fetchFileAt(path, headSha);
+        return {
+          content: setNavigationVisibility(source, input.checked),
+          mode: "100644",
+          path,
+          type: "blob",
+        };
+      })
     );
 
     const uiEntries = [];
@@ -832,30 +737,14 @@
     }
 
     if (!hasNewSection(newSection)) return [...existingEntries, ...uiEntries];
-    const newPaths = {
-      en: `_pages/${newSection.slug}-en.md`,
-      zh: `_pages/${newSection.slug}-zh.md`,
-    };
-    const collisions = await Promise.all(
-      ["zh", "en"].map((language) =>
-        githubRequest(`/repos/${repository}/contents/${encodePath(newPaths[language])}?ref=${encodeURIComponent(headSha)}`, {
-          allowNotFound: true,
-          token: activeToken,
-        })
-      )
-    );
-    if (collisions.some(Boolean)) throw new Error(strings.collision);
+    const newPath = `_pages/${newSection.slug}-zh.md`;
+    const collision = await githubRequest(`/repos/${repository}/contents/${encodePath(newPath)}?ref=${encodeURIComponent(headSha)}`, {
+      allowNotFound: true,
+      token: activeToken,
+    });
+    if (collision) throw new Error(strings.collision);
 
-    return [
-      ...existingEntries,
-      ...uiEntries,
-      ...["zh", "en"].map((language) => ({
-        content: createPageSource(language, newSection),
-        mode: "100644",
-        path: newPaths[language],
-        type: "blob",
-      })),
-    ];
+    return [...existingEntries, ...uiEntries, { content: createPageSource(newSection), mode: "100644", path: newPath, type: "blob" }];
   }
 
   async function createAtomicCommit(entries, headSha, baseTree, newSection) {
@@ -1160,7 +1049,6 @@
   elements.loadingCopy.addEventListener("change", () => selectLoadingCopy(elements.loadingCopy.value));
   newSectionInputs.forEach((input) => {
     input.addEventListener("input", () => {
-      if (input === elements.titleEn && slugIsAutomatic) elements.slug.value = slugify(input.value);
       if (input === elements.slug) slugIsAutomatic = false;
       settingsChanged();
     });
@@ -1178,7 +1066,6 @@
   elements.reset.addEventListener("click", () =>
     confirmDiscard(resetSettings, isEnglish ? "Discard all unpublished changes?" : "放弃全部未发布的修改？")
   );
-  elements.translate.addEventListener("click", translateNewSection);
   elements.connect.addEventListener("click", handleConnectButton);
   elements.ownerAccess.addEventListener("click", handleOwnerAccess);
   elements.commit.addEventListener("click", commitSettings);
@@ -1220,14 +1107,6 @@
       event.preventDefault();
       if (!elements.commit.disabled) commitSettings();
     }
-  });
-  root.querySelectorAll(".site-settings__segmented a").forEach((link) => {
-    link.addEventListener("click", (event) => {
-      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      event.preventDefault();
-      if (link.hasAttribute("aria-current")) return;
-      guardChanges(() => window.location.assign(link.href), true);
-    });
   });
   elements.refresh.addEventListener("click", () => guardChanges(() => window.location.reload(), true));
   window.addEventListener("beforeunload", (event) => {

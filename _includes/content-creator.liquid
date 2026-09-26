@@ -26,40 +26,11 @@
     </button>
   </header>
 
-  <p id="site-content-creator-status" class="site-content-creator__status" role="status" aria-live="polite">
-    直接开始写；中文完成后即可创建，英文镜像可以稍后补充。
-  </p>
-
-  <div class="site-spark-writer__language-tabs site-content-creator__language-tabs" role="tablist" aria-label="写作语言">
-    <button
-      id="site-content-creator-tab-zh"
-      type="button"
-      role="tab"
-      aria-selected="true"
-      aria-controls="site-content-creator-panel-zh"
-      data-content-language-tab="zh"
-    >
-      中文
-      <span id="site-content-creator-complete-zh" aria-hidden="true"></span>
-    </button>
-    <button
-      id="site-content-creator-tab-en"
-      type="button"
-      role="tab"
-      aria-selected="false"
-      aria-controls="site-content-creator-english"
-      data-content-language-tab="en"
-    >
-      English · 可选
-      <span id="site-content-creator-complete-en" aria-hidden="true"></span>
-    </button>
-  </div>
+  <p id="site-content-creator-status" class="site-content-creator__status" role="status" aria-live="polite">直接开始写；中文完成后即可创建。</p>
 
   <div
     id="site-content-creator-panel-zh"
     class="site-content-creator__paper site-spark-writer__paper"
-    role="tabpanel"
-    aria-labelledby="site-content-creator-tab-zh"
     data-content-language-panel="zh"
   >
     <label class="sr-only" for="site-content-creator-title-zh">中文标题</label>
@@ -89,50 +60,6 @@
       media_label='这份内容的图片'
       media_hint='可拖入、粘贴，或点击图片按钮'
       character_unit='字'
-    %}
-  </div>
-
-  <div class="site-content-creator__translation site-spark-writer__translation">
-    <button id="site-content-creator-translate" type="button"><i class="fa-solid fa-language" aria-hidden="true"></i> DeepSeek 翻译英文</button>
-    <span>译稿只进入当前加密草稿，检查后再创建。</span>
-  </div>
-
-  <div
-    id="site-content-creator-english"
-    class="site-content-creator__paper site-content-creator__paper--english site-spark-writer__paper"
-    role="tabpanel"
-    aria-labelledby="site-content-creator-tab-en"
-    data-content-language-panel="en"
-    lang="en"
-    hidden
-  >
-    <label class="sr-only" for="site-content-creator-title-en">English title</label>
-    <input
-      id="site-content-creator-title-en"
-      class="site-content-creator__title site-spark-writer__title"
-      type="text"
-      placeholder="English title"
-      autocomplete="off"
-    >
-    <label class="sr-only" for="site-content-creator-description-en">English summary</label>
-    <input
-      id="site-content-creator-description-en"
-      class="site-content-creator__description site-spark-writer__summary"
-      type="text"
-      placeholder="English summary"
-      autocomplete="off"
-    >
-    {%
-      include markdown-editor.liquid
-      mode='content'
-      language='en'
-      body_id='site-content-creator-body-en'
-      body_label='English body'
-      body_placeholder='Start writing here…'
-      drop_label='Release to insert the image'
-      media_label='Images in this content'
-      media_hint='Drag, paste, or use the image button'
-      character_unit='characters'
     %}
   </div>
 

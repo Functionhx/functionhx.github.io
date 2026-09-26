@@ -14,31 +14,24 @@
 
   const features = {
     creator: {
-      styles: ["deployment-monitor.css", "deepseek-translator.css", "spark-writer.css", "content-creator.css"],
-      scripts: ["github-auth-vault.js", "deployment-monitor.js", "deepseek-translator.js", "markdown-preview.js", "content-creator.js"],
+      styles: ["deployment-monitor.css", "spark-writer.css", "content-creator.css"],
+      scripts: ["github-auth-vault.js", "deployment-monitor.js", "markdown-preview.js", "content-creator.js"],
     },
     editor: {
-      styles: ["deployment-monitor.css", "deepseek-translator.css", "inline-editor.css"],
-      scripts: ["github-auth-vault.js", "deployment-monitor.js", "deepseek-translator.js", "inline-editor.js"],
+      styles: ["deployment-monitor.css", "inline-editor.css"],
+      scripts: ["github-auth-vault.js", "deployment-monitor.js", "inline-editor.js"],
     },
     monitor: {
       styles: ["deployment-monitor.css"],
       scripts: ["deployment-monitor.js"],
     },
     settings: {
-      styles: ["deployment-monitor.css", "deepseek-translator.css", "site-settings.css", "owner-unlock.css"],
-      scripts: ["github-auth-vault.js", "owner-unlock.js", "deployment-monitor.js", "deepseek-translator.js", "site-settings.js"],
+      styles: ["deployment-monitor.css", "site-settings.css", "owner-unlock.css"],
+      scripts: ["github-auth-vault.js", "owner-unlock.js", "deployment-monitor.js", "site-settings.js"],
     },
     spark: {
-      styles: ["deployment-monitor.css", "deepseek-translator.css"],
-      scripts: [
-        "github-auth-vault.js",
-        "deployment-monitor.js",
-        "deepseek-translator.js",
-        "markdown-preview.js",
-        "spark-vault-client.js",
-        "spark-writer.js",
-      ],
+      styles: ["deployment-monitor.css"],
+      scripts: ["github-auth-vault.js", "deployment-monitor.js", "markdown-preview.js", "spark-vault-client.js", "spark-writer.js"],
     },
     feishuDocuments: {
       styles: [],

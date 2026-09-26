@@ -26,9 +26,7 @@
   {% assign settings_hidden = 'Hidden' %}
   {% assign settings_new = 'Create a section' %}
   {% assign settings_title_zh = 'Chinese title' %}
-  {% assign settings_title_en = 'English title (optional)' %}
   {% assign settings_description_zh = 'Chinese description' %}
-  {% assign settings_description_en = 'English description (optional)' %}
   {% assign settings_slug = 'URL slug' %}
   {% assign settings_order = 'Navigation order' %}
   {% assign settings_format = 'Content format' %}
@@ -39,7 +37,6 @@
   {% assign settings_format_profiles = 'People profiles' %}
   {% assign settings_format_repositories = 'Repository list' %}
   {% assign settings_clear = 'Clear new section' %}
-  {% assign settings_translate = 'Translate Chinese with DeepSeek' %}
   {% assign settings_connect = 'Connect GitHub' %}
   {% assign settings_commit = 'Save and publish' %}
   {% assign settings_close = 'Close settings' %}
@@ -76,9 +73,7 @@
   {% assign settings_hidden = '已隐藏' %}
   {% assign settings_new = '新建栏目' %}
   {% assign settings_title_zh = '中文名称' %}
-  {% assign settings_title_en = '英文名称（可选）' %}
   {% assign settings_description_zh = '中文简介' %}
-  {% assign settings_description_en = '英文简介（可选）' %}
   {% assign settings_slug = '网址短名' %}
   {% assign settings_order = '导航顺序' %}
   {% assign settings_format = '内容格式' %}
@@ -89,7 +84,6 @@
   {% assign settings_format_profiles = '人物档案' %}
   {% assign settings_format_repositories = '仓库列表' %}
   {% assign settings_clear = '清空新栏目' %}
-  {% assign settings_translate = 'DeepSeek 翻译英文' %}
   {% assign settings_connect = '连接 GitHub' %}
   {% assign settings_commit = '保存并发布' %}
   {% assign settings_close = '关闭设置' %}
@@ -306,8 +300,6 @@
                   {% capture settings_key_marker %}|{{ section.translation_key }}|{% endcapture %}
                   {% unless settings_seen_keys contains settings_key_marker %}
                     {% assign settings_seen_keys = settings_seen_keys | append: section.translation_key | append: '|' %}
-                    {% assign translations = site.pages | where: 'translation_key', section.translation_key %}
-                    {% assign english_section = translations | where: 'lang', 'en' | first %}
                     {% assign section_source_stem = section.settings_file_stem | default: section.translation_key %}
                     {% assign section_format = 'page' %}
                     {% if section.layout == 'profiles' %}
@@ -322,13 +314,7 @@
                     <li>
                       <div>
                         <strong>
-                          {% if settings_lang == 'en' %}
-                            {{ english_section.title }}
-                            <span lang="zh-CN">{{ section.title }}</span>
-                          {% else %}
-                            {{ section.title }}
-                            <span lang="en">{{ english_section.title }}</span>
-                          {% endif %}
+                          {{ section.title }}
                         </strong>
                         <small>
                           {% case section_format %}
@@ -356,7 +342,6 @@
                           data-section-toggle
                           data-translation-key="{{ section.translation_key | escape }}"
                           data-source-path-zh="_pages/{{ section_source_stem | escape }}-zh.md"
-                          data-source-path-en="_pages/{{ section_source_stem | escape }}-en.md"
                           data-initial-visible="{% if section.nav %}true{% else %}false{% endif %}"
                           {% if section.nav %}
                             checked
@@ -379,16 +364,8 @@
                 <input id="site-settings-title-zh" type="text" autocomplete="off">
               </label>
               <label>
-                <span>{{ settings_title_en }}</span>
-                <input id="site-settings-title-en" type="text" autocomplete="off">
-              </label>
-              <label>
                 <span>{{ settings_description_zh }}</span>
                 <input id="site-settings-description-zh" type="text" autocomplete="off">
-              </label>
-              <label>
-                <span>{{ settings_description_en }}</span>
-                <input id="site-settings-description-en" type="text" autocomplete="off">
               </label>
               <label>
                 <span>{{ settings_slug }}</span>
@@ -414,10 +391,6 @@
               </label>
             </div>
             <div class="site-settings__new-actions">
-              <button id="site-settings-translate" class="site-settings__text-button site-settings__text-button--accent" type="button">
-                <i class="fa-solid fa-language" aria-hidden="true"></i>
-                {{ settings_translate }}
-              </button>
               <button id="site-settings-clear" class="site-settings__text-button" type="button">{{ settings_clear }}</button>
             </div>
           </details>

@@ -145,6 +145,8 @@ globalThis.fetch = async (input, init = {}) => {
   if (suffix === "/git/trees" && request.method === "POST") {
     const body = await request.json();
     treeCounter += 1;
+    const missingDeletion = body.tree.find((entry) => entry.sha === null && !files.has(fileKey(repository, entry.path)));
+    if (missingDeletion) return json({ message: `GitHub cannot delete missing path ${missingDeletion.path}` }, 422);
     const tree = body.tree.map((entry) => {
       const key = fileKey(repository, entry.path);
       if (entry.sha === null) {
@@ -487,11 +489,12 @@ try {
   assert.equal(chineseOnlyPublish.status, 200, "English must never block publishing the Chinese source");
   const chineseOnlyPublicZh = files.get(fileKey(publicRepo, `_posts/2026-07-31-${chineseOnlyValues.slug}-zh.md`));
   const chineseOnlyPublicEn = files.get(fileKey(publicRepo, `_posts/2026-07-31-${chineseOnlyValues.slug}-en.md`));
-  assert.ok(chineseOnlyPublicZh && chineseOnlyPublicEn, "publishing keeps a bilingual route pair");
+  assert.ok(chineseOnlyPublicZh, "publishing creates the Chinese source");
+  assert.equal(chineseOnlyPublicEn, undefined, "the Chinese-only site never publishes an English mirror");
+  assert.match(chineseOnlyPublicZh.content, /^lang: zh$/m);
+  assert.match(chineseOnlyPublicZh.content, new RegExp(`^permalink: /spark/${chineseOnlyValues.slug}/$`, "m"));
   assert.match(chineseOnlyPublicZh.content, /这是一条只应由樊宇琛读取的加密 Spark。/);
   assert.match(chineseOnlyPublicZh.content, new RegExp(`/assets/img/spark/${chineseOnlyValues.slug}/${mediaId}\\.png`));
-  assert.match(chineseOnlyPublicEn.content, /English translation pending/);
-  assert.match(chineseOnlyPublicEn.content, new RegExp(`/spark/${chineseOnlyValues.slug}/`));
 
   const saved = await apiRequest(`/api/notes/${values.slug}`, "PUT", sessionToken, {
     message: "spark: save encrypted test note",
@@ -528,13 +531,13 @@ try {
   const publicEn = files.get(fileKey(publicRepo, `_posts/2026-07-31-${values.slug}-en.md`));
   const publicMediaPath = `assets/img/spark/${values.slug}/${mediaId}.png`;
   const publicMedia = files.get(fileKey(publicRepo, publicMediaPath));
-  assert.ok(publicZh && publicEn, "publishing must create both language files");
+  assert.ok(publicZh, "publishing must create the Chinese file");
+  assert.equal(publicEn, undefined, "English values stay private; no English file is published");
+  assert.equal(publicZh.content.includes(values.en.body), false, "English text must not leak into the public source");
   assert.ok(publicMedia, "publishing must create the attached image in the public repository");
   assert.deepEqual(Buffer.from(publicMedia.content), Buffer.from(tinyPngBase64, "base64"));
   assert.match(publicZh.content, /^published: true$/m);
-  assert.match(publicEn.content, /^published: true$/m);
   assert.match(publicZh.content, /translation_key: spark-encrypted-spark/);
-  assert.match(publicEn.content, /translation_key: spark-encrypted-spark/);
   assert.match(publicZh.content, new RegExp(`/${publicMediaPath}`));
   assert.doesNotMatch(publicZh.content, /spark-media:\/\//);
 
@@ -548,6 +551,30 @@ try {
   assert.equal(files.has(fileKey(publicRepo, `_posts/2026-07-31-${values.slug}-zh.md`)), false);
   assert.equal(files.has(fileKey(publicRepo, `_posts/2026-07-31-${values.slug}-en.md`)), false);
   assert.equal(files.has(fileKey(publicRepo, publicMediaPath)), false, "making a Spark private must remove its public images");
+
+  for (const [slug, englishStillPublic] of [
+    ["legacy-pair", true],
+    ["legacy-pair-en-removed", false],
+  ]) {
+    const legacyPaths = { en: `_posts/2026-07-31-${slug}-en.md`, zh: `_posts/2026-07-31-${slug}-zh.md` };
+    files.set(fileKey(publicRepo, legacyPaths.zh), { content: "legacy zh", sha: validSha(`${slug}-zh`) });
+    if (englishStillPublic) files.set(fileKey(publicRepo, legacyPaths.en), { content: "legacy en", sha: validSha(`${slug}-en`) });
+    const adopted = await apiRequest(`/api/notes/${slug}`, "PUT", sessionToken, {
+      public: {
+        paths: legacyPaths,
+        shas: { en: validSha(`${slug}-en`), zh: validSha(`${slug}-zh`) },
+      },
+      values: { ...structuredClone(values), media: [], slug },
+    });
+    assert.equal(adopted.status, 200, `${slug}: a legacy bilingual public Spark must still be adoptable`);
+    const adoptedNote = (await adopted.json()).note;
+    const legacyPrivate = await apiRequest(`/api/notes/${slug}/unpublish`, "POST", sessionToken, {
+      expectedSha: adoptedNote.sha,
+    });
+    assert.equal(legacyPrivate.status, 200, `${slug}: making a legacy Spark private must succeed`);
+    assert.equal(files.has(fileKey(publicRepo, legacyPaths.zh)), false, `${slug}: the Chinese file must be removed`);
+    assert.equal(files.has(fileKey(publicRepo, legacyPaths.en)), false, `${slug}: a leftover English file must be removed`);
+  }
 
   const staleSave = await apiRequest(`/api/notes/${values.slug}`, "PUT", sessionToken, {
     expectedSha: savedNote.sha,

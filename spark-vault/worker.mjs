@@ -884,12 +884,16 @@ function validatePublicPath(path, id, language) {
 
 function normalizePublicState(input, id) {
   if (!input) return null;
-  const paths = {
-    en: validatePublicPath(input.paths?.en, id, "en"),
-    zh: validatePublicPath(input.paths?.zh, id, "zh"),
-  };
-  const shas = { en: normalizeSha(input.shas?.en), zh: normalizeSha(input.shas?.zh) };
-  if (!shas.en || !shas.zh) throw new HttpError(400, "Public Spark source SHAs are required.", "invalid_public_sha");
+  // The site is Chinese-only (owner decision 2026-09-24). A record published
+  // earlier may still name its English file; keep it so the next commit can
+  // remove that file if it still exists.
+  const paths = { zh: validatePublicPath(input.paths?.zh, id, "zh") };
+  const shas = { zh: normalizeSha(input.shas?.zh) };
+  if (!shas.zh) throw new HttpError(400, "Public Spark source SHAs are required.", "invalid_public_sha");
+  if (input.paths?.en) {
+    paths.en = validatePublicPath(input.paths.en, id, "en");
+    shas.en = normalizeSha(input.shas?.en);
+  }
   const media = {};
   for (const [mediaId, candidate] of Object.entries(input.media || {})) {
     const normalizedId = String(mediaId).toLowerCase();
@@ -2360,16 +2364,6 @@ function jekyllDate(value) {
   return `${String(value).replace("T", " ")}:00 +0800`;
 }
 
-function publicLocalization(language, record) {
-  const localized = record.values[language];
-  if (language !== "en" || (localized.title.trim() && localized.body.trim())) return localized;
-  return {
-    body: `> English translation pending. [Read the Chinese source](/spark/${record.id}/).`,
-    summary: "English translation pending. Read the Chinese source.",
-    title: `Translation pending · ${record.values.zh.title.trim()}`,
-  };
-}
-
 function publicMediaPaths(record) {
   return Object.fromEntries(
     (record.values.media || []).map((item) => [item.id, `assets/img/spark/${record.id}/${item.id}.${MEDIA_TYPES.get(item.type)}`])
@@ -2385,12 +2379,12 @@ function renderPublicMedia(body, mediaPaths) {
   return rendered;
 }
 
-function composePublicSource(language, record, path, mediaPaths = {}) {
+function composePublicSource(record, path, mediaPaths = {}) {
   const values = record.values;
-  const localized = publicLocalization(language, record);
+  const localized = values.zh;
   const body = renderPublicMedia(localized.body, mediaPaths);
   const description = localized.summary.trim() || plainSummary(body);
-  const permalink = language === "en" ? `/en/spark/${record.id}/` : `/spark/${record.id}/`;
+  const permalink = `/spark/${record.id}/`;
   return {
     content: [
       "---",
@@ -2402,8 +2396,8 @@ function composePublicSource(language, record, path, mediaPaths = {}) {
       `announce: ${values.announce ? "true" : "false"}`,
       `description: ${JSON.stringify(description)}`,
       `permalink: ${permalink}`,
-      `lang: ${language}`,
-      `locale: ${language}`,
+      "lang: zh",
+      "locale: zh",
       `translation_key: spark-${record.id}`,
       `kind: ${values.kind}`,
       "tags: []",
@@ -2420,12 +2414,8 @@ function composePublicSource(language, record, path, mediaPaths = {}) {
 }
 
 function publicPaths(record) {
-  if (record.public?.paths?.zh && record.public?.paths?.en) return record.public.paths;
-  const prefix = record.values.date.slice(0, 10);
-  return {
-    en: `_posts/${prefix}-${record.id}-en.md`,
-    zh: `_posts/${prefix}-${record.id}-zh.md`,
-  };
+  if (record.public?.paths?.zh) return { zh: record.public.paths.zh };
+  return { zh: `_posts/${record.values.date.slice(0, 10)}-${record.id}-zh.md` };
 }
 
 function assertChineseComplete(record) {
@@ -2438,7 +2428,7 @@ async function verifyPublicTargets(env, token, record, paths) {
   const repository = required(env, "PUBLIC_REPO");
   const branch = branchFor(env, "public");
   const remotes = {};
-  for (const language of ["zh", "en"]) {
+  for (const language of ["zh"]) {
     remotes[language] = await readRepositoryFile(env, token, repository, branch, paths[language], true);
     const expected = normalizeSha(record.public?.shas?.[language]);
     if (expected && remotes[language]?.sha !== expected) {
@@ -2509,18 +2499,17 @@ async function commitPublicPair(env, token, record, remove = false, message = ""
   const parent = await githubRequest(env, token, repoEndpoint(repository, `/git/commits/${headSha}`));
   const baseTree = parent.tree?.sha;
   if (!baseTree) throw new HttpError(502, "The public branch tree is unavailable.", "tree_unavailable");
-  const pair = remove
-    ? null
-    : {
-        en: composePublicSource("en", record, paths.en, desiredMediaPaths),
-        zh: composePublicSource("zh", record, paths.zh, desiredMediaPaths),
-      };
+  const source = remove ? null : composePublicSource(record, paths.zh, desiredMediaPaths);
   const mediaBlobs = remove ? {} : await createPublicMediaBlobs(env, token, record, desiredMediaPaths);
-  const sourceEntries = ["zh", "en"].map((language) =>
-    remove
-      ? { mode: "100644", path: paths[language], sha: null, type: "blob" }
-      : { content: pair[language].content, mode: "100644", path: paths[language], type: "blob" }
-  );
+  const sourceEntries = [
+    remove ? { mode: "100644", path: paths.zh, sha: null, type: "blob" } : { content: source.content, mode: "100644", path: paths.zh, type: "blob" },
+  ];
+  // Remove an English file left from before the site became Chinese-only, but
+  // only if it still exists: GitHub rejects deleting a missing path.
+  const legacyEnglishPath = record.public?.paths?.en;
+  if (legacyEnglishPath && (await readRepositoryMetadata(env, token, repository, branch, legacyEnglishPath, true))) {
+    sourceEntries.push({ mode: "100644", path: legacyEnglishPath, sha: null, type: "blob" });
+  }
   const mediaEntries = Object.values(mediaBlobs).map((item) => ({ mode: "100644", path: item.path, sha: item.sha, type: "blob" }));
   const staleMediaEntries = Object.entries(record.public?.media || {})
     .filter(([id]) => remove || !desiredMediaPaths[id])
@@ -2543,7 +2532,7 @@ async function commitPublicPair(env, token, record, remove = false, message = ""
   });
   const shas = {};
   if (!remove) {
-    for (const language of ["zh", "en"]) {
+    for (const language of ["zh"]) {
       shas[language] = tree.tree?.find((item) => item.path === paths[language])?.sha || "";
       if (!normalizeSha(shas[language])) {
         const remote = await readRepositoryFile(env, token, repository, branch, paths[language], false);

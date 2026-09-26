@@ -9,7 +9,10 @@
 
   const repository = root.dataset.repository;
   const branch = root.dataset.branch;
-  const isEnglish = root.dataset.language === "en";
+  // Chinese-only site (owner decision 2026-09-24). Private records keep their
+  // historical {zh, en} shape; any stored English text is carried through
+  // unchanged but is no longer edited, translated, or published.
+  const EDITOR_LANGUAGES = ["zh"];
   const isEntryPage = root.dataset.initialMode === "edit";
   const createDraftKey = `functionhx:spark-writer:${repository}:${branch}:new`;
   const vaultClient = window.functionhxSparkVault;
@@ -23,127 +26,62 @@
     vaultConfigurationError = error.message || "Invalid Spark Vault endpoint.";
   }
 
-  const strings = isEnglish
-    ? {
-        authFailed: "GitHub sign-in failed.",
-        unlockCanceled: "Private-vault unlock canceled; the draft remains safely encrypted on this device.",
-        unlockFailed: "Private-vault unlock failed.",
-        authSuccess: "GitHub owner verified.",
-        collision: "That URL slug already exists. Change it in Publishing settings.",
-        commitConflict: "This Spark changed after you opened it. Reopen it before saving again.",
-        commitFailed: "The Spark entry could not be saved.",
-        commitPrivateSuccess: "Encrypted and saved privately. No Markdown was written to the public site repository.",
-        commitPublicSuccess: "Chinese source published. The English mirror displays a pending notice until a translation is added.",
-        confirmDiscard: "Discard this encrypted browser draft?",
-        connected: "Lock Spark Vault",
-        connecting: "Opening GitHub sign-in…",
-        disconnectConfirm: "Lock Spark Vault and forget this device session?",
-        disconnected: "Spark Vault was locked and its device session was removed.",
-        draftChanged: "Encrypting an autosave on this device. Nothing has been sent to GitHub.",
-        draftFailed: "This browser could not encrypt the local draft.",
-        draftRestored: "Recovered the encrypted draft saved on this device.",
-        draftSaved: "Encrypted on this device. Nothing has been sent to GitHub.",
-        editing: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
-        editingFailed: "This Spark could not be loaded.",
-        idle: "Start writing. Changes will be encrypted on this device automatically.",
-        incompleteZh: "Add a Chinese title and body before saving.",
-        invalidDate: "Choose a valid date and time in Publishing settings.",
-        invalidSlug: "The URL slug may contain only lowercase letters, numbers, and hyphens.",
-        noChanges: "There are no unsaved changes.",
-        privateDraftsEmpty: "No private Spark drafts were found in the encrypted vault.",
-        privateDraftsFailed: "Private drafts could not be loaded.",
-        privateDraftsFound: (count) => String(count) + (count === 1 ? " encrypted private draft found." : " encrypted private drafts found."),
-        privateDraftsLoading: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
-        privateDraftOpen: "Continue editing",
-        privateRefreshFailed: "Saved securely. The rest of the private-draft list could not be refreshed; reopen it to retry.",
-        privateSaveComplete: "Saved securely. The private draft you just saved is highlighted below.",
-        saving: "Encrypting the private record…",
-        decoyLoaded: "Private space opened.",
-        decoySaved: "Saved in this private space.",
-        unlocking: "Waiting for the independent passphrase and passkey…",
-        translationCanceled: "Translation canceled; the Chinese draft is unchanged.",
-        translationFailed: "The English draft could not be translated.",
-        translationReady: "English translation is ready for review and remains an encrypted device draft.",
-        translating: "Waiting for DeepSeek to translate the Chinese draft…",
-        translateMissing: "Add a Chinese title and body before translating.",
-        overwriteTranslation: "Replace the current English draft with a new DeepSeek translation?",
-        vaultNotConfigured: "Spark Vault is not configured yet. This draft remains encrypted on this device only.",
-        vaultUnlocked: "Spark Vault unlocked for this tab only.",
-        viewCommit: "View the public commit on GitHub →",
-        imageAdded: (count) => `${count} image${count === 1 ? "" : "s"} inserted at the cursor.`,
-        imageFailed: "The image could not be inserted.",
-        imageInvalid: "Use JPEG, PNG, WebP, or GIF images only.",
-        imageLimit: "A Spark can contain up to 8 images and 5 MB of optimized image data.",
-        imageProcessing: "Optimizing the image locally…",
-        imageRemove: "Remove this image from both language drafts?",
-        imageUploadSaving: (count) => `Saving ${count} image${count === 1 ? "" : "s"} with this Spark…`,
-        mediaCount: (count, size) => `${count} image${count === 1 ? "" : "s"} · ${size}`,
-        removeImage: "Remove image",
-        locateImage: "Locate image in the draft",
-      }
-    : {
-        authFailed: "GitHub 登录失败。",
-        unlockCanceled: "已取消私密库解锁，草稿仍安全加密保存在此设备。",
-        unlockFailed: "私密库解锁失败。",
-        authSuccess: "已验证 GitHub 站长身份。",
-        collision: "这个网址短名已经存在，请在“发布设置”里换一个。",
-        commitConflict: "这条 Spark 在打开后已经发生变化，请重新打开再保存。",
-        commitFailed: "无法保存这条 Spark。",
-        commitPrivateSuccess: "已加密保存为私密稿；公开网站仓库中没有写入 Markdown。",
-        commitPublicSuccess: "中文公开版本已保存；英文未完成时会显示待翻译提示，请在右下角查看部署进度。",
-        confirmDiscard: "丢弃这份加密浏览器草稿？",
-        connected: "锁定 Spark 私密库",
-        connecting: "正在打开 GitHub 登录…",
-        disconnectConfirm: "锁定 Spark 私密库，并从这台设备移除登录状态？",
-        disconnected: "Spark 私密库已锁定，并移除了这台设备的登录状态。",
-        draftChanged: "正在为这台设备加密随写随存；内容尚未发送到 GitHub。",
-        draftFailed: "这个浏览器无法加密保存本地草稿。",
-        draftRestored: "已恢复这台设备上的加密草稿。",
-        draftSaved: "已加密保存在这台设备中，尚未发送到 GitHub。",
-        editing: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
-        editingFailed: "无法载入这条 Spark。",
-        idle: "直接开始写，修改会自动加密保存在这台设备中。",
-        incompleteZh: "保存前还需要补齐中文标题和正文。",
-        invalidDate: "请在“发布设置”里填写有效的日期与时间。",
-        invalidSlug: "网址短名只能包含小写字母、数字和连字符。",
-        noChanges: "当前没有尚未保存的修改。",
-        privateDraftsEmpty: "加密私密库中没有 Spark 草稿。",
-        privateDraftsFailed: "无法载入私密草稿。",
-        privateDraftsFound: (count) => "已解密载入 " + String(count) + " 条私密草稿。",
-        privateDraftsLoading: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
-        privateDraftOpen: "继续编辑",
-        privateRefreshFailed: "已经安全保存，但暂时无法刷新其余私密稿；重新打开私密草稿即可重试。",
-        privateSaveComplete: "已安全保存；刚刚保存的私密稿已在下方高亮显示。",
-        saving: "正在加密私密记录…",
-        decoyLoaded: "已打开私密空间。",
-        decoySaved: "已保存到当前私密空间。",
-        unlocking: "正在等待独立口令与通行密钥…",
-        translationCanceled: "已取消翻译，中文稿保持不变。",
-        translationFailed: "无法生成英文译稿。",
-        translationReady: "英文译稿已经生成，请检查；内容仍是设备加密草稿。",
-        translating: "正在等待 DeepSeek 翻译中文稿…",
-        translateMissing: "请先填写中文标题和正文。",
-        overwriteTranslation: "用新的 DeepSeek 翻译覆盖当前英文稿？",
-        vaultNotConfigured: "Spark 私密库尚未配置；当前草稿只会加密保存在这台设备中。",
-        vaultUnlocked: "Spark 私密库已解锁；根密钥只保留在当前标签页内存中。",
-        viewCommit: "在 GitHub 查看公开 Commit →",
-        imageAdded: (count) => `已在光标处插入 ${count} 张图片。`,
-        imageFailed: "无法插入这张图片。",
-        imageInvalid: "只支持 JPEG、PNG、WebP 或 GIF 图片。",
-        imageLimit: "每条 Spark 最多 8 张图片，优化后的图片总量不超过 5 MB。",
-        imageProcessing: "正在本地优化图片…",
-        imageRemove: "从中英文草稿中移除这张图片？",
-        imageUploadSaving: (count) => `正在随 Spark 安全保存 ${count} 张图片…`,
-        mediaCount: (count, size) => `${count} 张 · ${size}`,
-        removeImage: "移除图片",
-        locateImage: "在正文中定位图片",
-      };
+  const strings = {
+    authFailed: "GitHub 登录失败。",
+    unlockCanceled: "已取消私密库解锁，草稿仍安全加密保存在此设备。",
+    unlockFailed: "私密库解锁失败。",
+    authSuccess: "已验证 GitHub 站长身份。",
+    collision: "这个网址短名已经存在，请在“发布设置”里换一个。",
+    commitConflict: "这条 Spark 在打开后已经发生变化，请重新打开再保存。",
+    commitFailed: "无法保存这条 Spark。",
+    commitPrivateSuccess: "已加密保存为私密稿；公开网站仓库中没有写入 Markdown。",
+    commitPublicSuccess: "中文公开版本已保存；英文未完成时会显示待翻译提示，请在右下角查看部署进度。",
+    confirmDiscard: "丢弃这份加密浏览器草稿？",
+    connected: "锁定 Spark 私密库",
+    connecting: "正在打开 GitHub 登录…",
+    disconnectConfirm: "锁定 Spark 私密库，并从这台设备移除登录状态？",
+    disconnected: "Spark 私密库已锁定，并移除了这台设备的登录状态。",
+    draftChanged: "正在为这台设备加密随写随存；内容尚未发送到 GitHub。",
+    draftFailed: "这个浏览器无法加密保存本地草稿。",
+    draftRestored: "已恢复这台设备上的加密草稿。",
+    draftSaved: "已加密保存在这台设备中，尚未发送到 GitHub。",
+    editing: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
+    editingFailed: "无法载入这条 Spark。",
+    idle: "直接开始写，修改会自动加密保存在这台设备中。",
+    incompleteZh: "保存前还需要补齐中文标题和正文。",
+    invalidDate: "请在“发布设置”里填写有效的日期与时间。",
+    invalidSlug: "网址短名只能包含小写字母、数字和连字符。",
+    noChanges: "当前没有尚未保存的修改。",
+    privateDraftsEmpty: "加密私密库中没有 Spark 草稿。",
+    privateDraftsFailed: "无法载入私密草稿。",
+    privateDraftsFound: (count) => "已解密载入 " + String(count) + " 条私密草稿。",
+    privateDraftsLoading: window.functionhxSitePreferences?.getLoadingText?.() || "Thinking...",
+    privateDraftOpen: "继续编辑",
+    privateRefreshFailed: "已经安全保存，但暂时无法刷新其余私密稿；重新打开私密草稿即可重试。",
+    privateSaveComplete: "已安全保存；刚刚保存的私密稿已在下方高亮显示。",
+    saving: "正在加密私密记录…",
+    decoyLoaded: "已打开私密空间。",
+    decoySaved: "已保存到当前私密空间。",
+    unlocking: "正在等待独立口令与通行密钥…",
+    vaultNotConfigured: "Spark 私密库尚未配置；当前草稿只会加密保存在这台设备中。",
+    vaultUnlocked: "Spark 私密库已解锁；根密钥只保留在当前标签页内存中。",
+    viewCommit: "在 GitHub 查看公开 Commit →",
+    imageAdded: (count) => `已在光标处插入 ${count} 张图片。`,
+    imageFailed: "无法插入这张图片。",
+    imageInvalid: "只支持 JPEG、PNG、WebP 或 GIF 图片。",
+    imageLimit: "每条 Spark 最多 8 张图片，优化后的图片总量不超过 5 MB。",
+    imageProcessing: "正在本地优化图片…",
+    imageRemove: "从中英文草稿中移除这张图片？",
+    imageUploadSaving: (count) => `正在随 Spark 安全保存 ${count} 张图片…`,
+    mediaCount: (count, size) => `${count} 张 · ${size}`,
+    removeImage: "移除图片",
+    locateImage: "在正文中定位图片",
+  };
 
   const fields = {
     zh: {
       body: document.getElementById("site-spark-writer-body-zh"),
       characterCount: root.querySelector('[data-spark-character-count="zh"]'),
-      complete: document.getElementById("site-spark-writer-complete-zh"),
       dropzone: root.querySelector('[data-spark-dropzone="zh"]'),
       editor: root.querySelector('[data-spark-editor="zh"]'),
       imageInput: root.querySelector('[data-spark-image-input="zh"]'),
@@ -157,28 +95,7 @@
       previewSummary: root.querySelector('[data-spark-preview-summary="zh"]'),
       previewTitle: root.querySelector('[data-spark-preview-title="zh"]'),
       summary: document.getElementById("site-spark-writer-summary-zh"),
-      tab: document.getElementById("site-spark-writer-tab-zh"),
       title: document.getElementById("site-spark-writer-title-zh"),
-    },
-    en: {
-      body: document.getElementById("site-spark-writer-body-en"),
-      characterCount: root.querySelector('[data-spark-character-count="en"]'),
-      complete: document.getElementById("site-spark-writer-complete-en"),
-      dropzone: root.querySelector('[data-spark-dropzone="en"]'),
-      editor: root.querySelector('[data-spark-editor="en"]'),
-      imageInput: root.querySelector('[data-spark-image-input="en"]'),
-      mediaList: root.querySelector('[data-spark-media-list="en"]'),
-      mediaSection: root.querySelector('[data-spark-media-section="en"]'),
-      mediaTotal: root.querySelector('[data-spark-media-total="en"]'),
-      panel: document.getElementById("site-spark-writer-panel-en"),
-      preview: root.querySelector('[data-spark-preview="en"]'),
-      previewBody: root.querySelector('[data-spark-preview-body="en"]'),
-      previewEmpty: root.querySelector('[data-spark-preview-empty="en"]'),
-      previewSummary: root.querySelector('[data-spark-preview-summary="en"]'),
-      previewTitle: root.querySelector('[data-spark-preview-title="en"]'),
-      summary: document.getElementById("site-spark-writer-summary-en"),
-      tab: document.getElementById("site-spark-writer-tab-en"),
-      title: document.getElementById("site-spark-writer-title-en"),
     },
   };
 
@@ -203,7 +120,6 @@
     result: document.getElementById("site-spark-writer-result"),
     slug: document.getElementById("site-spark-writer-slug"),
     status: document.getElementById("site-spark-writer-status"),
-    translate: document.getElementById("site-spark-writer-translate"),
   };
 
   const optionalElements = new Set(["create", "drafts", "draftsClose", "draftsList", "draftsPanel", "draftsStatus"]);
@@ -229,7 +145,7 @@
   let activeTrigger = toggle;
   let busy = false;
   let cachedPrivateDrafts = [];
-  let currentLanguage = isEnglish ? "en" : "zh";
+  const currentLanguage = "zh";
   let currentMode = "create";
   let currentTranslationKey = "";
   let currentDraftKey = createDraftKey;
@@ -241,11 +157,12 @@
   let initialSnapshot = "";
   let media = [];
   let originalValues = null;
-  let originals = { zh: null, en: null };
+  let originals = { zh: null };
+  let preservedEnglish = { body: "", summary: "", title: "" };
   let privateDraftRefreshVersion = 0;
   let restorePromise = Promise.resolve(null);
   let slugIsAutomatic = true;
-  let sourcePaths = { zh: "", en: "" };
+  let sourcePaths = { zh: "" };
   let vaultSession = null;
   let decoyMode = false;
   const disconnectedLabel = elements.connect.querySelector("span")?.textContent.trim() || "GitHub";
@@ -337,7 +254,7 @@
 
   function setBusy(nextBusy) {
     busy = nextBusy;
-    for (const language of ["zh", "en"]) {
+    for (const language of EDITOR_LANGUAGES) {
       fields[language].title.disabled = nextBusy;
       fields[language].summary.disabled = nextBusy;
       fields[language].body.disabled = nextBusy;
@@ -355,7 +272,6 @@
     if (elements.drafts) elements.drafts.disabled = nextBusy;
     elements.publish.disabled = nextBusy;
     elements.published.disabled = nextBusy;
-    elements.translate.disabled = nextBusy;
   }
 
   function autoSize(textarea) {
@@ -436,7 +352,7 @@
   }
 
   function updateEditorMeta() {
-    for (const language of ["zh", "en"]) fields[language].characterCount.textContent = String(characterCount(fields[language].body.value));
+    for (const language of EDITOR_LANGUAGES) fields[language].characterCount.textContent = String(characterCount(fields[language].body.value));
   }
 
   function resolvePreviewImage(source) {
@@ -471,7 +387,7 @@
   }
 
   function updatePreviews() {
-    for (const language of ["zh", "en"]) updatePreview(language);
+    for (const language of EDITOR_LANGUAGES) updatePreview(language);
   }
 
   function locateMedia(language, item) {
@@ -493,7 +409,7 @@
     if (!window.confirm(strings.imageRemove)) return;
     const markerPattern = new RegExp(`!?\\[[^\\]]*\\]\\(spark-media:\\/\\/${item.id}\\)`, "g");
     media = media.filter((candidate) => candidate.id !== item.id);
-    for (const language of ["zh", "en"]) {
+    for (const language of EDITOR_LANGUAGES) {
       const textarea = fields[language].body;
       const nextValue = textarea.value.replace(markerPattern, "").replace(/\n{3,}/g, "\n\n");
       if (nextValue !== textarea.value) textarea.value = nextValue;
@@ -505,7 +421,7 @@
 
   function renderMedia() {
     const countLabel = strings.mediaCount(media.length, formatBytes(mediaSize()));
-    for (const language of ["zh", "en"]) {
+    for (const language of EDITOR_LANGUAGES) {
       fields[language].mediaList.replaceChildren();
       fields[language].mediaSection.hidden = media.length === 0;
       fields[language].mediaTotal.textContent = countLabel;
@@ -691,8 +607,8 @@
       return;
     }
     if (command === "heading") prefixSelectedLines(textarea, "## ");
-    else if (command === "bold") wrapSelection(textarea, "**", "**", isEnglish ? "bold text" : "加粗文字");
-    else if (command === "italic") wrapSelection(textarea, "_", "_", isEnglish ? "italic text" : "斜体文字");
+    else if (command === "bold") wrapSelection(textarea, "**", "**", "加粗文字");
+    else if (command === "italic") wrapSelection(textarea, "_", "_", "斜体文字");
     else if (command === "bullet-list") prefixSelectedLines(textarea, "- ");
     else if (command === "numbered-list") prefixSelectedLines(textarea, "1. ");
     else if (command === "quote") prefixSelectedLines(textarea, "> ");
@@ -700,10 +616,10 @@
     else if (command === "code") {
       const selected = textarea.value.slice(textarea.selectionStart ?? 0, textarea.selectionEnd ?? 0);
       if (selected.includes("\n")) wrapSelection(textarea, "```\n", "\n```", selected);
-      else wrapSelection(textarea, "`", "`", isEnglish ? "code" : "代码");
+      else wrapSelection(textarea, "`", "`", "代码");
     } else if (command === "link") {
       const start = textarea.selectionStart ?? 0;
-      const selected = textarea.value.slice(start, textarea.selectionEnd ?? start) || (isEnglish ? "link text" : "链接文字");
+      const selected = textarea.value.slice(start, textarea.selectionEnd ?? start) || "链接文字";
       const inserted = `[${selected}](https://)`;
       textarea.setRangeText(inserted, start, textarea.selectionEnd ?? start, "end");
       textarea.focus();
@@ -711,7 +627,7 @@
       textarea.setSelectionRange(urlStart, urlStart + 8);
       textarea.dispatchEvent(new Event("input", { bubbles: true }));
     } else if (command === "table") {
-      insertText(textarea, `| ${isEnglish ? "Column 1" : "列 1"} | ${isEnglish ? "Column 2" : "列 2"} |\n| --- | --- |\n|  |  |`, { block: true });
+      insertText(textarea, `| 列 1 | 列 2 |\n| --- | --- |\n|  |  |`, { block: true });
     }
   }
 
@@ -752,13 +668,7 @@
     }
   }
 
-  function selectLanguage(language, focus = false) {
-    currentLanguage = language;
-    for (const candidate of ["zh", "en"]) {
-      const selected = candidate === language;
-      fields[candidate].tab.setAttribute("aria-selected", String(selected));
-      fields[candidate].panel.hidden = !selected;
-    }
+  function selectLanguage(language = "zh", focus = false) {
     autoSize(fields[language].body);
     if (focus) fields[language].title.focus();
   }
@@ -768,11 +678,7 @@
       announce: elements.announce.checked,
       comments: elements.comments.checked,
       date: elements.date.value,
-      en: {
-        body: fields.en.body.value,
-        summary: fields.en.summary.value,
-        title: fields.en.title.value,
-      },
+      en: { ...preservedEnglish },
       kind: elements.kind.value,
       media: media.map((item) => ({ ...item })),
       message: elements.message.value,
@@ -788,7 +694,12 @@
 
   function writeValues(values) {
     media = normalizedMedia(values.media);
-    for (const language of ["zh", "en"]) {
+    preservedEnglish = {
+      body: String(values.en?.body || ""),
+      summary: String(values.en?.summary || ""),
+      title: String(values.en?.title || ""),
+    };
+    for (const language of EDITOR_LANGUAGES) {
       const localized = values[language] || {};
       fields[language].title.value = localized.title || "";
       fields[language].summary.value = localized.summary || "";
@@ -821,9 +732,6 @@
   }
 
   function updateCompletion() {
-    for (const language of ["zh", "en"]) {
-      fields[language].complete.dataset.complete = String(languageComplete(language));
-    }
     updateEditorMeta();
     updatePreviews();
   }
@@ -991,18 +899,13 @@
     return { ...splitSource(source), sha: remote.sha, source };
   }
 
-  function valuesFromSources(zhSource, enSource) {
+  function valuesFromSources(zhSource) {
     const zhFrontMatter = zhSource.frontMatter;
-    const enFrontMatter = enSource.frontMatter;
     return {
       announce: extractYamlBoolean(zhFrontMatter, "announce"),
       comments: extractYamlBoolean(zhFrontMatter, "giscus_comments"),
       date: toInputDate(extractYamlScalar(zhFrontMatter, "date")),
-      en: {
-        body: enSource.body,
-        summary: extractYamlScalar(enFrontMatter, "description"),
-        title: extractYamlScalar(enFrontMatter, "title"),
-      },
+      en: { body: "", summary: "", title: "" },
       kind: extractYamlScalar(zhFrontMatter, "kind") || "note",
       message: "",
       published: true,
@@ -1277,7 +1180,7 @@
     currentVaultPublished = false;
     currentVaultSha = "";
     originalValues = null;
-    originals = { zh: null, en: null };
+    originals = { zh: null };
   }
 
   async function prepareCreate() {
@@ -1285,7 +1188,7 @@
     decoyMode = false;
     currentTranslationKey = "";
     currentDraftKey = createDraftKey;
-    sourcePaths = { zh: "", en: "" };
+    sourcePaths = { zh: "" };
     resetVaultState();
     slugIsAutomatic = true;
     const now = new Date();
@@ -1339,7 +1242,7 @@
     decoyMode = false;
     currentTranslationKey = config.translationKey;
     currentDraftKey = `functionhx:spark-writer:${repository}:${branch}:${currentTranslationKey}`;
-    sourcePaths = { en: config.enPath || "", zh: config.zhPath || "" };
+    sourcePaths = { zh: config.zhPath || "" };
     resetVaultState();
     elements.slug.readOnly = true;
     elements.heading.textContent = elements.heading.dataset.editHeading;
@@ -1354,16 +1257,16 @@
       if (note) {
         adoptLoadedVaultNote(note);
       } else {
-        if (!sourcePaths.zh || !sourcePaths.en) throw new Error("The public source paths are unavailable.");
-        const [zhSource, enSource] = await Promise.all([loadRemoteSource("zh", sourcePaths.zh), loadRemoteSource("en", sourcePaths.en)]);
-        originals = { en: enSource, zh: zhSource };
-        const values = valuesFromSources(zhSource, enSource);
+        if (!sourcePaths.zh) throw new Error("The public source path is unavailable.");
+        const zhSource = await loadRemoteSource("zh", sourcePaths.zh);
+        originals = { zh: zhSource };
+        const values = valuesFromSources(zhSource);
         writeValues(values);
         originalValues = structuredClone(values);
         currentVaultPublished = true;
         currentVaultPublic = {
           paths: { ...sourcePaths },
-          shas: { en: enSource.sha, zh: zhSource.sha },
+          shas: { zh: zhSource.sha },
         };
       }
       initialSnapshot = snapshot();
@@ -1394,7 +1297,7 @@
     activeTrigger = trigger;
     await prepareCreate();
     revealWriter();
-    selectLanguage(isEnglish ? "en" : "zh");
+    selectLanguage("zh");
     window.requestAnimationFrame(() => fields[currentLanguage].title.focus());
   }
 
@@ -1403,7 +1306,7 @@
     decoyMode = true;
     currentTranslationKey = `spark-${note.id}`;
     currentDraftKey = `functionhx:spark-decoy:${note.id}`;
-    sourcePaths = { en: "", zh: "" };
+    sourcePaths = { zh: "" };
     resetVaultState();
     activeTrigger = trigger;
     elements.slug.readOnly = true;
@@ -1423,7 +1326,7 @@
     if (!root.hidden) await saveDraft(false);
     activeTrigger = trigger;
     revealWriter();
-    selectLanguage(isEnglish ? "en" : "zh");
+    selectLanguage("zh");
     await prepareEdit(config);
   }
 
@@ -1436,8 +1339,7 @@
 
   function publicStateForMigration() {
     if (currentVaultSha || !currentVaultPublished) return undefined;
-    if (!currentVaultPublic?.paths?.zh || !currentVaultPublic?.paths?.en) return undefined;
-    if (!currentVaultPublic?.shas?.zh || !currentVaultPublic?.shas?.en) return undefined;
+    if (!currentVaultPublic?.paths?.zh || !currentVaultPublic?.shas?.zh) return undefined;
     return currentVaultPublic;
   }
 
@@ -1448,7 +1350,7 @@
     currentVaultSha = note.sha || "";
     currentVaultPublished = note.published === true;
     currentVaultPublic = note.public || null;
-    sourcePaths = note.public?.paths || { zh: "", en: "" };
+    sourcePaths = { zh: note.public?.paths?.zh || "" };
     elements.published.checked = note.published === true;
     elements.message.value = "";
     elements.slug.readOnly = true;
@@ -1543,60 +1445,13 @@
     await forgetDraft(currentDraftKey);
     if (currentMode === "create") {
       await prepareCreate();
-      selectLanguage(isEnglish ? "en" : "zh", true);
+      selectLanguage("zh", true);
       return;
     }
     if (originalValues) {
       writeValues(structuredClone(originalValues));
       initialSnapshot = snapshot();
       setStatus(strings.noChanges);
-    }
-  }
-
-  async function translateChineseDraft() {
-    if (!languageComplete("zh")) {
-      selectLanguage("zh");
-      setStatus(strings.translateMissing, "error");
-      fields.zh.title.focus();
-      return;
-    }
-    if (
-      (fields.en.title.value.trim() || fields.en.summary.value.trim() || fields.en.body.value.trim()) &&
-      !window.confirm(strings.overwriteTranslation)
-    ) {
-      return;
-    }
-    if (!window.functionhxDeepSeek?.translate) {
-      setStatus(strings.translationFailed, "error");
-      return;
-    }
-
-    elements.translate.disabled = true;
-    setStatus(strings.translating);
-    try {
-      const translated = await window.functionhxDeepSeek.translate({
-        body: fields.zh.body.value,
-        summary: fields.zh.summary.value,
-        title: fields.zh.title.value,
-      });
-      fields.en.title.value = translated.title;
-      fields.en.summary.value = translated.summary;
-      fields.en.body.value = translated.body;
-      if (currentMode === "create" && slugIsAutomatic) {
-        const generated = slugify(translated.title);
-        if (generated) elements.slug.value = generated;
-      }
-      autoSize(fields.en.body);
-      updateCompletion();
-      scheduleDraftSave();
-      elements.result.hidden = true;
-      selectLanguage("en");
-      setStatus(strings.translationReady, "success");
-    } catch (error) {
-      if (error.name === "AbortError") setStatus(strings.translationCanceled);
-      else setStatus(`${strings.translationFailed} ${error.message || ""}`.trim(), "error");
-    } finally {
-      elements.translate.disabled = false;
     }
   }
 
@@ -1607,7 +1462,6 @@
       else {
         openEdit(
           {
-            enPath: root.dataset.sourcePathEn,
             translationKey: root.dataset.translationKey,
             zhPath: root.dataset.sourcePathZh,
           },
@@ -1627,11 +1481,8 @@
   elements.discard.addEventListener("click", discardDraft);
   elements.connect.addEventListener("click", handleConnectButton);
   elements.publish.addEventListener("click", publishPair);
-  elements.translate.addEventListener("click", translateChineseDraft);
-  fields.zh.tab.addEventListener("click", () => selectLanguage("zh", true));
-  fields.en.tab.addEventListener("click", () => selectLanguage("en", true));
 
-  for (const language of ["zh", "en"]) {
+  for (const language of EDITOR_LANGUAGES) {
     fields[language].editor.addEventListener("click", (event) => {
       const command = event.target.closest("[data-spark-command]")?.dataset.sparkCommand;
       if (command && !busy) runEditorCommand(language, command);
@@ -1669,7 +1520,7 @@
   }
 
   window.addEventListener("dragend", () => {
-    for (const language of ["zh", "en"]) delete fields[language].dropzone.dataset.dragging;
+    for (const language of EDITOR_LANGUAGES) delete fields[language].dropzone.dataset.dragging;
   });
 
   document.addEventListener("click", (event) => {
@@ -1685,7 +1536,6 @@
     if (authorTrigger?.dataset.authorAction === "spark-edit") {
       openEdit(
         {
-          enPath: authorTrigger.dataset.sourcePathEn,
           translationKey: authorTrigger.dataset.translationKey,
           zhPath: authorTrigger.dataset.sourcePathZh,
         },
@@ -1697,7 +1547,6 @@
     if (!editTrigger) return;
     openEdit(
       {
-        enPath: editTrigger.dataset.sourcePathEn,
         translationKey: editTrigger.dataset.translationKey,
         zhPath: editTrigger.dataset.sourcePathZh,
       },
@@ -1705,13 +1554,9 @@
     );
   });
 
-  for (const language of ["zh", "en"]) {
+  for (const language of EDITOR_LANGUAGES) {
     for (const field of [fields[language].title, fields[language].summary, fields[language].body]) {
       field.addEventListener("input", () => {
-        if (currentMode === "create" && language === "en" && field === fields.en.title && slugIsAutomatic) {
-          const generated = slugify(fields.en.title.value);
-          if (generated) elements.slug.value = generated;
-        }
         if (field === fields[language].body) autoSize(field);
         handleChange();
       });

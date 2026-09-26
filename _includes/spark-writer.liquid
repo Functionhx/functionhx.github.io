@@ -2,132 +2,59 @@
 {% assign writer_mode = include.mode | default: 'create' %}
 {% assign writer_translation_key = page.translation_key | default: '' %}
 {% assign writer_zh_path = '' %}
-{% assign writer_en_path = '' %}
 {% if writer_mode == 'edit' %}
   {% assign writer_translations = site.posts | where: 'translation_key', page.translation_key %}
   {% assign writer_zh_post = writer_translations | where: 'lang', 'zh' | first %}
-  {% assign writer_en_post = writer_translations | where: 'lang', 'en' | first %}
   {% if writer_zh_post %}
     {% assign writer_zh_path = writer_zh_post.path %}
   {% endif %}
-  {% if writer_en_post %}
-    {% assign writer_en_path = writer_en_post.path %}
-  {% endif %}
 {% endif %}
 
-{% if writer_lang == 'en' %}
-  {% assign writer_eyebrow = 'SPARK · DIRECT WRITING' %}
-  {% assign writer_new_heading = 'A new Spark' %}
-  {% assign writer_edit_heading = 'Edit this Spark' %}
-  {% assign writer_subtitle = 'Write first. Private saves use GitHub owner verification, an independent passphrase, and a passkey.' %}
-  {% assign writer_zh_tab = '中文' %}
-  {% assign writer_en_tab = 'English' %}
-  {% assign writer_title_zh = 'Chinese title' %}
-  {% assign writer_title_en = 'English title' %}
-  {% assign writer_title_zh_placeholder = '先写下中文标题' %}
-  {% assign writer_title_en_placeholder = 'Write the English title' %}
-  {% assign writer_summary_zh = '中文摘要（可选）' %}
-  {% assign writer_summary_en = 'English summary (optional)' %}
-  {% assign writer_summary_zh_placeholder = '留空时会取正文开头' %}
-  {% assign writer_summary_en_placeholder = 'Uses the opening of the body when left blank' %}
-  {% assign writer_body_zh = '中文正文' %}
-  {% assign writer_body_en = 'English body' %}
-  {% assign writer_body_zh_placeholder = '从这里开始写……' %}
-  {% assign writer_body_en_placeholder = 'Start writing here…' %}
-  {% assign writer_settings = 'Publishing settings' %}
-  {% assign writer_kind = 'Type' %}
-  {% assign writer_kind_note = 'Thought / note' %}
-  {% assign writer_kind_log = 'Work log' %}
-  {% assign writer_date = 'Date and time' %}
-  {% assign writer_slug = 'URL slug' %}
-  {% assign writer_comments = 'Enable GitHub comments' %}
-  {% assign writer_announce = 'Also show in homepage activity' %}
-  {% assign writer_announce_note = 'Optional for Spark. Regular notes stay out of the homepage by default.' %}
-  {% assign writer_public = 'Public on website' %}
-  {% assign writer_public_note = 'Off by default. Private entries are encrypted in this browser before the server receives them.' %}
-  {% assign writer_message = 'Commit message' %}
-  {% assign writer_connect = 'Unlock private vault' %}
-  {% assign writer_publish = 'Save Spark' %}
-  {% assign writer_discard = 'Discard draft' %}
-  {% assign writer_translate = 'Translate Chinese with DeepSeek' %}
-  {% assign writer_translate_note = 'Uses the translator’s own API Key; only @Functionhx can publish.' %}
-  {% assign writer_close = 'Close writer' %}
-  {% assign writer_idle = 'Start writing. Changes will be encrypted and saved on this device automatically.' %}
-  {% assign writer_format_toolbar = 'Writing tools' %}
-  {% assign writer_undo = 'Undo' %}
-  {% assign writer_redo = 'Redo' %}
-  {% assign writer_heading = 'Heading' %}
-  {% assign writer_bold = 'Bold' %}
-  {% assign writer_italic = 'Italic' %}
-  {% assign writer_bullet_list = 'Bulleted list' %}
-  {% assign writer_numbered_list = 'Numbered list' %}
-  {% assign writer_quote = 'Quote' %}
-  {% assign writer_divider = 'Divider' %}
-  {% assign writer_code = 'Code block' %}
-  {% assign writer_link = 'Link' %}
-  {% assign writer_table = 'Table' %}
-  {% assign writer_image = 'Image' %}
-  {% assign writer_drop_image = 'Release to insert the image' %}
-  {% assign writer_media = 'Images in this Spark' %}
-  {% assign writer_media_hint = 'Drag, paste, or use the image button' %}
-  {% assign writer_char_unit = 'characters' %}
-{% else %}
-  {% assign writer_eyebrow = 'SPARK · 原位写作' %}
-  {% assign writer_new_heading = '写一条新的 Spark' %}
-  {% assign writer_edit_heading = '编辑这条 Spark' %}
-  {% assign writer_subtitle = '中文写完即可保存；私密稿会经过站长身份、独立口令与通行密钥三重保护。' %}
-  {% assign writer_zh_tab = '中文' %}
-  {% assign writer_en_tab = 'English · 可选' %}
-  {% assign writer_title_zh = '中文标题' %}
-  {% assign writer_title_en = '英文标题（可选）' %}
-  {% assign writer_title_zh_placeholder = '写下标题' %}
-  {% assign writer_title_en_placeholder = 'Write the English title' %}
-  {% assign writer_summary_zh = '中文摘要（可选）' %}
-  {% assign writer_summary_en = '英文摘要（可选）' %}
-  {% assign writer_summary_zh_placeholder = '留空时自动取正文开头' %}
-  {% assign writer_summary_en_placeholder = 'Uses the opening of the body when left blank' %}
-  {% assign writer_body_zh = '中文正文' %}
-  {% assign writer_body_en = '英文正文（可选）' %}
-  {% assign writer_body_zh_placeholder = '从这里开始写……' %}
-  {% assign writer_body_en_placeholder = 'Start writing here…' %}
-  {% assign writer_settings = '发布设置' %}
-  {% assign writer_kind = '类型' %}
-  {% assign writer_kind_note = '思考 / 笔记' %}
-  {% assign writer_kind_log = '工作日志' %}
-  {% assign writer_date = '日期与时间' %}
-  {% assign writer_slug = '网址短名' %}
-  {% assign writer_comments = '开启 GitHub 评论' %}
-  {% assign writer_announce = '同时显示在首页动态' %}
-  {% assign writer_announce_note = 'Spark 默认不打扰首页；只有值得公开记录时再勾选。' %}
-  {% assign writer_public = '公开到网站' %}
-  {% assign writer_public_note = '默认关闭。私密内容先在浏览器加密，服务器和私有仓库只接收密文。' %}
-  {% assign writer_message = '提交说明' %}
-  {% assign writer_connect = '解锁私密库' %}
-  {% assign writer_publish = '保存 Spark' %}
-  {% assign writer_discard = '丢弃草稿' %}
-  {% assign writer_translate = 'DeepSeek 翻译英文' %}
-  {% assign writer_translate_note = '可稍后使用自己的 API Key 生成英文阅读镜像；不会阻塞中文发布。' %}
-  {% assign writer_close = '关闭写作区' %}
-  {% assign writer_idle = '直接开始写，修改会加密保存在这台设备中。' %}
-  {% assign writer_format_toolbar = '写作工具' %}
-  {% assign writer_undo = '撤销' %}
-  {% assign writer_redo = '重做' %}
-  {% assign writer_heading = '标题' %}
-  {% assign writer_bold = '加粗' %}
-  {% assign writer_italic = '斜体' %}
-  {% assign writer_bullet_list = '无序列表' %}
-  {% assign writer_numbered_list = '有序列表' %}
-  {% assign writer_quote = '引用' %}
-  {% assign writer_divider = '分割线' %}
-  {% assign writer_code = '代码块' %}
-  {% assign writer_link = '链接' %}
-  {% assign writer_table = '表格' %}
-  {% assign writer_image = '图片' %}
-  {% assign writer_drop_image = '松手插入图片' %}
-  {% assign writer_media = '这条 Spark 的图片' %}
-  {% assign writer_media_hint = '可拖入、粘贴，或点击图片按钮' %}
-  {% assign writer_char_unit = '字' %}
-{% endif %}
+{% assign writer_eyebrow = 'SPARK · 原位写作' %}
+{% assign writer_new_heading = '写一条新的 Spark' %}
+{% assign writer_edit_heading = '编辑这条 Spark' %}
+{% assign writer_subtitle = '中文写完即可保存；私密稿会经过站长身份、独立口令与通行密钥三重保护。' %}
+{% assign writer_title_zh = '中文标题' %}
+{% assign writer_title_zh_placeholder = '写下标题' %}
+{% assign writer_summary_zh = '中文摘要（可选）' %}
+{% assign writer_summary_zh_placeholder = '留空时自动取正文开头' %}
+{% assign writer_body_zh = '中文正文' %}
+{% assign writer_body_zh_placeholder = '从这里开始写……' %}
+{% assign writer_settings = '发布设置' %}
+{% assign writer_kind = '类型' %}
+{% assign writer_kind_note = '思考 / 笔记' %}
+{% assign writer_kind_log = '工作日志' %}
+{% assign writer_date = '日期与时间' %}
+{% assign writer_slug = '网址短名' %}
+{% assign writer_comments = '开启 GitHub 评论' %}
+{% assign writer_announce = '同时显示在首页动态' %}
+{% assign writer_announce_note = 'Spark 默认不打扰首页；只有值得公开记录时再勾选。' %}
+{% assign writer_public = '公开到网站' %}
+{% assign writer_public_note = '默认关闭。私密内容先在浏览器加密，服务器和私有仓库只接收密文。' %}
+{% assign writer_message = '提交说明' %}
+{% assign writer_connect = '解锁私密库' %}
+{% assign writer_publish = '保存 Spark' %}
+{% assign writer_discard = '丢弃草稿' %}
+{% assign writer_close = '关闭写作区' %}
+{% assign writer_idle = '直接开始写，修改会加密保存在这台设备中。' %}
+{% assign writer_format_toolbar = '写作工具' %}
+{% assign writer_undo = '撤销' %}
+{% assign writer_redo = '重做' %}
+{% assign writer_heading = '标题' %}
+{% assign writer_bold = '加粗' %}
+{% assign writer_italic = '斜体' %}
+{% assign writer_bullet_list = '无序列表' %}
+{% assign writer_numbered_list = '有序列表' %}
+{% assign writer_quote = '引用' %}
+{% assign writer_divider = '分割线' %}
+{% assign writer_code = '代码块' %}
+{% assign writer_link = '链接' %}
+{% assign writer_table = '表格' %}
+{% assign writer_image = '图片' %}
+{% assign writer_drop_image = '松手插入图片' %}
+{% assign writer_media = '这条 Spark 的图片' %}
+{% assign writer_media_hint = '可拖入、粘贴，或点击图片按钮' %}
+{% assign writer_char_unit = '字' %}
 
 <section
   id="site-spark-writer"
@@ -140,7 +67,6 @@
   data-vault-endpoint="{{ site.spark_vault.endpoint | default: '' | escape }}"
   data-translation-key="{{ writer_translation_key | escape }}"
   data-source-path-zh="{{ writer_zh_path | escape }}"
-  data-source-path-en="{{ writer_en_path | escape }}"
   hidden
   aria-labelledby="site-spark-writer-heading"
 >
@@ -167,40 +93,10 @@
     </button>
   </header>
 
-  <div class="site-spark-writer__language-tabs" role="tablist" aria-label="{% if writer_lang == 'en' %}Writing language{% else %}写作语言{% endif %}">
-    <button
-      id="site-spark-writer-tab-zh"
-      type="button"
-      role="tab"
-      aria-selected="{% if writer_lang == 'zh' %}true{% else %}false{% endif %}"
-      aria-controls="site-spark-writer-panel-zh"
-      data-language-tab="zh"
-    >
-      {{ writer_zh_tab }}
-      <span id="site-spark-writer-complete-zh" aria-hidden="true"></span>
-    </button>
-    <button
-      id="site-spark-writer-tab-en"
-      type="button"
-      role="tab"
-      aria-selected="{% if writer_lang == 'en' %}true{% else %}false{% endif %}"
-      aria-controls="site-spark-writer-panel-en"
-      data-language-tab="en"
-    >
-      {{ writer_en_tab }}
-      <span id="site-spark-writer-complete-en" aria-hidden="true"></span>
-    </button>
-  </div>
-
   <div
     id="site-spark-writer-panel-zh"
     class="site-spark-writer__paper"
-    role="tabpanel"
-    aria-labelledby="site-spark-writer-tab-zh"
     data-language-panel="zh"
-    {% if writer_lang == 'en' %}
-      hidden
-    {% endif %}
   >
     <label class="sr-only" for="site-spark-writer-title-zh">{{ writer_title_zh }}</label>
     <input
@@ -228,57 +124,6 @@
       body_id='site-spark-writer-body-zh'
       body_label=writer_body_zh
       body_placeholder=writer_body_zh_placeholder
-      drop_label=writer_drop_image
-      media_label=writer_media
-      media_hint=writer_media_hint
-      character_unit=writer_char_unit
-    %}
-  </div>
-
-  <div class="site-spark-writer__translation">
-    <button id="site-spark-writer-translate" type="button">
-      <i class="fa-solid fa-language" aria-hidden="true"></i>
-      {{ writer_translate }}
-    </button>
-    <span>{{ writer_translate_note }}</span>
-  </div>
-
-  <div
-    id="site-spark-writer-panel-en"
-    class="site-spark-writer__paper"
-    role="tabpanel"
-    aria-labelledby="site-spark-writer-tab-en"
-    data-language-panel="en"
-    {% if writer_lang != 'en' %}
-      hidden
-    {% endif %}
-  >
-    <label class="sr-only" for="site-spark-writer-title-en">{{ writer_title_en }}</label>
-    <input
-      id="site-spark-writer-title-en"
-      class="site-spark-writer__title"
-      type="text"
-      placeholder="{{ writer_title_en_placeholder }}"
-      autocomplete="off"
-      data-writer-field="title"
-      data-writer-language="en"
-    >
-    <label class="sr-only" for="site-spark-writer-summary-en">{{ writer_summary_en }}</label>
-    <input
-      id="site-spark-writer-summary-en"
-      class="site-spark-writer__summary"
-      type="text"
-      placeholder="{{ writer_summary_en_placeholder }}"
-      autocomplete="off"
-      data-writer-field="summary"
-      data-writer-language="en"
-    >
-    {%
-      include markdown-editor.liquid
-      language='en'
-      body_id='site-spark-writer-body-en'
-      body_label=writer_body_en
-      body_placeholder=writer_body_en_placeholder
       drop_label=writer_drop_image
       media_label=writer_media
       media_hint=writer_media_hint
