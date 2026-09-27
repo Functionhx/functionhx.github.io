@@ -616,17 +616,9 @@ def main() -> int:
             errors.append(f"{route}: article rail script missing")
         if "Created on" in html:
             errors.append(f"{route}: English publication date label leaked")
-        expected_comment_language = "zh-CN"
-        expected_comment_heading = ">评论</h2>"
-        for expected_comment_markup in (
-            '"Functionhx/functionhx.github.io"',
-            f"'data-lang': \"{expected_comment_language}\"",
-            expected_comment_heading,
-        ):
-            if expected_comment_markup not in html:
-                errors.append(
-                    f"{route}: Giscus markup {expected_comment_markup!r} missing"
-                )
+        # Comments were removed (owner decision 2026-09-26).
+        if "giscus" in html:
+            errors.append(f"{route}: removed comment thread still renders")
 
     required_social_links = {
         "mailto:functionhx@gmail.com",

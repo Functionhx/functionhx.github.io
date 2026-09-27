@@ -15,7 +15,6 @@ tags: [LIO, 机器人, 开源]
 categories: [技术]
 related_posts: false
 math: true
-giscus_comments: true
 ---
 
 ## 一、项目简介

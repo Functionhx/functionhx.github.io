@@ -93,9 +93,6 @@ the new version is live.
 Keep a Spark private while it is still a draft. Public records always use
 `published: true`; private records exist only as encrypted vault records.
 
-Owner-authored posts may enable `giscus_comments: true`. Comments are stored in
-this repository's GitHub Discussions through Giscus.
-
 ## Validation
 
 ```bash

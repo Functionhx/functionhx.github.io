@@ -30,8 +30,6 @@
     category: document.getElementById("site-content-creator-category"),
     categoryField: document.getElementById("site-content-creator-category-field"),
     close: document.getElementById("site-content-creator-close"),
-    comments: document.getElementById("site-content-creator-comments"),
-    commentsField: document.getElementById("site-content-creator-comments-field"),
     commit: document.getElementById("site-content-creator-commit"),
     connect: document.getElementById("site-content-creator-connect"),
     cover: document.getElementById("site-content-creator-cover"),
@@ -562,7 +560,6 @@
       announce: elements.announce.checked,
       bodyZh: elements.bodyZh.value,
       category: elements.category.value,
-      comments: elements.comments.checked,
       date: elements.date.value,
       descriptionZh: elements.descriptionZh.value,
       github: elements.github.value,
@@ -581,7 +578,6 @@
       announce: values.announce,
       bodyZh: values.bodyZh,
       category: values.category,
-      comments: values.comments,
       date: values.date,
       descriptionZh: values.descriptionZh,
       github: values.github,
@@ -604,7 +600,6 @@
     elements.announce.checked = values.announce !== false;
     elements.bodyZh.value = values.bodyZh || "";
     elements.category.value = values.category || (currentType === "tool" ? "fun" : currentType === "project" ? "work" : "");
-    elements.comments.checked = values.comments !== false;
     elements.date.value = values.date || localDateTime();
     elements.descriptionZh.value = values.descriptionZh || "";
     elements.github.value = values.github || "";
@@ -683,7 +678,6 @@
     elements.urlField.hidden = !isCard;
     elements.githubField.hidden = !isCard;
     elements.coverField.hidden = !isCard;
-    elements.commentsField.hidden = !isArticle;
     elements.announceField.hidden = isActivity;
     elements.settingsLabel.textContent = type === "tool" ? "封面与链接 · 发布设置" : "发布设置";
     elements.bodyZh.placeholder = isActivity ? "写下这条动态，可使用 Markdown 链接……" : "从这里开始写……";
@@ -702,7 +696,6 @@
     slugIsAutomatic = true;
     writeValues({
       announce: true,
-      comments: true,
       date: localDateTime(),
       slug: defaultSlug(type),
       type,
@@ -853,7 +846,6 @@
         `tags: ${JSON.stringify(parseList(values.tags))}`,
         `categories: ${JSON.stringify(parseList(values.category))}`,
         "related_posts: false",
-        `giscus_comments: ${values.comments ? "true" : "false"}`,
       ],
       localized.body
     );

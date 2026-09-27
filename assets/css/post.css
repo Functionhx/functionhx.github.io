@@ -658,7 +658,7 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   padding-top: 0;
 }
 
-/* ---------- footer, comments ---------- */
+/* ---------- footer ---------- */
 .post-footer-nav {
   border-top: 1px solid var(--post-line-soft);
   font-family: var(--post-mono);
@@ -679,19 +679,6 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
 }
 .post-footer-nav a:hover {
   color: var(--post-ink);
-}
-.post--article .comments {
-  margin-top: 72px;
-  max-width: 660px;
-}
-.post--article .comments > h2 {
-  color: var(--post-ink);
-  font-family: var(--post-mono);
-  font-size: 15.75px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  line-height: 1.5;
-  margin: 0 0 20px;
 }
 .post--article a:focus-visible,
 .post--article button:focus-visible {

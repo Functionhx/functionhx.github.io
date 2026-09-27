@@ -87,7 +87,6 @@
     bodyPanel: document.getElementById("site-inline-editor-body-panel"),
     bodyTab: document.getElementById("site-inline-editor-body-tab"),
     close: document.getElementById("site-inline-editor-close"),
-    comments: document.getElementById("site-inline-editor-comments"),
     commit: document.getElementById("site-inline-editor-commit"),
     connect: document.getElementById("site-inline-editor-connect"),
     description: document.getElementById("site-inline-editor-description"),
@@ -201,7 +200,6 @@
       elements.title,
       elements.description,
       elements.published,
-      elements.comments,
       elements.body,
       elements.frontMatter,
       elements.message,
@@ -286,7 +284,6 @@
     elements.title.value = extractYamlScalar(frontMatter, "title");
     elements.description.value = extractYamlScalar(frontMatter, "description");
     elements.published.checked = hasYamlKey(frontMatter, "published") ? extractYamlBoolean(frontMatter, "published") : true;
-    elements.comments.checked = extractYamlBoolean(frontMatter, "giscus_comments");
   }
 
   function updateMetadataField(key, value, type = "string") {
@@ -954,10 +951,6 @@
     updateMetadataField("published", elements.published.checked, "boolean");
     handleEditorChange();
   });
-  elements.comments.addEventListener("change", () => {
-    updateMetadataField("giscus_comments", elements.comments.checked, "boolean");
-    handleEditorChange();
-  });
   elements.body.addEventListener("input", handleEditorChange);
   elements.frontMatter.addEventListener("input", () => {
     syncMetadataFromFrontMatter();
@@ -989,7 +982,7 @@
   });
   restorePromise = restoreGitHubSession();
 
-  if (hasYamlKey(elements.frontMatter.value, "published") || hasYamlKey(elements.frontMatter.value, "giscus_comments")) {
+  if (hasYamlKey(elements.frontMatter.value, "published")) {
     syncMetadataFromFrontMatter();
   }
 })();

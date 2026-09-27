@@ -308,6 +308,7 @@ try {
   assert.equal(articleEn, undefined, "the Chinese-only site creates no English article");
   assert.match(articleZh.content, /^lang: zh$/m);
   assert.match(articleZh.content, /translation_key: post-chinese-first-article/);
+  assert.doesNotMatch(articleZh.content, /giscus_comments/, "comments were removed; new articles carry no flag");
   assert.ok(
     articleEntries.some(
       (entry) => /^assets\/img\/posts\/chinese-first-article\/[a-f0-9]{16}\.png$/.test(entry.path) && entry.sha === "cover-blob-sha"

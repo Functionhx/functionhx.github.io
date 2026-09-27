@@ -102,7 +102,6 @@
   const elements = {
     announce: document.getElementById("site-spark-writer-announce"),
     close: document.getElementById("site-spark-writer-close"),
-    comments: document.getElementById("site-spark-writer-comments"),
     connect: document.getElementById("site-spark-writer-connect"),
     create: document.getElementById("site-spark-create"),
     date: document.getElementById("site-spark-writer-date"),
@@ -263,7 +262,7 @@
         button.disabled = nextBusy;
       }
     }
-    for (const control of [elements.announce, elements.comments, elements.date, elements.kind, elements.message, elements.slug]) {
+    for (const control of [elements.announce, elements.date, elements.kind, elements.message, elements.slug]) {
       control.disabled = nextBusy;
     }
     elements.close.disabled = nextBusy;
@@ -676,7 +675,9 @@
   function readValues() {
     return {
       announce: elements.announce.checked,
-      comments: elements.comments.checked,
+      // Comments are gone, but the deployed vault treats a missing flag as
+      // "on" when it writes the public post, so say "off" explicitly.
+      comments: false,
       date: elements.date.value,
       en: { ...preservedEnglish },
       kind: elements.kind.value,
@@ -710,7 +711,6 @@
     elements.announce.checked = values.announce === true;
     elements.date.value = values.date || localDateTime();
     elements.slug.value = values.slug || defaultSlug();
-    elements.comments.checked = values.comments !== false;
     elements.published.checked = values.published === true;
     elements.message.value = values.message || "";
     updateCompletion();
@@ -903,7 +903,6 @@
     const zhFrontMatter = zhSource.frontMatter;
     return {
       announce: extractYamlBoolean(zhFrontMatter, "announce"),
-      comments: extractYamlBoolean(zhFrontMatter, "giscus_comments"),
       date: toInputDate(extractYamlScalar(zhFrontMatter, "date")),
       en: { body: "", summary: "", title: "" },
       kind: extractYamlScalar(zhFrontMatter, "kind") || "note",
@@ -1194,7 +1193,6 @@
     const now = new Date();
     writeValues({
       announce: false,
-      comments: true,
       date: localDateTime(now),
       en: { body: "", summary: "", title: "" },
       kind: "note",
@@ -1563,7 +1561,7 @@
     }
   }
 
-  for (const field of [elements.announce, elements.comments, elements.date, elements.kind, elements.message, elements.published]) {
+  for (const field of [elements.announce, elements.date, elements.kind, elements.message, elements.published]) {
     field.addEventListener("input", handleChange);
     field.addEventListener("change", handleChange);
   }
