@@ -8,7 +8,12 @@
   const heatmap = card.querySelector("[data-contrail-heatmap]");
   const grid = card.querySelector("[data-contrail-grid]");
   const link = card.querySelector(".function-contrail-link");
-  const HEATMAP_WEEKS = 53;
+  const MAX_WEEKS = 53;
+  const MIN_WEEKS = 13;
+  const MIN_CELL = 9;
+  const MAX_CELL = 14;
+  const CELL_GAP = 3;
+  const LABEL_WIDTH = 23; // 20px 标签列 + 一个间距
   const WEEK_DAYS = 7;
 
   const field = (name) => card.querySelector(`[data-contrail-field="${name}"]`);
@@ -108,30 +113,46 @@
     return node;
   }
 
-  function renderHeatmap(byDay, today) {
+  // 宽屏放一整年；放不下时减少周数，保证格子不小于 MIN_CELL，也不需要横向滚动。
+  // 格子边长由 JS 算成固定像素，这样每一行等高，标签行和普通行不会错开。
+  function heatmapLayout() {
+    const width = heatmap ? heatmap.clientWidth : 0;
+    if (!width) return { weeks: MAX_WEEKS, cell: 10 };
+    const fit = Math.floor((width - LABEL_WIDTH) / (MIN_CELL + CELL_GAP));
+    const weeks = Math.max(MIN_WEEKS, Math.min(MAX_WEEKS, fit));
+    const cell = Math.min(MAX_CELL, (width - LABEL_WIDTH) / weeks - CELL_GAP);
+    return { weeks, cell: Math.floor(cell * 10) / 10 };
+  }
+
+  function renderHeatmap(byDay, today, { weeks, cell }) {
     if (!grid) return;
-    const start = shiftDay(today, -(weekdayIndex(today) + (HEATMAP_WEEKS - 1) * WEEK_DAYS));
+    const start = shiftDay(today, -(weekdayIndex(today) + (weeks - 1) * WEEK_DAYS));
     const days = [];
     for (let day = start; day <= today; day = shiftDay(day, 1)) {
       const entry = byDay.get(day);
       days.push({ day, tokens: entry?.tokens || 0, cost: entry?.cost || 0 });
     }
     const level = levelScale(days.map((item) => item.tokens));
+    const monthOf = (index) => Number(days[index].day.slice(5, 7));
 
     const nodes = [];
-    // 左侧整列都是 sticky 底色（空标签也画出来），窄屏横向滚动时格子不会从标签下面透出来。
-    ["", "一", "", "三", "", "五", "", ""].forEach((label, index) => nodes.push(gridItem("function-contrail-weekday", 1, index + 1, label)));
+    [
+      ["一", 2],
+      ["三", 4],
+      ["五", 6],
+    ].forEach(([label, row]) => nodes.push(gridItem("function-contrail-weekday", 1, row, label)));
 
     let lastMonthColumn = -Infinity;
     days.forEach((item, index) => {
       const week = Math.floor(index / WEEK_DAYS);
       const column = week + 2;
       const weekday = index % WEEK_DAYS;
-      // 月份标在该月第一个完整出现的周上方；两个标签至少隔 3 列，避免挤在一起。
-      if (weekday === 0) {
-        const month = Number(item.day.slice(5, 7));
-        const previousMonth = week > 0 ? Number(days[index - WEEK_DAYS].day.slice(5, 7)) : null;
-        if (month !== previousMonth && column - lastMonthColumn >= 3 && week < HEATMAP_WEEKS - 1) {
+      // 月份标在该月第一周上方。两个标签至少隔 3 列；第一列若紧跟着就换月，让给下一个月。
+      if (weekday === 0 && week < weeks - 1) {
+        const month = monthOf(index);
+        const isNewMonth = week === 0 || month !== monthOf(index - WEEK_DAYS);
+        const nextSoon = week === 0 && index + 2 * WEEK_DAYS < days.length && monthOf(index + 2 * WEEK_DAYS) !== month;
+        if (isNewMonth && !nextSoon && column - lastMonthColumn >= 3) {
           nodes.push(gridItem("function-contrail-month", column, 1, `${month}月`));
           lastMonthColumn = column;
         }
@@ -143,10 +164,27 @@
       nodes.push(cell);
     });
 
-    grid.style.setProperty("--contrail-weeks", String(HEATMAP_WEEKS));
+    grid.style.setProperty("--contrail-weeks", String(weeks));
+    grid.style.setProperty("--contrail-cell", `${cell}px`);
     grid.replaceChildren(...nodes);
-    // 窄屏横向滚动时，默认停在最近几周。
-    if (heatmap) heatmap.scrollLeft = heatmap.scrollWidth;
+  }
+
+  function metaText(weeks, updatedAt) {
+    let meta = weeks >= 52 ? "过去一年每日 token" : `最近 ${weeks} 周每日 token`;
+    if (updatedAt) {
+      const stamp = new Intl.DateTimeFormat("zh-CN", {
+        timeZone: "Asia/Shanghai",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })
+        .format(new Date(updatedAt))
+        .replace("/", ".");
+      meta += ` · 更新于 ${stamp}`;
+    }
+    return meta;
   }
 
   function render({ byDay, updatedAt }) {
@@ -173,23 +211,22 @@
     setField("week-cost", usd(weekCost));
     setField("total-cost", usd(totalCost));
     setField("active-days", `${activeDays} 天`);
-    renderHeatmap(byDay, today);
-
-    let meta = "过去一年每日 token";
-    if (updatedAt) {
-      const stamp = new Intl.DateTimeFormat("zh-CN", {
-        timeZone: "Asia/Shanghai",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      })
-        .format(new Date(updatedAt))
-        .replace("/", ".");
-      meta += ` · 更新于 ${stamp}`;
+    let layout = heatmapLayout();
+    renderHeatmap(byDay, today, layout);
+    if (heatmap && "ResizeObserver" in window) {
+      new ResizeObserver(() => {
+        const next = heatmapLayout();
+        if (next.weeks === layout.weeks && next.cell === layout.cell) return;
+        layout = next;
+        renderHeatmap(byDay, today, layout);
+        setField("meta", metaText(layout.weeks, updatedAt));
+      }).observe(heatmap);
     }
-    setField("meta", meta);
+
+    const firstDay = [...byDay.keys()].filter((day) => byDay.get(day).tokens > 0).sort()[0];
+    if (firstDay) setField("since", `自 ${firstDay.replaceAll("-", ".")} 起累计`);
+
+    setField("meta", metaText(layout.weeks, updatedAt));
     card.setAttribute("data-contrail-state", "ready");
   }
 

@@ -338,16 +338,16 @@ body.function-home-page {
 }
 .function-contrail-total small {
   display: block;
-  margin-top: 10px;
-  font-size: 0.24em;
+  margin-top: 8px;
+  font-size: 15px;
   font-weight: 500;
-  letter-spacing: 0;
+  letter-spacing: 0.01em;
 }
-.function-contrail-lede {
-  margin: 14px 0 0;
+.function-contrail-since {
+  margin: 8px 0 0;
   color: var(--global-text-color-light);
   font-size: 13px;
-  line-height: 1.8;
+  line-height: 1.7;
 }
 .function-contrail-link {
   display: inline-block;
@@ -437,18 +437,14 @@ html[lang="zh-CN"][data-theme="dark"] .function-contrail {
   position: relative;
   z-index: 1;
   margin-top: 40px;
-  overflow-x: auto;
+  overflow: hidden;
   cursor: pointer;
-  scrollbar-width: none;
-}
-.function-contrail-heatmap::-webkit-scrollbar {
-  display: none;
 }
 .function-contrail-grid {
   display: grid;
-  grid-template-columns: auto repeat(var(--contrail-weeks, 53), minmax(0, 1fr));
+  grid-template-columns: 20px repeat(var(--contrail-weeks, 53), var(--contrail-cell, 10px));
+  grid-template-rows: auto repeat(7, var(--contrail-cell, 10px));
   gap: 3px;
-  min-width: 0;
 }
 .function-contrail-month,
 .function-contrail-weekday {
@@ -461,21 +457,9 @@ html[lang="zh-CN"][data-theme="dark"] .function-contrail {
   padding-bottom: 4px;
 }
 .function-contrail-weekday {
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-  padding-right: 6px;
-  background: var(--global-bg-color);
-  box-shadow:
-    3px 0 0 var(--global-bg-color),
-    0 3px 0 var(--global-bg-color),
-    3px 3px 0 var(--global-bg-color);
+  align-self: center;
 }
 .function-contrail-cell {
-  aspect-ratio: 1;
   border-radius: 2px;
   background: var(--contrail-level-0);
   outline: 1px solid var(--contrail-cell-edge);
@@ -525,8 +509,12 @@ html[lang="zh-CN"][data-theme="dark"] .function-contrail {
 .function-contrail-legend span:last-child {
   margin-left: 4px;
 }
+.function-contrail-legend {
+  margin-left: auto;
+}
 .function-contrail-legend .function-contrail-cell {
   width: 11px;
+  height: 11px;
 }
 @media (max-width: 991.98px) {
   .function-contrail {
@@ -538,11 +526,6 @@ html[lang="zh-CN"][data-theme="dark"] .function-contrail {
   }
   .function-contrail-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  /* 窄屏放不下一整年：格子保持可辨认的大小，横向滚动，默认停在最近几周。 */
-  .function-contrail-grid {
-    grid-template-columns: auto repeat(var(--contrail-weeks, 53), 11px);
-    width: max-content;
   }
 }
 @media (max-width: 700px) {
