@@ -311,251 +311,409 @@ body.function-home-page {
   overflow-wrap: anywhere;
   text-wrap: pretty;
 }
-.function-contrail {
+/* AI 编程用量：照搬 Contrail dashboard 的 Card / StatsPanel / ActivityHeatmap（Tailwind 类换成等值 CSS）。 */
+.function-usage {
+  --usage-card-bg: #fff;
+  --usage-border: #e5e5e5;
+  --usage-divider: #f5f5f5;
+  --usage-tile-bg: #fafafa;
+  --usage-strong: #0a0a0a;
+  --usage-muted: #a3a3a3;
+  --usage-soft: #737373;
+  --usage-title: #737373;
+  --usage-model: #404040;
+  --usage-level-0: #ebedf0;
+  --usage-level-1: #a7f3d0;
+  --usage-level-2: #6ee7b7;
+  --usage-level-3: #34d399;
+  --usage-level-4: #10b981;
+  --usage-level-0-badge: #6b7280;
   position: relative;
-  display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  gap: 80px;
-  border-top: 1px solid var(--global-divider-color);
-  padding: 68px 0 72px;
-}
-.function-contrail-heading h2 {
-  margin: 0;
-  font-size: 23px;
-  font-weight: 600;
+  padding: 0 0 72px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
   line-height: 1.5;
 }
-.function-contrail-total {
-  display: block;
-  margin-bottom: 20px;
-  color: var(--global-theme-color);
-  font-family: "Avenir Next", var(--site-font-family);
-  font-size: 82px;
-  font-weight: 500;
-  letter-spacing: -0.06em;
-  line-height: 1;
-  white-space: nowrap;
-}
-.function-contrail-total small {
-  display: block;
-  margin-top: 8px;
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-}
-.function-contrail-since {
-  margin: 8px 0 0;
-  color: var(--global-text-color-light);
-  font-size: 13px;
-  line-height: 1.7;
-}
-.function-contrail-link {
-  display: inline-block;
-  margin-top: 22px;
-  color: var(--global-text-color-light);
-  font-size: 13px;
-}
-/* 整张卡片都可以点击，但只保留一个真正的链接。 */
-.function-contrail-link::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-}
-.function-contrail-link:focus-visible {
-  outline: none;
-}
-.function-contrail-link:focus-visible::after {
-  outline: 2px solid var(--global-theme-color);
-  outline-offset: 6px;
-  border-radius: 4px;
-}
-.function-contrail:hover .function-contrail-link {
-  color: var(--global-theme-color);
-}
-.function-contrail-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 24px;
-  margin: 6px 0 0;
-}
-.function-contrail-stats > div {
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--global-divider-color);
-  transition: border-color 200ms ease;
-}
-.function-contrail:hover .function-contrail-stats > div {
-  border-color: var(--global-theme-color);
-}
-.function-contrail-stats dt {
-  color: var(--global-text-color-light);
-  font-size: 13px;
-  font-weight: 400;
-}
-.function-contrail-stats dd {
-  margin: 6px 0 0;
-  font-family: "Avenir Next", var(--site-font-family);
-  font-size: 27px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.3;
-  white-space: nowrap;
-}
-.function-contrail-stats dd small {
-  margin-left: 0.25em;
-  font-size: 0.56em;
-  font-weight: 500;
-  letter-spacing: 0;
-}
-/* 仿 GitHub 贡献图：一列一周、一格一天，颜色按当年用量的四分位分级。 */
-.function-contrail {
-  --contrail-level-0: #ebedf0;
-  --contrail-level-1: #9be9a8;
-  --contrail-level-2: #40c463;
-  --contrail-level-3: #30a14e;
-  --contrail-level-4: #216e39;
-  --contrail-cell-edge: rgba(27, 31, 35, 0.06);
-}
-html[lang="zh-CN"][data-theme="dark"] .function-contrail {
-  --contrail-level-0: #2a2a30;
-  --contrail-level-1: #0e4429;
-  --contrail-level-2: #006d32;
-  --contrail-level-3: #26a641;
-  --contrail-level-4: #39d353;
-  --contrail-cell-edge: rgba(255, 255, 255, 0.05);
+html[lang="zh-CN"][data-theme="dark"] .function-usage {
+  --usage-card-bg: #171717;
+  --usage-border: #262626;
+  --usage-divider: #262626;
+  --usage-tile-bg: #262626;
+  --usage-strong: #fafafa;
+  --usage-muted: #a3a3a3;
+  --usage-soft: #d4d4d4;
+  --usage-title: #d4d4d4;
+  --usage-model: #e5e5e5;
+  --usage-level-0: #121212;
+  --usage-level-1: #065f46;
+  --usage-level-2: #059669;
+  --usage-level-3: #10b981;
+  --usage-level-4: #34d399;
+  --usage-level-0-badge: #9ca3af;
 }
 @media (prefers-color-scheme: dark) {
-  html[lang="zh-CN"]:not([data-theme]) .function-contrail {
-    --contrail-level-0: #2a2a30;
-    --contrail-level-1: #0e4429;
-    --contrail-level-2: #006d32;
-    --contrail-level-3: #26a641;
-    --contrail-level-4: #39d353;
-    --contrail-cell-edge: rgba(255, 255, 255, 0.05);
+  html[lang="zh-CN"]:not([data-theme]) .function-usage {
+    --usage-card-bg: #171717;
+    --usage-border: #262626;
+    --usage-divider: #262626;
+    --usage-tile-bg: #262626;
+    --usage-strong: #fafafa;
+    --usage-muted: #a3a3a3;
+    --usage-soft: #d4d4d4;
+    --usage-title: #d4d4d4;
+    --usage-model: #e5e5e5;
+    --usage-level-0: #121212;
+    --usage-level-1: #065f46;
+    --usage-level-2: #059669;
+    --usage-level-3: #10b981;
+    --usage-level-4: #34d399;
+    --usage-level-0-badge: #9ca3af;
   }
 }
-.function-contrail-heatmap {
-  position: relative;
-  z-index: 1;
-  margin-top: 40px;
-  overflow: hidden;
-  cursor: pointer;
+/* 主题的 main.css 给所有 span/div 设了正文颜色；卡片内改回继承，颜色只由下面的类决定。
+   :where() 让这条规则的优先级只有一个类选择器，不会压过后面的具体规则。 */
+.function-usage :where(p, h3, div, span, strong, b, small, i) {
+  color: inherit;
 }
-.function-contrail-grid {
+.usage-grid {
   display: grid;
-  grid-template-columns: 20px repeat(var(--contrail-weeks, 53), var(--contrail-cell, 10px));
-  grid-template-rows: auto repeat(7, var(--contrail-cell, 10px));
-  gap: 3px;
+  grid-template-columns: 280px minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
 }
-.function-contrail-month,
-.function-contrail-weekday {
-  color: var(--global-text-color-light);
-  font-size: 11px;
-  line-height: 1;
+.usage-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--usage-border);
+  border-radius: 12px;
+  background: var(--usage-card-bg);
+}
+.usage-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.usage-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--usage-tile-bg);
+}
+.usage-tile-value {
+  color: var(--usage-strong);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.usage-tile-label {
+  margin-top: 2px;
+  color: var(--usage-muted);
+  font-size: 10px;
+  line-height: 14px;
   white-space: nowrap;
 }
-.function-contrail-month {
-  padding-bottom: 4px;
-}
-.function-contrail-weekday {
-  align-self: center;
-}
-.function-contrail-cell {
-  border-radius: 2px;
-  background: var(--contrail-level-0);
-  outline: 1px solid var(--contrail-cell-edge);
-  outline-offset: -1px;
-}
-.function-contrail-cell[data-level="1"] {
-  background: var(--contrail-level-1);
-}
-.function-contrail-cell[data-level="2"] {
-  background: var(--contrail-level-2);
-}
-.function-contrail-cell[data-level="3"] {
-  background: var(--contrail-level-3);
-}
-.function-contrail-cell[data-level="4"] {
-  background: var(--contrail-level-4);
-}
-.function-contrail-cell:hover {
-  outline: 1px solid var(--global-text-color);
-}
-.function-contrail-footer {
+.usage-footer {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px 20px;
-  margin-top: 12px;
-}
-.function-contrail-meta {
-  margin: 0;
-  color: var(--global-text-color-light);
-  font-family: "SFMono-Regular", Consolas, monospace;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--usage-divider);
+  color: var(--usage-muted);
   font-size: 12px;
-  letter-spacing: -0.02em;
+  line-height: 16px;
 }
-.function-contrail-legend {
+.usage-footer-value {
+  margin-left: 6px;
+  color: var(--usage-soft);
+  font-variant-numeric: tabular-nums;
+}
+.usage-footer a {
+  color: var(--usage-soft);
+  white-space: nowrap;
+}
+.usage-footer a:hover {
+  color: var(--usage-strong);
+}
+.usage-heatmap-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.usage-heatmap-header h3 {
+  margin: 0;
+  color: var(--usage-title);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+.usage-heatmap-header span {
+  color: var(--usage-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+.usage-heatmap-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+.usage-heatmap-months,
+.usage-heatmap-grid {
+  display: grid;
+  column-gap: 3px;
+}
+.usage-heatmap-months {
+  margin-bottom: 4px;
+  color: var(--usage-muted);
+  font-size: 10px;
+  line-height: 15px;
+  text-transform: uppercase;
+}
+.usage-heatmap-months span {
+  white-space: nowrap;
+}
+/* 与星期标签列一样固定在左侧，横向滚动时盖住被切掉一半的月份。 */
+.usage-heatmap-months > span:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--usage-card-bg);
+  box-shadow: 3px 0 0 var(--usage-card-bg);
+}
+.usage-heatmap-days {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: repeat(7, 12px);
+  row-gap: 3px;
+  padding-right: 8px;
+  background: var(--usage-card-bg);
+  color: var(--usage-muted);
+  font-size: 10px;
+  line-height: 1;
+}
+.usage-heatmap-cells {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 12px);
+  gap: 3px;
+}
+.usage-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--usage-level-0);
+  cursor: pointer;
+  transition: transform 150ms ease;
+}
+.usage-cell:hover {
+  position: relative;
+  z-index: 10;
+  transform: scale(1.25);
+}
+.usage-cell[data-level="1"],
+.usage-legend i[data-level="1"] {
+  background: var(--usage-level-1);
+}
+.usage-cell[data-level="2"],
+.usage-legend i[data-level="2"] {
+  background: var(--usage-level-2);
+}
+.usage-cell[data-level="3"],
+.usage-legend i[data-level="3"] {
+  background: var(--usage-level-3);
+}
+.usage-cell[data-level="4"],
+.usage-legend i[data-level="4"] {
+  background: var(--usage-level-4);
+}
+.usage-legend {
   display: flex;
   align-items: center;
-  gap: 3px;
-  margin: 0;
-  color: var(--global-text-color-light);
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--usage-muted);
+  font-size: 10px;
+  line-height: 15px;
+}
+.usage-legend-cells {
+  display: flex;
+  gap: 2px;
+}
+.usage-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
+  background: var(--usage-level-0);
+}
+.usage-status:empty {
+  display: none;
+}
+.usage-status {
+  margin: 12px 0 0;
+  color: var(--usage-soft);
+  font-size: 12px;
+  text-align: center;
+}
+.usage-tooltip {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+  max-width: 280px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--usage-border) 50%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--usage-card-bg) 95%, transparent);
+  box-shadow:
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+.usage-tooltip[hidden] {
+  display: none;
+}
+.usage-tooltip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--usage-divider);
+}
+.usage-tooltip-day {
+  color: var(--usage-title);
+  font-size: 11px;
+  font-weight: 600;
+}
+.usage-tooltip-level {
+  --badge: var(--usage-level-0-badge);
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--badge) 27%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--badge) 13%, transparent);
+  color: var(--badge);
+  font-size: 10px;
+  font-weight: 500;
+}
+.usage-tooltip-level[data-level="1"] {
+  --badge: var(--usage-level-1);
+}
+.usage-tooltip-level[data-level="2"] {
+  --badge: var(--usage-level-2);
+}
+.usage-tooltip-level[data-level="3"] {
+  --badge: var(--usage-level-3);
+}
+.usage-tooltip-level[data-level="4"] {
+  --badge: var(--usage-level-4);
+}
+.usage-tooltip-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.usage-tooltip-amount strong {
+  color: var(--usage-strong);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+.usage-tooltip-amount span,
+.usage-tooltip-caption {
+  color: var(--usage-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.usage-tooltip-models {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--usage-divider);
+}
+.usage-tooltip-model {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.usage-tooltip-model-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   font-size: 11px;
 }
-.function-contrail-legend span:first-child {
-  margin-right: 4px;
+.usage-tooltip-model-name {
+  max-width: 120px;
+  overflow: hidden;
+  color: var(--usage-model);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.function-contrail-legend span:last-child {
-  margin-left: 4px;
+.usage-tooltip-model-figures {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.function-contrail-legend {
-  margin-left: auto;
+.usage-tooltip-model-figures b {
+  color: var(--usage-strong);
+  font-family: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, monospace;
+  font-weight: 600;
 }
-.function-contrail-legend .function-contrail-cell {
-  width: 11px;
-  height: 11px;
+.usage-tooltip-model-figures small {
+  min-width: 28px;
+  color: var(--usage-muted);
+  font-size: 9px;
+  font-weight: 500;
+  text-align: right;
+}
+.usage-tooltip-bar {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--usage-divider);
+}
+.usage-tooltip-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--usage-level-4);
 }
 @media (max-width: 991.98px) {
-  .function-contrail {
-    grid-template-columns: 190px minmax(0, 1fr);
-    gap: 40px;
-  }
-  .function-contrail-total {
-    font-size: 58px;
-  }
-  .function-contrail-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .usage-grid {
+    grid-template-columns: 240px minmax(0, 1fr);
   }
 }
 @media (max-width: 700px) {
-  .function-contrail {
-    display: block;
-    padding: 38px 0 46px;
+  .function-usage {
+    padding-bottom: 46px;
   }
-  .function-contrail-heading h2 {
-    font-size: 20px;
-  }
-  .function-contrail-total {
-    margin-bottom: 12px;
-    font-size: 49px;
-  }
-  .function-contrail-stats {
-    gap: 8px 24px;
-    margin-top: 28px;
-  }
-  .function-contrail-stats > div {
-    padding: 12px 0;
-  }
-  .function-contrail-stats dd {
-    font-size: 22px;
-  }
-  .function-contrail-heatmap {
-    margin-top: 28px;
+  .usage-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .function-contrail-stats > div {
+  .usage-cell {
     transition: none;
   }
 }

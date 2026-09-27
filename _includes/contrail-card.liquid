@@ -1,44 +1,46 @@
 {% comment %}
-  首页的 AI 编程用量摘要。数据来自独立仓库 Functionhx/contrail 发布的静态 JSON，
-  只在卡片接近视口时才加载；读不到数据时保留占位符和详情链接，不影响首页其它部分。
+  首页的 AI 编程用量摘要，照搬 Contrail 详情页（Functionhx/contrail 的 dashboard）左栏的
+  StatsPanel 与 ActivityHeatmap 样式，只显示 token 数量，不显示花费。
+  数据来自 Contrail 发布的静态 JSON，只在卡片接近视口时才加载；读不到数据时保留占位符和详情链接。
 {% endcomment %}
 {% assign contrail_url = 'https://functionhx.github.io/contrail/' %}
-<section class="function-contrail" aria-labelledby="contrail-heading" data-contrail-card data-contrail-base="{{ contrail_url }}">
-  <div class="function-contrail-heading">
-    <h2 id="contrail-heading"><span class="function-contrail-total" data-contrail-field="total">—</span>AI 编程用量</h2>
-    <p class="function-contrail-since" data-contrail-field="since">Claude Code · Codex · OpenCode</p>
-    <a class="function-contrail-link" href="{{ contrail_url }}">查看详情 <span aria-hidden="true">↗</span></a>
-  </div>
-  <div class="function-contrail-body">
-    <dl class="function-contrail-stats">
-      <div>
-        <dt>近 7 天 token</dt>
-        <dd data-contrail-field="week-tokens">—</dd>
+<section class="function-usage" aria-labelledby="usage-heading" data-contrail-card data-contrail-base="{{ contrail_url }}">
+  <h2 id="usage-heading" class="sr-only">AI 编程用量</h2>
+  <div class="usage-grid">
+    <div class="usage-card usage-stats">
+      <div class="usage-tiles">
+        <div class="usage-tile">
+          <span class="usage-tile-value" data-contrail-field="last-30d">—</span>
+          <span class="usage-tile-label">30d</span>
+        </div>
+        <div class="usage-tile">
+          <span class="usage-tile-value" data-contrail-field="total">—</span>
+          <span class="usage-tile-label">total</span>
+        </div>
       </div>
-      <div>
-        <dt>近 7 天估算花费</dt>
-        <dd data-contrail-field="week-cost">—</dd>
+      <div class="usage-footer">
+        <span>Started <span class="usage-footer-value" data-contrail-field="started">—</span></span>
+        <a href="{{ contrail_url }}">查看详情 <span aria-hidden="true">↗</span></a>
       </div>
-      <div>
-        <dt>累计估算花费</dt>
-        <dd data-contrail-field="total-cost">—</dd>
-      </div>
-      <div>
-        <dt>活跃天数</dt>
-        <dd data-contrail-field="active-days">—</dd>
-      </div>
-    </dl>
-    <div class="function-contrail-heatmap" data-contrail-heatmap aria-hidden="true">
-      <div class="function-contrail-grid" data-contrail-grid></div>
     </div>
-    <div class="function-contrail-footer">
-      <p class="function-contrail-meta" data-contrail-field="meta" role="status">过去一年每日 token</p>
-      <p class="function-contrail-legend" aria-hidden="true">
-        <span>少</span><i class="function-contrail-cell" data-level="0"></i><i class="function-contrail-cell" data-level="1"></i
-        ><i class="function-contrail-cell" data-level="2"></i><i class="function-contrail-cell" data-level="3"></i
-        ><i class="function-contrail-cell" data-level="4"></i><span>多</span>
-      </p>
+    <div class="usage-card usage-heatmap">
+      <div class="usage-heatmap-header">
+        <h3>Activity Heatmap</h3>
+        <span>UTC+08:00</span>
+      </div>
+      <div class="usage-heatmap-scroll" data-contrail-heatmap>
+        <div class="usage-heatmap-body" data-contrail-grid aria-hidden="true"></div>
+      </div>
+      <div class="usage-legend" aria-hidden="true">
+        <span>Less</span>
+        <span class="usage-legend-cells"
+          ><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i
+        ></span>
+        <span>More</span>
+      </div>
+      <p class="usage-status" data-contrail-field="status" role="status"></p>
     </div>
   </div>
+  <div class="usage-tooltip" data-contrail-tooltip hidden></div>
 </section>
 <script src="{{ '/assets/js/contrail-card.js' | relative_url | bust_file_cache }}" defer></script>
