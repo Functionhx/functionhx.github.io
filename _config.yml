@@ -226,6 +226,7 @@ exclude:
   - readme_preview/
   - scripts/
   - spark-vault/
+  - letter-mailer/
   - test/
   - gems/
   - migrations/

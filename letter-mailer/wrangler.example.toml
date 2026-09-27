@@ -1,0 +1,21 @@
+name = "functionhx-letter"
+main = "worker.mjs"
+compatibility_date = "2026-09-27"
+workers_dev = true
+
+# 每天发信次数的计数器。创建：npx wrangler kv namespace create LETTER_LIMITS
+[[kv_namespaces]]
+binding = "LETTER_LIMITS"
+id = "REPLACE_WITH_LETTER_LIMITS_KV_NAMESPACE_ID"
+
+[vars]
+SITE_ORIGINS = "https://functionhx.github.io,https://fanyuchen.com.cn"
+# 同一个 IP 每天最多收几封；全站每天最多发几封。
+PER_IP_DAILY_LIMIT = "3"
+DAILY_LIMIT = "20"
+
+# 以下四项只用 `npx wrangler secret put <名字>` 设置，不要写进这个文件，也不要提交：
+# - GMAIL_ADDRESS       发信的 Gmail 地址
+# - GMAIL_APP_PASSWORD  Gmail「应用专用密码」（16 位）
+# - LETTER_PHRASE       信的暗号（与站点设置里写信时用的暗号相同）
+# - LETTER_PIN          拆信的六位数字密码（与写信时用的密码相同）
