@@ -2,5 +2,5 @@
 # Only the owner can change them; publishing applies them to every visitor.
 navigation_density: relaxed
 site_font: system
-loading_copy: thinking
-season_effect: auto
+loading_copy: loading
+season_effect: leaves
