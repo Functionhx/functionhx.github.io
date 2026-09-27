@@ -1,88 +1,66 @@
 <div class="function-home">
   <section class="function-intro" aria-labelledby="function-name">
-    <figure class="function-portrait">
-      <img
-        src="{{ '/assets/img/function/portrait-hero-v2-1760.webp' | relative_url | bust_file_cache }}"
-        srcset="{{ '/assets/img/function/portrait-hero-v2-960.webp' | relative_url | bust_file_cache }} 960w, {{ '/assets/img/function/portrait-hero-v2-1760.webp' | relative_url | bust_file_cache }} 1760w"
-        sizes="(max-width: 700px) 1200px, (max-width: 1480px) 100vw, 1400px"
-        width="1760"
-        height="880"
-        alt="根据樊宇琛本人照片绘制的动漫风插画肖像"
-        loading="eager"
-        decoding="async"
-        fetchpriority="high"
-      >
-      <figcaption>插画肖像</figcaption>
-    </figure>
     <div class="function-intro-copy">
+      <figure class="function-portrait">
+        <img
+          src="{{ '/assets/img/function/portrait-hero-v2-960.webp' | relative_url | bust_file_cache }}"
+          srcset="{{ '/assets/img/function/portrait-hero-v2-960.webp' | relative_url | bust_file_cache }} 960w, {{ '/assets/img/function/portrait-hero-v2-1760.webp' | relative_url | bust_file_cache }} 1760w"
+          sizes="480px"
+          width="1760"
+          height="880"
+          alt="根据樊宇琛本人照片绘制的动漫风插画肖像"
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
+        >
+        <figcaption class="sr-only">插画肖像</figcaption>
+      </figure>
       <p class="function-intro-alias" lang="en">Function</p>
       <h1 id="function-name">樊宇琛<span lang="en">Yuchen Fan</span></h1>
-      <p class="function-intro-role">
-        北京理工大学<br>
-        机器人工程本科生
-      </p>
+      <section class="function-introduction" id="introduction" aria-label="关于我">{{ content }}</section>
       <div class="function-contact-links">
-        <a href="#contact">联系我 <span aria-hidden="true">↓</span></a>
+        <a class="function-button" href="#contact">联系我</a>
+        <a class="function-button function-button--ghost" href="https://scholar.fanyuchen.com.cn/">学术主页 <span aria-hidden="true">↗</span></a>
       </div>
     </div>
-    <a class="function-scroll-cue" href="#introduction">往下看看 <span aria-hidden="true">↓</span></a>
-  </section>
-  <div class="function-reading">
-    <section class="function-introduction" id="introduction" aria-label="关于我">{{ content }}</section>
     <nav class="function-directory" aria-label="浏览本站">
       {% for entry in site.data.home.directory %}
         <a href="{{ entry.url | relative_url }}" class="function-directory-link"
           ><span class="function-directory-title">
             {{- entry.title -}}
-            <span aria-hidden="true">↗</span></span
+            <span class="function-directory-arrow" aria-hidden="true">→</span></span
           ><span class="function-directory-note">{{ entry.note }}</span></a
         >
       {% endfor %}
     </nav>
-    {% include contrail-card.liquid %}
-    {% if page.announcements.enabled %}
-      {% assign updates = site.news | concat: site.posts | where: 'lang', 'zh' | sort: 'date' | reverse %}
-      {% assign update_count = 0 %}
-      {% assign previous_year = '' %}
-      {% for item in updates %}
-        {% assign show_update = false %}
-        {% if item.path contains '_news/' or item.announce == true %}{% assign show_update = true %}{% endif %}
-        {% if item.published == false or item.private == true or item.visibility == 'private' %}{% assign show_update = false %}{% endif %}
-        {% if show_update and update_count < page.announcements.limit %}
-          {% assign update_year = item.date | date: '%Y' %}
-          {% if update_year != previous_year %}
-            {% if update_count > 0 %}
-              </ol>
-              </section>
-            {% endif %}
-            <section class="function-timeline" aria-labelledby="updates-{{ update_year }}">
-              <div class="function-timeline-heading">
-                <h2 id="updates-{{ update_year }}">
-                  <span>
-                    {{- update_year -}}
-                    <span class="sr-only"> · </span></span
-                  >最近的更新
-                </h2>
-                <a href="{{ '/news/' | relative_url }}">全部动态 <span aria-hidden="true">↗</span></a>
-              </div>
-              <ol class="function-events">
-                {% assign previous_year = update_year %}
-          {% endif %}
-          {% assign update_count = update_count | plus: 1 %}
-          {% assign summary = site.data.home.updates[item.translation_key] %}
-          <li class="function-event">
-            <time datetime="{{ item.date | date: '%Y-%m-%d' }}">{{ item.date | date: '%m.%d' }}</time>
-            <div>
+  </section>
+  {% if page.announcements.enabled %}
+    {% assign updates = site.news | concat: site.posts | where: 'lang', 'zh' | sort: 'date' | reverse %}
+    {% assign update_count = 0 %}
+    <section class="function-timeline" aria-labelledby="updates-heading">
+      <div class="function-timeline-heading">
+        <h2 id="updates-heading">最近的更新</h2>
+        <a href="{{ '/news/' | relative_url }}">全部动态 <span aria-hidden="true">↗</span></a>
+      </div>
+      <ol class="function-events">
+        {% for item in updates %}
+          {% assign show_update = false %}
+          {% if item.path contains '_news/' or item.announce == true %}{% assign show_update = true %}{% endif %}
+          {% if item.published == false or item.private == true or item.visibility == 'private' %}{% assign show_update = false %}{% endif %}
+          {% if show_update and update_count < page.announcements.limit %}
+            {% assign update_count = update_count | plus: 1 %}
+            {% assign summary = site.data.home.updates[item.translation_key] %}
+            <li class="function-event">
               <h3>
                 <a href="{{ summary.url | default: item.url | relative_url }}">
-                  {{- summary.title | default: item.title }}
-                  <span aria-hidden="true">↗</span></a
-                >
+                  {{- summary.title | default: item.title -}}
+                </a>
               </h3>
               {% assign update_description = summary.description | default: item.description %}
               {% if update_description and update_description != empty %}
                 <p class="function-event-description">{{ update_description | escape }}</p>
               {% endif %}
+              <time datetime="{{ item.date | date: '%Y-%m-%d' }}">{{ item.date | date: '%Y 年 %-m 月 %-d 日' }}</time>
               {% if item.path contains '_news/' %}
                 <button
                   type="button"
@@ -97,15 +75,14 @@
                   <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
                 </button>
               {% endif %}
-            </div>
-          </li>
-        {% endif %}
-      {% endfor %}
-      {% if update_count > 0 %}
-        </ol>
-        </section>
-      {% endif %}
-    {% endif %}
+            </li>
+          {% endif %}
+        {% endfor %}
+      </ol>
+    </section>
+  {% endif %}
+  <div class="function-reading">
+    {% include contrail-card.liquid %}
     {% if page.social %}
       <section class="social" id="contact" aria-labelledby="contact-heading">
         <h2 id="contact-heading">联系我</h2>

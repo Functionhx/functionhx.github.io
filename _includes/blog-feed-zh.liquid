@@ -1,86 +1,168 @@
 {% assign postlist = paginator.posts | where: 'lang', 'zh' %}
+{% assign all_posts = site.posts | where: 'lang', 'zh' %}
+{% assign art_colors = 'terracotta,sky,olive,lavender,sand' | split: ',' %}
+{% assign art_fallbacks = 'arm,graph,chart,book' | split: ',' %}
+{% assign writing_categories = '' %}
+{% assign writing_tags = '' %}
+{% for post in all_posts %}
+  {% for category in post.categories %}
+    {% unless writing_categories contains category %}
+      {% assign writing_categories = writing_categories | append: category | append: '|' %}
+    {% endunless %}
+  {% endfor %}
+  {% for tag in post.tags %}
+    {% unless writing_tags contains tag %}
+      {% assign writing_tags = writing_tags | append: tag | append: '|' %}
+    {% endunless %}
+  {% endfor %}
+{% endfor %}
+{% assign writing_categories = writing_categories | split: '|' %}
+{% assign writing_tags = writing_tags | split: '|' %}
+
 <div class="writing-page">
-  <header class="writing-heading">
-    <h1>{{ page.blog_name }}</h1>
-    <p>{{ page.blog_description }}</p>
+  <header class="writing-hero">
+    <div class="writing-hero-copy">
+      <h1>{{ page.blog_name }}</h1>
+      <p>{{ page.blog_description }}</p>
+      <a class="function-button" href="{{ '/#introduction' | relative_url }}">关于我</a>
+    </div>
+    <nav class="writing-topics" aria-label="按主题浏览">
+      {% for category in writing_categories %}
+        <a href="#writing-grid" data-writing-topic="{{ category | escape }}">
+          {{- category | escape -}}
+          <span aria-hidden="true">→</span></a
+        >
+      {% endfor %}
+      {% assign writing_pages = site.pages | where: 'lang', 'zh' | where: 'nav', true | sort: 'nav_order' %}
+      {% for writing_page in writing_pages %}
+        {% if writing_page.translation_key != 'blog' and writing_page.permalink != '/' %}
+          <a href="{{ writing_page.url | relative_url }}">
+            {{- writing_page.title | escape -}}
+            <span aria-hidden="true">→</span></a
+          >
+        {% endif %}
+      {% endfor %}
+    </nav>
   </header>
 
   <div class="writing-layout">
-    <section class="writing-feed" aria-labelledby="writing-feed-title">
-      <div class="writing-feed-heading">
-        <h2 id="writing-feed-title">
-          全部文章 <span>{{ paginator.total_posts | default: postlist.size }}</span>
-        </h2>
-        <span>按发布时间</span>
+    <aside class="writing-filters" aria-label="筛选文章" hidden>
+      <details class="writing-filter" open>
+        <summary>排序</summary>
+        <div class="writing-filter-options" role="radiogroup" aria-label="排序">
+          <button type="button" data-writing-sort="new" aria-pressed="true">最新在前</button>
+          <button type="button" data-writing-sort="old" aria-pressed="false">最早在前</button>
+        </div>
+      </details>
+      <details class="writing-filter" open>
+        <summary>分类</summary>
+        <div class="writing-filter-options">
+          <button type="button" data-writing-category="" aria-pressed="true">全部</button>
+          {% for category in writing_categories %}
+            <button type="button" data-writing-category="{{ category | escape }}" aria-pressed="false">
+              {{- category | escape -}}
+            </button>
+          {% endfor %}
+        </div>
+      </details>
+      {% if writing_tags.size > 0 %}
+        <details class="writing-filter">
+          <summary>标签</summary>
+          <div class="writing-filter-options">
+            <button type="button" data-writing-tag="" aria-pressed="true">全部</button>
+            {% for tag in writing_tags %}
+              <button type="button" data-writing-tag="{{ tag | escape }}" aria-pressed="false">{{ tag | escape }}</button>
+            {% endfor %}
+          </div>
+        </details>
+      {% endif %}
+    </aside>
+
+    <section class="writing-feed" id="writing-grid" aria-labelledby="writing-feed-title">
+      <h2 id="writing-feed-title" class="sr-only">全部文章</h2>
+      <div class="writing-grid">
+        {% for post in postlist %}
+          {% assign article_url = post.url | relative_url %}
+          {% assign external_article = false %}
+          {% if post.redirect contains '://' %}
+            {% assign article_url = post.redirect %}
+            {% assign external_article = true %}
+          {% elsif post.redirect != blank %}
+            {% assign article_url = post.redirect | relative_url %}
+          {% endif %}
+          {% assign post_text = post.content | strip_html | strip_newlines %}
+          {% assign read_time = post_text | size | divided_by: 500 | plus: 1 %}
+          {% assign post_category = post.categories.first %}
+          {% assign color_index = forloop.index0 | modulo: art_colors.size %}
+          {% assign art_color = post.art_color | default: art_colors[color_index] %}
+          {% assign fallback_index = forloop.index0 | modulo: art_fallbacks.size %}
+          {% if post.art %}
+            {% assign art_name = post.art %}
+          {% elsif post_category == '技术' %}
+            {% assign art_name = 'lidar' %}
+          {% elsif post_category == '观点' %}
+            {% assign art_name = 'chat' %}
+          {% else %}
+            {% assign art_name = art_fallbacks[fallback_index] %}
+          {% endif %}
+          <article
+            class="writing-card"
+            data-category="{{ post.categories | join: '|' | escape }}"
+            data-tags="|{{ post.tags | join: '|' | escape }}|"
+            data-date="{{ post.date | date: '%Y-%m-%d' }}"
+          >
+            <a
+              class="writing-card-link"
+              href="{{ article_url }}"
+              title="{{ post.description | escape }}"
+              {% if external_article %}
+                target="_blank" rel="noopener noreferrer"
+              {% endif %}
+            >
+              <div class="writing-card-art" style="--writing-art: var(--function-art-{{ art_color | escape }})">
+                {% if post.cover %}
+                  <img src="{{ post.cover | relative_url }}" alt="" loading="lazy" decoding="async">
+                {% else %}
+                  {% include blog-art.liquid name=art_name %}
+                {% endif %}
+              </div>
+              <div class="writing-card-body">
+                <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y 年 %-m 月 %-d 日' }}</time>
+                <h3>
+                  {{- post.title | escape -}}
+                  {% if external_article -%}
+                    <span class="sr-only">（在新窗口打开外部文章）</span>
+                  {%- endif %}
+                </h3>
+                <p class="writing-card-meta">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    {%- if post_category == '技术' -%}
+                      <path d="m8 7-5 5 5 5M16 7l5 5-5 5"/>
+                    {%- elsif post_category == '观点' -%}
+                      <path d="M4 5h16v11H9l-5 4z"/>
+                    {%- else -%}
+                      <path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.2"/>
+                    {%- endif -%}
+                  </svg>
+                  <span>{{ post_category | default: '文章' | escape }}</span>
+                  <span aria-hidden="true">·</span>
+                  <span>约 {{ read_time }} 分钟</span>
+                </p>
+              </div>
+            </a>
+          </article>
+        {% endfor %}
       </div>
-      {% for post in postlist %}
-        {% assign article_url = post.url | relative_url %}
-        {% assign external_article = false %}
-        {% if post.redirect contains '://' %}
-          {% assign article_url = post.redirect %}
-          {% assign external_article = true %}
-        {% elsif post.redirect != blank %}
-          {% assign article_url = post.redirect | relative_url %}
+      <p
+        class="writing-empty"
+        {% if postlist.size > 0 %}
+          hidden
         {% endif %}
-        {% assign post_text = post.content | strip_html | strip_newlines %}
-        {% assign read_time = post_text | size | divided_by: 500 | plus: 1 %}
-        <article class="writing-item">
-          <div class="writing-item-meta">
-            {% if post.categories.first -%}
-              <span class="writing-category">{{ post.categories.first | escape }}</span>
-            {%- endif %}
-            <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y-%m-%d' }}</time>
-          </div>
-          <h3>
-            <a
-              href="{{ article_url }}"
-              {% if external_article %}
-                target="_blank" rel="noopener noreferrer"
-              {% endif %}
-            >
-              {{- post.title | escape -}}
-              {% if external_article -%}
-                <span class="sr-only">（在新窗口打开外部文章）</span>
-              {%- endif %}
-            </a>
-          </h3>
-          <p class="writing-summary">{{ post.description | escape }}</p>
-          <div class="writing-item-footer">
-            <a
-              class="writing-read"
-              href="{{ article_url }}"
-              {% if external_article %}
-                target="_blank" rel="noopener noreferrer"
-              {% endif %}
-              aria-label="阅读全文：{{ post.title | escape }}{% if external_article %}（在新窗口打开）{% endif %}"
-            >
-              阅读全文 <span aria-hidden="true">›</span>
-            </a>
-            <span>约 {{ read_time }} 分钟</span>
-            {% if post.tags.size > 0 -%}
-              <span class="writing-tags">{{ post.tags | join: ' · ' | escape }}</span>
-            {%- endif %}
-          </div>
-        </article>
-      {% else %}
-        <p class="writing-empty">暂时还没有公开文章。</p>
-      {% endfor %}
+      >
+        {%- if postlist.size > 0 -%}这个筛选下还没有文章。{%- else -%}暂时还没有公开文章。{%- endif -%}
+      </p>
       {% include pagination.liquid %}
     </section>
-
-    <aside class="writing-sidebar" aria-label="关于作者">
-      <div class="writing-author">
-        <a class="writing-author-identity" href="{{ '/' | relative_url }}">
-          <span class="writing-author-mark" aria-hidden="true">ƒ</span>
-          <span><strong>樊宇琛</strong><span lang="en">Function</span></span>
-        </a>
-        <p>
-          北京理工大学<br>
-          机器人工程本科生
-        </p>
-        <a class="writing-author-link" href="{{ '/#introduction' | relative_url }}">关于我 <span aria-hidden="true">→</span></a>
-      </div>
-      <p class="writing-sidebar-note">{{ page.blog_topics }}</p>
-    </aside>
   </div>
 </div>
+<script src="{{ '/assets/js/blog-cards.js' | relative_url | bust_file_cache }}" defer></script>

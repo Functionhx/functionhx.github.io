@@ -1,0 +1,60 @@
+{%- comment -%}
+  博客卡片的插画：暖白色块 + 墨线。用法：{% include blog-art.liquid name='lidar' %}
+  可选 name：lidar、arm、chat、graph、chart、book。
+{%- endcomment -%}
+<svg class="writing-art" viewBox="0 0 240 150" aria-hidden="true" focusable="false">
+  <g fill="none" stroke="#141413" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+    {%- case include.name -%}
+      {%- when 'lidar' -%}
+        <path d="M78 112a42 42 0 0 1 84 0z" fill="#faf9f5" stroke="none"/>
+        <path d="M58 112a62 62 0 0 1 124 0"/>
+        <path d="M36 112a84 84 0 0 1 168 0" stroke-dasharray="2 10"/>
+        <rect x="103" y="94" width="34" height="24" rx="7" fill="#faf9f5"/>
+        <circle cx="120" cy="104" r="4.5" fill="#141413"/>
+        <path d="M120 94V80"/>
+        <circle cx="70" cy="68" r="4" fill="#faf9f5"/>
+        <circle cx="160" cy="52" r="4" fill="#faf9f5"/>
+        <circle cx="186" cy="84" r="3" fill="#141413"/>
+        <circle cx="52" cy="92" r="3" fill="#141413"/>
+        <circle cx="118" cy="40" r="3" fill="#141413"/>
+      {%- when 'arm' -%}
+        <path d="M44 48l18-30 18 30z" fill="#faf9f5" stroke="none"/>
+        <rect x="66" y="112" width="58" height="16" rx="4" fill="#faf9f5"/>
+        <path d="M95 112 112 66 154 52" stroke-width="17"/>
+        <path d="M95 112 112 66 154 52" stroke="#faf9f5" stroke-width="10.6"/>
+        <circle cx="95" cy="110" r="8" fill="#faf9f5"/>
+        <circle cx="112" cy="66" r="8" fill="#faf9f5"/>
+        <circle cx="154" cy="52" r="7" fill="#faf9f5"/>
+        <path d="M160 44l10-8M160 60l10 8"/>
+        <rect x="170" y="42" width="24" height="24" rx="2" transform="rotate(12 182 54)" fill="#faf9f5"/>
+      {%- when 'chat' -%}
+        <path d="M52 50c0-16 10-26 26-26h52c16 0 26 10 26 26v20c0 16-10 26-26 26H96l-20 18V96c-14-1-24-10-24-26z"/>
+        <path d="M112 70c0-14 8-22 22-22h40c14 0 22 8 22 22v16c0 14-8 22-22 22h-6v16l-16-16h-18c-14 0-22-8-22-22z" fill="#faf9f5" stroke="none"/>
+        <circle cx="140" cy="80" r="3.4" fill="#141413" stroke="none"/>
+        <circle cx="154" cy="80" r="3.4" fill="#141413" stroke="none"/>
+        <circle cx="168" cy="80" r="3.4" fill="#141413" stroke="none"/>
+      {%- when 'graph' -%}
+        <path d="M120 75 76 44M120 75l48-34M120 75 70 108M120 75l54 32M120 75v-50M76 44l-6 64M168 41l6 66"/>
+        <circle cx="120" cy="75" r="11" fill="#141413"/>
+        <circle cx="76" cy="44" r="8" fill="#faf9f5"/>
+        <circle cx="168" cy="41" r="8" fill="#faf9f5"/>
+        <circle cx="70" cy="108" r="8" fill="#faf9f5"/>
+        <circle cx="174" cy="107" r="8" fill="#faf9f5"/>
+        <circle cx="120" cy="25" r="6" fill="#faf9f5"/>
+      {%- when 'chart' -%}
+        <rect x="80" y="84" width="20" height="36" fill="#faf9f5" stroke="none"/>
+        <rect x="110" y="66" width="20" height="54" fill="#faf9f5" stroke="none"/>
+        <rect x="140" y="50" width="20" height="70" fill="#faf9f5" stroke="none"/>
+        <path d="M64 24v96h122"/>
+        <path d="M76 100l30-28 26 12 44-50"/>
+        <circle cx="106" cy="72" r="5" fill="#faf9f5"/>
+        <circle cx="132" cy="84" r="5" fill="#faf9f5"/>
+        <circle cx="176" cy="34" r="5" fill="#141413"/>
+      {%- else -%}
+        <path d="M120 44c-18-10-40-12-58-8v70c18-4 40-2 58 8z" fill="#faf9f5"/>
+        <path d="M120 44c18-10 40-12 58-8v70c-18-4-40-2-58 8z" fill="#faf9f5"/>
+        <path d="M76 56c10-2 22-1 32 3M76 70c10-2 22-1 32 3M76 84c10-2 22-1 32 3M132 59c10-4 22-5 32-3M132 73c10-4 22-5 32-3"/>
+        <path d="M150 104l38-44 8 7-38 44-11 4z" fill="#faf9f5"/>
+    {%- endcase -%}
+  </g>
+</svg>
