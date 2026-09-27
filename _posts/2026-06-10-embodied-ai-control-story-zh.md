@@ -14,7 +14,6 @@ kind: writing
 tags: [具身智能, 控制, VLA]
 categories: [观点]
 related_posts: false
-giscus_comments: true
 ---
 
 ## 让纯 CS 范式主导具身智能，正在制造一场以 VLA 为名的泡沫

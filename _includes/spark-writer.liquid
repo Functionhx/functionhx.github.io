@@ -26,7 +26,6 @@
 {% assign writer_kind_log = '工作日志' %}
 {% assign writer_date = '日期与时间' %}
 {% assign writer_slug = '网址短名' %}
-{% assign writer_comments = '开启 GitHub 评论' %}
 {% assign writer_announce = '同时显示在首页动态' %}
 {% assign writer_announce_note = 'Spark 默认不打扰首页；只有值得公开记录时再勾选。' %}
 {% assign writer_public = '公开到网站' %}
@@ -148,10 +147,6 @@
       <label>
         <span>{{ writer_slug }}</span>
         <input id="site-spark-writer-slug" type="text" inputmode="url" autocomplete="off" spellcheck="false">
-      </label>
-      <label class="site-spark-writer__check">
-        <input id="site-spark-writer-comments" type="checkbox" checked>
-        <span>{{ writer_comments }}</span>
       </label>
       <label class="site-spark-writer__check site-spark-writer__announce">
         <input id="site-spark-writer-announce" type="checkbox">

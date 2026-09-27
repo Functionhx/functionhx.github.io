@@ -2403,7 +2403,6 @@ function composePublicSource(record, path, mediaPaths = {}) {
       "tags: []",
       "categories: []",
       "related_posts: false",
-      `giscus_comments: ${values.comments ? "true" : "false"}`,
       "---",
       "",
       body.trimEnd(),

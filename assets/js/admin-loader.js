@@ -14,12 +14,12 @@
 
   const features = {
     creator: {
-      styles: ["deployment-monitor.css", "spark-writer.css", "content-creator.css"],
+      styles: ["deployment-monitor.css", "spark-writer.css", "content-creator.css", "post.css"],
       scripts: ["github-auth-vault.js", "deployment-monitor.js", "markdown-preview.js", "content-creator.js"],
     },
     editor: {
-      styles: ["deployment-monitor.css", "inline-editor.css"],
-      scripts: ["github-auth-vault.js", "deployment-monitor.js", "inline-editor.js"],
+      styles: ["deployment-monitor.css", "inline-editor.css", "post.css"],
+      scripts: ["github-auth-vault.js", "deployment-monitor.js", "markdown-preview.js", "inline-editor.js"],
     },
     monitor: {
       styles: ["deployment-monitor.css"],
@@ -30,7 +30,7 @@
       scripts: ["github-auth-vault.js", "owner-unlock.js", "deployment-monitor.js", "site-settings.js"],
     },
     spark: {
-      styles: ["deployment-monitor.css"],
+      styles: ["deployment-monitor.css", "post.css"],
       scripts: ["github-auth-vault.js", "deployment-monitor.js", "markdown-preview.js", "spark-vault-client.js", "spark-writer.js"],
     },
     feishuDocuments: {

@@ -141,11 +141,9 @@ def main() -> int:
         errors.append("_config.yml: the removed global footer must remain disabled")
     if config.get("icon") != "ƒ":
         errors.append("_config.yml: the site favicon must use the Magic identity mark")
-    giscus = config.get("giscus", {})
-    if giscus.get("repo") != "Functionhx/functionhx.github.io":
-        errors.append("_config.yml: Giscus repository is not configured")
-    if not giscus.get("repo_id") or not giscus.get("category_id"):
-        errors.append("_config.yml: Giscus repository and category IDs are required")
+    # Comments were removed (owner decision 2026-09-26).
+    if config.get("giscus"):
+        errors.append("_config.yml: comments were removed; the Giscus block must stay out")
 
     site_ui_path = ROOT / "_data" / "site_ui.yml"
     try:

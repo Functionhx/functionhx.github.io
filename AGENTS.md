@@ -32,6 +32,12 @@ Preserve the upstream al-folio visual language. Do not redesign its typography,
 spacing, cards, navigation, search, or theme system unless the owner explicitly
 requests a deviation. Keep the upstream `LICENSE`.
 
+Approved deviation (owner request 2026-09-26): article pages (`_layouts/post.liquid`,
+`assets/css/post.css`, `assets/js/post.js`) follow the claude.dev blog layout — warm
+paper palette, a hero aligned to the text column, and a sticky left rail with the
+section tree and reading progress. Anthropic's proprietary fonts must never be
+committed or loaded; articles use the site font preference.
+
 ## Development
 
 ```bash

@@ -67,6 +67,9 @@
     let listType = "";
     let inFence = false;
     let fenceLines = [];
+    let fenceLanguage = "";
+    // Matches the article page, whose code header reads "text" when unlabeled.
+    const fence = () => `<pre data-lang="${escapeHtml(fenceLanguage || "text")}"><code>${escapeHtml(fenceLines.join("\n"))}</code></pre>`;
 
     function closeParagraph() {
       if (!paragraph.length) return;
@@ -90,10 +93,11 @@
       if (/^\s*```/.test(line)) {
         closeBlocks();
         if (inFence) {
-          output.push(`<pre><code>${escapeHtml(fenceLines.join("\n"))}</code></pre>`);
+          output.push(fence());
           fenceLines = [];
           inFence = false;
         } else {
+          fenceLanguage = line.trim().slice(3).trim().split(/\s+/)[0] || "";
           inFence = true;
         }
         continue;
@@ -108,9 +112,16 @@
       }
 
       const nextLine = lines[index + 1] || "";
-      if (line.includes("|") && /^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$/.test(nextLine)) {
+      if (line.includes("|") && /^\s*\|?(?:\s*:?-+:?\s*\|)+\s*:?-+:?\s*\|?\s*$/.test(nextLine)) {
         closeBlocks();
         const headings = tableCells(line);
+        // Column alignment from the divider row, emitted the way kramdown does.
+        const alignments = tableCells(nextLine).map((cell) => {
+          if (cell.startsWith(":") && cell.endsWith(":")) return ' style="text-align: center"';
+          if (cell.endsWith(":")) return ' style="text-align: right"';
+          if (cell.startsWith(":")) return ' style="text-align: left"';
+          return "";
+        });
         const rows = [];
         index += 2;
         while (index < lines.length && lines[index].trim() && lines[index].includes("|")) {
@@ -120,9 +131,12 @@
         index -= 1;
         output.push(
           `<div class="site-markdown-preview__table-wrap"><table><thead><tr>${headings
-            .map((cell) => `<th>${formatInline(cell, options)}</th>`)
+            .map((cell, cellIndex) => `<th${alignments[cellIndex] || ""}>${formatInline(cell, options)}</th>`)
             .join("")}</tr></thead><tbody>${rows
-            .map((row) => `<tr>${headings.map((_heading, cellIndex) => `<td>${formatInline(row[cellIndex] || "", options)}</td>`).join("")}</tr>`)
+            .map(
+              (row) =>
+                `<tr>${headings.map((_heading, cellIndex) => `<td${alignments[cellIndex] || ""}>${formatInline(row[cellIndex] || "", options)}</td>`).join("")}</tr>`
+            )
             .join("")}</tbody></table></div>`
         );
         continue;
@@ -163,7 +177,7 @@
       paragraph.push(line);
     }
 
-    if (inFence) output.push(`<pre><code>${escapeHtml(fenceLines.join("\n"))}</code></pre>`);
+    if (inFence) output.push(fence());
     closeBlocks();
     return output.join("\n");
   }

@@ -6,7 +6,6 @@
   {% assign editor_title_label = 'Title' %}
   {% assign editor_description_label = 'Summary' %}
   {% assign editor_published_label = 'Published' %}
-  {% assign editor_comments_label = 'GitHub comments' %}
   {% assign editor_body_label = 'Body' %}
   {% assign editor_metadata_label = 'Front matter' %}
   {% assign editor_preview_label = 'Live preview' %}
@@ -32,7 +31,6 @@
   {% assign editor_title_label = '标题' %}
   {% assign editor_description_label = '摘要' %}
   {% assign editor_published_label = '公开发布' %}
-  {% assign editor_comments_label = 'GitHub 评论' %}
   {% assign editor_body_label = '正文' %}
   {% assign editor_metadata_label = '页面元数据' %}
   {% assign editor_preview_label = '即时预览' %}
@@ -112,15 +110,6 @@
         <input id="site-inline-editor-published" type="checkbox">
         <span>{{ editor_published_label }}</span>
       </label>
-      <label
-        class="site-inline-editor__check"
-        {% unless page.path contains '_posts/' %}
-          hidden
-        {% endunless %}
-      >
-        <input id="site-inline-editor-comments" type="checkbox">
-        <span>{{ editor_comments_label }}</span>
-      </label>
     </div>
 
     <div class="site-inline-editor__tabs" role="tablist">
@@ -167,9 +156,10 @@
           <h2 id="site-inline-editor-preview-heading">{{ editor_preview_label }}</h2>
           <span>{{ editor_preview_note }}</span>
         </div>
-        <article>
-          <h1 id="site-inline-editor-preview-title"></h1>
-          <div id="site-inline-editor-preview-body"></div>
+        <article class="post-paper">
+          <h1 id="site-inline-editor-preview-title" class="post-paper__title"></h1>
+          <p id="site-inline-editor-preview-summary" class="post-paper__summary" hidden></p>
+          <div id="site-inline-editor-preview-body" class="post-prose"></div>
         </article>
       </aside>
     </div>
