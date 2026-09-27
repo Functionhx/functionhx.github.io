@@ -11,8 +11,8 @@ body.function-home-page {
 }
 .function-intro {
   display: grid;
-  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
-  gap: clamp(40px, 8vw, 128px);
+  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+  gap: clamp(40px, 8vw, 120px);
   align-items: center;
   padding: clamp(40px, 6vw, 88px) 0 clamp(56px, 7vw, 104px);
 }
@@ -91,55 +91,100 @@ body.function-home-page {
   gap: 12px;
   margin-top: 28px;
 }
+/* 右栏：像书的目录，一行一个去处 */
 .function-directory {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  counter-reset: directory;
+}
+.function-directory-heading {
+  margin: 0 0 6px;
+  color: var(--global-text-color-light);
+  font-size: 14px;
 }
 .function-directory-link {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  column-gap: 22px;
-  width: fit-content;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 24px 8px 24px 0;
+  border-bottom: 1px solid var(--global-divider-color);
   color: var(--global-text-color) !important;
   text-decoration: none !important;
+  counter-increment: directory;
+  transition: background 200ms ease;
+}
+.function-directory-link:first-of-type {
+  border-top: 1px solid var(--global-divider-color);
+}
+.function-directory-link::before {
+  content: counter(directory, decimal-leading-zero);
+  grid-row: 1 / 3;
+  align-self: start;
+  padding-top: 10px;
+  color: var(--global-text-color-light);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
 }
 .function-directory-title {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.18em;
   font-family: var(--function-serif);
-  font-size: clamp(52px, 6.6vw, 100px);
+  font-size: clamp(28px, 2.6vw, 36px);
   font-weight: 500;
-  letter-spacing: -0.025em;
-  line-height: 1.14;
-}
-.function-directory-arrow {
-  position: relative;
-  top: -0.48em;
-  margin-left: 0.08em;
-  font-family: var(--site-font-family);
-  font-size: 0.5em;
-  font-weight: 300;
-  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.function-directory-link:hover .function-directory-arrow {
-  transform: translateX(8px);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
 }
 .function-directory-note {
+  grid-column: 2;
+  margin-top: 4px;
   color: var(--global-text-color-light);
-  font-size: 15px;
-  opacity: 0;
-  transform: translateX(-6px);
-  transition:
-    opacity 200ms ease,
-    transform 200ms ease;
+  font-size: 14px;
 }
-.function-directory-link:hover .function-directory-note,
-.function-directory-link:focus-visible .function-directory-note {
-  opacity: 1;
-  transform: none;
+.function-directory-arrow {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  color: var(--global-text-color-light);
+  font-size: 22px;
+  font-weight: 300;
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 200ms ease;
+}
+.function-directory-link:hover .function-directory-arrow {
+  color: var(--global-text-color);
+  transform: translateX(6px);
+}
+
+/* GitHub：唯一的实心按钮，带账号名，醒目但不喧宾夺主 */
+.function-button--github svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+.function-button-note {
+  padding-left: 10px;
+  margin-left: 2px;
+  border-left: 1px solid color-mix(in srgb, var(--global-bg-color) 30%, transparent);
+  color: color-mix(in srgb, var(--global-bg-color) 70%, transparent);
+  font-size: 13px;
+  font-weight: 400;
+}
+.function-contact-links {
+  align-items: center;
+}
+.function-text-link {
+  padding: 4px 2px;
+  color: var(--global-text-color) !important;
+  font-size: 15px;
+  text-decoration: underline !important;
+  text-decoration-color: var(--global-divider-color) !important;
+  text-underline-offset: 6px;
+}
+.function-text-link:hover {
+  text-decoration-color: currentColor !important;
+}
+.function-colophon-links {
+  display: inline-flex;
+  gap: 20px;
 }
 
 /* 最近的更新：通栏横条，竖线分隔，可以左右滑 */
@@ -735,13 +780,12 @@ html[lang="zh-CN"][data-theme="dark"] .function-usage {
   .function-intro h1 {
     font-size: 38px;
   }
-  .function-directory-title {
-    font-size: clamp(44px, 13vw, 60px);
+  .function-directory-link {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    padding-block: 18px;
   }
-  .function-directory-note {
-    opacity: 1;
-    transform: none;
-    font-size: 13px;
+  .function-directory-title {
+    font-size: 26px;
   }
   .function-timeline-heading {
     width: calc(100vw - 32px);
@@ -783,7 +827,7 @@ html[lang="zh-CN"][data-theme="dark"] .function-usage {
 }
 @media (prefers-reduced-motion: reduce) {
   .function-directory-arrow,
-  .function-directory-note,
+  .function-directory-link,
   .function-bio a {
     transition: none;
   }

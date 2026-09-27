@@ -9,60 +9,51 @@
   padding: 8px 0 40px;
 }
 
-/* 顶部：左栏标题与简介，右栏大号衬线主题 */
+/* 顶部：一条紧凑的标题栏，左边标题与简介，右边一行主题链接 */
 .writing-hero {
-  display: grid;
-  grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
-  gap: clamp(40px, 8vw, 128px);
-  align-items: start;
-  padding: clamp(32px, 5vw, 72px) 0 clamp(56px, 7vw, 96px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px 48px;
+  padding: clamp(24px, 4vw, 56px) 0 32px;
   border-bottom: 1px solid var(--global-divider-color);
 }
-.writing-hero-copy {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-height: 100%;
-}
 .writing-hero-copy h1 {
-  margin: 0 0 auto;
-  padding-bottom: 48px;
-  font-size: 30px;
-  line-height: 1.3;
+  margin: 0 0 8px;
+  font-size: clamp(36px, 4vw, 48px);
+  line-height: 1.2;
 }
 .writing-hero-copy p {
-  margin: 0 0 28px;
+  margin: 0;
   color: var(--global-text-color-light);
-  font-size: 18px;
-  line-height: 1.75;
+  font-size: 16px;
+  line-height: 1.7;
 }
 .writing-topics {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 6px 26px;
 }
 .writing-topics a {
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.2em;
-  width: fit-content;
+  align-items: center;
+  gap: 6px;
   color: var(--global-text-color) !important;
   font-family: var(--function-serif);
-  font-size: clamp(44px, 5.6vw, 84px);
+  font-size: 19px;
   font-weight: 500;
-  letter-spacing: -0.025em;
-  line-height: 1.16;
   text-decoration: none !important;
 }
 .writing-topics a span {
-  position: relative;
-  top: -0.48em;
+  color: var(--global-text-color-light);
   font-family: var(--site-font-family);
-  font-size: 0.5em;
-  font-weight: 300;
-  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  font-size: 14px;
+  transition: transform 200ms ease;
 }
 .writing-topics a:hover span {
-  transform: translateX(8px);
+  color: var(--global-text-color);
+  transform: translateX(4px);
 }
 
 /* 下半部分：左侧筛选，右侧卡片 */
@@ -140,7 +131,7 @@
 }
 .writing-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 36px;
 }
 .writing-card[hidden] {
@@ -247,18 +238,10 @@
     width: calc(100% - 32px);
   }
   .writing-hero {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 36px;
     padding-top: 12px;
   }
-  .writing-hero-copy h1 {
-    padding-bottom: 16px;
-  }
-  .writing-hero-copy p {
-    font-size: 16px;
-  }
   .writing-topics a {
-    font-size: clamp(40px, 12vw, 56px);
+    font-size: 17px;
   }
   .writing-layout {
     grid-template-columns: minmax(0, 1fr);
