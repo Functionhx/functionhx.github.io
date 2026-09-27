@@ -37,13 +37,13 @@
 
   // 齿轮按钮：访客点击是站长登录，已验证的站长点击是打开站点设置。
   const settingsToggle = document.getElementById("site-settings-toggle");
-  function syncSettingsControl(verified) {
+  function syncSettingsControl(ownerActive) {
     if (!settingsToggle) return;
-    // 访客点齿轮打开彩蛋图鉴（eggs.js），长按才是站长登录。
-    const label = verified ? "打开站点设置" : "彩蛋图鉴";
+    // 访客模式下点齿轮打开彩蛋图鉴（eggs.js），长按才是站长登录或回到站长模式。
+    const label = ownerActive ? "打开站点设置" : "彩蛋图鉴";
     settingsToggle.setAttribute("aria-label", label);
     const tip = settingsToggle.querySelector("[data-settings-tip]");
-    if (tip) tip.textContent = verified ? "站点设置" : "彩蛋图鉴";
+    if (tip) tip.textContent = ownerActive ? "站点设置" : "彩蛋图鉴";
   }
   syncSettingsControl(false);
 
@@ -61,7 +61,7 @@
       document.documentElement.dataset.ownerVerified = "true";
       delete document.documentElement.dataset.ownerRestore;
       setVaultHint(remembered === true);
-      syncSettingsControl(true);
+      syncSettingsControl(ownerModeIsActive());
       window.requestAnimationFrame(restoreLauncherPosition);
     } else {
       setOwnerMode(false);
@@ -81,6 +81,7 @@
     if (enabled) document.documentElement.dataset.ownerMode = "true";
     else delete document.documentElement.dataset.ownerMode;
     syncContextualOwnerControls(enabled);
+    syncSettingsControl(enabled);
     if (toggle) {
       toggle.setAttribute("aria-pressed", enabled ? "true" : "false");
       toggle.setAttribute("aria-label", enabled ? "站长模式已开启；打开创作菜单" : visitorToggleLabel);

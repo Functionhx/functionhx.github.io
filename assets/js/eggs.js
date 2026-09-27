@@ -130,8 +130,9 @@
   const gear = document.getElementById("site-settings-toggle");
   let gallery = null;
 
-  function ownerVerified() {
-    return root.dataset.ownerVerified === "true";
+  // 齿轮跟着「当前模式」走：已验证的站长回到访客模式后，点齿轮也是图鉴，长按才回到站长模式。
+  function ownerActive() {
+    return root.dataset.ownerVerified === "true" && root.dataset.ownerMode === "true";
   }
 
   function renderGallery() {
@@ -242,7 +243,8 @@
       gear.classList.remove("is-egg-holding");
     };
     gear.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0 || ownerVerified()) return;
+      if (event.button !== 0 || ownerActive()) return;
+      tip.textContent = root.dataset.ownerVerified === "true" ? "继续按住 · 回到站长模式" : "继续按住 · 站长登录";
       gear.classList.add("is-egg-holding");
       holdTimer = window.setTimeout(() => {
         holdTimer = 0;
@@ -268,10 +270,10 @@
     gear.addEventListener("pointerleave", cancelHold);
     gear.addEventListener("pointercancel", cancelHold);
     gear.addEventListener("contextmenu", (event) => {
-      if (!ownerVerified()) event.preventDefault();
+      if (!ownerActive()) event.preventDefault();
     });
     gear.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && event.altKey && !ownerVerified()) {
+      if (event.key === "Enter" && event.altKey && !ownerActive()) {
         event.preventDefault();
         requestOwnerLogin();
       }
@@ -288,7 +290,7 @@
           event.stopImmediatePropagation();
           return;
         }
-        if (ownerVerified() || gear.dataset.ownerIntent === "true") return;
+        if (ownerActive() || gear.dataset.ownerIntent === "true") return;
         event.preventDefault();
         event.stopImmediatePropagation();
         if (gallery) closeGallery();
