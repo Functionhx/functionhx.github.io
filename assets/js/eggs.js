@@ -116,7 +116,9 @@
   async function sealLetter({ phrase, pin, title, text, sign, pinHint }) {
     if (!normalize(phrase)) throw new Error("暗号不能为空。");
     if (!/^\d{6}$/.test(String(pin || ""))) throw new Error("密码需要是 6 位数字。");
-    const inner = await encryptWith(String(pin), { title, text, sign });
+    // date 是封信的日子，拆开后写在落款下面。
+    const date = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Shanghai" });
+    const inner = await encryptWith(String(pin), { title, text, sign, date });
     return { v: 2, ...(await encryptWith(phrase, { inner, pinHint: pinHint || "" })) };
   }
 
@@ -352,70 +354,270 @@
     window.setTimeout(finish, 6000);
   }
 
-  // ---------- 终端 ----------
+  // ---------- 字体：打开彩蛋时才按需加载，加载不到就用系统字体 ----------
+  const FONT_URLS = {
+    hand: "https://cdn.jsdelivr.net/npm/@fontsource/long-cang@5.3.0/400.css",
+    type: "https://cdn.jsdelivr.net/npm/@fontsource/special-elite@5.3.0/400.css",
+    crt: "https://cdn.jsdelivr.net/npm/@fontsource/vt323@5.3.0/400.css",
+  };
+  const loadedFonts = new Set();
+  function loadFont(...names) {
+    for (const name of names) {
+      if (loadedFonts.has(name) || !FONT_URLS[name]) continue;
+      loadedFonts.add(name);
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = FONT_URLS[name];
+      link.crossOrigin = "anonymous";
+      document.head.append(link);
+    }
+  }
+
+  const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const shanghaiDate = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Shanghai" });
+  const dotted = (day) => String(day || "").replace(/-/g, ".");
+
+  // 手账小邮票：外层打孔花边，里面一弯月亮。
+  const STAMP_HTML = `<span class="egg-postage" aria-hidden="true"><span class="egg-postage-inner"><i class="egg-postage-moon"></i><b>ƒ</b><small>FUNCTION POST</small></span></span>`;
+
+  // ---------- 终端：复古 CRT ----------
   let terminal = null;
   const FORTUNES = [
     "机器人不会累，但它的电池会。",
     "先让它跑起来，再让它跑得对，最后让它跑得快。",
     "真机永远比仿真多一个 bug。",
     "今天也要记得保存 rosbag。",
+    "能用 print 调通的，就不要开调试器。——也不对。",
+    "所有的「就改一行」都不止一行。",
+    "今天的你，比昨天多懂了一点点。",
   ];
+  const TRAIN = [
+    "      ====        ________                ___________",
+    "  _D _|  |_______/        \\__I_I_____===__|_________|",
+    "   |(_)---  |   H\\________/ |   |        =|___ ___|  ",
+    "   /     |  |   H  |  |     |   |         ||_| |_||  ",
+    "  |      |  |   H  |__--------------------| [___] |  ",
+    "  | ________|___H__/__|_____/[][]~\\_______|       |  ",
+    "  |/ |   |-----------I_____I [][] []  D   |=======|__",
+    "__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__",
+    " |/-=|___|=    ||    ||    ||    |_____/~\\___/       ",
+    "  \\_/      \\O=====O=====O=====O_/      \\_/           ",
+  ].join("\n");
+  const LOGO = ["     ___  ", "    /  _| ", "  _| |_   ", " |_   _|  ", "   | |    ", "  _| |    ", " |__/     "];
+  const COMMANDS = [
+    "help",
+    "whoami",
+    "ls",
+    "cat",
+    "cd",
+    "pwd",
+    "echo",
+    "fortune",
+    "date",
+    "neofetch",
+    "cowsay",
+    "history",
+    "sl",
+    "matrix",
+    "theme",
+    "coffee",
+    "dog",
+    "sudo",
+    "rm",
+    "vim",
+    "clear",
+    "exit",
+    "unlock",
+  ];
+
+  function cowsay(text) {
+    const words = Array.from(text || "哞～");
+    const line = words.join("");
+    const width = words.reduce((sum, character) => sum + (/[\u0000-\u00ff]/.test(character) ? 1 : 2), 0);
+    return [
+      ` ${"_".repeat(width + 2)}`,
+      `< ${line} >`,
+      ` ${"-".repeat(width + 2)}`,
+      "        \\   ^__^",
+      "         \\  (oo)\\_______",
+      "            (__)\\       )\\/\\",
+      "                ||----w |",
+      "                ||     ||",
+    ].join("\n");
+  }
+
+  function matrixRain(screen) {
+    if (reducedMotion() || screen.querySelector(".egg-crt-rain")) return;
+    const canvas = document.createElement("canvas");
+    canvas.className = "egg-crt-rain";
+    screen.append(canvas);
+    const context = canvas.getContext("2d");
+    const width = (canvas.width = screen.clientWidth);
+    const height = (canvas.height = screen.clientHeight);
+    const size = 16;
+    const drops = Array.from({ length: Math.ceil(width / size) }, () => Math.random() * -30);
+    const glyphs = "ƒ01アイウエオカキクケコサシスセソタチツテトナニヌネノ<>{}=+*";
+    const color = getComputedStyle(screen).getPropertyValue("--phosphor").trim() || "#8dffb0";
+    let last = 0;
+    let frame = 0;
+    const started = window.performance.now();
+    const draw = (time) => {
+      if (!canvas.isConnected) return;
+      if (time - last > 50) {
+        last = time;
+        context.fillStyle = "rgba(4, 10, 6, 0.2)";
+        context.fillRect(0, 0, width, height);
+        context.fillStyle = color;
+        context.font = `${size}px VT323, ui-monospace, monospace`;
+        drops.forEach((drop, column) => {
+          context.fillText(glyphs[Math.floor(Math.random() * glyphs.length)], column * size, drop * size);
+          drops[column] = drop * size > height && Math.random() > 0.96 ? 0 : drop + 1;
+        });
+      }
+      if (time - started < 4200) frame = window.requestAnimationFrame(draw);
+      else {
+        canvas.classList.add("is-fading");
+        window.setTimeout(() => canvas.remove(), 500);
+      }
+    };
+    frame = window.requestAnimationFrame(draw);
+    canvas.addEventListener("egg:stop", () => window.cancelAnimationFrame(frame));
+  }
 
   function openTerminal() {
     if (terminal) return;
     markFound("terminal");
+    loadFont("crt");
     terminal = openOverlay(
       "egg-terminal-backdrop",
-      `<div class="egg-terminal">
-        <div class="egg-terminal-bar"><i></i><i></i><i></i><span>visitor@function: ~</span><button type="button" data-egg-exit>esc</button></div>
-        <div class="egg-terminal-log" aria-live="polite"></div>
-        <form class="egg-terminal-input"><label for="egg-terminal-command">visitor@function:~$</label><input id="egg-terminal-command" autocomplete="off" spellcheck="false" autocapitalize="off"></form>
+      `<div class="egg-crt" data-phosphor="green">
+        <div class="egg-crt-screen">
+          <div class="egg-crt-content">
+            <div class="egg-terminal-log" aria-live="polite"></div>
+            <form class="egg-terminal-input"><label for="egg-terminal-command">visitor@function:~$</label><input id="egg-terminal-command" autocomplete="off" spellcheck="false" autocapitalize="off"></form>
+          </div>
+        </div>
+        <div class="egg-crt-panel">
+          <span class="egg-crt-brand">FUNCTION<small>·80</small></span>
+          <span class="egg-crt-hint">esc 关机</span>
+          <button class="egg-crt-power" type="button" aria-label="关闭终端"><i></i></button>
+        </div>
       </div>`,
       "终端"
     );
+    const crt = terminal.querySelector(".egg-crt");
+    const screen = terminal.querySelector(".egg-crt-screen");
     const log = terminal.querySelector(".egg-terminal-log");
     const input = terminal.querySelector("input");
-    const print = (html) => {
-      log.insertAdjacentHTML("beforeend", `${html}\n`);
+    const typed = [];
+    let cursor = 0;
+    let closing = false;
+    const print = (html, className = "") => {
+      log.insertAdjacentHTML("beforeend", `<div class="egg-line ${className}">${html}</div>`);
       log.scrollTop = log.scrollHeight;
     };
-    const close = () => terminal?.egg.close();
+    const text = (value, className) => print(escapeHtml(value), className);
+    const dim = (value) => print(escapeHtml(value), "egg-dim");
+    const powerOff = () => {
+      if (closing) return;
+      closing = true;
+      screen.querySelector(".egg-crt-rain")?.dispatchEvent(new Event("egg:stop"));
+      if (reducedMotion()) return close();
+      screen.classList.add("is-off");
+      window.setTimeout(close, 420);
+    };
+    const { close } = terminal.egg;
+    terminal.egg = { close: powerOff };
     terminal.addEventListener("egg:close", () => {
       terminal = null;
     });
-    print('<span class="egg-accent">Function OS</span> <span class="egg-dim">· 输入 help 查看命令，esc 退出</span>');
+
+    const files = {
+      "about.txt": "樊宇琛 · Function\n北京理工大学，机器人工程本科生。\n关注自主系统、具身智能、三维场景智能与 AI 系统工程。",
+      "notes.md": "# 给好奇的你\n这个终端里藏着几条没写进 help 的命令。\n线索：history 记得一些事情。",
+      ".plan": "TODO\n [x] 做一只会跑的机器狗\n [x] 给网站藏几个彩蛋\n [ ] 睡够八小时\n [ ] 把 bug 修完（大概永远勾不上）",
+    };
     const commands = {
-      help: () => print('<span class="egg-dim">可用命令：</span> whoami  ls  cat about.txt  fortune  dog  date  unlock &lt;暗号&gt;  clear  exit'),
-      whoami: () => print("visitor —— 一位好奇的访客。欢迎你。"),
+      help: () => {
+        text("whoami  ls  cat <文件>  fortune  date  neofetch  theme  clear  exit");
+        dim("（还有一些命令没写在这里。）");
+      },
+      whoami: () => text("visitor —— 一位好奇的访客。欢迎你。"),
+      pwd: () => text("/home/visitor"),
+      cd: () => dim("cd: 这里只有一层，哪也去不了。"),
+      echo: (argument) => text(argument),
       ls: (argument) =>
+        /(^|\s)-\w*a/.test(argument) ? text(".  ..  .plan  about.txt  notes.md  projects/") : text("about.txt  notes.md  projects/"),
+      cat: (argument) => {
+        const name = argument.replace(/^\.\//, "");
+        if (Object.hasOwn(files, name)) text(files[name]);
+        else if (name.startsWith("projects")) dim("cat: projects/: 是一个目录。去首页的「项目」看看吧。");
+        else dim(`cat: ${argument || "?"}: 没有这个文件`);
+      },
+      fortune: () => text(FORTUNES[Math.floor(Math.random() * FORTUNES.length)]),
+      date: () => text(new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false })),
+      neofetch: () => {
+        const info = [
+          '<span class="egg-accent">visitor</span>@<span class="egg-accent">function</span>',
+          "----------------",
+          '<span class="egg-accent">OS</span>: Function OS 1.0',
+          '<span class="egg-accent">Host</span>: functionhx.github.io',
+          '<span class="egg-accent">Kernel</span>: curiosity',
+          '<span class="egg-accent">Shell</span>: ƒsh',
+          '<span class="egg-accent">Theme</span>: 复古手账',
+          '<span class="egg-accent">Robots</span>: 1 只机器狗',
+        ];
         print(
-          argument.replace(/\/$/, "") === "secrets"
-            ? '<span class="egg-dim">ls: secrets/: 权限不够。也许去齿轮里看看？</span>'
-            : "about.txt  projects/  tools/  blog/  secrets/"
+          LOGO.map((row, index) => `<span class="egg-accent">${escapeHtml(row)}</span>  ${info[index] || ""}`).join("\n") +
+            (info[7] ? `\n${" ".repeat(12)}${info[7]}` : "")
+        );
+      },
+      cowsay: (argument) => text(cowsay(argument)),
+      history: () =>
+        text(
+          ["  1  neofetch", "  2  sl", "  3  cowsay 你好", "  4  matrix", "  5  theme amber", "  6  coffee", "  7  rm -rf /      # 别试"].join("\n")
         ),
-      cat: (argument) =>
-        print(
-          argument === "about.txt"
-            ? "樊宇琛 · Function\n北京理工大学，机器人工程本科生。\n关注自主系统、具身智能、三维场景智能与 AI 系统工程。"
-            : `<span class="egg-dim">cat: ${escapeHtml(argument)}: 没有这个文件</span>`
-        ),
-      fortune: () => print(escapeHtml(FORTUNES[Math.floor(Math.random() * FORTUNES.length)])),
+      sl: () => {
+        if (reducedMotion()) return text(TRAIN);
+        const train = document.createElement("pre");
+        train.className = "egg-crt-train";
+        train.setAttribute("aria-hidden", "true");
+        train.textContent = TRAIN;
+        screen.append(train);
+        train.addEventListener("animationend", () => train.remove(), { once: true });
+        dim("呜——");
+      },
+      matrix: () => {
+        dim("Wake up, visitor…");
+        matrixRain(screen);
+      },
+      theme: (argument) => {
+        const next = argument === "amber" || argument === "green" ? argument : crt.dataset.phosphor === "green" ? "amber" : "green";
+        crt.dataset.phosphor = next;
+        dim(`荧光粉已切换为 ${next === "amber" ? "琥珀色" : "绿色"}。`);
+      },
+      coffee: () => text("    ( (\n     ) )\n  ........\n  |      |]\n  \\      /\n   `----'\n咖啡因 +1，bug -0。"),
       dog: () => {
-        print("正在放出机器狗……");
+        dim("正在放出机器狗……");
         runDog();
       },
-      date: () => print(new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false })),
-      sudo: () => print('<span class="egg-dim">visitor 不在 sudoers 文件中。此事将被报告（给 ƒ）。</span>'),
+      sudo: () => dim("visitor 不在 sudoers 文件中。此事将被报告（给 ƒ）。"),
+      rm: (argument) => {
+        if (!/-\w*r/.test(argument)) return dim("rm: 这里的文件都很珍贵，留着吧。");
+        crt.classList.remove("is-shaking");
+        void crt.offsetWidth;
+        crt.classList.add("is-shaking");
+        text("正在删除 / ……");
+        window.setTimeout(() => dim("开玩笑的。这台机器由 ƒ 守护。"), 700);
+      },
+      vim: () => dim("你进入了 vim。……开玩笑的，这里没有 vim，所以也不用想怎么退出。"),
       clear: () => {
         log.innerHTML = "";
       },
-      exit: close,
+      exit: powerOff,
       unlock: async (argument) => {
         const envelope = await revealEnvelope(argument);
-        if (!envelope) {
-          print('<span class="egg-dim">unlock: 暗号不对</span>');
-          return;
-        }
+        if (!envelope) return dim("unlock: 暗号不对");
         print('<span class="egg-accent">✉ 找到一封上了锁的信</span>');
         window.setTimeout(() => {
           close();
@@ -423,48 +625,267 @@
         }, 500);
       },
     };
+    commands.logout = commands.exit;
+    commands.vi = commands.vim;
+
+    const boot = [
+      ["FUNCTION BIOS v1.0   (C) ƒ", "egg-accent"],
+      ["内存检测 ............ 640K OK", ""],
+      ["好奇心 .............. 满格", ""],
+      ["正在启动 Function OS ...", ""],
+      ["", ""],
+      ["欢迎。输入 help 看看能做什么，esc 关机。", "egg-dim"],
+    ];
+    boot.forEach(([line, className], index) => {
+      window.setTimeout(() => terminal && text(line || " ", className), reducedMotion() ? 0 : 180 + index * 150);
+    });
+
     terminal.querySelector("form").addEventListener("submit", (event) => {
       event.preventDefault();
       const line = input.value.trim();
       input.value = "";
       if (!line) return;
+      typed.push(line);
+      cursor = typed.length;
       print(`<span class="egg-accent">visitor@function:~$</span> ${escapeHtml(line)}`);
       const [name, ...rest] = line.split(/\s+/);
-      const run = Object.hasOwn(commands, name.toLowerCase()) ? commands[name.toLowerCase()] : null;
+      const key = name.toLowerCase();
+      const run = Object.hasOwn(commands, key) ? commands[key] : null;
       if (run) run(rest.join(" "));
-      else print(`<span class="egg-dim">${escapeHtml(name)}: 找不到命令。输入 help 看看。</span>`);
+      else dim(`${name}: 找不到命令。输入 help 看看。`);
     });
-    terminal.querySelector("[data-egg-exit]").addEventListener("click", close);
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+        if (!typed.length) return;
+        event.preventDefault();
+        cursor = Math.max(0, Math.min(typed.length, cursor + (event.key === "ArrowUp" ? -1 : 1)));
+        input.value = typed[cursor] || "";
+      } else if (event.key === "Tab") {
+        event.preventDefault();
+        const matches = COMMANDS.filter((command) => command.startsWith(input.value.trim().toLowerCase()));
+        if (input.value.trim() && matches.length === 1) input.value = `${matches[0]} `;
+        else if (input.value.trim() && matches.length > 1) dim(matches.join("  "));
+      } else if (event.key === "l" && event.ctrlKey) {
+        event.preventDefault();
+        log.innerHTML = "";
+      }
+    });
+    terminal.querySelector(".egg-crt-power").addEventListener("click", powerOff);
+    screen.addEventListener("click", () => input.focus({ preventScroll: true }));
     input.focus();
   }
 
-  // ---------- f(x)：首页连点 ƒ 五下 ----------
+  // ---------- f(x)：首页连点 ƒ 五下 → 追逐曲线 ----------
+  // 追踪者 P 始终朝着目标 Q 的方向前进：dP/dt = v·(Q−P)/|Q−P|。Q 是一个四处游走的问号，
+  // 每追上一个，新的问号就会出现在别处。
+  function pursuit(canvas, onCatch) {
+    const context = canvas.getContext("2d");
+    if (!context) return () => {};
+    const ink = "#20344f";
+    const red = "#b4463d";
+    let width = 0;
+    let height = 0;
+    let phase = Math.random() * 20;
+    let clock = 0;
+    let pursuer;
+    let trail;
+    let targetTrail;
+    let target;
+    let sinceCatch = 0;
+    let smoothed = 0;
+    let flash = null;
+    let frame = 0;
+    let lastTime = 0;
+
+    const targetAt = (time) => ({
+      x: width * (0.5 + 0.37 * Math.sin(0.83 * time + phase) + 0.06 * Math.sin(2.3 * time + phase)),
+      y: height * (0.5 + 0.33 * Math.sin(1.21 * time + phase * 0.7) + 0.06 * Math.cos(3.1 * time)),
+    });
+    const reset = () => {
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      width = canvas.clientWidth;
+      height = canvas.clientHeight;
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      pursuer = { x: width * 0.08, y: height * 0.88 };
+      trail = [{ ...pursuer }];
+      target = targetAt(clock);
+      targetTrail = [{ ...target }];
+    };
+
+    const step = (dt) => {
+      clock += dt * 0.5;
+      sinceCatch += dt;
+      const next = targetAt(clock);
+      const targetSpeed = Math.hypot(next.x - target.x, next.y - target.y) / Math.max(dt, 1e-3);
+      smoothed = smoothed ? smoothed * 0.95 + targetSpeed * 0.05 : targetSpeed;
+      target = next;
+      targetTrail.push({ ...target });
+      if (targetTrail.length > 150) targetTrail.shift();
+      // 平时比问号慢一点，只能在拐弯处抄近路；久追不上就慢慢加速。
+      const factor = Math.min(0.86 + sinceCatch * 0.025, 1.25);
+      const dx = target.x - pursuer.x;
+      const dy = target.y - pursuer.y;
+      const distance = Math.hypot(dx, dy);
+      const move = Math.min(distance, smoothed * factor * dt);
+      if (distance > 0) {
+        pursuer = { x: pursuer.x + (dx / distance) * move, y: pursuer.y + (dy / distance) * move };
+      }
+      trail.push({ ...pursuer });
+      if (trail.length > 1400) trail.shift();
+      if (distance < 9) {
+        flash = { x: pursuer.x, y: pursuer.y, age: 0 };
+        sinceCatch = 0;
+        phase += 2 + Math.random() * 3;
+        target = targetAt(clock);
+        targetTrail = [{ ...target }];
+        onCatch?.();
+      }
+      if (flash) {
+        flash.age += dt;
+        if (flash.age > 0.9) flash = null;
+      }
+    };
+
+    const draw = () => {
+      context.clearRect(0, 0, width, height);
+      // 坐标轴
+      context.strokeStyle = "rgba(32, 52, 79, 0.55)";
+      context.fillStyle = "rgba(32, 52, 79, 0.6)";
+      context.lineWidth = 1.2;
+      context.beginPath();
+      context.moveTo(14, height - 14);
+      context.lineTo(width - 12, height - 14);
+      context.moveTo(14, height - 14);
+      context.lineTo(14, 10);
+      context.stroke();
+      context.font = "italic 13px Georgia, serif";
+      context.fillText("x", width - 20, height - 20);
+      context.fillText("y", 20, 18);
+      // 问号走过的路：红铅笔虚线
+      context.setLineDash([4, 6]);
+      context.strokeStyle = "rgba(180, 70, 61, 0.45)";
+      context.lineWidth = 1.4;
+      context.beginPath();
+      targetTrail.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
+      context.stroke();
+      context.setLineDash([]);
+      // 追踪者的墨迹：越新越浓
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      const segments = 14;
+      const chunk = Math.ceil(trail.length / segments);
+      for (let part = 0; part < segments; part += 1) {
+        const slice = trail.slice(part * chunk, (part + 1) * chunk + 1);
+        if (slice.length < 2) continue;
+        context.strokeStyle = `rgba(32, 52, 79, ${0.18 + (0.82 * (part + 1)) / segments})`;
+        context.lineWidth = 2.2;
+        context.beginPath();
+        slice.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
+        context.stroke();
+      }
+      // 视线：P 指向 Q 的方向
+      context.setLineDash([2, 5]);
+      context.strokeStyle = "rgba(32, 52, 79, 0.35)";
+      context.lineWidth = 1;
+      context.beginPath();
+      context.moveTo(pursuer.x, pursuer.y);
+      context.lineTo(target.x, target.y);
+      context.stroke();
+      context.setLineDash([]);
+      // Q：问号
+      context.fillStyle = red;
+      context.font = "26px 'Long Cang', 'Kaiti SC', STKaiti, KaiTi, cursive";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText("?", target.x, target.y - 1);
+      context.strokeStyle = "rgba(180, 70, 61, 0.55)";
+      context.beginPath();
+      context.arc(target.x, target.y, 14, 0, Math.PI * 2);
+      context.stroke();
+      // P：ƒ
+      context.fillStyle = ink;
+      context.beginPath();
+      context.arc(pursuer.x, pursuer.y, 4.2, 0, Math.PI * 2);
+      context.fill();
+      context.font = "italic 17px Georgia, 'Times New Roman', serif";
+      context.fillText("ƒ", pursuer.x - 11, pursuer.y - 13);
+      if (flash) {
+        const progress = flash.age / 0.9;
+        context.strokeStyle = `rgba(180, 70, 61, ${1 - progress})`;
+        context.lineWidth = 2;
+        context.beginPath();
+        context.arc(flash.x, flash.y, 10 + progress * 34, 0, Math.PI * 2);
+        context.stroke();
+        context.fillStyle = `rgba(180, 70, 61, ${1 - progress})`;
+        context.font = "bold 22px Georgia, serif";
+        context.fillText("!", flash.x, flash.y - 26 - progress * 10);
+      }
+      context.textAlign = "start";
+      context.textBaseline = "alphabetic";
+    };
+
+    reset();
+    if (reducedMotion()) {
+      for (let index = 0; index < 900; index += 1) step(1 / 60);
+      draw();
+      return () => {};
+    }
+    const loop = (time) => {
+      const dt = lastTime ? Math.min((time - lastTime) / 1000, 0.05) : 1 / 60;
+      lastTime = time;
+      step(dt);
+      draw();
+      frame = window.requestAnimationFrame(loop);
+    };
+    frame = window.requestAnimationFrame(loop);
+    const onResize = () => reset();
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", onResize);
+    };
+  }
+
   let taps = [];
   function showFunction() {
     markFound("fx");
+    loadFont("hand", "type");
     const overlay = openOverlay(
       "egg-fx-backdrop",
-      `<div class="egg-fx">
-        <div class="egg-fx-glyph" aria-hidden="true">ƒ</div>
-        <div class="egg-fx-formula" aria-live="polite"></div>
-        <svg viewBox="0 0 400 150" aria-hidden="true"><path class="egg-fx-axis" d="M10 120H390M30 140V10"/>
-          <path class="egg-fx-curve" d="M30 118 C 90 116, 120 104, 160 88 S 240 40, 290 30 S 360 18, 390 14"/><circle class="egg-fx-dot" cx="390" cy="14" r="5"/></svg>
-        <p class="egg-fx-caption">输入好奇心，输出一点点新东西。</p>
-        <button class="egg-button" type="button">收起</button>
+      `<div class="egg-fx egg-journal">
+        <span class="egg-tape egg-tape--left" aria-hidden="true"></span>
+        <span class="egg-tape egg-tape--right" aria-hidden="true"></span>
+        <header class="egg-fx-head">
+          <div>
+            <p class="egg-type">f(x) · pursuit curve</p>
+            <h3 class="egg-hand">追逐曲线</h3>
+          </div>
+          ${STAMP_HTML}
+        </header>
+        <canvas class="egg-fx-plot" role="img" aria-label="一条墨水曲线始终朝着一个游走的问号前进，追上一个，新的问号又出现在别处。"></canvas>
+        <p class="egg-fx-formula"><i>d</i><b>P</b>/<i>dt</i> = <i>v</i> · (<b>Q</b> − <b>P</b>) / ‖<b>Q</b> − <b>P</b>‖</p>
+        <footer class="egg-fx-foot">
+          <div>
+            <p class="egg-hand egg-fx-caption">朝着未知的方向，一直追下去。</p>
+            <p class="egg-hand egg-fx-count" aria-live="polite">正在追一个问号……</p>
+          </div>
+          <button class="egg-tag" type="button">收起</button>
+        </footer>
       </div>`,
-      "f(x)"
+      "f(x) 追逐曲线"
     );
-    const formula = overlay.querySelector(".egg-fx-formula");
-    const text = "f(x) = 樊宇琛";
-    let index = 0;
-    const type = () => {
-      index += 1;
-      formula.innerHTML = escapeHtml(text.slice(0, index)).replace("樊宇琛", "<b>樊宇琛</b>");
-      if (index < text.length && overlay.isConnected) window.setTimeout(type, 90);
-    };
-    window.setTimeout(type, 700);
-    overlay.querySelector(".egg-button").addEventListener("click", () => overlay.egg.close());
-    overlay.querySelector(".egg-button").focus({ preventScroll: true });
+    const count = overlay.querySelector(".egg-fx-count");
+    let caught = 0;
+    const stop = pursuit(overlay.querySelector("canvas"), () => {
+      caught += 1;
+      count.textContent = `追上了第 ${caught} 个未知 —— 新的问号又出现了。`;
+    });
+    overlay.addEventListener("egg:close", stop);
+    const button = overlay.querySelector(".egg-tag");
+    button.addEventListener("click", () => overlay.egg.close());
+    button.focus({ preventScroll: true });
   }
 
   document.addEventListener("click", (event) => {
@@ -485,8 +906,9 @@
   });
 
   // ---------- 一封信 ----------
-  function sparkle(canvas) {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // 背景里缓缓飘着的暖色尘光，像台灯下的空气。
+  function dust(canvas) {
+    const reduce = reducedMotion();
     const context = canvas.getContext("2d");
     if (!context) return () => {};
     let width = 0;
@@ -500,30 +922,32 @@
     };
     resize();
     window.addEventListener("resize", resize);
-    const dots = Array.from({ length: reduce ? 30 : 60 }, () => ({
+    const motes = Array.from({ length: reduce ? 24 : 46 }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      r: Math.random() * 1.8 + 0.4,
-      s: Math.random() * 0.25 + 0.05,
+      r: Math.random() * 1.6 + 0.5,
+      s: Math.random() * 0.2 + 0.05,
+      d: Math.random() * 0.3 - 0.15,
       p: Math.random() * Math.PI * 2,
     }));
     let last = 0;
     const draw = (time) => {
-      // 30 帧足够，背景星点不需要更高帧率。
+      // 30 帧足够，背景尘光不需要更高帧率。
       if (time - last >= 33) {
         last = time;
         context.clearRect(0, 0, width, height);
-        for (const dot of dots) {
+        for (const mote of motes) {
           if (!reduce) {
-            dot.y -= dot.s * 2;
-            if (dot.y < -5) {
-              dot.y = height + 5;
-              dot.x = Math.random() * width;
+            mote.y -= mote.s;
+            mote.x += mote.d * Math.sin(time / 1800 + mote.p);
+            if (mote.y < -5) {
+              mote.y = height + 5;
+              mote.x = Math.random() * width;
             }
           }
           context.beginPath();
-          context.arc(dot.x, dot.y, dot.r, 0, Math.PI * 2);
-          context.fillStyle = `rgba(233, 214, 255, ${0.35 + 0.35 * Math.sin(time / 900 + dot.p)})`;
+          context.arc(mote.x, mote.y, mote.r, 0, Math.PI * 2);
+          context.fillStyle = `rgba(255, 214, 160, ${0.22 + 0.3 * Math.sin(time / 1100 + mote.p) ** 2})`;
           context.fill();
         }
       }
@@ -561,33 +985,106 @@
     }
   }
 
+  function postmark(day) {
+    return `<svg class="egg-postmark" viewBox="0 0 132 64" aria-hidden="true">
+      <g fill="none" stroke="currentColor"><circle cx="32" cy="32" r="27" stroke-width="1.8"/><circle cx="32" cy="32" r="20.5" stroke-width="1"/>
+      <path d="M64 20q8-6 16 0t16 0t16 0t16 0M64 32q8-6 16 0t16 0t16 0t16 0M64 44q8-6 16 0t16 0t16 0t16 0" stroke-width="1.6"/></g>
+      <text x="32" y="29" text-anchor="middle" font-size="7.4" fill="currentColor">FUNCTION</text>
+      <text x="32" y="40" text-anchor="middle" font-size="7.4" fill="currentColor">${escapeHtml(dotted(day))}</text>
+    </svg>`;
+  }
+
+  // 一个字一个字写出来；标点和换行处停一停，像真的在写。
+  function handwrite(node, value, { onDone } = {}) {
+    const characters = Array.from(value);
+    const pen = document.createElement("span");
+    pen.className = "egg-pen";
+    pen.setAttribute("aria-hidden", "true");
+    const written = document.createTextNode("");
+    node.replaceChildren(written, pen);
+    let index = 0;
+    let timer = 0;
+    const finish = () => {
+      window.clearTimeout(timer);
+      written.data = value;
+      pen.remove();
+      onDone?.();
+    };
+    if (reducedMotion()) {
+      finish();
+      return finish;
+    }
+    const tick = () => {
+      if (!node.isConnected) return;
+      if (index >= characters.length) return finish();
+      const character = characters[index];
+      index += 1;
+      written.data += character;
+      node.closest(".egg-paper")?.scrollTo?.({ top: node.offsetTop + node.offsetHeight - 260 });
+      const pause = character === "\n" ? 420 : /[，、；：,;:]/.test(character) ? 200 : /[。！？…!?]/.test(character) ? 340 : 55 + Math.random() * 45;
+      timer = window.setTimeout(tick, pause);
+    };
+    timer = window.setTimeout(tick, 300);
+    return finish;
+  }
+
   function showLetter(envelope) {
     markFound("letter");
+    loadFont("hand", "type");
     const overlay = openOverlay(
       "egg-letter",
       `<canvas aria-hidden="true"></canvas>
       <div class="egg-letter-stage">
-        <div class="egg-envelope is-locked" aria-hidden="true"><span class="egg-envelope-body"></span><span class="egg-envelope-flap"></span><span class="egg-envelope-pocket"></span><span class="egg-envelope-seal">ƒ</span></div>
+        <div class="egg-envelope is-locked" aria-hidden="true">
+          <span class="egg-envelope-body"></span>
+          <span class="egg-envelope-sheet"></span>
+          <span class="egg-envelope-pocket"><span class="egg-envelope-to egg-hand">To：你</span></span>
+          <span class="egg-envelope-flap"></span>
+          ${STAMP_HTML}
+          ${postmark(shanghaiDate())}
+          <span class="egg-tape egg-tape--corner"></span>
+          <span class="egg-seal"><i class="egg-seal-half egg-seal-half--a"></i><i class="egg-seal-half egg-seal-half--b"></i><b>ƒ</b></span>
+        </div>
         <form class="egg-pin" autocomplete="off">
-          <p class="egg-pin-title">这封信上了锁</p>
+          <p class="egg-type egg-pin-kicker">PRIVATE · 6 DIGITS</p>
+          <p class="egg-pin-title egg-hand">这封信上了锁</p>
           <div class="egg-pin-boxes" role="group" aria-label="六位密码">${Array.from(
             { length: 6 },
             (_, index) => `<input inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="第 ${index + 1} 位">`
           ).join("")}</div>
-          <p class="egg-pin-status" role="status"></p>
+          <p class="egg-pin-status egg-hand" role="status"></p>
           <button class="egg-pin-mail-toggle" type="button">不知道密码？发到我的邮箱</button>
           <div class="egg-pin-mail" hidden>
             <input type="email" placeholder="你的邮箱" aria-label="你的邮箱" autocomplete="email" maxlength="254">
-            <button type="button">发送</button>
+            <button type="button">寄出</button>
           </div>
         </form>
       </div>
-      <article class="egg-paper" tabindex="-1"><h3></h3><p class="egg-paper-text"></p><p class="egg-paper-sign"></p><button class="egg-paper-close" type="button">把信收好</button></article>
+      <article class="egg-paper" tabindex="-1" aria-labelledby="egg-paper-title">
+        <span class="egg-tape egg-tape--left" aria-hidden="true"></span>
+        <span class="egg-tape egg-tape--right" aria-hidden="true"></span>
+        <h3 id="egg-paper-title" class="egg-hand"></h3>
+        <p class="sr-only egg-paper-full"></p>
+        <div class="egg-paper-text egg-hand" aria-hidden="true"></div>
+        <div class="egg-paper-end">
+          <p class="egg-paper-sign egg-hand"></p>
+          <svg class="egg-paper-doodle" viewBox="0 0 48 40" aria-hidden="true"><path d="M24 35C10 25 4 18 6 11c2-6 10-8 14-3l4 5 4-5c4-5 12-3 14 3 2 7-4 14-18 24z" pathLength="1"/></svg>
+          <p class="egg-paper-date egg-type"></p>
+        </div>
+        <div class="egg-paper-actions">
+          <button class="egg-paper-skip" type="button">直接看完</button>
+          <button class="egg-paper-close" type="button">把信收好</button>
+        </div>
+      </article>
       <button class="egg-letter-dismiss" type="button" aria-label="关闭">×</button>`,
       "一封上了锁的信"
     );
-    const stop = sparkle(overlay.querySelector("canvas"));
-    overlay.addEventListener("egg:close", stop);
+    const stop = dust(overlay.querySelector("canvas"));
+    let skipWriting = null;
+    overlay.addEventListener("egg:close", () => {
+      stop();
+      skipWriting?.();
+    });
     overlay.querySelector(".egg-letter-dismiss").addEventListener("click", () => overlay.egg.close());
     overlay.querySelector(".egg-paper-close").addEventListener("click", () => overlay.egg.close());
 
@@ -596,9 +1093,36 @@
     const status = form.querySelector(".egg-pin-status");
     const envelopeNode = overlay.querySelector(".egg-envelope");
     const paper = overlay.querySelector(".egg-paper");
+    const skip = paper.querySelector(".egg-paper-skip");
     let misses = 0;
     let checking = false;
     boxes[0].focus();
+
+    function readLetter(letter) {
+      const reduce = reducedMotion();
+      paper.querySelector("h3").textContent = letter.title || "给你";
+      paper.querySelector(".egg-paper-full").textContent = letter.text || "";
+      paper.querySelector(".egg-paper-sign").textContent = letter.sign || "";
+      paper.querySelector(".egg-paper-date").textContent = dotted(letter.date);
+      const steps = reduce ? [0, 0, 0, 0] : [0, 380, 950, 1600];
+      window.setTimeout(() => envelopeNode.classList.add("is-unsealed"), steps[0]);
+      window.setTimeout(() => envelopeNode.classList.add("is-open"), steps[1]);
+      window.setTimeout(() => envelopeNode.classList.add("is-sliding"), steps[2]);
+      window.setTimeout(() => {
+        envelopeNode.classList.add("is-gone");
+        overlay.querySelector(".egg-letter-stage").classList.add("is-done");
+        paper.classList.add("is-shown");
+        paper.focus({ preventScroll: true });
+        skipWriting = handwrite(paper.querySelector(".egg-paper-text"), letter.text || "", {
+          onDone: () => {
+            skipWriting = null;
+            skip.hidden = true;
+            paper.classList.add("is-signed");
+          },
+        });
+      }, steps[3]);
+    }
+    skip.addEventListener("click", () => skipWriting?.());
 
     async function tryPin() {
       const pin = boxes.map((box) => box.value).join("");
@@ -621,16 +1145,7 @@
       }
       status.textContent = "";
       form.classList.add("is-open");
-      envelopeNode.classList.remove("is-locked");
-      paper.querySelector("h3").textContent = letter.title || "给你";
-      paper.querySelector(".egg-paper-text").textContent = letter.text || "";
-      paper.querySelector(".egg-paper-sign").textContent = letter.sign || "";
-      window.setTimeout(() => envelopeNode.classList.add("is-open"), 350);
-      window.setTimeout(() => paper.classList.add("is-shown"), 700);
-      window.setTimeout(() => {
-        envelopeNode.style.visibility = "hidden";
-        paper.focus({ preventScroll: true });
-      }, 1700);
+      readLetter(letter);
     }
 
     boxes.forEach((box, index) => {
@@ -672,11 +1187,11 @@
         return;
       }
       mailButton.disabled = true;
-      status.textContent = "正在发送…";
+      status.textContent = "正在寄出…";
       const result = await mailPin(envelope.phrase, mailInput.value.trim());
       mailButton.disabled = false;
       if (result.ok) {
-        status.textContent = "密码已经发到你的邮箱，去看看吧。";
+        status.textContent = "密码已经寄到你的邮箱，去看看吧。";
         mail.hidden = true;
         boxes[0].focus();
       } else {
