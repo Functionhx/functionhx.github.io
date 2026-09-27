@@ -27,6 +27,7 @@ LANGUAGES = {"zh"}
 # 站长可选的站点字体与加载文案；与 site-preferences.liquid / site-preferences.js 保持一致。
 SITE_FONTS = {"system", "anthropic-serif", "anthropic-sans", "dyslexic"}
 LOADING_COPY = {"thinking", "loading", "thinking-zh", "loading-zh"}
+SEASON_EFFECTS = {"off", "auto", "snow", "sakura", "rain", "leaves"}
 
 REQUIRED_ROUTES = {
     "home": {"/"},
@@ -170,6 +171,11 @@ def main() -> int:
     if site_ui.get("loading_copy") not in LOADING_COPY:
         errors.append(
             f"_data/site_ui.yml: loading_copy must be one of {sorted(LOADING_COPY)}"
+        )
+    # 季节氛围同样由站长发布（2026-09-27）。
+    if site_ui.get("season_effect") not in SEASON_EFFECTS:
+        errors.append(
+            f"_data/site_ui.yml: season_effect must be one of {sorted(SEASON_EFFECTS)}"
         )
 
     # 首页彩蛋：公开线索开关，以及只含密文的信（暗号、密码、信的明文绝不能进仓库）。

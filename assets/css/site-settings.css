@@ -1042,3 +1042,70 @@ html[data-theme="dark"] .site-settings__footer > p[data-state="success"] {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* 季节氛围：分段选择器 */
+.site-settings__preference--season {
+  flex-wrap: wrap;
+}
+.site-settings__preference--season > div:first-child {
+  flex: 1 1 100%;
+}
+.site-settings__segmented {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  margin-top: 10px;
+  border-radius: 14px;
+  background: var(--function-wash, rgba(0, 0, 0, 0.05));
+}
+.site-settings__segmented label {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 72px;
+  margin: 0;
+  cursor: pointer;
+}
+.site-settings__segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.site-settings__segmented span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: var(--global-text-color-light);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+.site-settings__segmented svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.site-settings__segmented label:hover span {
+  color: var(--global-text-color);
+}
+.site-settings__segmented input:checked + span {
+  background: var(--global-card-bg-color, #fff);
+  color: var(--global-text-color);
+  box-shadow: 0 1px 4px rgba(20, 20, 19, 0.12);
+}
+.site-settings__segmented input:focus-visible + span {
+  outline: 2px solid var(--global-theme-color);
+  outline-offset: 1px;
+}

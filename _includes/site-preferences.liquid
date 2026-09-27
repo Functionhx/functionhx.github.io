@@ -3,6 +3,7 @@
     const root = document.documentElement;
     const supportedFonts = new Set(['anthropic-serif', 'anthropic-sans', 'system', 'dyslexic']);
     const supportedLoadingCopy = new Set(['thinking', 'loading', 'thinking-zh', 'loading-zh']);
+    const supportedSeasonEffects = new Set(['off', 'auto', 'snow', 'sakura', 'rain', 'leaves']);
     root.classList.add('js');
     const loaderState = window.functionhxPageLoaderState || { hideTimer: 0, showTimer: 0, visibleAt: 0 };
     window.functionhxPageLoaderState = loaderState;
@@ -16,6 +17,8 @@
     const publishedLoadingCopy = {{ site.data.site_ui.loading_copy | default: 'thinking' | jsonify }};
     root.dataset.publishedSiteFont = supportedFonts.has(publishedFont) ? publishedFont : 'system';
     root.dataset.publishedLoadingCopy = supportedLoadingCopy.has(publishedLoadingCopy) ? publishedLoadingCopy : 'thinking';
+    const publishedSeasonEffect = {{ site.data.site_ui.season_effect | default: 'off' | jsonify }};
+    root.dataset.publishedSeasonEffect = supportedSeasonEffects.has(publishedSeasonEffect) ? publishedSeasonEffect : 'off';
     root.dataset.siteFont = root.dataset.publishedSiteFont;
     root.dataset.loadingCopy = root.dataset.publishedLoadingCopy;
     try {

@@ -109,6 +109,7 @@
     data-initial-navigation-density="{{ site.data.site_ui.navigation_density | default: 'auto' | escape }}"
     data-initial-site-font="{{ site.data.site_ui.site_font | default: 'system' | escape }}"
     data-initial-loading-copy="{{ site.data.site_ui.loading_copy | default: 'thinking' | escape }}"
+    data-initial-season-effect="{{ site.data.site_ui.season_effect | default: 'off' | escape }}"
     data-ui-settings-path="_data/site_ui.yml"
   >
     <header class="site-settings__header">
@@ -181,6 +182,40 @@
               </select>
               <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
             </label>
+          </div>
+          <div class="site-settings__preference site-settings__preference--season">
+            <div>
+              <strong>季节氛围</strong>
+              <small>为页面增添季节的氛围；「自动」按月份换：冬雪、春樱、夏雨、秋叶</small>
+            </div>
+            <div class="site-settings__segmented" role="radiogroup" aria-label="季节氛围">
+              {% assign season_rows = 'off:关闭|auto:自动|snow:飘雪|sakura:樱花|rain:雨|leaves:落叶' | split: '|' %}
+              {% for row in season_rows %}
+                {% assign season_pair = row | split: ':' %}
+                <label>
+                  <input type="radio" name="site-settings-season" value="{{ season_pair[0] }}">
+                  <span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      {%- case season_pair[0] -%}
+                        {%- when 'off' -%}
+                          <circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/>
+                        {%- when 'auto' -%}
+                          <circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/>
+                        {%- when 'snow' -%}
+                          <path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5 12 7l2.5-2.5M9.5 19.5 12 17l2.5 2.5"/>
+                        {%- when 'sakura' -%}
+                          <path d="M12 11c-2.5-2-3-5.5-1-7.5l1 1.5 1-1.5c2 2 1.5 5.5-1 7.5zM12 11c3-.8 6 .7 6.5 3.6l-1.8.2.9 1.6c-2.6 1.4-5.6-.4-5.6-5.4zM12 11c-3-.8-6 .7-6.5 3.6l1.8.2-.9 1.6c2.6 1.4 5.6-.4 5.6-5.4z"/>
+                        {%- when 'rain' -%}
+                          <path d="M8 4 5 14M14 4l-3 10M20 4l-3 10M11 16l-1.5 4M17 16l-1.5 4"/>
+                        {%- else -%}
+                          <path d="M5 19C5 11 10 5 19 5c0 9-6 14-14 14zM5 19l8-8"/>
+                      {%- endcase -%}
+                    </svg>
+                    {{- season_pair[1] -}}
+                  </span>
+                </label>
+              {% endfor %}
+            </div>
           </div>
         </div>
       </section>

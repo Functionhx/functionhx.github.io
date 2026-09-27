@@ -115,6 +115,7 @@
   const letterSeal = document.getElementById("site-settings-letter-seal");
   const letterStatus = document.getElementById("site-settings-letter-status");
   const eggsPath = "_data/eggs.yml";
+  const seasonInputs = [...root.querySelectorAll('input[name="site-settings-season"]')];
   const eggIds = ["turbo", "dog", "terminal", "fx", "night", "idle", "console", "tab", "letter"];
   let initialEggPublic = {};
   let publishedLetter = null;
@@ -332,7 +333,7 @@
 
   function finishClosingSettings() {
     document.documentElement.dataset.navDensity = root.dataset.initialNavigationDensity;
-    previewPersonalization(root.dataset.initialSiteFont, root.dataset.initialLoadingCopy);
+    previewPersonalization(root.dataset.initialSiteFont, root.dataset.initialLoadingCopy, root.dataset.initialSeasonEffect);
     closeDialog(dialog);
     toggle.setAttribute("aria-expanded", "false");
     restoreSettingsFocus();
@@ -415,6 +416,7 @@
       Number(navigationDensityChanged()) +
       Number(fontChanged()) +
       Number(loadingCopyChanged()) +
+      Number(seasonChanged()) +
       Number(eggsChanged()) +
       Number(letterChanged()) +
       Number(hasNewSection());
@@ -446,6 +448,7 @@
       density: { initial: root.dataset.initialNavigationDensity, value: selectedNavigationDensity() },
       font: { initial: root.dataset.initialSiteFont, value: selectedFont() },
       loadingCopy: { initial: root.dataset.initialLoadingCopy, value: selectedLoadingCopy() },
+      season: { initial: root.dataset.initialSeasonEffect, value: selectedSeason() },
       eggs: eggInputs.map((input) => ({ id: input.dataset.eggPublic, value: input.checked })),
       sections: changedSections().map((input) => ({ key: input.dataset.translationKey, value: input.checked })),
       newSection: {
@@ -483,6 +486,9 @@
       }
       if (draft.loadingCopy?.initial === root.dataset.initialLoadingCopy && hasOption(elements.loadingCopy, draft.loadingCopy?.value)) {
         elements.loadingCopy.value = draft.loadingCopy.value;
+      }
+      if (draft.season?.initial === root.dataset.initialSeasonEffect && seasonInputs.some((input) => input.value === draft.season?.value)) {
+        checkSeason(draft.season.value);
       }
       for (const change of Array.isArray(draft.eggs) ? draft.eggs : []) {
         const input = eggInputs.find((item) => item.dataset.eggPublic === change.id);
@@ -541,6 +547,7 @@
     });
     elements.font.value = root.dataset.initialSiteFont;
     elements.loadingCopy.value = root.dataset.initialLoadingCopy;
+    checkSeason(root.dataset.initialSeasonEffect);
     eggInputs.forEach((input) => {
       input.checked = initialEggPublic[input.dataset.eggPublic] === true;
     });
@@ -591,6 +598,7 @@
       navigationDensityChanged() ||
       fontChanged() ||
       loadingCopyChanged() ||
+      seasonChanged() ||
       eggsChanged() ||
       letterChanged() ||
       hasNewSection()
@@ -623,15 +631,30 @@
     return selectedLoadingCopy() !== root.dataset.initialLoadingCopy;
   }
 
-  function previewPersonalization(font = selectedFont(), copy = selectedLoadingCopy()) {
+  function selectedSeason() {
+    return seasonInputs.find((input) => input.checked)?.value || root.dataset.initialSeasonEffect;
+  }
+
+  function seasonChanged() {
+    return selectedSeason() !== root.dataset.initialSeasonEffect;
+  }
+
+  function checkSeason(value) {
+    seasonInputs.forEach((input) => {
+      input.checked = input.value === value;
+    });
+  }
+
+  function previewPersonalization(font = selectedFont(), copy = selectedLoadingCopy(), season = selectedSeason()) {
     window.functionhxSitePreferences?.setFont?.(font);
     window.functionhxSitePreferences?.setLoadingCopy?.(copy);
+    window.functionhxSeasons?.set?.(season);
   }
 
   function syncPersonalization() {
     if (!hasOption(elements.font, elements.font.value)) elements.font.value = root.dataset.initialSiteFont;
     if (!hasOption(elements.loadingCopy, elements.loadingCopy.value)) elements.loadingCopy.value = root.dataset.initialLoadingCopy;
-    elements.preferenceStatus.hidden = !(fontChanged() || loadingCopyChanged());
+    elements.preferenceStatus.hidden = !(fontChanged() || loadingCopyChanged() || seasonChanged());
     elements.preferenceStatus.textContent = isEnglish
       ? "Previewing on this page. Save and publish to apply it for every visitor."
       : "正在本页预览，保存并发布后对所有访客生效。";
@@ -825,6 +848,7 @@
 
   const siteUiChoices = Object.freeze({
     loading_copy: /^(?:thinking|loading|thinking-zh|loading-zh)$/,
+    season_effect: /^(?:off|auto|snow|sakura|rain|leaves)$/,
     site_font: /^[a-z][a-z0-9-]{1,40}$/,
   });
 
@@ -907,11 +931,13 @@
     const densityChanged = navigationDensity !== root.dataset.initialNavigationDensity;
     const fontUpdated = personalization.font !== root.dataset.initialSiteFont;
     const copyUpdated = personalization.loadingCopy !== root.dataset.initialLoadingCopy;
-    if (densityChanged || fontUpdated || copyUpdated) {
+    const seasonUpdated = personalization.season !== root.dataset.initialSeasonEffect;
+    if (densityChanged || fontUpdated || copyUpdated || seasonUpdated) {
       let source = await fetchFileAt(uiSettingsPath, headSha);
       if (densityChanged) source = setNavigationDensity(source, navigationDensity);
       if (fontUpdated) source = setSiteUiValue(source, "site_font", personalization.font);
       if (copyUpdated) source = setSiteUiValue(source, "loading_copy", personalization.loadingCopy);
+      if (seasonUpdated) source = setSiteUiValue(source, "season_effect", personalization.season);
       uiEntries.push({
         content: source,
         mode: "100644",
@@ -1137,7 +1163,7 @@
     const sectionChanges = changedSections();
     const newSection = readNewSection();
     const navigationDensity = selectedNavigationDensity();
-    const personalization = { font: selectedFont(), loadingCopy: selectedLoadingCopy() };
+    const personalization = { font: selectedFont(), loadingCopy: selectedLoadingCopy(), season: selectedSeason() };
     if (!validateNewSection(newSection)) return;
     if (!hasPendingSettings()) {
       setStatus(strings.noChanges);
@@ -1176,6 +1202,8 @@
       root.dataset.initialLoadingCopy = personalization.loadingCopy;
       document.documentElement.dataset.publishedSiteFont = personalization.font;
       document.documentElement.dataset.publishedLoadingCopy = personalization.loadingCopy;
+      root.dataset.initialSeasonEffect = personalization.season;
+      document.documentElement.dataset.publishedSeasonEffect = personalization.season;
       eggInputs.forEach((input) => {
         initialEggPublic[input.dataset.eggPublic] = input.checked;
       });
@@ -1224,7 +1252,7 @@
   });
   dialog.addEventListener("close", () => {
     document.documentElement.dataset.navDensity = root.dataset.initialNavigationDensity;
-    previewPersonalization(root.dataset.initialSiteFont, root.dataset.initialLoadingCopy);
+    previewPersonalization(root.dataset.initialSiteFont, root.dataset.initialLoadingCopy, root.dataset.initialSeasonEffect);
     toggle.setAttribute("aria-expanded", "false");
     restoreSettingsFocus();
   });
@@ -1264,6 +1292,13 @@
   );
   elements.font.addEventListener("change", () => selectFont(elements.font.value));
   elements.loadingCopy.addEventListener("change", () => selectLoadingCopy(elements.loadingCopy.value));
+  seasonInputs.forEach((input) =>
+    input.addEventListener("change", () => {
+      previewPersonalization();
+      syncPersonalization();
+      settingsChanged();
+    })
+  );
   newSectionInputs.forEach((input) => {
     input.addEventListener("input", () => {
       if (input === elements.slug) slugIsAutomatic = false;
@@ -1351,6 +1386,7 @@
   restorePromise = restoreGitHubSession();
   elements.font.value = root.dataset.initialSiteFont;
   elements.loadingCopy.value = root.dataset.initialLoadingCopy;
+  checkSeason(root.dataset.initialSeasonEffect);
   syncPersonalization();
   restoreDraft();
   updateSaveState();
