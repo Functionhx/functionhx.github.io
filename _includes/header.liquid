@@ -256,18 +256,37 @@
       <div class="collapse navbar-collapse navbar-collapse-main" id="navbarNav">
         <ul class="navbar-nav navbar-menu-list flex-nowrap">
           <!-- About -->
-          <li class="nav-item {% if page.home %}active{% endif %}">
-            <a class="nav-link" href="{{ home_page.url | relative_url }}" data-nav-translation-key="home">
+          <li class="nav-item {% if page.home and current_lang == 'en' %}active{% endif %}">
+            <a
+              class="nav-link"
+              href="{{ home_page.url | relative_url }}"
+              {% if current_lang == 'en' %}
+                data-nav-translation-key="home"
+              {% else %}
+                aria-label="Function 首页"
+              {% endif %}
+            >
               {% if current_lang != 'en' %}
                 <span class="function-wordmark"><span aria-hidden="true">ƒ</span> Function</span>
               {% else %}
                 {{- home_page.title }}
               {% endif %}
-              {% if page.home %}
+              {% if page.home and current_lang == 'en' %}
                 <span class="sr-only">(current)</span>
               {% endif %}
             </a>
           </li>
+          {% if current_lang != 'en' %}
+            <!-- 显式的「首页」入口：不是每个人都知道点左侧的 ƒ 会回到首页。 -->
+            <li class="nav-item {% if page.home %}active{% endif %}">
+              <a class="nav-link" href="{{ home_page.url | relative_url }}" data-nav-translation-key="home">
+                首页
+                {%- if page.home -%}
+                  <span class="sr-only">(current)</span>
+                {%- endif -%}
+              </a>
+            </li>
+          {% endif %}
 
           <!-- Other pages -->
           {% assign sorted_pages = site.pages | sort: 'nav_order' %}

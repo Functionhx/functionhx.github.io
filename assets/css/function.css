@@ -290,6 +290,10 @@ html[data-function-scrolled="true"] .function-page #navbar {
   outline-offset: 3px;
   border-radius: 10px;
 }
+/* 主题 main.css 给 #light-toggle 加了 translateY(4px)，放在这组按钮里会比搜索、设置低 4px。 */
+.function-page #navbar #light-toggle {
+  transform: none;
+}
 .function-control > span[id] {
   color: inherit;
   line-height: 0;
