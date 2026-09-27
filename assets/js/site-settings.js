@@ -115,7 +115,7 @@
   const letterSeal = document.getElementById("site-settings-letter-seal");
   const letterStatus = document.getElementById("site-settings-letter-status");
   const eggsPath = "_data/eggs.yml";
-  const eggIds = ["turbo", "dog", "terminal", "fx", "letter"];
+  const eggIds = ["turbo", "dog", "terminal", "fx", "night", "idle", "console", "tab", "letter"];
   let initialEggPublic = {};
   let publishedLetter = null;
   try {

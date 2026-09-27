@@ -5,5 +5,9 @@ public:
   dog: true
   terminal: true
   fx: false
+  night: true
+  idle: true
+  console: true
+  tab: true
   letter: true
 letter:

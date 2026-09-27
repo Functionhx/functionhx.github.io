@@ -24,6 +24,10 @@
     { id: "dog", icon: "🐕", name: "机器狗", hint: "一段三十多年前的游戏秘籍，用方向键和 B、A。" },
     { id: "terminal", icon: "⌨️", name: "终端", hint: "键盘左上角，数字 1 的旁边。" },
     { id: "fx", icon: "ƒ", name: "f(x)", hint: "首页左上角的 ƒ 好像不只是个标志。" },
+    { id: "night", icon: "🌙", name: "深夜来访", hint: "有些话，只在午夜之后说。" },
+    { id: "idle", icon: "🖥️", name: "屏保", hint: "什么都别做，静静等上一分钟。" },
+    { id: "console", icon: "🛠️", name: "控制台", hint: "开发者工具里，也有人在等你。" },
+    { id: "tab", icon: "👀", name: "标签页", hint: "切到别的标签页，再回来看看。" },
     { id: "letter", icon: "✉️", name: "一封信", hint: "只有一个人知道暗号。", phrase: true },
   ].filter((egg) => egg.id !== "letter" || hasLetter());
   const publicHints = config.public && typeof config.public === "object" ? config.public : {};
@@ -147,14 +151,15 @@
       <ul class="egg-list">${shown
         .map((egg) => {
           const isFound = found.has(egg.id);
-          return `<li class="egg-item" data-found="${isFound}">
+          const replay = isFound && REPLAY[egg.id] ? ` data-egg-replay="${egg.id}" tabindex="0" role="button" title="再玩一次"` : "";
+          return `<li class="egg-item" data-found="${isFound}"${replay}>
             <span class="egg-icon" aria-hidden="true">${egg.icon}</span>
             <div>
               <strong>${isFound ? `${escapeHtml(egg.name)}<span class="egg-found">已发现</span>` : "？？？"}</strong>
               <p>${escapeHtml(egg.hint)}</p>
               ${
                 egg.phrase
-                  ? `<form class="egg-phrase" data-egg-phrase><input aria-label="暗号" placeholder="输入暗号" autocomplete="off" maxlength="64"><button type="submit">打开</button></form><p class="egg-phrase-status" role="status"></p>`
+                  ? `<form class="egg-phrase" data-egg-phrase data-no-page-loader><input aria-label="暗号" placeholder="输入暗号" autocomplete="off" maxlength="64"><button type="submit">打开</button></form><p class="egg-phrase-status" role="status"></p>`
                   : ""
               }
             </div>
@@ -162,6 +167,21 @@
         })
         .join("")}</ul>
       ${hiddenCount ? `<p class="egg-secret-count">还有 ${hiddenCount} 个彩蛋没有线索。</p>` : ""}`;
+    gallery.querySelectorAll("[data-egg-replay]").forEach((item) => {
+      const run = () => {
+        closeGallery();
+        REPLAY[item.dataset.eggReplay]?.();
+      };
+      item.addEventListener("click", (event) => {
+        if (!event.target.closest("form")) run();
+      });
+      item.addEventListener("keydown", (event) => {
+        if ((event.key === "Enter" || event.key === " ") && event.target === item) {
+          event.preventDefault();
+          run();
+        }
+      });
+    });
     gallery.querySelector("[data-egg-phrase]")?.addEventListener("submit", async (event) => {
       event.preventDefault();
       const input = event.currentTarget.querySelector("input");
@@ -494,7 +514,7 @@
         <div class="egg-crt-screen">
           <div class="egg-crt-content">
             <div class="egg-terminal-log" aria-live="polite"></div>
-            <form class="egg-terminal-input"><label for="egg-terminal-command">visitor@function:~$</label><input id="egg-terminal-command" autocomplete="off" spellcheck="false" autocapitalize="off"></form>
+            <form class="egg-terminal-input" data-no-page-loader><label for="egg-terminal-command">visitor@function:~$</label><input id="egg-terminal-command" autocomplete="off" spellcheck="false" autocapitalize="off"></form>
           </div>
         </div>
         <div class="egg-crt-panel">
@@ -512,9 +532,10 @@
     const typed = [];
     let cursor = 0;
     let closing = false;
+    const content = terminal.querySelector(".egg-crt-content");
     const print = (html, className = "") => {
       log.insertAdjacentHTML("beforeend", `<div class="egg-line ${className}">${html}</div>`);
-      log.scrollTop = log.scrollHeight;
+      content.scrollTop = content.scrollHeight;
     };
     const text = (value, className) => print(escapeHtml(value), className);
     const dim = (value) => print(escapeHtml(value), "egg-dim");
@@ -1045,7 +1066,7 @@
           <span class="egg-tape egg-tape--corner"></span>
           <span class="egg-seal"><i class="egg-seal-half egg-seal-half--a"></i><i class="egg-seal-half egg-seal-half--b"></i><b>ƒ</b></span>
         </div>
-        <form class="egg-pin" autocomplete="off">
+        <form class="egg-pin" autocomplete="off" data-no-page-loader>
           <p class="egg-type egg-pin-kicker">PRIVATE · 6 DIGITS</p>
           <p class="egg-pin-title egg-hand">这封信上了锁</p>
           <div class="egg-pin-boxes" role="group" aria-label="六位密码">${Array.from(
@@ -1207,10 +1228,190 @@
     });
   }
 
+  // ---------- 小纸条：深夜、控制台等彩蛋共用 ----------
+  let activeToast = null;
+  function toast(html, { duration = 8000, className = "" } = {}) {
+    activeToast?.remove();
+    loadFont("hand");
+    const note = document.createElement("div");
+    note.className = `egg-toast ${className}`;
+    note.setAttribute("role", "status");
+    note.innerHTML = `<span class="egg-tape egg-tape--left" aria-hidden="true"></span>${html}<button type="button" class="egg-toast-close" aria-label="关闭">×</button>`;
+    document.body.append(note);
+    activeToast = note;
+    const dismiss = () => {
+      if (!note.isConnected) return;
+      note.classList.add("is-leaving");
+      window.setTimeout(() => note.remove(), reducedMotion() ? 0 : 320);
+      if (activeToast === note) activeToast = null;
+    };
+    note.querySelector(".egg-toast-close").addEventListener("click", dismiss);
+    window.setTimeout(dismiss, duration);
+    return note;
+  }
+
+  // ---------- 深夜来访：零点到五点之间打开网站 ----------
+  function showNight() {
+    markFound("night");
+    toast(
+      `<span class="egg-toast-moon" aria-hidden="true"></span>
+      <div><p class="egg-hand egg-toast-title">这么晚还不睡呀</p><p>夜里的想法最多，也最该早点休息。晚安，明天见。</p></div>`,
+      { className: "egg-toast--night", duration: 10000 }
+    );
+  }
+  if (new Date().getHours() < 5) {
+    let shown = false;
+    try {
+      shown = window.sessionStorage.getItem("functionhx:eggs:night") === "1";
+      window.sessionStorage.setItem("functionhx:eggs:night", "1");
+    } catch (_error) {
+      /* 存不下就每次都说晚安，也没什么不好。 */
+    }
+    if (!shown) window.setTimeout(showNight, 2400);
+  }
+
+  // ---------- 屏保：一分钟没有任何操作，ƒ 在屏幕上弹来弹去 ----------
+  const IDLE_MS = 60000;
+  const SAVER_COLORS = ["#c5a2ff", "#d97757", "#6a9bcc", "#9fb67a", "#f3d78a", "#f0efe8"];
+  let idleTimer = 0;
+  let saver = null;
+
+  function stopScreensaver() {
+    if (!saver) return;
+    window.cancelAnimationFrame(saver.frame);
+    const node = saver.node;
+    saver = null;
+    node.classList.add("is-leaving");
+    window.setTimeout(() => node.remove(), reducedMotion() ? 0 : 400);
+  }
+
+  function startScreensaver() {
+    if (saver) return;
+    markFound("idle");
+    const node = document.createElement("div");
+    node.className = "egg-saver";
+    node.setAttribute("aria-hidden", "true");
+    node.innerHTML = `<div class="egg-saver-logo"><b>ƒ</b><span>FUNCTION</span></div><p class="egg-saver-corner">正好撞进角落！</p><p class="egg-saver-hint">动一下鼠标就回来</p>`;
+    document.body.append(node);
+    const logo = node.querySelector(".egg-saver-logo");
+    const corner = node.querySelector(".egg-saver-corner");
+    saver = { node, frame: 0, startedAt: window.performance.now() };
+    let colorIndex = 0;
+    logo.style.color = SAVER_COLORS[colorIndex];
+    if (reducedMotion()) return;
+    let x = Math.random() * Math.max(1, window.innerWidth - 200);
+    let y = Math.random() * Math.max(1, window.innerHeight - 120);
+    let vx = 150;
+    let vy = 110;
+    let last = 0;
+    const step = (time) => {
+      if (!saver) return;
+      const dt = last ? Math.min((time - last) / 1000, 0.05) : 0;
+      last = time;
+      const maxX = window.innerWidth - logo.offsetWidth;
+      const maxY = window.innerHeight - logo.offsetHeight;
+      x += vx * dt;
+      y += vy * dt;
+      let hits = 0;
+      if (x <= 0 || x >= maxX) {
+        vx = -vx;
+        x = Math.max(0, Math.min(x, maxX));
+        hits += 1;
+      }
+      if (y <= 0 || y >= maxY) {
+        vy = -vy;
+        y = Math.max(0, Math.min(y, maxY));
+        hits += 1;
+      }
+      if (hits) {
+        colorIndex = (colorIndex + 1) % SAVER_COLORS.length;
+        logo.style.color = SAVER_COLORS[colorIndex];
+      }
+      if (hits === 2) {
+        corner.classList.remove("is-shown");
+        void corner.offsetWidth;
+        corner.classList.add("is-shown");
+      }
+      logo.style.transform = `translate(${x}px, ${y}px)`;
+      saver.frame = window.requestAnimationFrame(step);
+    };
+    saver.frame = window.requestAnimationFrame(step);
+  }
+
+  function resetIdle() {
+    // 刚从图鉴里点开屏保时，那一下点击和随后的移动不算「回来了」。
+    if (saver && window.performance.now() - saver.startedAt > 900) stopScreensaver();
+    window.clearTimeout(idleTimer);
+    idleTimer = window.setTimeout(() => {
+      if (document.hidden || anyOverlayOpen() || gallery) resetIdle();
+      else startScreensaver();
+    }, IDLE_MS);
+  }
+  ["pointermove", "pointerdown", "keydown", "wheel", "touchstart", "scroll"].forEach((type) => {
+    window.addEventListener(type, resetIdle, { capture: true, passive: true });
+  });
+  resetIdle();
+
+  // ---------- 控制台：给打开开发者工具的人 ----------
+  function showConsoleToast() {
+    markFound("console");
+    toast(
+      `<span class="egg-toast-icon" aria-hidden="true">🛠️</span>
+      <div><p class="egg-hand egg-toast-title">控制台里的你好</p><p>被你发现了。本站源码在 GitHub 上，欢迎来看，也欢迎来提 issue。</p></div>`
+    );
+  }
+  function consoleEgg() {
+    showConsoleToast();
+    return "ƒ(你) = 好奇心 × 行动力。源码：https://github.com/Functionhx/magic-site-blueprint";
+  }
+  try {
+    if (!("ƒ" in window)) Object.defineProperty(window, "ƒ", { value: consoleEgg, configurable: true });
+    if (!("fx" in window)) Object.defineProperty(window, "fx", { value: consoleEgg, configurable: true });
+    window.console.log(
+      "%cƒ%c Function\n\n你好，同行。既然打开了开发者工具，就输入 ƒ() 试试吧。\n（Mac 上 ƒ 是 Option + F，也可以输入 fx()。）",
+      "font: italic 700 44px Georgia, serif; color: #6434b2",
+      "font: 600 14px/1.6 -apple-system, 'PingFang SC', sans-serif; color: inherit"
+    );
+  } catch (_error) {
+    /* 控制台不可用时就算了。 */
+  }
+
+  // ---------- 标签页：离开时标题喊你回来 ----------
+  const originalTitle = document.title;
+  const AWAY_TITLE = "ƒ 在等你回来…";
+  let titleTimer = 0;
+  document.addEventListener("visibilitychange", () => {
+    window.clearTimeout(titleTimer);
+    if (document.hidden) {
+      titleTimer = window.setTimeout(() => {
+        if (document.hidden) document.title = AWAY_TITLE;
+      }, 1500);
+      return;
+    }
+    if (document.title !== AWAY_TITLE) return;
+    document.title = "欢迎回来 ✦";
+    markFound("tab");
+    titleTimer = window.setTimeout(() => {
+      document.title = originalTitle;
+    }, 2500);
+  });
+
+  // 图鉴里点一下已发现的彩蛋就能再玩一次（手机上没有 ` 键时也能打开终端）。
+  const REPLAY = {
+    turbo: () => window.functionhxTurbo?.toggle(),
+    dog: runDog,
+    terminal: openTerminal,
+    fx: showFunction,
+    night: showNight,
+    idle: startScreensaver,
+    console: showConsoleToast,
+  };
+
   // ---------- 键盘 ----------
   let konami = 0;
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
+      if (activeToast) activeToast.querySelector(".egg-toast-close")?.click();
       if (gallery) {
         closeGallery(true);
         return;

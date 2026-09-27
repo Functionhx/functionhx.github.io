@@ -547,17 +547,16 @@
 .egg-crt-screen :is(div, span, label) {
   color: inherit;
 }
+/* 像真的终端一样：输入行紧跟在最后一行输出后面，写满了整屏一起往上滚。 */
 .egg-crt-content {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
   padding: 22px 26px;
-}
-.egg-terminal-log {
-  flex: 1;
   overflow-y: auto;
   scrollbar-width: none;
+}
+.egg-crt-content::-webkit-scrollbar {
+  display: none;
 }
 .egg-line {
   color: inherit;
@@ -1336,6 +1335,219 @@
   #site-settings-toggle > .function-icon {
     transition-duration: 1ms !important;
     transition-delay: 0ms !important;
+  }
+}
+
+/* ---------- 小纸条 ---------- */
+.egg-toast {
+  --egg-paper: #fbf6ea;
+  --egg-ink: #20344f;
+  --egg-hand-font: "Long Cang", "Kaiti SC", STKaiti, KaiTi, cursive;
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 1080;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  width: min(340px, calc(100vw - 32px));
+  padding: 20px 40px 16px 18px;
+  border-radius: 3px;
+  background: var(--egg-paper);
+  color: var(--egg-ink);
+  box-shadow: 0 16px 40px rgb(30 20 10 / 0.22);
+  transform: rotate(-1deg);
+  animation: egg-toast-in 420ms cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
+}
+.egg-toast.is-leaving {
+  opacity: 0;
+  transform: translateY(12px) rotate(-1deg);
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
+}
+@keyframes egg-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) rotate(-3deg);
+  }
+}
+.egg-toast .egg-tape--left {
+  top: -12px;
+  left: 50%;
+  width: 84px;
+  margin-left: -42px;
+  transform: rotate(-3deg);
+}
+.egg-toast p {
+  margin: 0;
+  color: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.egg-toast .egg-toast-title {
+  margin-bottom: 2px;
+  font-family: var(--egg-hand-font);
+  font-size: 22px;
+  line-height: 1.3;
+}
+.egg-toast-icon {
+  flex: none;
+  font-size: 24px;
+  line-height: 1.4;
+}
+.egg-toast-moon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  margin-top: 4px;
+  border-radius: 50%;
+  box-shadow: -7px 3px 0 0 #e8b94a;
+  transform: translateX(8px);
+}
+.egg-toast--night {
+  --egg-paper: #1f2a40;
+  --egg-ink: #f3ead4;
+}
+.egg-toast-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 18px;
+  opacity: 0.6;
+  cursor: pointer;
+}
+.egg-toast-close:hover {
+  opacity: 1;
+}
+
+.egg-toast :is(div, span, b),
+.egg-saver :is(div, span, b) {
+  color: inherit;
+}
+
+/* ---------- 屏保 ---------- */
+.egg-saver {
+  position: fixed;
+  inset: 0;
+  z-index: 1095;
+  overflow: hidden;
+  background: rgb(8 8 10 / 0.94);
+  animation: egg-saver-in 900ms ease both;
+  cursor: none;
+}
+.egg-saver.is-leaving {
+  opacity: 0;
+  transition: opacity 380ms ease;
+}
+@keyframes egg-saver-in {
+  from {
+    opacity: 0;
+  }
+}
+.egg-saver-logo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  justify-items: center;
+  padding: 10px 22px 12px;
+  border: 3px solid currentColor;
+  border-radius: 50% / 40%;
+  transition: color 200ms ease;
+  will-change: transform;
+}
+.egg-saver-logo b {
+  font:
+    italic 700 60px/1 Georgia,
+    "Times New Roman",
+    serif;
+}
+.egg-saver-logo span {
+  margin-top: 4px;
+  font:
+    700 12px/1 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  letter-spacing: 0.3em;
+}
+.egg-saver-corner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: 0;
+  color: #f3d78a;
+  font-size: 22px;
+  font-weight: 600;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.egg-saver-corner.is-shown {
+  animation: egg-saver-corner 1800ms ease both;
+}
+@keyframes egg-saver-corner {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -30%) scale(0.8);
+  }
+  20%,
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+}
+.egg-saver-hint {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  margin: 0;
+  color: rgb(255 255 255 / 0.35);
+  font-size: 12px;
+  transform: translateX(-50%);
+}
+.egg-saver .egg-saver-logo {
+  top: calc(50% - 50px);
+  left: calc(50% - 70px);
+}
+.egg-saver .egg-saver-logo[style*="translate"] {
+  top: 0;
+  left: 0;
+}
+
+/* 图鉴里已发现的彩蛋可以点击重玩 */
+.egg-item[data-egg-replay] {
+  cursor: pointer;
+}
+.egg-item[data-egg-replay]:hover .egg-icon {
+  transform: rotate(-8deg) scale(1.06);
+}
+.egg-icon {
+  transition: transform 200ms ease;
+}
+
+@media (max-width: 560px) {
+  .egg-toast {
+    bottom: 16px;
+    left: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .egg-toast,
+  .egg-saver,
+  .egg-saver-corner.is-shown {
+    animation-duration: 1ms !important;
   }
 }
 
