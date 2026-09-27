@@ -141,8 +141,9 @@ def route_file(site: Path, route: str) -> Path:
 
 def check_academic_link(site: Path) -> list[str]:
     """Every page must offer the academic homepage, and work without JavaScript."""
+    # 学术主页默认进英文版（站长决定 2026-09-27）：中文站的导航也指向学术站根路径。
     expected = {
-        "index.html": ("https://scholar.fanyuchen.com.cn/zh/", "/academic/zh/"),
+        "index.html": ("https://scholar.fanyuchen.com.cn/", "/academic/"),
     }
     problems = []
     for rel, (href, gh) in expected.items():
