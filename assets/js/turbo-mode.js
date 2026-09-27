@@ -146,7 +146,8 @@
   function resizeCanvas() {
     viewportWidth = Math.max(1, window.innerWidth);
     viewportHeight = Math.max(1, window.innerHeight);
-    pixelRatio = Math.min(window.devicePixelRatio || 1, viewportWidth < 720 ? 1.15 : 1.35);
+    // 背景特效不需要高清：按 1 倍像素渲染，每帧要填充的像素少将近一半。
+    pixelRatio = 1;
 
     const renderWidth = Math.floor(viewportWidth * pixelRatio);
     const renderHeight = Math.floor(viewportHeight * pixelRatio);
@@ -1086,7 +1087,7 @@
       pointer.y = event.clientY;
       pointer.seen = true;
       updateCursorTarget(event.target);
-      if (!active || reducedMotion || event.timeStamp - lastParticleAt < 15) return;
+      if (!active || reducedMotion || event.timeStamp - lastParticleAt < 32) return;
       lastParticleAt = event.timeStamp;
       const speed = Math.hypot(event.movementX, event.movementY);
       const color = particles.length % 5 === 0 ? palette.danger : particles.length % 3 === 0 ? palette.magenta : palette.cyan;

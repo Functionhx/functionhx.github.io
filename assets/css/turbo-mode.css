@@ -180,39 +180,8 @@ html:not([data-theme="light"]) .turbo-cursor[data-pressed="true"] {
   opacity: 0;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  html[data-turbo="on"][data-turbo-cursor="enabled"] body,
-  html[data-turbo="on"][data-turbo-cursor="enabled"] body * {
-    cursor: none !important;
-  }
-
-  html[data-turbo="on"][data-turbo-cursor="enabled"]
-    body
-    :is(
-      textarea,
-      [contenteditable="true"],
-      [contenteditable="plaintext-only"],
-      input:not([type]),
-      input[type="text"],
-      input[type="search"],
-      input[type="email"],
-      input[type="password"],
-      input[type="number"],
-      input[type="tel"],
-      input[type="url"],
-      input[type="date"],
-      input[type="datetime-local"],
-      input[type="month"],
-      input[type="time"],
-      input[type="week"]
-    ) {
-    cursor: text !important;
-  }
-
-  html[data-turbo="on"][data-turbo-cursor="enabled"] body select {
-    cursor: default !important;
-  }
-}
+/* 系统光标始终保留：Turbo 的瞄准框只是跟随的装饰。
+   若隐藏系统光标，用户看到的「鼠标」就是一个由 JS 移动的元素，天然比真实指针慢一拍。 */
 
 @keyframes turbo-cursor-orbit {
   to {
@@ -220,8 +189,9 @@ html:not([data-theme="light"]) .turbo-cursor[data-pressed="true"] {
   }
 }
 
+/* 性能：全屏 Canvas 每帧都在重画，不能再挂 filter / mix-blend-mode——
+   那会让浏览器每一帧对整屏重新做滤镜和混合，鼠标因此发涩。 */
 .turbo-canvas {
-  filter: contrast(1.08) saturate(1.18);
   height: 100vh;
   inset: 0;
   opacity: 0;
@@ -234,15 +204,8 @@ html:not([data-theme="light"]) .turbo-cursor[data-pressed="true"] {
 }
 
 html[data-turbo="on"] .turbo-canvas {
-  mix-blend-mode: multiply;
   opacity: 0.9;
   visibility: visible;
-}
-
-html[data-theme="dark"][data-turbo="on"] .turbo-canvas,
-html:not([data-theme="light"])[data-turbo="on"] .turbo-canvas {
-  mix-blend-mode: screen;
-  opacity: 0.96;
 }
 
 html[data-turbo="on"] body > header,
@@ -252,14 +215,13 @@ html[data-turbo="on"] body > footer {
   z-index: 1;
 }
 
+/* 导航栏下面就是逐帧重画的 Canvas，毛玻璃会让它每帧重新模糊整条导航；换成接近不透明的底色。 */
 html[data-turbo="on"] #navbar {
-  background: color-mix(in srgb, var(--global-bg-color) 82%, transparent);
-  backdrop-filter: blur(18px) saturate(145%);
+  background: color-mix(in srgb, var(--global-bg-color) 94%, transparent);
   border-bottom-color: color-mix(in srgb, var(--turbo-cyan) 28%, transparent);
   box-shadow:
     0 1px 0 color-mix(in srgb, var(--turbo-magenta) 20%, transparent),
     0 10px 42px color-mix(in srgb, var(--turbo-cyan) 8%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(145%);
 }
 
 .turbo-chrome {

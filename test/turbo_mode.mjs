@@ -95,7 +95,7 @@ try {
   assert.equal(state.cursorCapability, "enabled", "Turbo must enable its custom cursor on a desktop pointer");
   assert.equal(state.cursorVisible, "true", "The Turbo cursor must appear after pointer input");
   assert.equal(state.cursorState, "locked", "The Turbo cursor must lock onto the appearance control");
-  assert.equal(state.bodyCursor, "none", "The native cursor must be hidden while the Turbo cursor is active");
+  assert.notEqual(state.bodyCursor, "none", "The native cursor must stay visible so pointer input never lags");
 
   if (process.env.TURBO_SCREENSHOT_PATH) {
     await page.waitForTimeout(1250);
