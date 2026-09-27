@@ -107,8 +107,8 @@ after owner verification (`owner-unlock.js`, `github-auth-vault.js`,
 
 ## Out-of-repo services
 
-Two services live in this repo but are excluded from the Jekyll build and run on
-the owner's Tencent Cloud server:
+Three services live in this repo but are excluded from the Jekyll build. The
+first two run on the owner's Tencent Cloud server:
 
 - `magic-search/server.py` — semantic ranking over the build-time index.
   `_plugins/magic_search_generator.rb` generates `assets/search/index-zh.json`
@@ -118,6 +118,10 @@ the owner's Tencent Cloud server:
   ciphertext to a separate private repository. Read `spark-vault/README.md`
   before touching anything in it; its security boundary (per-note data keys,
   passphrase + passkey wrapping, the decoy quick gate) is deliberate.
+- `letter-mailer/` — a Cloudflare Worker (not Tencent: mainland servers cannot
+  reach Gmail) that emails the six-digit PIN for the homepage letter easter egg
+  after checking the secret phrase. Gmail credentials, the phrase and the PIN
+  live only in Worker secrets; see `letter-mailer/README.md`.
 
 ## Deployment
 
