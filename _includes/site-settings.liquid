@@ -50,10 +50,10 @@
   {% assign settings_auth_cancel = 'Cancel' %}
   {% assign settings_auth_verify = 'Verify and connect' %}
 {% else %}
-  {% assign settings_heading = '浏览偏好' %}
-  {% assign settings_intro = '字体与加载文案仅保存在当前浏览器。' %}
-  {% assign settings_personalization = '个性化' %}
-  {% assign settings_personalization_note = '字体与加载文案 · 只保存在当前浏览器' %}
+  {% assign settings_heading = '站点设置' %}
+  {% assign settings_intro = '字体、加载文案与栏目由站长设置，保存并发布后对所有访客生效。' %}
+  {% assign settings_personalization = '阅读体验' %}
+  {% assign settings_personalization_note = '即时预览 · 发布后对所有访客生效' %}
   {% assign settings_font = '阅读字体' %}
   {% assign settings_font_note = '应用于所有页面' %}
   {% assign settings_loading_copy = '加载文案' %}
@@ -87,7 +87,7 @@
   {% assign settings_connect = '连接 GitHub' %}
   {% assign settings_commit = '保存并发布' %}
   {% assign settings_close = '关闭设置' %}
-  {% assign settings_idle = '修改暂时只保留在这个面板中，提交后才会更新站点。' %}
+  {% assign settings_idle = '修改暂时只保留在这个面板中，保存并发布后才会更新站点。' %}
   {% assign settings_auth_heading = '连接 GitHub' %}
   {% assign settings_auth_intro = '创建时选择“Only select repositories → functionhx.github.io”，权限只开启 Contents: write 与 Actions: read。' %}
   {% assign settings_auth_create = '在 GitHub 创建受限令牌' %}
@@ -107,6 +107,8 @@
     data-owner="Functionhx"
     data-branch="main"
     data-initial-navigation-density="{{ site.data.site_ui.navigation_density | default: 'auto' | escape }}"
+    data-initial-site-font="{{ site.data.site_ui.site_font | default: 'system' | escape }}"
+    data-initial-loading-copy="{{ site.data.site_ui.loading_copy | default: 'thinking' | escape }}"
     data-ui-settings-path="_data/site_ui.yml"
   >
     <header class="site-settings__header">

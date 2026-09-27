@@ -129,6 +129,7 @@
   let commitAuthorization = null;
   let setupAfterConnect = false;
   let protectionState = { enabled: false, locked: false };
+  let openSettingsAfterLogin = false;
   const disconnectedLabel = elements.connect.querySelector("span")?.textContent.trim() || "GitHub";
 
   async function syncOwnerAccess() {
@@ -265,14 +266,45 @@
     window.functionhxOwnerUi?.closePrimaryNavigation?.();
     syncPersonalization();
     openDialog(dialog);
-    if (hasPendingSettings()) previewNavigationDensity();
+    if (hasPendingSettings()) {
+      previewNavigationDensity();
+      previewPersonalization();
+    }
     updateSaveState();
     toggle.setAttribute("aria-expanded", "true");
     syncOwnerAccess();
   }
 
+  function ownerIsVerified() {
+    return document.documentElement.dataset.ownerVerified === "true";
+  }
+
+  // 登录成功后进入站长模式（铅笔出现），并打开站点设置。
+  function finishOwnerLogin() {
+    openSettingsAfterLogin = false;
+    if (!ownerIsVerified()) return;
+    window.functionhxOwnerUi?.setOwnerMode?.(true);
+    openSettings();
+  }
+
+  // 齿轮按钮：已验证的站长直接打开设置；其他人先走站长登录
+  // （已绑定 Touch ID 时是密码 + Touch ID，否则是连接 GitHub）。
+  async function handleSettingsToggle() {
+    await restorePromise;
+    if (ownerIsVerified()) {
+      window.functionhxOwnerUi?.setOwnerMode?.(true);
+      openSettings();
+      return;
+    }
+    openSettingsAfterLogin = true;
+    await requestOwnerAccess(false);
+    // 解锁路径在这里已经完成；连接 GitHub 的路径在 connectGitHub 成功后继续。
+    if (openSettingsAfterLogin && ownerIsVerified()) finishOwnerLogin();
+  }
+
   function finishClosingSettings() {
     document.documentElement.dataset.navDensity = root.dataset.initialNavigationDensity;
+    previewPersonalization(root.dataset.initialSiteFont, root.dataset.initialLoadingCopy);
     closeDialog(dialog);
     toggle.setAttribute("aria-expanded", "false");
     restoreSettingsFocus();
@@ -350,7 +382,8 @@
   }
 
   function updateSaveState() {
-    const count = changedSections().length + Number(navigationDensityChanged()) + Number(hasNewSection());
+    const count =
+      changedSections().length + Number(navigationDensityChanged()) + Number(fontChanged()) + Number(loadingCopyChanged()) + Number(hasNewSection());
     elements.saveState.textContent = count
       ? isEnglish
         ? `${count} unpublished change${count === 1 ? "" : "s"}`
@@ -377,6 +410,8 @@
     const draft = {
       version: 1,
       density: { initial: root.dataset.initialNavigationDensity, value: selectedNavigationDensity() },
+      font: { initial: root.dataset.initialSiteFont, value: selectedFont() },
+      loadingCopy: { initial: root.dataset.initialLoadingCopy, value: selectedLoadingCopy() },
       sections: changedSections().map((input) => ({ key: input.dataset.translationKey, value: input.checked })),
       newSection: {
         ...values,
@@ -407,6 +442,13 @@
           });
         } else if (draft.density.value !== root.dataset.initialNavigationDensity) densityConflict = true;
       }
+      // 只在线上值没变时找回字体与加载文案草稿，避免覆盖另一处刚发布的设置。
+      if (draft.font?.initial === root.dataset.initialSiteFont && hasOption(elements.font, draft.font?.value)) {
+        elements.font.value = draft.font.value;
+      }
+      if (draft.loadingCopy?.initial === root.dataset.initialLoadingCopy && hasOption(elements.loadingCopy, draft.loadingCopy?.value)) {
+        elements.loadingCopy.value = draft.loadingCopy.value;
+      }
       for (const change of Array.isArray(draft.sections) ? draft.sections : []) {
         const input = sectionToggles.find((item) => item.dataset.translationKey === change.key);
         if (input && typeof change.value === "boolean") input.checked = change.value;
@@ -418,7 +460,7 @@
       if (typeof values.visible === "boolean") elements.newVisible.checked = values.visible;
       slugIsAutomatic = draft.slugIsAutomatic !== false;
       if (hasPendingSettings()) {
-        elements.ownerDetails.open = true;
+        if (changedSections().length || navigationDensityChanged() || hasNewSection()) elements.ownerDetails.open = true;
         if (hasNewSection()) elements.newDetails.open = true;
         setStatus(
           densityConflict
@@ -458,8 +500,11 @@
     navigationDensityInputs.forEach((input) => {
       input.checked = input.value === root.dataset.initialNavigationDensity;
     });
+    elements.font.value = root.dataset.initialSiteFont;
+    elements.loadingCopy.value = root.dataset.initialLoadingCopy;
     clearNewSection();
     previewNavigationDensity();
+    previewPersonalization();
     settingsChanged();
   }
 
@@ -497,53 +542,61 @@
   }
 
   function hasPendingSettings() {
-    return changedSections().length > 0 || navigationDensityChanged() || hasNewSection();
+    return changedSections().length > 0 || navigationDensityChanged() || fontChanged() || loadingCopyChanged() || hasNewSection();
   }
 
   function previewNavigationDensity() {
     document.documentElement.dataset.navDensity = selectedNavigationDensity();
   }
 
-  function currentFontSetting() {
-    return window.functionhxSitePreferences?.getFont?.() || document.documentElement.dataset.siteFont || "system";
+  // 字体与加载文案是站长发布的站点设置：下拉框里的选择先在本页预览，
+  // 和导航布局一起「保存并发布」到 _data/site_ui.yml 后才对所有访客生效。
+  function hasOption(select, value) {
+    return [...select.options].some((option) => option.value === value);
   }
 
-  function currentLoadingCopySetting() {
-    return window.functionhxSitePreferences?.getLoadingCopy?.() || document.documentElement.dataset.loadingCopy || "thinking";
+  function selectedFont() {
+    return elements.font.value || root.dataset.initialSiteFont;
+  }
+
+  function selectedLoadingCopy() {
+    return elements.loadingCopy.value || root.dataset.initialLoadingCopy;
+  }
+
+  function fontChanged() {
+    return selectedFont() !== root.dataset.initialSiteFont;
+  }
+
+  function loadingCopyChanged() {
+    return selectedLoadingCopy() !== root.dataset.initialLoadingCopy;
+  }
+
+  function previewPersonalization(font = selectedFont(), copy = selectedLoadingCopy()) {
+    window.functionhxSitePreferences?.setFont?.(font);
+    window.functionhxSitePreferences?.setLoadingCopy?.(copy);
   }
 
   function syncPersonalization() {
-    elements.font.value = currentFontSetting();
-    elements.loadingCopy.value = currentLoadingCopySetting();
+    if (!hasOption(elements.font, elements.font.value)) elements.font.value = root.dataset.initialSiteFont;
+    if (!hasOption(elements.loadingCopy, elements.loadingCopy.value)) elements.loadingCopy.value = root.dataset.initialLoadingCopy;
+    elements.preferenceStatus.hidden = !(fontChanged() || loadingCopyChanged());
+    elements.preferenceStatus.textContent = isEnglish
+      ? "Previewing on this page. Save and publish to apply it for every visitor."
+      : "正在本页预览，保存并发布后对所有访客生效。";
   }
 
   function selectFont(setting) {
-    window.functionhxSitePreferences?.setFont?.(setting);
+    elements.font.value = setting;
+    previewPersonalization();
     syncPersonalization();
-    showPreferenceStatus("functionhx:site-font", elements.font.value);
-  }
-
-  function showPreferenceStatus(key, value) {
-    let saved = false;
-    try {
-      saved = window.localStorage.getItem(key) === value;
-    } catch (_error) {
-      /* Page-only preference. */
-    }
-    elements.preferenceStatus.hidden = false;
-    elements.preferenceStatus.textContent = saved
-      ? isEnglish
-        ? "Saved in this browser."
-        : "已保存到当前浏览器。"
-      : isEnglish
-        ? "Applied to this page; browser storage is unavailable."
-        : "已应用到本页；当前浏览器无法保存偏好。";
+    settingsChanged();
   }
 
   function selectLoadingCopy(setting) {
-    window.functionhxSitePreferences?.setLoadingCopy?.(setting);
+    elements.loadingCopy.value = setting;
+    previewPersonalization();
     syncPersonalization();
-    showPreferenceStatus("functionhx:loading-copy", elements.loadingCopy.value);
+    settingsChanged();
   }
 
   function readNewSection() {
@@ -658,6 +711,19 @@
     return `${source.trimEnd()}\n${replacement}\n`;
   }
 
+  const siteUiChoices = Object.freeze({
+    loading_copy: /^(?:thinking|loading|thinking-zh|loading-zh)$/,
+    site_font: /^[a-z][a-z0-9-]{1,40}$/,
+  });
+
+  function setSiteUiValue(source, key, value) {
+    if (!siteUiChoices[key]?.test(value)) throw new Error(`Unsupported ${key}`);
+    const replacement = `${key}: ${value}`;
+    const pattern = new RegExp(`^${key}:.*$`, "m");
+    if (pattern.test(source)) return source.replace(pattern, replacement);
+    return `${source.trimEnd()}\n${replacement}\n`;
+  }
+
   function projectGridBody(slug) {
     return `<div class="projects">
   {% assign localized_projects = site.projects | where: "lang", "zh" | where: "section_key", "${slug}" | sort: "importance" %}
@@ -710,7 +776,7 @@
     return decodeBase64Utf8(remote.content);
   }
 
-  async function prepareTreeEntries(headSha, sectionChanges, newSection, navigationDensity) {
+  async function prepareTreeEntries(headSha, sectionChanges, newSection, navigationDensity, personalization) {
     const existingEntries = await Promise.all(
       sectionChanges.map(async (input) => {
         const path = input.dataset.sourcePathZh;
@@ -726,10 +792,16 @@
     );
 
     const uiEntries = [];
-    if (navigationDensity !== root.dataset.initialNavigationDensity) {
-      const source = await fetchFileAt(uiSettingsPath, headSha);
+    const densityChanged = navigationDensity !== root.dataset.initialNavigationDensity;
+    const fontUpdated = personalization.font !== root.dataset.initialSiteFont;
+    const copyUpdated = personalization.loadingCopy !== root.dataset.initialLoadingCopy;
+    if (densityChanged || fontUpdated || copyUpdated) {
+      let source = await fetchFileAt(uiSettingsPath, headSha);
+      if (densityChanged) source = setNavigationDensity(source, navigationDensity);
+      if (fontUpdated) source = setSiteUiValue(source, "site_font", personalization.font);
+      if (copyUpdated) source = setSiteUiValue(source, "loading_copy", personalization.loadingCopy);
       uiEntries.push({
-        content: setNavigationDensity(source, navigationDensity),
+        content: source,
         mode: "100644",
         path: uiSettingsPath,
         type: "blob",
@@ -917,11 +989,14 @@
       setAuthStatus(saved.failed ? strings.authRememberFailed : saved.remembered ? strings.authRemembered : strings.authSuccess, "success");
       const continueCommit = pendingCommit;
       const continueSetup = setupAfterConnect;
+      const continueSettings = openSettingsAfterLogin;
+      window.functionhxOwnerUi?.setVerified?.(true, saved.remembered === true);
       pendingCommit = false;
       window.clearTimeout(authCompletionTimer);
       authCompletionTimer = window.setTimeout(
         () => {
           closeAuth();
+          if (continueSettings) finishOwnerLogin();
           if (continueSetup) setupOwnerAccess(continueCommit);
           else if (continueCommit) commitSettings();
         },
@@ -946,8 +1021,9 @@
     const sectionChanges = changedSections();
     const newSection = readNewSection();
     const navigationDensity = selectedNavigationDensity();
+    const personalization = { font: selectedFont(), loadingCopy: selectedLoadingCopy() };
     if (!validateNewSection(newSection)) return;
-    if (!sectionChanges.length && !hasNewSection(newSection) && !navigationDensityChanged()) {
+    if (!hasPendingSettings()) {
       setStatus(strings.noChanges);
       return;
     }
@@ -973,13 +1049,18 @@
       });
       const baseTree = parent.tree?.sha;
       if (!baseTree) throw new Error("The branch tree is unavailable.");
-      const entries = await prepareTreeEntries(headSha, sectionChanges, newSection, navigationDensity);
+      const entries = await prepareTreeEntries(headSha, sectionChanges, newSection, navigationDensity, personalization);
       const commit = await createAtomicCommit(entries, headSha, baseTree, newSection);
 
       sectionChanges.forEach((input) => {
         input.dataset.initialVisible = String(input.checked);
       });
       root.dataset.initialNavigationDensity = navigationDensity;
+      root.dataset.initialSiteFont = personalization.font;
+      root.dataset.initialLoadingCopy = personalization.loadingCopy;
+      document.documentElement.dataset.publishedSiteFont = personalization.font;
+      document.documentElement.dataset.publishedLoadingCopy = personalization.loadingCopy;
+      syncPersonalization();
       clearNewSection();
       setStatus(strings.commitSuccess, "success");
       if (commit.html_url) {
@@ -1008,7 +1089,7 @@
     }
   }
 
-  toggle.addEventListener("click", openSettings);
+  toggle.addEventListener("click", handleSettingsToggle);
   root.addEventListener("focusin", (event) => {
     lastSettingsFocus = event.target;
   });
@@ -1019,6 +1100,7 @@
   });
   dialog.addEventListener("close", () => {
     document.documentElement.dataset.navDensity = root.dataset.initialNavigationDensity;
+    previewPersonalization(root.dataset.initialSiteFont, root.dataset.initialLoadingCopy);
     toggle.setAttribute("aria-expanded", "false");
     restoreSettingsFocus();
   });
@@ -1090,6 +1172,7 @@
     authCompletionTimer = 0;
     pendingCommit = false;
     setupAfterConnect = false;
+    openSettingsAfterLogin = false;
     elements.token.value = "";
   });
   elements.filter.addEventListener("input", () => {
@@ -1131,6 +1214,8 @@
     restorePromise = restoreGitHubSession();
   });
   restorePromise = restoreGitHubSession();
+  elements.font.value = root.dataset.initialSiteFont;
+  elements.loadingCopy.value = root.dataset.initialLoadingCopy;
   syncPersonalization();
   restoreDraft();
   updateSaveState();

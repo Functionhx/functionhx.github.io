@@ -1,2 +1,5 @@
 # Site-wide presentation choices managed from the on-page settings panel.
+# Only the owner can change them; publishing applies them to every visitor.
 navigation_density: relaxed
+site_font: system
+loading_copy: thinking

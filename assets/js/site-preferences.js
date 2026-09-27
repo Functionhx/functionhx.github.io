@@ -2,8 +2,6 @@
   "use strict";
 
   const root = document.documentElement;
-  const fontStorageKey = "functionhx:site-font";
-  const loadingCopyStorageKey = "functionhx:loading-copy";
   const supportedFonts = new Set(["anthropic-serif", "anthropic-sans", "system", "dyslexic"]);
   const loadingCopy = Object.freeze({
     loading: "Loading...",
@@ -17,34 +15,24 @@
   const loaderState = window.functionhxPageLoaderState || { failsafeTimer: 0, hideTimer: 0, showTimer: 0, visibleAt: 0 };
   window.functionhxPageLoaderState = loaderState;
 
-  function storedFont() {
-    try {
-      const value = window.localStorage.getItem(fontStorageKey);
-      return supportedFonts.has(value) ? value : "system";
-    } catch (_error) {
-      return "system";
-    }
+  // 字体与加载文案是站长发布的站点设置（_data/site_ui.yml），由 <head> 里的脚本写到
+  // data-published-site-font / data-published-loading-copy 上。这里不再读写浏览器存储；
+  // setFont / setLoadingCopy 只在当前页面预览，发布由设置面板提交到仓库。
+  function publishedFont() {
+    const value = root.dataset.publishedSiteFont;
+    return supportedFonts.has(value) ? value : "system";
+  }
+
+  function publishedLoadingCopy() {
+    const value = root.dataset.publishedLoadingCopy;
+    return Object.hasOwn(loadingCopy, value) ? value : "thinking";
   }
 
   function setFont(value) {
     const font = supportedFonts.has(value) ? value : "system";
     root.dataset.siteFont = font;
-    try {
-      window.localStorage.setItem(fontStorageKey, font);
-    } catch (_error) {
-      // The preference still applies to this page when storage is unavailable.
-    }
     window.dispatchEvent(new CustomEvent("functionhx:font-changed", { detail: { font } }));
     return font;
-  }
-
-  function storedLoadingCopy() {
-    try {
-      const value = window.localStorage.getItem(loadingCopyStorageKey);
-      return Object.hasOwn(loadingCopy, value) ? value : "thinking";
-    } catch (_error) {
-      return "thinking";
-    }
   }
 
   function setLoadingCopy(value) {
@@ -54,11 +42,6 @@
     document.querySelectorAll("[data-loading-placeholder]").forEach((element) => {
       element.textContent = loadingCopy[choice];
     });
-    try {
-      window.localStorage.setItem(loadingCopyStorageKey, choice);
-    } catch (_error) {
-      // The preference still applies to this page when storage is unavailable.
-    }
     window.dispatchEvent(new CustomEvent("functionhx:loading-copy-changed", { detail: { choice } }));
     return choice;
   }
@@ -157,8 +140,10 @@
   window.addEventListener("pagehide", showLoading);
 
   window.functionhxSitePreferences = Object.freeze({
-    getFont: () => root.dataset.siteFont || storedFont(),
-    getLoadingCopy: () => root.dataset.loadingCopy || storedLoadingCopy(),
+    getFont: () => root.dataset.siteFont || publishedFont(),
+    getLoadingCopy: () => root.dataset.loadingCopy || publishedLoadingCopy(),
+    getPublishedFont: publishedFont,
+    getPublishedLoadingCopy: publishedLoadingCopy,
     getLoadingText: () => loadingCopy[root.dataset.loadingCopy] || loadingCopy.thinking,
     hideLoading,
     loaderTiming: Object.freeze({ delay: loaderDelay, minimumVisible: loaderMinimumVisible }),
@@ -167,8 +152,8 @@
     showLoading,
   });
 
-  root.dataset.siteFont = supportedFonts.has(root.dataset.siteFont) ? root.dataset.siteFont : storedFont();
-  root.dataset.loadingCopy = Object.hasOwn(loadingCopy, root.dataset.loadingCopy) ? root.dataset.loadingCopy : storedLoadingCopy();
+  root.dataset.siteFont = supportedFonts.has(root.dataset.siteFont) ? root.dataset.siteFont : publishedFont();
+  root.dataset.loadingCopy = Object.hasOwn(loadingCopy, root.dataset.loadingCopy) ? root.dataset.loadingCopy : publishedLoadingCopy();
   loader?.querySelector(".sr-only")?.replaceChildren(loadingCopy[root.dataset.loadingCopy]);
   document.querySelectorAll("[data-loading-placeholder]").forEach((element) => {
     element.textContent = loadingCopy[root.dataset.loadingCopy];

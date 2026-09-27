@@ -8,7 +8,8 @@ html[data-owner-restore="true"]:not([data-owner-verified="true"]) .site-author-n
   visibility: hidden;
 }
 
-html[data-owner-verified="true"] .site-author-nav.owner-only-control {
+/* 铅笔只在站长模式下出现；「返回访客模式」后页面与访客看到的一致，重新进入站长模式用导航栏的齿轮。 */
+html[data-owner-verified="true"][data-owner-mode="true"] .site-author-nav.owner-only-control {
   display: flex !important;
 }
 

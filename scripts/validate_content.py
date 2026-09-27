@@ -24,6 +24,10 @@ CONTENT_DIRECTORIES = (
 # Owner decision 2026-09-24: the site is Chinese-only; English pages were
 # removed and must not return (their old /en/ URLs deliberately 404).
 LANGUAGES = {"zh"}
+# 站长可选的站点字体与加载文案；与 site-preferences.liquid / site-preferences.js 保持一致。
+SITE_FONTS = {"system", "anthropic-serif", "anthropic-sans", "dyslexic"}
+LOADING_COPY = {"thinking", "loading", "thinking-zh", "loading-zh"}
+
 REQUIRED_ROUTES = {
     "home": {"/"},
     "blog": {"/blog/"},
@@ -157,6 +161,15 @@ def main() -> int:
     if site_ui.get("navigation_density") not in {"auto", "compact", "relaxed"}:
         errors.append(
             "_data/site_ui.yml: navigation_density must be auto, compact, or relaxed"
+        )
+    # 字体与加载文案由站长发布、对所有访客生效（站长决定 2026-09-27），不再是访客的本地偏好。
+    if site_ui.get("site_font") not in SITE_FONTS:
+        errors.append(
+            f"_data/site_ui.yml: site_font must be one of {sorted(SITE_FONTS)}"
+        )
+    if site_ui.get("loading_copy") not in LOADING_COPY:
+        errors.append(
+            f"_data/site_ui.yml: loading_copy must be one of {sorted(LOADING_COPY)}"
         )
 
     socials_path = ROOT / "_data" / "socials.yml"
@@ -403,8 +416,8 @@ def main() -> int:
         else ""
     )
     for contract in (
-        "functionhx:site-font",
-        "functionhx:loading-copy",
+        "publishedSiteFont",
+        "publishedLoadingCopy",
         "anthropic-serif",
         "anthropic-sans",
         "dyslexic",

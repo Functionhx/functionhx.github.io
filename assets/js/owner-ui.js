@@ -35,6 +35,17 @@
 
   syncContextualOwnerControls(false);
 
+  // 齿轮按钮：访客点击是站长登录，已验证的站长点击是打开站点设置。
+  const settingsToggle = document.getElementById("site-settings-toggle");
+  function syncSettingsControl(verified) {
+    if (!settingsToggle) return;
+    const label = verified ? "打开站点设置" : "站长登录";
+    settingsToggle.setAttribute("aria-label", label);
+    const tip = settingsToggle.querySelector("[data-settings-tip]");
+    if (tip) tip.textContent = verified ? "站点设置" : "站长登录";
+  }
+  syncSettingsControl(false);
+
   function setVaultHint(enabled) {
     try {
       if (enabled) window.localStorage.setItem(vaultHintKey, "true");
@@ -49,12 +60,14 @@
       document.documentElement.dataset.ownerVerified = "true";
       delete document.documentElement.dataset.ownerRestore;
       setVaultHint(remembered === true);
+      syncSettingsControl(true);
       window.requestAnimationFrame(restoreLauncherPosition);
     } else {
       setOwnerMode(false);
       delete document.documentElement.dataset.ownerVerified;
       delete document.documentElement.dataset.ownerRestore;
       setVaultHint(false);
+      syncSettingsControl(false);
     }
   }
 
@@ -74,7 +87,7 @@
     }
     if (!enabled) closeMenu();
     window.dispatchEvent(new CustomEvent("functionhx:owner-mode-changed", { detail: { active: enabled } }));
-    if (focus) window.requestAnimationFrame(() => toggle?.focus());
+    if (focus) window.requestAnimationFrame(() => (enabled ? toggle : settingsToggle || toggle)?.focus());
     return enabled;
   }
 
