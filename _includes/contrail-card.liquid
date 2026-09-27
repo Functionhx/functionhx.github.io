@@ -8,15 +8,14 @@
   <h2 id="usage-heading" class="sr-only">AI 编程用量</h2>
   <div class="usage-grid">
     <div class="usage-card usage-stats">
-      <div class="usage-tiles">
-        <div class="usage-tile">
-          <span class="usage-tile-value" data-contrail-field="last-30d">—</span>
-          <span class="usage-tile-label">30d</span>
-        </div>
-        <div class="usage-tile">
-          <span class="usage-tile-value" data-contrail-field="total">—</span>
-          <span class="usage-tile-label">total</span>
-        </div>
+      <!-- 数字排版取自 Contrail UsageOverview 的 TOTAL TOKENS 区：小号大写标签 + 大号粗体数字。 -->
+      <div class="usage-figure usage-figure--hero">
+        <span class="usage-figure-label">Total tokens</span>
+        <span class="usage-figure-value" data-contrail-field="total">—</span>
+      </div>
+      <div class="usage-figure">
+        <span class="usage-figure-label">Last 30 days</span>
+        <span class="usage-figure-value" data-contrail-field="last-30d">—</span>
       </div>
       <div class="usage-footer">
         <span>Started <span class="usage-footer-value" data-contrail-field="started">—</span></span>

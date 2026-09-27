@@ -377,7 +377,7 @@ html[lang="zh-CN"][data-theme="dark"] .function-usage {
 .usage-grid {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
-  align-items: start;
+  align-items: stretch;
   gap: 20px;
 }
 .usage-card {
@@ -387,41 +387,55 @@ html[lang="zh-CN"][data-theme="dark"] .function-usage {
   border-radius: 12px;
   background: var(--usage-card-bg);
 }
-.usage-tiles {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-.usage-tile {
+.usage-stats {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  padding: 8px;
-  border-radius: 8px;
-  background: var(--usage-tile-bg);
+  align-self: stretch;
 }
-.usage-tile-value {
+.usage-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* 次要数字与标签排成一行，卡片高度才能和热力图卡片对齐。 */
+.usage-figure + .usage-figure {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--usage-divider);
+}
+.usage-figure + .usage-figure .usage-figure-value {
+  font-size: 22px;
+}
+.usage-figure-label {
+  color: var(--usage-title);
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.usage-figure-value {
   color: var(--usage-strong);
-  font-size: 14px;
+  font-size: 28px;
   font-weight: 600;
-  line-height: 20px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
-.usage-tile-label {
-  margin-top: 2px;
-  color: var(--usage-muted);
-  font-size: 10px;
-  line-height: 14px;
-  white-space: nowrap;
+.usage-figure--hero .usage-figure-value {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
 }
 .usage-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 16px;
+  margin-top: auto;
   padding-top: 12px;
   border-top: 1px solid var(--usage-divider);
   color: var(--usage-muted);
@@ -706,6 +720,12 @@ html[lang="zh-CN"][data-theme="dark"] .function-usage {
 @media (max-width: 700px) {
   .function-usage {
     padding-bottom: 46px;
+  }
+  .usage-figure--hero .usage-figure-value {
+    font-size: 48px;
+  }
+  .usage-footer {
+    margin-top: 16px;
   }
   .usage-grid {
     grid-template-columns: minmax(0, 1fr);
