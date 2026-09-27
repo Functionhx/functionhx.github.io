@@ -172,6 +172,34 @@ def main() -> int:
             f"_data/site_ui.yml: loading_copy must be one of {sorted(LOADING_COPY)}"
         )
 
+    # 首页彩蛋：公开线索开关，以及只含密文的信（暗号、密码、信的明文绝不能进仓库）。
+    eggs_path = ROOT / "_data" / "eggs.yml"
+    try:
+        eggs = yaml.safe_load(eggs_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as error:
+        errors.append(f"_data/eggs.yml: {error}")
+        eggs = {}
+    egg_ids = {"turbo", "dog", "terminal", "fx", "letter"}
+    public = eggs.get("public") if isinstance(eggs, dict) else None
+    if not isinstance(public, dict) or set(public) != egg_ids or not all(
+        isinstance(value, bool) for value in public.values()
+    ):
+        errors.append(f"_data/eggs.yml: public must map exactly {sorted(egg_ids)} to true/false")
+    letter = eggs.get("letter") if isinstance(eggs, dict) else None
+    if letter is not None:
+        base64_value = re.compile(r"^[A-Za-z0-9+/=]+$")
+        if (
+            not isinstance(letter, dict)
+            or set(letter) != {"v", "salt", "iv", "data"}
+            or letter.get("v") != 2
+            or not all(isinstance(letter.get(key), str) and base64_value.match(letter[key]) for key in ("salt", "iv", "data"))
+        ):
+            errors.append("_data/eggs.yml: letter must be empty or a v2 ciphertext {v, salt, iv, data}")
+    eggs_text = eggs_path.read_text(encoding="utf-8") if eggs_path.exists() else ""
+    for plaintext_key in ("phrase:", "pin:", "text:", "title:"):
+        if plaintext_key in eggs_text:
+            errors.append(f"_data/eggs.yml: plaintext field {plaintext_key!r} must never be committed")
+
     socials_path = ROOT / "_data" / "socials.yml"
     try:
         socials = yaml.safe_load(socials_path.read_text(encoding="utf-8"))

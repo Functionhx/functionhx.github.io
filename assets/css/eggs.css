@@ -1,0 +1,798 @@
+/* 隐藏彩蛋（assets/js/eggs.js）。颜色全部取自站点主题变量，深浅色自动跟随。 */
+
+/* 主题 main.css 给所有 span/div/p 设了正文颜色；彩蛋容器内改回继承，颜色由下面的类决定。 */
+:where(.egg-gallery, .egg-overlay, .egg-dog-lane) :where(p, h2, h3, div, span, strong, b, small, i, label) {
+  color: inherit;
+}
+
+/* ---------- 齿轮：长按进度 ---------- */
+#site-settings-toggle .egg-hold-ring {
+  position: absolute;
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
+  overflow: visible;
+  pointer-events: none;
+}
+#site-settings-toggle .egg-hold-ring rect {
+  fill: none;
+  stroke: var(--global-theme-color);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: 100;
+  opacity: 0;
+  transition:
+    stroke-dashoffset 160ms ease,
+    opacity 160ms ease;
+}
+#site-settings-toggle.is-egg-holding .egg-hold-ring rect {
+  opacity: 1;
+  stroke-dashoffset: 0;
+  transition:
+    stroke-dashoffset 700ms cubic-bezier(0.4, 0, 0.6, 1),
+    opacity 80ms ease;
+}
+#site-settings-toggle > .function-icon {
+  transition: transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+#site-settings-toggle.is-egg-holding > .function-icon {
+  transform: rotate(150deg);
+  transition: transform 700ms cubic-bezier(0.55, 0, 0.8, 0.6);
+}
+#site-settings-toggle.is-egg-done {
+  animation: egg-gear-pop 380ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+@keyframes egg-gear-pop {
+  40% {
+    transform: scale(1.14);
+  }
+}
+#site-settings-toggle .egg-hold-tip {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  z-index: 5;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--global-text-color);
+  color: var(--global-bg-color);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -4px);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+#site-settings-toggle.is-egg-holding .egg-hold-tip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition-delay: 250ms;
+}
+#site-settings-toggle.is-egg-holding .function-control-tip {
+  opacity: 0 !important;
+}
+
+/* ---------- 图鉴 ---------- */
+.egg-gallery {
+  position: fixed;
+  z-index: 1090;
+  width: min(380px, calc(100vw - 24px));
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  padding: 20px 20px 16px;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 20px;
+  background: var(--global-card-bg-color, var(--global-bg-color));
+  box-shadow:
+    0 18px 48px #17171c1f,
+    0 2px 8px #17171c0d;
+  color: var(--global-text-color);
+  font-size: 15px;
+  line-height: 1.7;
+  transform-origin: top right;
+  animation: egg-pop 180ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes egg-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+.egg-gallery header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.egg-gallery h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.egg-gallery header span {
+  color: var(--global-text-color-light);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.egg-progress {
+  height: 4px;
+  margin: 12px 0 14px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--function-wash);
+}
+.egg-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--function-mark), var(--global-theme-color));
+  transition: width 400ms ease;
+}
+.egg-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.egg-item {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--function-wash) 55%, transparent);
+}
+.egg-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 11px;
+  background: var(--global-bg-color);
+  font-size: 18px;
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+.egg-item[data-found="true"] .egg-icon {
+  border-color: var(--function-mark);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--function-mark) 30%, transparent);
+  filter: none;
+  opacity: 1;
+}
+.egg-item strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.egg-item[data-found="false"] strong {
+  color: var(--global-text-color-light);
+  letter-spacing: 0.12em;
+}
+.egg-item p {
+  margin: 2px 0 0;
+  color: var(--global-text-color-light);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.egg-found {
+  margin-left: 6px;
+  color: var(--global-theme-color) !important;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.egg-phrase {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.egg-phrase input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 9px;
+  background: var(--global-bg-color);
+  color: var(--global-text-color);
+  font-size: 13px;
+}
+.egg-phrase button,
+.egg-button {
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--global-theme-color);
+  color: var(--global-bg-color);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.egg-gallery .egg-phrase-status {
+  min-height: 1em;
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+.egg-secret-count {
+  margin: 12px 2px 0;
+  color: var(--global-text-color-light);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ---------- 通用浮层 ---------- */
+.egg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  animation: egg-fade 180ms ease both;
+}
+@keyframes egg-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- 机器狗 ---------- */
+.egg-dog-lane {
+  position: fixed;
+  right: 0;
+  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  left: 0;
+  z-index: 1095;
+  height: 74px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.egg-dog {
+  position: absolute;
+  bottom: 4px;
+  left: -140px;
+  width: 104px;
+  animation: egg-run 4.6s cubic-bezier(0.35, 0.05, 0.4, 1) forwards;
+}
+.egg-dog svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  animation: egg-hop 280ms steps(2) infinite;
+}
+.egg-dog .egg-legs-a {
+  animation: egg-legs 280ms steps(1) infinite;
+}
+.egg-dog .egg-legs-b {
+  animation: egg-legs 280ms steps(1) infinite reverse;
+}
+@keyframes egg-legs {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes egg-hop {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes egg-run {
+  to {
+    left: calc(100vw + 40px);
+  }
+}
+.egg-dog-bubble {
+  position: absolute;
+  bottom: 64px;
+  left: 58px;
+  padding: 4px 10px;
+  border-radius: 10px 10px 10px 2px;
+  background: var(--global-text-color);
+  color: var(--global-bg-color) !important;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* ---------- 终端 ---------- */
+.egg-terminal-backdrop {
+  background: #0f0d1470;
+}
+.egg-terminal {
+  display: flex;
+  flex-direction: column;
+  width: min(720px, 100%);
+  height: min(440px, calc(100vh - 80px));
+  overflow: hidden;
+  border-radius: 16px;
+  background: #16141b;
+  box-shadow: 0 30px 80px #0008;
+  color: #e9e4f2;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  animation: egg-pop 200ms ease both;
+}
+.egg-terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #221f29;
+  color: #9d93ad;
+  font-size: 12px;
+}
+.egg-terminal-bar i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #ff5f57;
+}
+.egg-terminal-bar i:nth-child(2) {
+  background: #febc2e;
+}
+.egg-terminal-bar i:nth-child(3) {
+  background: #28c840;
+}
+.egg-terminal-bar span {
+  margin-inline: auto;
+}
+.egg-terminal-bar button {
+  border: 0;
+  background: none;
+  color: #9d93ad;
+  font: inherit;
+  cursor: pointer;
+}
+.egg-terminal-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px 6px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+.egg-dim {
+  color: #9d93ad !important;
+}
+.egg-accent {
+  color: #c5a2ff !important;
+}
+.egg-terminal-input {
+  display: flex;
+  gap: 8px;
+  padding: 6px 16px 14px;
+}
+.egg-terminal-input label {
+  color: #c5a2ff;
+  white-space: nowrap;
+}
+.egg-terminal-input input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #e9e4f2;
+  font: inherit;
+  caret-color: #c5a2ff;
+}
+
+/* ---------- f(x) ---------- */
+.egg-fx-backdrop {
+  background: color-mix(in srgb, var(--global-bg-color) 84%, transparent);
+}
+.egg-fx {
+  color: var(--global-text-color);
+  text-align: center;
+}
+.egg-fx-glyph {
+  color: var(--global-theme-color) !important;
+  font-family: Georgia, serif;
+  font-size: clamp(90px, 18vw, 150px);
+  line-height: 1;
+  animation: egg-spin-in 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes egg-spin-in {
+  from {
+    opacity: 0;
+    transform: rotate(-200deg) scale(0.2);
+  }
+}
+.egg-fx-formula {
+  min-height: 1.4em;
+  margin-top: 10px;
+  font-family: Georgia, "Songti SC", serif;
+  font-size: clamp(22px, 4vw, 32px);
+  font-style: italic;
+}
+.egg-fx-formula b {
+  font-style: normal;
+  font-weight: 600;
+}
+.egg-fx svg {
+  display: block;
+  width: min(420px, 86vw);
+  height: auto;
+  margin: 14px auto 0;
+  overflow: visible;
+}
+.egg-fx-axis {
+  stroke: var(--global-divider-color);
+  stroke-width: 1.2;
+}
+.egg-fx-curve {
+  fill: none;
+  stroke: var(--global-theme-color);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-dasharray: 900;
+  stroke-dashoffset: 900;
+  animation: egg-draw 1.8s 1.1s ease forwards;
+}
+.egg-fx-dot {
+  fill: var(--global-theme-color);
+  opacity: 0;
+  animation: egg-fade-in 300ms 2.8s forwards;
+}
+@keyframes egg-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes egg-fade-in {
+  to {
+    opacity: 1;
+  }
+}
+.egg-fx-caption {
+  margin: 10px 0 22px;
+  color: var(--global-text-color-light) !important;
+  font-size: 14px;
+  opacity: 0;
+  animation: egg-fade-in 400ms 3s forwards;
+}
+
+/* ---------- 一封信 ---------- */
+.egg-letter {
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 40%, #2a2233 0%, #0e0c12 70%);
+  animation-duration: 500ms;
+}
+.egg-letter canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.egg-letter-stage {
+  position: relative;
+  z-index: 4;
+  display: grid;
+  justify-items: center;
+  gap: 56px;
+}
+.egg-envelope {
+  position: relative;
+  width: min(360px, 84vw);
+  aspect-ratio: 1.55;
+  animation: egg-float-in 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes egg-float-in {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.94);
+  }
+}
+.egg-envelope-body,
+.egg-envelope-flap,
+.egg-envelope-pocket,
+.egg-envelope-seal {
+  position: absolute;
+}
+.egg-envelope-body {
+  inset: 0;
+  border-radius: 10px;
+  background: linear-gradient(160deg, #f7efe1, #eadcc3);
+  box-shadow: 0 30px 60px #0007;
+}
+.egg-envelope-flap {
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: 58%;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(180deg, #efe3cc, #e2d2b4);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform-origin: top;
+  transition: transform 700ms cubic-bezier(0.5, 0.1, 0.3, 1);
+}
+.egg-envelope-pocket {
+  inset: 0;
+  z-index: 3;
+  border-radius: 10px;
+  background: linear-gradient(170deg, #f3e8d4, #e7d8bd);
+  clip-path: polygon(0 0, 50% 58%, 100% 0, 100% 100%, 0 100%);
+}
+.egg-envelope-seal {
+  top: 58%;
+  left: 50%;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #a877ea, #7a3fc7 60%, #4f2388);
+  box-shadow:
+    0 4px 10px #0005,
+    inset 0 -3px 6px #0004;
+  color: #f7efe1 !important;
+  font-family: Georgia, serif;
+  font-size: 28px;
+  transition:
+    transform 400ms ease,
+    opacity 400ms ease;
+}
+.egg-envelope.is-locked .egg-envelope-seal::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #1d1824
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e9d6ff' stroke-width='2' stroke-linecap='round'%3E%3Crect x='5' y='11' width='14' height='9' rx='2'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E")
+    center / 13px no-repeat;
+  box-shadow: 0 2px 6px #0006;
+}
+.egg-envelope.is-open .egg-envelope-flap {
+  z-index: 1;
+  transform: rotateX(180deg);
+}
+.egg-envelope.is-open .egg-envelope-seal {
+  opacity: 0;
+  transform: scale(0.6);
+}
+.egg-pin {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  color: #e9e1f5;
+  transition:
+    opacity 400ms ease,
+    transform 400ms ease;
+}
+.egg-pin.is-open {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+}
+.egg-pin-title {
+  margin: 0;
+  color: #cfc2e2 !important;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+}
+.egg-pin-boxes {
+  display: flex;
+  gap: 10px;
+}
+.egg-pin-boxes input {
+  width: 44px;
+  height: 54px;
+  border: 1px solid #ffffff2e;
+  border-radius: 12px;
+  background: #ffffff10;
+  color: #fff;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 22px;
+  text-align: center;
+  caret-color: #c5a2ff;
+  transition:
+    border-color 160ms,
+    background 160ms,
+    transform 160ms;
+}
+.egg-pin-boxes input:focus {
+  border-color: #c5a2ff;
+  outline: none;
+  background: #c5a2ff1f;
+  transform: translateY(-2px);
+}
+.egg-pin.is-wrong .egg-pin-boxes {
+  animation: egg-shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+@keyframes egg-shake {
+  20%,
+  60% {
+    transform: translateX(-8px);
+  }
+  40%,
+  80% {
+    transform: translateX(8px);
+  }
+}
+.egg-pin-status {
+  min-height: 1.4em;
+  margin: 0;
+  color: #cfc2e2 !important;
+  font-size: 13px;
+  text-align: center;
+}
+.egg-pin-mail-toggle {
+  border: 0;
+  background: none;
+  color: #b9a7d6;
+  font-size: 12.5px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.egg-pin-mail {
+  display: flex;
+  gap: 8px;
+}
+.egg-pin-mail[hidden] {
+  display: none;
+}
+.egg-pin-mail input {
+  width: min(220px, 60vw);
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #ffffff2e;
+  border-radius: 10px;
+  background: #ffffff10;
+  color: #fff;
+  font-size: 13px;
+}
+.egg-pin-mail button {
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: #c5a2ff;
+  color: #1d1824;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.egg-pin-mail button:disabled {
+  opacity: 0.6;
+}
+.egg-letter-dismiss {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top, 0px));
+  right: 16px;
+  z-index: 6;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #ffffff2a;
+  border-radius: 50%;
+  background: #ffffff10;
+  color: #e9e1f5;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.egg-paper {
+  --pad: 40px;
+  position: absolute;
+  z-index: 5;
+  width: min(520px, 90vw);
+  max-height: min(78vh, 640px);
+  overflow-y: auto;
+  padding: var(--pad) var(--pad) 34px;
+  border-radius: 6px;
+  /* 横格线与 34px 行高对齐：每一行文字的底边正好落在一条线上。 */
+  background: #fbf7ef repeating-linear-gradient(transparent 0 33px, #d8c9ad66 33px 34px);
+  background-attachment: local;
+  background-position: 0 var(--pad);
+  box-shadow: 0 40px 90px #000a;
+  color: #3b3326;
+  font-family: "Songti SC", STSong, "Noto Serif SC", serif;
+  font-size: 17px;
+  line-height: 34px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(60px) scale(0.96);
+  transition:
+    opacity 700ms 450ms ease,
+    transform 900ms 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.egg-paper.is-shown {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+.egg-paper h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 34px;
+}
+.egg-paper p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.egg-paper .egg-paper-sign {
+  margin-top: 34px;
+  text-align: right;
+}
+.egg-paper-close {
+  display: block;
+  margin: 34px auto 0;
+  padding: 6px 18px;
+  border: 1px solid #b9a88a;
+  border-radius: 99px;
+  background: transparent;
+  color: #3b3326;
+  font-size: 13px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+@media (max-width: 520px) {
+  .egg-paper {
+    --pad: 26px;
+    font-size: 16px;
+  }
+}
+@media (max-width: 420px) {
+  .egg-pin-boxes {
+    gap: 7px;
+  }
+  .egg-pin-boxes input {
+    width: 38px;
+    height: 48px;
+    font-size: 19px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .egg-gallery,
+  .egg-overlay,
+  .egg-terminal,
+  .egg-envelope,
+  .egg-dog,
+  .egg-dog svg,
+  .egg-fx-glyph,
+  .egg-fx-curve,
+  .egg-fx-dot,
+  .egg-fx-caption,
+  .egg-pin.is-wrong .egg-pin-boxes,
+  #site-settings-toggle.is-egg-done {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+  }
+  .egg-paper,
+  .egg-envelope-flap,
+  #site-settings-toggle .egg-hold-ring rect,
+  #site-settings-toggle > .function-icon {
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* 焦点样式：用主题色描边代替浏览器默认的黑框；信纸是程序聚焦（便于读屏），不画描边。 */
+.egg-phrase input:focus {
+  border-color: var(--global-theme-color);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--global-theme-color) 22%, transparent);
+}
+.egg-paper:focus {
+  outline: none;
+}
+.egg-gallery :focus-visible,
+.egg-overlay button:focus-visible {
+  outline: 2px solid var(--global-theme-color);
+  outline-offset: 2px;
+}

@@ -952,3 +952,93 @@ html[data-theme="dark"] .site-settings__footer > p[data-state="success"] {
     display: none;
   }
 }
+
+/* 彩蛋：公开线索开关与写信 */
+.site-settings__egg-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.site-settings__egg-list label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--function-wash, var(--global-code-bg-color));
+  font-size: 14px;
+  cursor: pointer;
+}
+.site-settings__egg-list input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--global-theme-color);
+}
+.site-settings__letter {
+  margin-top: 14px;
+}
+.site-settings__letter summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.site-settings__letter summary small {
+  color: var(--global-text-color-light);
+  font-weight: 400;
+}
+.site-settings__letter-note {
+  margin: 10px 0 12px;
+  color: var(--global-text-color-light);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.site-settings__letter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  margin-bottom: 12px;
+}
+.site-settings__letter-grid label {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  color: var(--global-text-color-light);
+  font-size: 13px;
+}
+.site-settings__letter-grid .site-settings__letter-wide {
+  grid-column: 1 / -1;
+}
+.site-settings__letter-grid input,
+.site-settings__letter-grid textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 10px;
+  background: var(--global-bg-color);
+  color: var(--global-text-color);
+  font: inherit;
+  font-size: 14px;
+}
+.site-settings__letter-grid textarea {
+  resize: vertical;
+  line-height: 1.7;
+}
+.site-settings__letter-status {
+  min-height: 1.4em;
+  margin: 8px 0 0;
+  color: var(--global-text-color-light);
+  font-size: 13px;
+}
+@media (max-width: 560px) {
+  .site-settings__letter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

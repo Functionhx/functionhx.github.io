@@ -102,6 +102,30 @@
     token: document.getElementById("site-settings-token"),
   };
   const sectionToggles = [...document.querySelectorAll("[data-section-toggle]")];
+  const eggSection = document.getElementById("site-settings-eggs");
+  const eggInputs = [...document.querySelectorAll("[data-egg-public]")];
+  const letterFields = {
+    phrase: document.getElementById("site-settings-letter-phrase"),
+    pin: document.getElementById("site-settings-letter-pin"),
+    pinHint: document.getElementById("site-settings-letter-hint"),
+    title: document.getElementById("site-settings-letter-title"),
+    text: document.getElementById("site-settings-letter-text"),
+    sign: document.getElementById("site-settings-letter-sign"),
+  };
+  const letterSeal = document.getElementById("site-settings-letter-seal");
+  const letterStatus = document.getElementById("site-settings-letter-status");
+  const eggsPath = "_data/eggs.yml";
+  const eggIds = ["turbo", "dog", "terminal", "fx", "letter"];
+  let initialEggPublic = {};
+  let publishedLetter = null;
+  try {
+    initialEggPublic = JSON.parse(eggSection?.dataset.initialEggPublic || "{}") || {};
+    publishedLetter = JSON.parse(eggSection?.dataset.initialLetter || "null");
+  } catch (_error) {
+    initialEggPublic = {};
+  }
+  // 刚加密、尚未发布的信（只含密文）。
+  let sealedLetter = null;
   const navigationDensityInputs = [...document.querySelectorAll("[data-navigation-density]")];
 
   if (Object.values(elements).some((element) => !element) || !sectionToggles.length || !navigationDensityInputs.length || !uiSettingsPath) {
@@ -290,12 +314,16 @@
   // 齿轮按钮：已验证的站长直接打开设置；其他人先走站长登录
   // （已绑定 Touch ID 时是密码 + Touch ID，否则是连接 GitHub）。
   async function handleSettingsToggle() {
+    // eggs.js 在长按齿轮（或 Alt+Enter）时打上 ownerIntent；访客普通点击由彩蛋图鉴处理。
+    const ownerIntent = toggle.dataset.ownerIntent === "true";
+    delete toggle.dataset.ownerIntent;
     await restorePromise;
     if (ownerIsVerified()) {
       window.functionhxOwnerUi?.setOwnerMode?.(true);
       openSettings();
       return;
     }
+    if (!ownerIntent && window.functionhxEggs) return;
     openSettingsAfterLogin = true;
     await requestOwnerAccess(false);
     // 解锁路径在这里已经完成；连接 GitHub 的路径在 connectGitHub 成功后继续。
@@ -383,7 +411,13 @@
 
   function updateSaveState() {
     const count =
-      changedSections().length + Number(navigationDensityChanged()) + Number(fontChanged()) + Number(loadingCopyChanged()) + Number(hasNewSection());
+      changedSections().length +
+      Number(navigationDensityChanged()) +
+      Number(fontChanged()) +
+      Number(loadingCopyChanged()) +
+      Number(eggsChanged()) +
+      Number(letterChanged()) +
+      Number(hasNewSection());
     elements.saveState.textContent = count
       ? isEnglish
         ? `${count} unpublished change${count === 1 ? "" : "s"}`
@@ -412,6 +446,7 @@
       density: { initial: root.dataset.initialNavigationDensity, value: selectedNavigationDensity() },
       font: { initial: root.dataset.initialSiteFont, value: selectedFont() },
       loadingCopy: { initial: root.dataset.initialLoadingCopy, value: selectedLoadingCopy() },
+      eggs: eggInputs.map((input) => ({ id: input.dataset.eggPublic, value: input.checked })),
       sections: changedSections().map((input) => ({ key: input.dataset.translationKey, value: input.checked })),
       newSection: {
         ...values,
@@ -448,6 +483,10 @@
       }
       if (draft.loadingCopy?.initial === root.dataset.initialLoadingCopy && hasOption(elements.loadingCopy, draft.loadingCopy?.value)) {
         elements.loadingCopy.value = draft.loadingCopy.value;
+      }
+      for (const change of Array.isArray(draft.eggs) ? draft.eggs : []) {
+        const input = eggInputs.find((item) => item.dataset.eggPublic === change.id);
+        if (input && typeof change.value === "boolean") input.checked = change.value;
       }
       for (const change of Array.isArray(draft.sections) ? draft.sections : []) {
         const input = sectionToggles.find((item) => item.dataset.translationKey === change.key);
@@ -502,6 +541,11 @@
     });
     elements.font.value = root.dataset.initialSiteFont;
     elements.loadingCopy.value = root.dataset.initialLoadingCopy;
+    eggInputs.forEach((input) => {
+      input.checked = initialEggPublic[input.dataset.eggPublic] === true;
+    });
+    sealedLetter = null;
+    if (letterStatus) letterStatus.textContent = "";
     clearNewSection();
     previewNavigationDensity();
     previewPersonalization();
@@ -542,7 +586,15 @@
   }
 
   function hasPendingSettings() {
-    return changedSections().length > 0 || navigationDensityChanged() || fontChanged() || loadingCopyChanged() || hasNewSection();
+    return (
+      changedSections().length > 0 ||
+      navigationDensityChanged() ||
+      fontChanged() ||
+      loadingCopyChanged() ||
+      eggsChanged() ||
+      letterChanged() ||
+      hasNewSection()
+    );
   }
 
   function previewNavigationDensity() {
@@ -597,6 +649,66 @@
     previewPersonalization();
     syncPersonalization();
     settingsChanged();
+  }
+
+  function eggsChanged() {
+    return eggInputs.some((input) => input.checked !== (initialEggPublic[input.dataset.eggPublic] === true));
+  }
+
+  function letterChanged() {
+    return sealedLetter !== null;
+  }
+
+  // 在浏览器里用暗号和六位密码加密信；只有密文会进入发布。
+  async function sealLetterDraft() {
+    if (!window.functionhxEggs?.sealLetter || !letterSeal) return;
+    letterSeal.disabled = true;
+    letterStatus.textContent = "正在加密…";
+    try {
+      sealedLetter = await window.functionhxEggs.sealLetter({
+        phrase: letterFields.phrase.value,
+        pin: letterFields.pin.value.trim(),
+        pinHint: letterFields.pinHint.value.trim(),
+        title: letterFields.title.value.trim(),
+        text: letterFields.text.value,
+        sign: letterFields.sign.value.trim(),
+      });
+      letterFields.phrase.value = "";
+      letterFields.pin.value = "";
+      letterStatus.textContent = "已加密。暗号和密码已从表单清除，保存并发布后生效。";
+    } catch (error) {
+      sealedLetter = null;
+      letterStatus.textContent = error.message || "加密失败。";
+    } finally {
+      letterSeal.disabled = false;
+      settingsChanged();
+    }
+  }
+
+  function yamlString(value) {
+    return JSON.stringify(String(value));
+  }
+
+  function eggsSource(letter) {
+    const lines = [
+      "# 首页彩蛋：哪些彩蛋在图鉴里公开触发线索，以及那封加密的信。",
+      "# 由站点设置里的「彩蛋」一栏发布，不要手改 letter：它是浏览器里用暗号和六位密码加密后的密文。",
+      "public:",
+      ...eggIds.map((id) => {
+        const input = eggInputs.find((item) => item.dataset.eggPublic === id);
+        const value = input ? input.checked : initialEggPublic[id] === true;
+        return `  ${id}: ${value ? "true" : "false"}`;
+      }),
+    ];
+    if (letter) {
+      if (letter.v !== 2 || ![letter.salt, letter.iv, letter.data].every((part) => /^[A-Za-z0-9+/=]+$/.test(String(part || "")))) {
+        throw new Error("Unsupported letter ciphertext");
+      }
+      lines.push("letter:", "  v: 2", `  salt: ${yamlString(letter.salt)}`, `  iv: ${yamlString(letter.iv)}`, `  data: ${yamlString(letter.data)}`);
+    } else {
+      lines.push("letter:");
+    }
+    return `${lines.join("\n")}\n`;
   }
 
   function readNewSection() {
@@ -806,6 +918,10 @@
         path: uiSettingsPath,
         type: "blob",
       });
+    }
+
+    if (eggsChanged() || letterChanged()) {
+      uiEntries.push({ content: eggsSource(sealedLetter || publishedLetter), mode: "100644", path: eggsPath, type: "blob" });
     }
 
     if (!hasNewSection(newSection)) return [...existingEntries, ...uiEntries];
@@ -1060,6 +1176,14 @@
       root.dataset.initialLoadingCopy = personalization.loadingCopy;
       document.documentElement.dataset.publishedSiteFont = personalization.font;
       document.documentElement.dataset.publishedLoadingCopy = personalization.loadingCopy;
+      eggInputs.forEach((input) => {
+        initialEggPublic[input.dataset.eggPublic] = input.checked;
+      });
+      if (sealedLetter) {
+        publishedLetter = sealedLetter;
+        sealedLetter = null;
+        if (letterStatus) letterStatus.textContent = "这封信已发布。";
+      }
       syncPersonalization();
       clearNewSection();
       setStatus(strings.commitSuccess, "success");
@@ -1127,6 +1251,17 @@
     });
   });
   elements.ownerDetails.addEventListener("toggle", updateSaveState);
+  eggInputs.forEach((input) => input.addEventListener("change", settingsChanged));
+  letterSeal?.addEventListener("click", sealLetterDraft);
+  Object.values(letterFields).forEach((field) =>
+    field?.addEventListener("input", () => {
+      // 加密之后又改了内容：旧密文作废，需要重新加密。
+      if (!sealedLetter) return;
+      sealedLetter = null;
+      letterStatus.textContent = "内容有改动，请重新填写暗号和密码并加密。";
+      settingsChanged();
+    })
+  );
   elements.font.addEventListener("change", () => selectFont(elements.font.value));
   elements.loadingCopy.addEventListener("change", () => selectLoadingCopy(elements.loadingCopy.value));
   newSectionInputs.forEach((input) => {

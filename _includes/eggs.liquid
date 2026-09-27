@@ -1,0 +1,15 @@
+{% comment %}
+  隐藏彩蛋（assets/js/eggs.js）：图鉴、机器狗、终端、f(x) 与一封加密的信。
+  这里只输出公开配置和密文；暗号与六位密码从不出现在页面或仓库里。
+{% endcomment %}
+{% assign eggs = site.data.eggs %}
+<script type="application/json" id="function-eggs-config">
+  {
+    "home": {{ '/' | relative_url | jsonify }},
+    "mailer": {{ site.letter_mailer.endpoint | default: '' | jsonify }},
+    "public": {{ eggs.public | jsonify }},
+    "letter": {{ eggs.letter | jsonify }}
+  }
+</script>
+<link rel="stylesheet" href="{{ '/assets/css/eggs.css' | relative_url | bust_file_cache }}">
+<script src="{{ '/assets/js/eggs.js' | relative_url | bust_file_cache }}" defer></script>

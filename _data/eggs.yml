@@ -1,0 +1,9 @@
+# 首页彩蛋：哪些彩蛋在图鉴里公开触发线索，以及那封加密的信。
+# 由站点设置里的「彩蛋」一栏发布，不要手改 letter：它是浏览器里用暗号和六位密码加密后的密文。
+public:
+  turbo: true
+  dog: true
+  terminal: true
+  fx: false
+  letter: true
+letter:

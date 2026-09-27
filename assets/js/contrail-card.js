@@ -240,11 +240,13 @@
   }
 
   function render(byDay) {
-    const today = todayKey();
+    // 各机器每天发布一次，当天的用量要到第二天才完整：热力图和「近 30 天」都截止到昨天。
+    const today = formatDay(addDays(parseDay(todayKey()), -1));
     let total = 0;
     let last30d = 0;
     const from30d = formatDay(addDays(parseDay(today), -29));
     for (const [day, entry] of byDay) {
+      if (day > today) continue;
       total += entry.tokens;
       if (day >= from30d && day <= today) last30d += entry.tokens;
     }

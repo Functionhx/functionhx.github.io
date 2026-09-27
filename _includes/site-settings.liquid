@@ -276,6 +276,68 @@
             </fieldset>
           </section>
 
+          {% comment %} 彩蛋：图鉴里公开哪些线索，以及那封加密的信（assets/js/eggs.js）。 {% endcomment %}
+          {% assign egg_settings = site.data.eggs %}
+          <section
+            id="site-settings-eggs"
+            class="site-settings__section site-settings__eggs"
+            aria-labelledby="site-settings-eggs-heading"
+            data-initial-egg-public="{{ egg_settings.public | jsonify | escape }}"
+            data-initial-letter="{{ egg_settings.letter | jsonify | escape }}"
+          >
+            <div class="site-settings__section-heading">
+              <h3 id="site-settings-eggs-heading">彩蛋</h3>
+              <span>在图鉴里公开触发线索</span>
+            </div>
+            <ul class="site-settings__egg-list">
+              {% assign egg_rows = 'turbo:⚡ Turbo 模式|dog:🐕 机器狗|terminal:⌨️ 终端|fx:ƒ f(x)|letter:✉️ 一封信' | split: '|' %}
+              {% for row in egg_rows %}
+                {% assign egg_pair = row | split: ':' %}
+                {% assign egg_id = egg_pair[0] %}
+                <li>
+                  <label>
+                    <span>{{ egg_pair[1] }}</span>
+                    <input
+                      type="checkbox"
+                      role="switch"
+                      data-egg-public="{{ egg_id }}"
+                      {% if egg_settings.public[egg_id] %}
+                        checked
+                      {% endif %}
+                    >
+                  </label>
+                </li>
+              {% endfor %}
+            </ul>
+            <details id="site-settings-letter" class="site-settings__letter">
+              <summary>
+                <span>写一封信</span>
+                <small>
+                  {%- if egg_settings.letter %}已写好，可以重写{% else %}还没写{% endif -%}
+                </small>
+              </summary>
+              <p class="site-settings__letter-note">
+                暗号和六位密码只在这台浏览器里用来加密，不会上传；发布到仓库的只有密文。两者要与发信服务的 LETTER_PHRASE、LETTER_PIN 保持一致。
+              </p>
+              <div class="site-settings__letter-grid">
+                <label>暗号<input id="site-settings-letter-phrase" type="text" autocomplete="off" spellcheck="false" maxlength="64"></label>
+                <label
+                  >六位密码<input id="site-settings-letter-pin" type="text" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}"
+                ></label>
+                <label class="site-settings__letter-wide"
+                  >密码提示（输错三次后出现，可留空）<input id="site-settings-letter-hint" type="text" maxlength="80"
+                ></label>
+                <label class="site-settings__letter-wide">标题<input id="site-settings-letter-title" type="text" value="给你" maxlength="40"></label>
+                <label class="site-settings__letter-wide"
+                  >信的内容<textarea id="site-settings-letter-text" rows="8" maxlength="4000"></textarea>
+                </label>
+                <label class="site-settings__letter-wide">落款<input id="site-settings-letter-sign" type="text" value="—— ƒ" maxlength="40"></label>
+              </div>
+              <button id="site-settings-letter-seal" class="site-settings__button" type="button">加密这封信</button>
+              <p id="site-settings-letter-status" class="site-settings__letter-status" role="status" aria-live="polite"></p>
+            </details>
+          </section>
+
           <section class="site-settings__section" aria-labelledby="site-settings-existing-heading">
             <div class="site-settings__section-heading">
               <h3 id="site-settings-existing-heading">{{ settings_existing }}</h3>

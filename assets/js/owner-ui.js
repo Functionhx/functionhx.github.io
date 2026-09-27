@@ -39,10 +39,11 @@
   const settingsToggle = document.getElementById("site-settings-toggle");
   function syncSettingsControl(verified) {
     if (!settingsToggle) return;
-    const label = verified ? "打开站点设置" : "站长登录";
+    // 访客点齿轮打开彩蛋图鉴（eggs.js），长按才是站长登录。
+    const label = verified ? "打开站点设置" : "彩蛋图鉴";
     settingsToggle.setAttribute("aria-label", label);
     const tip = settingsToggle.querySelector("[data-settings-tip]");
-    if (tip) tip.textContent = verified ? "站点设置" : "站长登录";
+    if (tip) tip.textContent = verified ? "站点设置" : "彩蛋图鉴";
   }
   syncSettingsControl(false);
 

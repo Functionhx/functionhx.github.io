@@ -15,7 +15,8 @@ const contracts = {
   "magic-search.css": [".magic-search::backdrop", "max-width: 42rem", "@media (prefers-reduced-motion: reduce)"],
   "owner-ui.css": [
     'html:not([data-owner-verified="true"][data-owner-mode="true"]) .owner-only-control',
-    'html[data-owner-verified="true"] .site-author-nav.owner-only-control',
+    // 铅笔只在站长模式下显示（「返回访客模式」后页面与访客一致，2026-09-27）。
+    'html[data-owner-verified="true"][data-owner-mode="true"] .site-author-nav.owner-only-control',
     ".site-author-menu[hidden]",
     "@media (max-width: 575.98px)",
   ],
