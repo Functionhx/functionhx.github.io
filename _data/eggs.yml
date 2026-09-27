@@ -4,10 +4,14 @@ public:
   turbo: true
   dog: true
   terminal: true
-  fx: false
+  fx: true
   night: true
   idle: true
   console: true
   tab: true
   letter: true
 letter:
+  v: 2
+  salt: "PqMRALChZvG8nBNqz+kmRA=="
+  iv: "+Y5qUWgV5HVaaFbD"
+  data: "m9pPphsGLc1UwUUIXOF8ZITqmntIY2/O5IQkvPqEGFRXSiKOcnCyqyhkwrgSlWMMNQLXiWpgaynPHvpgsRk918hU8v31zsANBNWJWEoaYBx2kFOZTt/Vhp6gPJNwCdb32YPoZr+LX3cuobkuG9YEsEullRBaubD8A2t+nsHJBVi4gRcUR8PjABu7slhZIwk4SxasRPleWLDDG/RCXcxp+pCfK0bdhbl5R6qRmxnPCpYzhw3i5NLxEc+UD2bieqP2wX92HtJiKm2JkJ3w2tvVAMqOJUB4rVHYBb6d9PLGdnB5b1ehTlWzmlEP4Xvf1AZqLxrs6AcntTIdcL3rrIjvfoPcKnbrCAz2RamXr1npM5LyN54qW6ipkOOz7XFiXerwqBJwSaPqgnFnpx4="
