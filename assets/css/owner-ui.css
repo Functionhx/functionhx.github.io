@@ -251,3 +251,23 @@ html[data-owner-verified="true"][data-owner-mode="true"] .site-author-nav.owner-
     transform: none;
   }
 }
+
+/* 铅笔停靠进导航栏：停靠位在齿轮右边，和导航按钮一样大。 */
+.function-page #navbar .function-author-dock {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+}
+.function-page #navbar .function-author-dock[hidden] {
+  display: none !important;
+}
+.site-author-nav[data-docked="true"] #site-inline-editor-toggle {
+  box-shadow: none;
+}
+/* 拖到齿轮附近时给出「可以放下」的提示 */
+.site-author-nav[data-dock-ready="true"] #site-inline-editor-toggle {
+  border-color: var(--global-theme-color);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--global-theme-color) 22%, transparent);
+  color: var(--global-theme-color);
+}

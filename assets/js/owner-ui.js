@@ -8,7 +8,6 @@
   const menu = document.getElementById("site-author-menu");
   const launcher = toggle?.closest(".site-author-nav") || null;
   const dragThreshold = 6;
-  let baseNavbarBottom = null;
   let dragState = null;
   let suppressNextPointerClick = false;
   let resizeFrame = 0;
@@ -115,16 +114,6 @@
     return insets;
   }
 
-  function navbarBottom() {
-    const navbar = document.getElementById("navbar");
-    if (!navbar) return 0;
-    const navigationPanel = document.getElementById("navbarNav");
-    if (baseNavbarBottom == null || !navigationPanel?.classList.contains("show")) {
-      baseNavbarBottom = navbar.getBoundingClientRect().bottom;
-    }
-    return baseNavbarBottom;
-  }
-
   function viewportBounds() {
     const viewport = window.visualViewport;
     const left = viewport?.offsetLeft || 0;
@@ -139,14 +128,14 @@
     const rootFontSize = Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16;
     const mobile = window.matchMedia("(max-width: 575.98px)").matches;
     const edgeGap = rootFontSize * (mobile ? 0.65 : 0.75);
-    const navbarGap = rootFontSize * (mobile ? 0.4 : 0.55);
     const safeArea = readSafeAreaInsets();
     const viewport = viewportBounds();
     const toggleRect = toggle.getBoundingClientRect();
     const width = toggleRect.width || toggle.offsetWidth || rootFontSize * 2.6;
     const height = toggleRect.height || toggle.offsetHeight || rootFontSize * 2.6;
     const minimumX = viewport.left + Math.max(edgeGap, safeArea.left);
-    const minimumY = Math.max(navbarBottom() + navbarGap, viewport.top + safeArea.top + edgeGap);
+    // 可以拖到窗口的任何地方，包括导航栏那一行；拖到齿轮旁边会停靠进导航栏。
+    const minimumY = viewport.top + Math.max(edgeGap, safeArea.top);
     const bottomInset = Math.max(edgeGap, safeArea.bottom);
     const rightInset = Math.max(edgeGap, safeArea.right);
     const maximumX = Math.max(minimumX, viewport.right - width - rightInset);
@@ -164,11 +153,92 @@
     launcher.style.top = `${nextTop.toFixed(2)}px`;
   }
 
+  // ---------- 停靠进导航栏 ----------
+  const dockSlot = document.querySelector("[data-author-dock]");
+  const DOCK_DISTANCE = 72;
+  let dockFrame = 0;
+  let dockFollowUntil = 0;
+
+  function dockTarget() {
+    // 停靠位显示时对准它；隐藏时按齿轮右边预估它会出现的位置。
+    if (!dockSlot) return null;
+    const slotRect = dockSlot.hidden ? null : dockSlot.getBoundingClientRect();
+    if (slotRect && slotRect.width) return { x: slotRect.left + slotRect.width / 2, y: slotRect.top + slotRect.height / 2 };
+    const gear = document.getElementById("site-settings-toggle");
+    const gearRect = gear?.getBoundingClientRect();
+    if (!gearRect || !gearRect.width) return null;
+    return { x: gearRect.right + 8 + gearRect.width / 2, y: gearRect.top + gearRect.height / 2 };
+  }
+
+  function nearDock(left, top) {
+    const target = dockTarget();
+    const rect = toggle?.getBoundingClientRect();
+    if (!target || !rect) return false;
+    return Math.hypot(left + rect.width / 2 - target.x, top + rect.height / 2 - target.y) < DOCK_DISTANCE;
+  }
+
+  function isDocked() {
+    return launcher?.dataset.docked === "true";
+  }
+
+  function syncDock() {
+    if (!isDocked() || !dockSlot) return;
+    const slotRect = dockSlot.getBoundingClientRect();
+    const rect = toggle.getBoundingClientRect();
+    // 窄屏时齿轮收进了折叠菜单，停靠位看不见：铅笔暂时回到默认位置，展开或变宽后再回去。
+    if (!slotRect.width) {
+      delete launcher.dataset.positioned;
+      launcher.style.left = "";
+      launcher.style.top = "";
+      launcher.style.right = "";
+      return;
+    }
+    launcher.dataset.positioned = "true";
+    launcher.style.right = "auto";
+    launcher.style.left = `${(slotRect.left + (slotRect.width - rect.width) / 2).toFixed(2)}px`;
+    launcher.style.top = `${(slotRect.top + (slotRect.height - rect.height) / 2).toFixed(2)}px`;
+  }
+
+  // 导航栏滚动时会收成胶囊（带过渡动画），停靠时在动画期间逐帧跟着走。
+  function followDock(duration = 700) {
+    if (!isDocked()) return;
+    dockFollowUntil = Math.max(dockFollowUntil, window.performance.now() + duration);
+    if (dockFrame) return;
+    const step = () => {
+      syncDock();
+      if (window.performance.now() < dockFollowUntil) dockFrame = window.requestAnimationFrame(step);
+      else dockFrame = 0;
+    };
+    dockFrame = window.requestAnimationFrame(step);
+  }
+
+  function dockLauncher() {
+    if (!launcher || !dockSlot) return;
+    dockSlot.hidden = false;
+    launcher.dataset.docked = "true";
+    delete launcher.dataset.dockReady;
+    followDock();
+  }
+
+  function undockLauncher() {
+    if (!launcher || !dockSlot) return;
+    dockSlot.hidden = true;
+    delete launcher.dataset.docked;
+  }
+
+  function saveDocked() {
+    try {
+      window.localStorage.setItem(launcherPositionKey, JSON.stringify({ version: 1, docked: true, x: 1, y: 0 }));
+    } catch (_error) {
+      // Docking still works for this page when local storage is unavailable.
+    }
+  }
+
   function readLauncherPosition() {
     try {
       const value = JSON.parse(window.localStorage.getItem(launcherPositionKey) || "null");
       if (value?.version !== 1 || !Number.isFinite(value.x) || !Number.isFinite(value.y)) return null;
-      return { x: clamp(value.x, 0, 1), y: clamp(value.y, 0, 1) };
+      return { docked: value.docked === true, x: clamp(value.x, 0, 1), y: clamp(value.y, 0, 1) };
     } catch (_error) {
       return null;
     }
@@ -200,6 +270,10 @@
     if (!launcher || !toggle || toggle.getBoundingClientRect().width === 0) return;
     const saved = readLauncherPosition();
     if (!saved) return;
+    if (saved.docked && dockSlot) {
+      dockLauncher();
+      return;
+    }
     const constraints = launcherConstraints();
     if (!constraints) return;
     placeLauncher(
@@ -244,6 +318,7 @@
     const rect = launcher?.getBoundingClientRect();
     if (!constraints || !rect) return true;
     closeMenu();
+    if (isDocked()) undockLauncher();
     if (event.key === "Home") placeLauncher(constraints.maximumX, constraints.minimumY, constraints);
     else {
       const step = event.altKey ? 1 : 16;
@@ -256,7 +331,13 @@
   }
 
   function clampLauncherToViewport() {
-    if (!launcher || !toggle || toggle.getBoundingClientRect().width === 0) return;
+    if (!launcher || !toggle) return;
+    if (isDocked()) {
+      syncDock();
+      placeMenu();
+      return;
+    }
+    if (toggle.getBoundingClientRect().width === 0) return;
     const saved = readLauncherPosition();
     if (saved) restoreLauncherPosition();
     else if (launcher.dataset.positioned === "true") {
@@ -344,9 +425,14 @@
         dragState.active = true;
         launcher.dataset.dragging = "true";
         closeMenu();
+        if (isDocked()) undockLauncher();
       }
       event.preventDefault();
       placeLauncher(dragState.startLeft + deltaX, dragState.startTop + deltaY, dragState.constraints);
+      const rect = launcher.getBoundingClientRect();
+      if (nearDock(rect.left, rect.top)) launcher.dataset.dockReady = "true";
+      else delete launcher.dataset.dockReady;
+      if (dockSlot) dockSlot.dataset.ready = launcher.dataset.dockReady ? "true" : "false";
     });
 
     function finishDrag(event) {
@@ -365,6 +451,13 @@
       window.setTimeout(() => {
         suppressNextPointerClick = false;
       }, 0);
+      if (dockSlot) delete dockSlot.dataset.ready;
+      if (launcher.dataset.dockReady === "true") {
+        dockLauncher();
+        saveDocked();
+        return;
+      }
+      delete launcher.dataset.dockReady;
       saveLauncherPosition();
     }
 
@@ -433,6 +526,11 @@
     });
   }
 
+  document.getElementById("navbar")?.addEventListener("transitionrun", () => followDock());
+  new MutationObserver(() => followDock()).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-function-scrolled", "data-nav-density", "data-owner-mode"],
+  });
   window.addEventListener("resize", scheduleViewportClamp, { passive: true });
   window.addEventListener("orientationchange", scheduleViewportClamp, { passive: true });
   window.visualViewport?.addEventListener("resize", scheduleViewportClamp, { passive: true });
