@@ -116,14 +116,21 @@
       | default: 'https://cdn.jsdelivr.net/npm/vanilla-back-to-top@7.2.1/dist/vanilla-back-to-top.min.js'
     %}
     {% assign back_to_top_integrity = site.third_party_libraries['vanilla-back-to-top'].integrity.js %}
+    {%- comment -%}
+      异步加载：CDN 连不上时（国内常见）同步脚本会卡住整页解析，加载页一直不消失。
+      加载成功后才初始化「回到顶部」，失败就安静地不显示这个按钮。
+    {%- endcomment -%}
     {% if back_to_top_integrity %}
-      <script src="{{ back_to_top_js }}" integrity="{{ back_to_top_integrity }}" crossorigin="anonymous"></script>
+      <script
+        async
+        src="{{ back_to_top_js }}"
+        integrity="{{ back_to_top_integrity }}"
+        crossorigin="anonymous"
+        onload="window.addBackToTop && window.addBackToTop()"
+      ></script>
     {% else %}
-      <script src="{{ back_to_top_js }}"></script>
+      <script async src="{{ back_to_top_js }}" onload="window.addBackToTop && window.addBackToTop()"></script>
     {% endif %}
-    <script>
-      addBackToTop();
-    </script>
   {% endunless %}
 {% endif %}
 

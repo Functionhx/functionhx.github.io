@@ -113,6 +113,31 @@
         }
       }
     </style>
+    <!--
+      站内链接：悬停约 200ms 后在后台预渲染目标页，点下去即时切换（Chromium 系浏览器）。
+      带查询参数的链接、新窗口、下载和站长专用入口不预渲染；其它浏览器仍由 navigation-performance.js 悬停预取。
+    -->
+    <script type="speculationrules">
+      {
+        "prerender": [
+          {
+            "where": {
+              "and": [
+                { "href_matches": "/*" },
+                { "not": { "href_matches": "/*\\?*" } },
+                { "not": { "href_matches": "/*.xml" } },
+                {
+                  "not": {
+                    "selector_matches": "[target=_blank], [download], [data-no-prefetch], [data-no-page-loader], .owner-only-control, .owner-only-control *"
+                  }
+                }
+              ]
+            },
+            "eagerness": "moderate"
+          }
+        ]
+      }
+    </script>
   </head>
 
   <!-- Body -->
