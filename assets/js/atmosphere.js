@@ -48,7 +48,8 @@
         .then(() => {
           root.animate(
             { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-            { duration: 560, easing: "cubic-bezier(0.4, 0, 0.2, 1)", pseudoElement: "::view-transition-new(root)" }
+            // 快起步、慢收尾：一点下去圆圈立刻冲出去，截图冻住的时间更短。
+            { duration: 420, easing: "cubic-bezier(0.22, 1, 0.36, 1)", pseudoElement: "::view-transition-new(root)" }
           );
         })
         .catch(() => {});

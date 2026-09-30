@@ -755,6 +755,19 @@ html.is-theme-revealing::view-transition-new(root) {
 html.is-theme-revealing::view-transition-new(root) {
   z-index: 1;
 }
+/* 季节氛围在切换主题时单独成一层、叠在最上面实时飘落：圆圈外的旧画面是静态截图，
+   落叶一直在动，画面就不会像定格一样。 */
+html.is-theme-revealing .season-canvas {
+  view-transition-name: season-canvas;
+}
+html.is-theme-revealing::view-transition-group(season-canvas),
+html.is-theme-revealing::view-transition-new(season-canvas) {
+  z-index: 2;
+  animation: none;
+}
+html.is-theme-revealing::view-transition-old(season-canvas) {
+  display: none;
+}
 /* 翻页过渡给导航栏和正文单独起了名字；切换主题时收回，让整页一起跟着圆形扩散。 */
 html.is-theme-revealing #navbar,
 html.is-theme-revealing #site-rendered-content {
