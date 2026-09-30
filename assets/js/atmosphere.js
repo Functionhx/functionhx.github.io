@@ -46,6 +46,9 @@
       });
       transition.ready
         .then(() => {
+          // 圆圈的前沿就是风的前沿：从按钮处吹起，扫过哪里，那里的叶子就被卷走。
+          // 快照那一小段时间页面本身会停住，风在动画开始的这一刻才起，停顿读起来像起风前的屏息。
+          gust(x, y, radius, 420);
           root.animate(
             { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
             // 快起步、慢收尾：一点下去圆圈立刻冲出去，截图冻住的时间更短。
@@ -182,27 +185,29 @@
       },
       draw(context, items) {
         for (const item of items) {
-          const s = item.size;
-          context.save();
-          context.translate(item.x, item.y);
-          context.rotate(item.angle);
-          context.scale(Math.max(0.15, Math.abs(Math.cos(item.flip))), 1);
-          context.globalAlpha = item.alpha * (isDark() ? 0.85 : 1);
-          context.fillStyle = item.color;
-          // 花瓣：圆润的一头，另一头有个小缺口
-          context.beginPath();
-          context.moveTo(0, s);
-          context.bezierCurveTo(s * 0.95, s * 0.55, s * 0.8, -s * 0.75, s * 0.18, -s);
-          context.lineTo(0, -s * 0.72);
-          context.lineTo(-s * 0.18, -s);
-          context.bezierCurveTo(-s * 0.8, -s * 0.75, -s * 0.95, s * 0.55, 0, s);
-          context.fill();
-          context.globalAlpha *= 0.35;
-          context.fillStyle = "#e0819c";
-          context.beginPath();
-          context.ellipse(0, s * 0.55, s * 0.12, s * 0.3, 0, 0, Math.PI * 2);
-          context.fill();
-          context.restore();
+          drawWithTrail(context, item, (alpha, dx, dy) => {
+            const s = item.size;
+            context.save();
+            context.translate(item.x + dx, item.y + dy);
+            context.rotate(item.angle);
+            context.scale(Math.max(0.15, Math.abs(Math.cos(item.flip))), 1);
+            context.globalAlpha = alpha * (isDark() ? 0.85 : 1);
+            context.fillStyle = item.color;
+            // 花瓣：圆润的一头，另一头有个小缺口
+            context.beginPath();
+            context.moveTo(0, s);
+            context.bezierCurveTo(s * 0.95, s * 0.55, s * 0.8, -s * 0.75, s * 0.18, -s);
+            context.lineTo(0, -s * 0.72);
+            context.lineTo(-s * 0.18, -s);
+            context.bezierCurveTo(-s * 0.8, -s * 0.75, -s * 0.95, s * 0.55, 0, s);
+            context.fill();
+            context.globalAlpha *= 0.35;
+            context.fillStyle = "#e0819c";
+            context.beginPath();
+            context.ellipse(0, s * 0.55, s * 0.12, s * 0.3, 0, 0, Math.PI * 2);
+            context.fill();
+            context.restore();
+          });
         }
       },
     },
@@ -237,26 +242,30 @@
       },
       draw(context, items) {
         for (const item of items) {
-          const s = item.size;
-          context.save();
-          context.translate(item.x, item.y);
-          context.rotate(item.angle);
-          context.scale(0.35 + 0.65 * Math.abs(Math.cos(item.flip)), 1);
-          context.globalAlpha = item.alpha * (isDark() ? 0.85 : 1);
-          context.fillStyle = item.color;
-          // 叶片：两头尖的椭圆，加一条叶脉和一小截叶柄
-          context.beginPath();
-          context.moveTo(0, -s);
-          context.quadraticCurveTo(s * 0.75, -s * 0.2, 0, s * 0.8);
-          context.quadraticCurveTo(-s * 0.75, -s * 0.2, 0, -s);
-          context.fill();
-          context.strokeStyle = "rgba(90, 45, 20, 0.45)";
-          context.lineWidth = 0.9;
-          context.beginPath();
-          context.moveTo(0, -s * 0.85);
-          context.lineTo(0, s * 1.15);
-          context.stroke();
-          context.restore();
+          drawWithTrail(context, item, (alpha, dx, dy, trail) => {
+            const s = item.size;
+            context.save();
+            context.translate(item.x + dx, item.y + dy);
+            context.rotate(item.angle);
+            context.scale(0.35 + 0.65 * Math.abs(Math.cos(item.flip)), 1);
+            context.globalAlpha = alpha * (isDark() ? 0.85 : 1);
+            context.fillStyle = item.color;
+            // 叶片：两头尖的椭圆，加一条叶脉和一小截叶柄
+            context.beginPath();
+            context.moveTo(0, -s);
+            context.quadraticCurveTo(s * 0.75, -s * 0.2, 0, s * 0.8);
+            context.quadraticCurveTo(-s * 0.75, -s * 0.2, 0, -s);
+            context.fill();
+            if (!trail) {
+              context.strokeStyle = "rgba(90, 45, 20, 0.45)";
+              context.lineWidth = 0.9;
+              context.beginPath();
+              context.moveTo(0, -s * 0.85);
+              context.lineTo(0, s * 1.15);
+              context.stroke();
+            }
+            context.restore();
+          });
         }
       },
     },
@@ -273,6 +282,63 @@
   let clock = 0;
   let ratio = 1;
   let requested = "off";
+  // 一阵风：从 (x, y) 起，前沿半径按揭开动画的节奏扩大，被前沿扫到的粒子获得一个向外的冲量。
+  let wind = null;
+  const GUST_FORCE = { leaves: 1, sakura: 0.8, snow: 0.45, rain: 0.2 };
+
+  // 与揭开动画 cubic-bezier(0.22, 1, 0.36, 1) 近似的缓出曲线。
+  const easeOut = (t) => 1 - Math.pow(1 - Math.min(Math.max(t, 0), 1), 3.6);
+
+  function gust(x, y, radius, duration) {
+    if (!canvas || !kind || reducedMotion.matches) return;
+    wind = { x, y, radius, duration, start: window.performance.now(), force: GUST_FORCE[current] ?? 0.4 };
+    for (const item of items) item.swept = false;
+  }
+
+  function applyWind(item, dt) {
+    if (!wind) return;
+    if (!item.swept) {
+      const progress = easeOut((window.performance.now() - wind.start) / wind.duration);
+      const dx = item.x - wind.x;
+      const dy = item.y - wind.y;
+      const distance = Math.hypot(dx, dy) || 1;
+      if (distance > progress * wind.radius) return;
+      item.swept = true;
+      // 大的（近处的）叶子被吹得更猛；沿半径方向向外，再加一点切向的卷曲。
+      const depth = Math.min(Math.max((item.size || 6) / 10, 0.7), 1.5);
+      const power = random(520, 900) * depth * wind.force;
+      const curl = random(0.25, 0.55) * (Math.random() < 0.5 ? 1 : -1);
+      item.kx = (dx / distance - (dy / distance) * curl) * power;
+      item.ky = (dy / distance + (dx / distance) * curl) * power - power * 0.12;
+      if ("spin" in item) item.gustSpin = random(0.12, 0.3) * (Math.random() < 0.5 ? 1 : -1) * wind.force;
+    }
+    if (!item.kx && !item.ky) return;
+    item.x += item.kx * dt;
+    item.y += item.ky * dt;
+    if (item.gustSpin) {
+      item.angle += item.gustSpin * dt * 60;
+      item.flip += Math.abs(item.gustSpin) * dt * 30;
+    }
+    // 风势逐渐减弱，叶子回到自己的节奏里继续飘。
+    const decay = Math.exp(-dt / 0.55);
+    item.kx *= decay;
+    item.ky *= decay;
+    if (item.gustSpin) item.gustSpin *= decay;
+    if (Math.hypot(item.kx, item.ky) < 8) item.kx = item.ky = item.gustSpin = 0;
+  }
+
+  // 被风吹着的时候，沿来路补两道淡淡的残影，看起来更有速度。
+  function drawWithTrail(context, item, paint) {
+    const speed = Math.hypot(item.kx || 0, item.ky || 0);
+    if (speed > 90) {
+      const length = Math.min(speed * 0.014, 14);
+      const ux = item.kx / speed;
+      const uy = item.ky / speed;
+      paint(item.alpha * 0.16, -ux * length * 2, -uy * length * 2, true);
+      paint(item.alpha * 0.3, -ux * length, -uy * length, true);
+    }
+    paint(item.alpha, 0, 0, false);
+  }
 
   function density() {
     const area = (window.innerWidth * window.innerHeight) / (1440 * 900);
@@ -309,11 +375,17 @@
     clock += dt;
     const width = window.innerWidth;
     const height = window.innerHeight;
+    if (wind && window.performance.now() - wind.start > 2200) wind = null;
     for (const item of items) {
       kind.step(item, dt, clock);
-      if (item.y - item.size > height || item.x - item.size > width + 80) {
+      applyWind(item, dt);
+      // 被吹出屏幕左边或上边的，回到顶部重新飘下来。
+      const gone = item.x + item.size < -120 || item.y + item.size < -220;
+      if (gone || item.y - item.size > height || item.x - item.size > width + 80) {
         if (item.splash && splashes.length < 24 && Math.random() < 0.5) splashes.push({ x: item.x, y: height - random(2, 14), age: 0 });
         Object.assign(item, kind.make(item.layer, width, height, false), { layer: item.layer });
+        // 重新飘下来的叶子不带走旧的风势，也不再被这一阵风卷第二次。
+        Object.assign(item, { kx: 0, ky: 0, gustSpin: 0, swept: true });
       }
     }
     splashes = splashes.filter((splash) => (splash.age += dt) < 0.4);
@@ -388,6 +460,6 @@
   reducedMotion.addEventListener?.("change", apply);
   new MutationObserver(apply).observe(root, { attributes: true, attributeFilter: ["data-turbo"] });
 
-  window.functionhxSeasons = Object.freeze({ set, resolve: resolveEffect });
+  window.functionhxSeasons = Object.freeze({ set, resolve: resolveEffect, gust });
   set(root.dataset.publishedSeasonEffect || "off");
 })();
