@@ -116,6 +116,9 @@
   const letterStatus = document.getElementById("site-settings-letter-status");
   const eggsPath = "_data/eggs.yml";
   const seasonInputs = [...root.querySelectorAll('input[name="site-settings-season"]')];
+  const windInput = document.getElementById("site-settings-wind");
+  const windValue = document.getElementById("site-settings-wind-value");
+  const windTest = document.getElementById("site-settings-wind-test");
   const eggIds = ["turbo", "dog", "terminal", "fx", "night", "idle", "console", "tab", "letter"];
   let initialEggPublic = {};
   let publishedLetter = null;
@@ -132,6 +135,25 @@
   if (Object.values(elements).some((element) => !element) || !sectionToggles.length || !navigationDensityInputs.length || !uiSettingsPath) {
     return;
   }
+
+  // 外观类设置（字体、加载文案、季节氛围、风力、导航间距、彩蛋线索和那封信）不需要重新构建：
+  // 改动后自动保存到仓库 site-settings 分支的 settings.json，所有访客的页面直接读它，马上生效。
+  // 构建时写进 _data 的值（baked）只是取不到实时设置时的后备，会在后台静默同步回主分支。
+  // 只有栏目的显示与隐藏这类需要重新生成页面的改动，才用「保存并发布」。
+  const baked = {
+    density: root.dataset.initialNavigationDensity,
+    font: root.dataset.initialSiteFont,
+    loadingCopy: root.dataset.initialLoadingCopy,
+    season: root.dataset.initialSeasonEffect,
+    wind: Number(root.dataset.initialWindStrength ?? 100),
+    eggPublic: { ...initialEggPublic },
+    letter: publishedLetter,
+  };
+  let liveSaveTimer = 0;
+  let liveSaving = false;
+  let liveQueued = false;
+  let bakedTimer = 0;
+  let workChain = Promise.resolve();
 
   let confirmRequest = null;
   let lastSettingsFocus = elements.close;
@@ -291,11 +313,8 @@
     window.functionhxOwnerUi?.closePrimaryNavigation?.();
     syncPersonalization();
     openDialog(dialog);
-    if (hasPendingSettings()) {
-      previewNavigationDensity();
-      previewPersonalization();
-    }
     updateSaveState();
+    refreshLiveFromRemote();
     toggle.setAttribute("aria-expanded", "true");
     syncOwnerAccess();
   }
@@ -333,7 +352,12 @@
 
   function finishClosingSettings() {
     document.documentElement.dataset.navDensity = root.dataset.initialNavigationDensity;
-    previewPersonalization(root.dataset.initialSiteFont, root.dataset.initialLoadingCopy, root.dataset.initialSeasonEffect);
+    previewPersonalization(
+      root.dataset.initialSiteFont,
+      root.dataset.initialLoadingCopy,
+      root.dataset.initialSeasonEffect,
+      Number(root.dataset.initialWindStrength ?? 100)
+    );
     closeDialog(dialog);
     toggle.setAttribute("aria-expanded", "false");
     restoreSettingsFocus();
@@ -411,15 +435,7 @@
   }
 
   function updateSaveState() {
-    const count =
-      changedSections().length +
-      Number(navigationDensityChanged()) +
-      Number(fontChanged()) +
-      Number(loadingCopyChanged()) +
-      Number(seasonChanged()) +
-      Number(eggsChanged()) +
-      Number(letterChanged()) +
-      Number(hasNewSection());
+    const count = changedSections().length + Number(hasNewSection());
     elements.saveState.textContent = count
       ? isEnglish
         ? `${count} unpublished change${count === 1 ? "" : "s"}`
@@ -445,11 +461,6 @@
     // Drafts contain only form content, never tokens, passwords, or passkeys.
     const draft = {
       version: 1,
-      density: { initial: root.dataset.initialNavigationDensity, value: selectedNavigationDensity() },
-      font: { initial: root.dataset.initialSiteFont, value: selectedFont() },
-      loadingCopy: { initial: root.dataset.initialLoadingCopy, value: selectedLoadingCopy() },
-      season: { initial: root.dataset.initialSeasonEffect, value: selectedSeason() },
-      eggs: eggInputs.map((input) => ({ id: input.dataset.eggPublic, value: input.checked })),
       sections: changedSections().map((input) => ({ key: input.dataset.translationKey, value: input.checked })),
       newSection: {
         ...values,
@@ -472,28 +483,6 @@
     try {
       const draft = JSON.parse(window.sessionStorage.getItem(draftKey) || "null");
       if (draft?.version !== 1) return;
-      let densityConflict = false;
-      if (draft.density?.value !== draft.density?.initial && ["auto", "compact", "relaxed"].includes(draft.density?.value)) {
-        if (draft.density.initial === root.dataset.initialNavigationDensity) {
-          navigationDensityInputs.forEach((input) => {
-            input.checked = input.value === draft.density.value;
-          });
-        } else if (draft.density.value !== root.dataset.initialNavigationDensity) densityConflict = true;
-      }
-      // 只在线上值没变时找回字体与加载文案草稿，避免覆盖另一处刚发布的设置。
-      if (draft.font?.initial === root.dataset.initialSiteFont && hasOption(elements.font, draft.font?.value)) {
-        elements.font.value = draft.font.value;
-      }
-      if (draft.loadingCopy?.initial === root.dataset.initialLoadingCopy && hasOption(elements.loadingCopy, draft.loadingCopy?.value)) {
-        elements.loadingCopy.value = draft.loadingCopy.value;
-      }
-      if (draft.season?.initial === root.dataset.initialSeasonEffect && seasonInputs.some((input) => input.value === draft.season?.value)) {
-        checkSeason(draft.season.value);
-      }
-      for (const change of Array.isArray(draft.eggs) ? draft.eggs : []) {
-        const input = eggInputs.find((item) => item.dataset.eggPublic === change.id);
-        if (input && typeof change.value === "boolean") input.checked = change.value;
-      }
       for (const change of Array.isArray(draft.sections) ? draft.sections : []) {
         const input = sectionToggles.find((item) => item.dataset.translationKey === change.key);
         if (input && typeof change.value === "boolean") input.checked = change.value;
@@ -505,17 +494,9 @@
       if (typeof values.visible === "boolean") elements.newVisible.checked = values.visible;
       slugIsAutomatic = draft.slugIsAutomatic !== false;
       if (hasPendingSettings()) {
-        if (changedSections().length || navigationDensityChanged() || hasNewSection()) elements.ownerDetails.open = true;
+        if (changedSections().length || hasNewSection()) elements.ownerDetails.open = true;
         if (hasNewSection()) elements.newDetails.open = true;
-        setStatus(
-          densityConflict
-            ? isEnglish
-              ? "Draft restored. Navigation spacing changed online; the latest spacing was kept."
-              : "已找回草稿。线上导航间距已有更新，已保留最新间距。"
-            : isEnglish
-              ? "Unpublished draft restored for this tab."
-              : "已找回当前标签页的未发布草稿。"
-        );
+        setStatus(isEnglish ? "Unpublished draft restored for this tab." : "已找回当前标签页的未发布草稿。");
       }
       persistDraft();
     } catch (_error) {
@@ -526,6 +507,7 @@
   function settingsChanged() {
     persistDraft();
     updateSaveState();
+    scheduleLiveSave();
     setStatus(
       hasPendingSettings() && !draftStored
         ? isEnglish
@@ -542,20 +524,7 @@
     sectionToggles.forEach((input) => {
       input.checked = input.dataset.initialVisible === "true";
     });
-    navigationDensityInputs.forEach((input) => {
-      input.checked = input.value === root.dataset.initialNavigationDensity;
-    });
-    elements.font.value = root.dataset.initialSiteFont;
-    elements.loadingCopy.value = root.dataset.initialLoadingCopy;
-    checkSeason(root.dataset.initialSeasonEffect);
-    eggInputs.forEach((input) => {
-      input.checked = initialEggPublic[input.dataset.eggPublic] === true;
-    });
-    sealedLetter = null;
-    if (letterStatus) letterStatus.textContent = "";
     clearNewSection();
-    previewNavigationDensity();
-    previewPersonalization();
     settingsChanged();
   }
 
@@ -593,24 +562,15 @@
   }
 
   function hasPendingSettings() {
-    return (
-      changedSections().length > 0 ||
-      navigationDensityChanged() ||
-      fontChanged() ||
-      loadingCopyChanged() ||
-      seasonChanged() ||
-      eggsChanged() ||
-      letterChanged() ||
-      hasNewSection()
-    );
+    return changedSections().length > 0 || hasNewSection();
   }
 
   function previewNavigationDensity() {
     document.documentElement.dataset.navDensity = selectedNavigationDensity();
   }
 
-  // 字体与加载文案是站长发布的站点设置：下拉框里的选择先在本页预览，
-  // 和导航布局一起「保存并发布」到 _data/site_ui.yml 后才对所有访客生效。
+  // 字体、加载文案、季节氛围、风力、导航间距和彩蛋是实时生效的外观设置：改动先在本页预览，
+  // 随后自动保存到 site-settings 分支的 settings.json（saveLiveSettings），不用等构建。
   function hasOption(select, value) {
     return [...select.options].some((option) => option.value === value);
   }
@@ -645,19 +605,282 @@
     });
   }
 
-  function previewPersonalization(font = selectedFont(), copy = selectedLoadingCopy(), season = selectedSeason()) {
+  function selectedWind() {
+    const value = windInput ? Number(windInput.value) : Number(root.dataset.initialWindStrength ?? 100);
+    return Number.isFinite(value) ? Math.min(Math.max(Math.round(value), 0), 200) : 100;
+  }
+
+  function windChanged() {
+    return selectedWind() !== Number(root.dataset.initialWindStrength ?? 100);
+  }
+
+  function previewPersonalization(font = selectedFont(), copy = selectedLoadingCopy(), season = selectedSeason(), wind = selectedWind()) {
     window.functionhxSitePreferences?.setFont?.(font);
     window.functionhxSitePreferences?.setLoadingCopy?.(copy);
+    window.functionhxSeasons?.setWind?.(wind);
     window.functionhxSeasons?.set?.(season);
   }
 
   function syncPersonalization() {
     if (!hasOption(elements.font, elements.font.value)) elements.font.value = root.dataset.initialSiteFont;
     if (!hasOption(elements.loadingCopy, elements.loadingCopy.value)) elements.loadingCopy.value = root.dataset.initialLoadingCopy;
-    elements.preferenceStatus.hidden = !(fontChanged() || loadingCopyChanged() || seasonChanged());
-    elements.preferenceStatus.textContent = isEnglish
-      ? "Previewing on this page. Save and publish to apply it for every visitor."
-      : "正在本页预览，保存并发布后对所有访客生效。";
+    if (windInput && windValue) windValue.textContent = selectedWind() === 0 ? "关" : `${selectedWind()}%`;
+  }
+
+  // ---------- 实时生效的外观设置 ----------
+  function liveDirty() {
+    return (
+      fontChanged() || loadingCopyChanged() || seasonChanged() || windChanged() || navigationDensityChanged() || eggsChanged() || letterChanged()
+    );
+  }
+
+  function setLiveStatus(message, state = "") {
+    const node = elements.preferenceStatus;
+    node.hidden = !message;
+    node.textContent = message;
+    if (state) node.dataset.state = state;
+    else delete node.dataset.state;
+  }
+
+  function liveSettingsFromForm() {
+    const publicMap = {};
+    eggInputs.forEach((input) => {
+      publicMap[input.dataset.eggPublic] = input.checked;
+    });
+    return {
+      version: 1,
+      site_font: selectedFont(),
+      loading_copy: selectedLoadingCopy(),
+      season_effect: selectedSeason(),
+      wind_strength: selectedWind(),
+      navigation_density: selectedNavigationDensity(),
+      eggs: { public: publicMap, letter: sealedLetter || publishedLetter || null },
+    };
+  }
+
+  // 保存、同步、发布都用同一份授权对象，排队一个一个来。
+  function exclusive(task) {
+    const run = workChain.then(task, task);
+    workChain = run.catch(() => {});
+    return run;
+  }
+
+  function scheduleLiveSave() {
+    window.clearTimeout(liveSaveTimer);
+    if (!liveDirty()) return;
+    setLiveStatus(isEnglish ? "Applying…" : "正在让修改生效…");
+    liveSaveTimer = window.setTimeout(saveLiveSettings, 700);
+  }
+
+  function saveLiveSettings() {
+    window.clearTimeout(liveSaveTimer);
+    if (liveSaving) {
+      liveQueued = true;
+      return workChain;
+    }
+    return exclusive(saveLiveNow);
+  }
+
+  async function saveLiveNow() {
+    await restorePromise;
+    if (!liveDirty()) return;
+    if (!activeToken) {
+      setLiveStatus("需要先连接 GitHub，修改才会对所有访客生效。", "error");
+      // 不在排队链里等弹窗：连接成功后会回到 commitSettings，那里会先把这些修改存下来。
+      if (!authDialog.open) requestOwnerAccess(true);
+      return;
+    }
+    liveSaving = true;
+    const snapshot = liveSettingsFromForm();
+    commitAuthorization = { version: authVersion, token: activeToken, controller: new AbortController() };
+    try {
+      await writeRuntimeSettings(snapshot);
+      applySavedLive(snapshot);
+      setLiveStatus("已生效：所有访客约 1–3 分钟内就会看到。", "success");
+      scheduleBakedSync();
+    } catch (error) {
+      if (error.status === 401 || error.status === 403) await disconnectGitHub(false);
+      setLiveStatus(`没能让修改生效：${error.message || "请稍后重试"}（本页已保留预览）`, "error");
+    } finally {
+      commitAuthorization = null;
+      liveSaving = false;
+      updateSaveState();
+      if (liveQueued) {
+        liveQueued = false;
+        scheduleLiveSave();
+      }
+    }
+  }
+
+  // 写 site-settings 分支上的 settings.json（分支还不存在就从主分支新建）。
+  async function writeRuntimeSettings(settings) {
+    const api = window.functionhxRuntimeSettings;
+    if (!api) throw new Error("实时设置模块没有加载。");
+    const base = `/repos/${repository}`;
+    const file = `${base}/contents/${api.file}`;
+    const content = encodeBase64Utf8(`${JSON.stringify(settings, null, 2)}\n`);
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      let existing = await githubRequest(`${file}?ref=${encodeURIComponent(api.branch)}`, { allowNotFound: true, token: activeToken });
+      if (!existing) {
+        const ref = await githubRequest(`${base}/git/ref/heads/${encodeURIComponent(api.branch)}`, { allowNotFound: true, token: activeToken });
+        if (!ref) {
+          const head = await githubRequest(`${base}/git/ref/heads/${encodeURIComponent(branch)}`, { token: activeToken });
+          await githubRequest(`${base}/git/refs`, {
+            body: { ref: `refs/heads/${api.branch}`, sha: head.object.sha },
+            method: "POST",
+            token: activeToken,
+          });
+        }
+        existing = null;
+      }
+      try {
+        await githubRequest(file, {
+          body: { branch: api.branch, content, message: "site: live appearance settings", ...(existing?.sha ? { sha: existing.sha } : {}) },
+          method: "PUT",
+          token: activeToken,
+        });
+        return;
+      } catch (error) {
+        // 另一处刚好也在写：重新取一次 sha 再试一遍。
+        if (attempt === 0 && (error.status === 409 || error.status === 422)) continue;
+        throw error;
+      }
+    }
+  }
+
+  function encodeBase64Utf8(text) {
+    const bytes = new TextEncoder().encode(text);
+    let binary = "";
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
+    return window.btoa(binary);
+  }
+
+  // 保存成功：把这些值记作「线上现状」，并交给 runtime-settings.js 更新本机缓存和整页。
+  function applySavedLive(settings) {
+    root.dataset.initialSiteFont = settings.site_font;
+    root.dataset.initialLoadingCopy = settings.loading_copy;
+    root.dataset.initialSeasonEffect = settings.season_effect;
+    root.dataset.initialWindStrength = String(settings.wind_strength);
+    root.dataset.initialNavigationDensity = settings.navigation_density;
+    initialEggPublic = { ...settings.eggs.public };
+    if (sealedLetter) {
+      publishedLetter = sealedLetter;
+      sealedLetter = null;
+      if (letterStatus) letterStatus.textContent = "这封信已生效。";
+    }
+    window.functionhxRuntimeSettings?.store?.(settings);
+    syncPersonalization();
+  }
+
+  // 打开面板时取一份最新的（跳过缓存），在没有未保存修改的前提下把控件对上线上现状。
+  function adoptLiveSettings(live = {}) {
+    const page = document.documentElement.dataset;
+    if (page.publishedSiteFont) root.dataset.initialSiteFont = page.publishedSiteFont;
+    if (page.publishedLoadingCopy) root.dataset.initialLoadingCopy = page.publishedLoadingCopy;
+    if (page.publishedSeasonEffect) root.dataset.initialSeasonEffect = page.publishedSeasonEffect;
+    if (page.publishedWindStrength !== undefined) root.dataset.initialWindStrength = page.publishedWindStrength;
+    if (live.navigation_density) root.dataset.initialNavigationDensity = live.navigation_density;
+    if (live.eggs?.public) initialEggPublic = { ...initialEggPublic, ...live.eggs.public };
+    if (live.eggs && "letter" in live.eggs) publishedLetter = live.eggs.letter;
+    elements.font.value = root.dataset.initialSiteFont;
+    elements.loadingCopy.value = root.dataset.initialLoadingCopy;
+    checkSeason(root.dataset.initialSeasonEffect);
+    if (windInput) windInput.value = root.dataset.initialWindStrength ?? "100";
+    navigationDensityInputs.forEach((input) => {
+      input.checked = input.value === root.dataset.initialNavigationDensity;
+    });
+    eggInputs.forEach((input) => {
+      input.checked = initialEggPublic[input.dataset.eggPublic] === true;
+    });
+    syncPersonalization();
+  }
+
+  async function refreshLiveFromRemote() {
+    const api = window.functionhxRuntimeSettings;
+    if (!api) return;
+    await restorePromise;
+    try {
+      const settings = await api.refresh({ fresh: true, token: activeToken });
+      if (settings && !liveDirty() && !liveSaving) adoptLiveSettings(settings);
+    } catch (_error) {
+      /* 取不到就用页面上已有的值。 */
+    }
+    if (bakedDrift()) scheduleBakedSync(3000);
+  }
+
+  // ---------- 把实时设置同步回主分支（后备） ----------
+  function bakedDrift() {
+    const liveWind = Number(root.dataset.initialWindStrength ?? 100);
+    return (
+      root.dataset.initialNavigationDensity !== baked.density ||
+      root.dataset.initialSiteFont !== baked.font ||
+      root.dataset.initialLoadingCopy !== baked.loadingCopy ||
+      root.dataset.initialSeasonEffect !== baked.season ||
+      liveWind !== baked.wind ||
+      eggIds.some((id) => (initialEggPublic[id] === true) !== (baked.eggPublic[id] === true)) ||
+      JSON.stringify(publishedLetter || null) !== JSON.stringify(baked.letter || null)
+    );
+  }
+
+  function scheduleBakedSync(delay = 20000) {
+    window.clearTimeout(bakedTimer);
+    bakedTimer = window.setTimeout(() => exclusive(syncBakedNow), delay);
+  }
+
+  async function bakedEntries(headSha) {
+    const entries = [];
+    const liveWind = Number(root.dataset.initialWindStrength ?? 100);
+    const uiChanged =
+      root.dataset.initialNavigationDensity !== baked.density ||
+      root.dataset.initialSiteFont !== baked.font ||
+      root.dataset.initialLoadingCopy !== baked.loadingCopy ||
+      root.dataset.initialSeasonEffect !== baked.season ||
+      liveWind !== baked.wind;
+    if (uiChanged) {
+      let source = await fetchFileAt(uiSettingsPath, headSha);
+      if (root.dataset.initialNavigationDensity !== baked.density) source = setNavigationDensity(source, root.dataset.initialNavigationDensity);
+      if (root.dataset.initialSiteFont !== baked.font) source = setSiteUiValue(source, "site_font", root.dataset.initialSiteFont);
+      if (root.dataset.initialLoadingCopy !== baked.loadingCopy) source = setSiteUiValue(source, "loading_copy", root.dataset.initialLoadingCopy);
+      if (root.dataset.initialSeasonEffect !== baked.season) source = setSiteUiValue(source, "season_effect", root.dataset.initialSeasonEffect);
+      if (liveWind !== baked.wind) source = setSiteUiValue(source, "wind_strength", String(liveWind));
+      entries.push({ content: source, mode: "100644", path: uiSettingsPath, type: "blob" });
+    }
+    const eggsDiffer =
+      eggIds.some((id) => (initialEggPublic[id] === true) !== (baked.eggPublic[id] === true)) ||
+      JSON.stringify(publishedLetter || null) !== JSON.stringify(baked.letter || null);
+    if (eggsDiffer) entries.push({ content: eggsSource(publishedLetter, initialEggPublic), mode: "100644", path: eggsPath, type: "blob" });
+    return entries;
+  }
+
+  function markBakedSynced() {
+    baked.density = root.dataset.initialNavigationDensity;
+    baked.font = root.dataset.initialSiteFont;
+    baked.loadingCopy = root.dataset.initialLoadingCopy;
+    baked.season = root.dataset.initialSeasonEffect;
+    baked.wind = Number(root.dataset.initialWindStrength ?? 100);
+    baked.eggPublic = { ...initialEggPublic };
+    baked.letter = publishedLetter;
+  }
+
+  // 后台静默提交：让构建写进页面的后备值追上实时设置。没有提示、不打断；失败了下次打开面板时再试。
+  async function syncBakedNow() {
+    if (!activeToken || busy || publishing || liveSaving || !bakedDrift()) return;
+    commitAuthorization = { version: authVersion, token: activeToken, controller: new AbortController() };
+    try {
+      const head = await githubRequest(`/repos/${repository}/git/ref/heads/${encodeURIComponent(branch)}`, { token: activeToken });
+      const headSha = head.object?.sha;
+      if (!headSha) return;
+      const parent = await githubRequest(`/repos/${repository}/git/commits/${headSha}`, { token: activeToken });
+      const entries = await bakedEntries(headSha);
+      if (entries.length) await createAtomicCommit(entries, headSha, parent.tree.sha, null, "site: sync live appearance settings");
+      markBakedSynced();
+    } catch (_error) {
+      /* 后备同步失败不影响实时设置。 */
+    } finally {
+      commitAuthorization = null;
+    }
   }
 
   function selectFont(setting) {
@@ -698,7 +921,7 @@
       });
       letterFields.phrase.value = "";
       letterFields.pin.value = "";
-      letterStatus.textContent = "已加密。暗号和密码已从表单清除，保存并发布后生效。";
+      letterStatus.textContent = "已加密。暗号和密码已从表单清除，正在让这封信生效…";
     } catch (error) {
       sealedLetter = null;
       letterStatus.textContent = error.message || "加密失败。";
@@ -712,14 +935,14 @@
     return JSON.stringify(String(value));
   }
 
-  function eggsSource(letter) {
+  function eggsSource(letter, publicMap = null) {
     const lines = [
       "# 首页彩蛋：哪些彩蛋在图鉴里公开触发线索，以及那封加密的信。",
       "# 由站点设置里的「彩蛋」一栏发布，不要手改 letter：它是浏览器里用暗号和六位密码加密后的密文。",
       "public:",
       ...eggIds.map((id) => {
         const input = eggInputs.find((item) => item.dataset.eggPublic === id);
-        const value = input ? input.checked : initialEggPublic[id] === true;
+        const value = publicMap ? publicMap[id] === true : input ? input.checked : initialEggPublic[id] === true;
         return `  ${id}: ${value ? "true" : "false"}`;
       }),
     ];
@@ -848,6 +1071,7 @@
 
   const siteUiChoices = Object.freeze({
     loading_copy: /^(?:thinking|loading|thinking-zh|loading-zh)$/,
+    wind_strength: /^(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|200)$/,
     season_effect: /^(?:off|auto|snow|sakura|rain|leaves)$/,
     site_font: /^[a-z][a-z0-9-]{1,40}$/,
   });
@@ -912,7 +1136,7 @@
     return decodeBase64Utf8(remote.content);
   }
 
-  async function prepareTreeEntries(headSha, sectionChanges, newSection, navigationDensity, personalization) {
+  async function prepareTreeEntries(headSha, sectionChanges, newSection) {
     const existingEntries = await Promise.all(
       sectionChanges.map(async (input) => {
         const path = input.dataset.sourcePathZh;
@@ -927,28 +1151,8 @@
       })
     );
 
-    const uiEntries = [];
-    const densityChanged = navigationDensity !== root.dataset.initialNavigationDensity;
-    const fontUpdated = personalization.font !== root.dataset.initialSiteFont;
-    const copyUpdated = personalization.loadingCopy !== root.dataset.initialLoadingCopy;
-    const seasonUpdated = personalization.season !== root.dataset.initialSeasonEffect;
-    if (densityChanged || fontUpdated || copyUpdated || seasonUpdated) {
-      let source = await fetchFileAt(uiSettingsPath, headSha);
-      if (densityChanged) source = setNavigationDensity(source, navigationDensity);
-      if (fontUpdated) source = setSiteUiValue(source, "site_font", personalization.font);
-      if (copyUpdated) source = setSiteUiValue(source, "loading_copy", personalization.loadingCopy);
-      if (seasonUpdated) source = setSiteUiValue(source, "season_effect", personalization.season);
-      uiEntries.push({
-        content: source,
-        mode: "100644",
-        path: uiSettingsPath,
-        type: "blob",
-      });
-    }
-
-    if (eggsChanged() || letterChanged()) {
-      uiEntries.push({ content: eggsSource(sealedLetter || publishedLetter), mode: "100644", path: eggsPath, type: "blob" });
-    }
+    // 顺手把实时设置的后备值也带上（有差异才会有条目）。
+    const uiEntries = await bakedEntries(headSha);
 
     if (!hasNewSection(newSection)) return [...existingEntries, ...uiEntries];
     const newPath = `_pages/${newSection.slug}-zh.md`;
@@ -961,13 +1165,13 @@
     return [...existingEntries, ...uiEntries, { content: createPageSource(newSection), mode: "100644", path: newPath, type: "blob" }];
   }
 
-  async function createAtomicCommit(entries, headSha, baseTree, newSection) {
+  async function createAtomicCommit(entries, headSha, baseTree, newSection, customMessage = "") {
     const tree = await githubRequest(`/repos/${repository}/git/trees`, {
       body: { base_tree: baseTree, tree: entries },
       method: "POST",
       token: activeToken,
     });
-    const message = hasNewSection(newSection) ? `site: add section "${newSection.slug}"` : strings.defaultMessage;
+    const message = customMessage || (newSection && hasNewSection(newSection) ? `site: add section "${newSection.slug}"` : strings.defaultMessage);
     const commit = await githubRequest(`/repos/${repository}/git/commits`, {
       body: { message, parents: [headSha], tree: tree.sha },
       method: "POST",
@@ -1160,17 +1364,22 @@
   async function commitSettings() {
     await restorePromise;
     if (busy) return;
+    // 外观类修改如果还在排队，先让它们生效。
+    if (liveDirty()) await saveLiveSettings();
+    return exclusive(commitNow);
+  }
+
+  async function commitNow() {
+    if (busy) return;
     const sectionChanges = changedSections();
     const newSection = readNewSection();
-    const navigationDensity = selectedNavigationDensity();
-    const personalization = { font: selectedFont(), loadingCopy: selectedLoadingCopy(), season: selectedSeason() };
     if (!validateNewSection(newSection)) return;
     if (!hasPendingSettings()) {
       setStatus(strings.noChanges);
       return;
     }
     if (!activeToken) {
-      await requestOwnerAccess(true);
+      if (!authDialog.open) requestOwnerAccess(true);
       return;
     }
 
@@ -1191,27 +1400,13 @@
       });
       const baseTree = parent.tree?.sha;
       if (!baseTree) throw new Error("The branch tree is unavailable.");
-      const entries = await prepareTreeEntries(headSha, sectionChanges, newSection, navigationDensity, personalization);
+      const entries = await prepareTreeEntries(headSha, sectionChanges, newSection);
       const commit = await createAtomicCommit(entries, headSha, baseTree, newSection);
+      markBakedSynced();
 
       sectionChanges.forEach((input) => {
         input.dataset.initialVisible = String(input.checked);
       });
-      root.dataset.initialNavigationDensity = navigationDensity;
-      root.dataset.initialSiteFont = personalization.font;
-      root.dataset.initialLoadingCopy = personalization.loadingCopy;
-      document.documentElement.dataset.publishedSiteFont = personalization.font;
-      document.documentElement.dataset.publishedLoadingCopy = personalization.loadingCopy;
-      root.dataset.initialSeasonEffect = personalization.season;
-      document.documentElement.dataset.publishedSeasonEffect = personalization.season;
-      eggInputs.forEach((input) => {
-        initialEggPublic[input.dataset.eggPublic] = input.checked;
-      });
-      if (sealedLetter) {
-        publishedLetter = sealedLetter;
-        sealedLetter = null;
-        if (letterStatus) letterStatus.textContent = "这封信已发布。";
-      }
       syncPersonalization();
       clearNewSection();
       setStatus(strings.commitSuccess, "success");
@@ -1252,7 +1447,12 @@
   });
   dialog.addEventListener("close", () => {
     document.documentElement.dataset.navDensity = root.dataset.initialNavigationDensity;
-    previewPersonalization(root.dataset.initialSiteFont, root.dataset.initialLoadingCopy, root.dataset.initialSeasonEffect);
+    previewPersonalization(
+      root.dataset.initialSiteFont,
+      root.dataset.initialLoadingCopy,
+      root.dataset.initialSeasonEffect,
+      Number(root.dataset.initialWindStrength ?? 100)
+    );
     toggle.setAttribute("aria-expanded", "false");
     restoreSettingsFocus();
   });
@@ -1299,6 +1499,12 @@
       settingsChanged();
     })
   );
+  windInput?.addEventListener("input", () => {
+    previewPersonalization();
+    syncPersonalization();
+    settingsChanged();
+  });
+  windTest?.addEventListener("click", () => window.functionhxSeasons?.testGust?.());
   newSectionInputs.forEach((input) => {
     input.addEventListener("input", () => {
       if (input === elements.slug) slugIsAutomatic = false;
@@ -1384,10 +1590,7 @@
     restorePromise = restoreGitHubSession();
   });
   restorePromise = restoreGitHubSession();
-  elements.font.value = root.dataset.initialSiteFont;
-  elements.loadingCopy.value = root.dataset.initialLoadingCopy;
-  checkSeason(root.dataset.initialSeasonEffect);
-  syncPersonalization();
+  adoptLiveSettings(window.functionhxRuntimeSettings?.current?.() || {});
   restoreDraft();
   updateSaveState();
 })();

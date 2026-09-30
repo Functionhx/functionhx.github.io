@@ -19,7 +19,7 @@
   const FOUND_KEY = "functionhx:eggs:found";
   const HOLD_DURATION = 700;
   const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
-  const EGGS = [
+  const ALL_EGGS = [
     { id: "turbo", icon: "⚡", name: "Turbo 模式", hint: "有个按钮，按住它久一点。" },
     { id: "dog", icon: "🐕", name: "机器狗", hint: "一段三十多年前的游戏秘籍，用方向键和 B、A。" },
     { id: "terminal", icon: "⌨️", name: "终端", hint: "键盘左上角，数字 1 的旁边。" },
@@ -29,13 +29,32 @@
     { id: "console", icon: "🛠️", name: "控制台", hint: "开发者工具里，也有人在等你。" },
     { id: "tab", icon: "👀", name: "标签页", hint: "切到别的标签页，再回来看看。" },
     { id: "letter", icon: "✉️", name: "一封信", hint: "只有一个人知道暗号。", phrase: true },
-  ].filter((egg) => egg.id !== "letter" || hasLetter());
+  ];
   const publicHints = config.public && typeof config.public === "object" ? config.public : {};
+  // 图鉴里有哪些彩蛋：那封信写好之前不出现。站长在站点设置里改动后（runtime-settings.js）会重新算一遍。
+  const EGGS = [];
+  function rebuildEggs() {
+    EGGS.length = 0;
+    EGGS.push(...ALL_EGGS.filter((egg) => egg.id !== "letter" || hasLetter()));
+  }
 
   function hasLetter() {
     const letter = config.letter;
     return Boolean(letter && letter.v === 2 && letter.salt && letter.iv && letter.data);
   }
+
+  rebuildEggs();
+
+  // 站长实时改的线索开关和那封信：取到新值后更新图鉴。
+  function applyRuntimeEggs(settings) {
+    const eggs = settings?.eggs;
+    if (!eggs) return;
+    if (eggs.public) Object.assign(publicHints, eggs.public);
+    if ("letter" in eggs) config.letter = eggs.letter;
+    rebuildEggs();
+    if (typeof gallery !== "undefined" && gallery) renderGallery();
+  }
+  window.addEventListener("functionhx:runtime-settings", (event) => applyRuntimeEggs(event.detail?.settings));
 
   function readFound() {
     try {
@@ -1436,5 +1455,13 @@
     }
   });
 
-  window.functionhxEggs = Object.freeze({ eggs: EGGS.map(({ id, name }) => ({ id, name })), sealLetter });
+  // 页面头部没有等网络，先用本机缓存里最近一次的设置。
+  applyRuntimeEggs(window.functionhxRuntimeSettings?.current?.());
+
+  window.functionhxEggs = Object.freeze({
+    get eggs() {
+      return EGGS.map(({ id, name }) => ({ id, name }));
+    },
+    sealLetter,
+  });
 })();

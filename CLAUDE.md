@@ -98,8 +98,22 @@ after owner verification (`owner-unlock.js`, `github-auth-vault.js`,
 - `inline-editor.js` / `content-creator.js` — edit and create pages, posts and
   sections in place, committing to this repo via the GitHub Contents/Git APIs
   with a fine-grained token encrypted in IndexedDB.
-- `site-settings.js` — section manager; publishes navigation layout into
-  `_data/site_ui.yml`.
+- `site-settings.js` — the settings panel. Two kinds of change, two paths:
+  - **Appearance** (font, loading copy, season effect, wind strength, navigation
+    spacing, easter-egg hints and the sealed letter) applies **instantly**: the panel
+    auto-saves `settings.json` on the `site-settings` branch, and every page reads it
+    through `runtime-settings.js` (GitHub contents API, cached in localStorage and
+    applied from the head script before first paint). Nothing here needs a rebuild. A
+    quiet background commit later syncs the same values into `_data/site_ui.yml` /
+    `_data/eggs.yml` on `main` so the built-in fallback catches up (used when the API
+    is unreachable, e.g. mainland China, and on a visitor's very first load).
+  - **Structure** (showing/hiding sections, creating a section) changes generated
+    pages, so it still goes through "保存并发布" as a commit to `main`.
+  Anything new that is purely presentational should join the first path: add it to
+  `sanitize()` in `runtime-settings.js` (allow-list: the file is public and only the
+  owner can write it, but pages still trust only known fields and values), to
+  `liveSettingsFromForm()` / `adoptLiveSettings()` in `site-settings.js`, and keep a
+  baked default in `_data/site_ui.yml` with a check in `validate_content.py`.
 - `spark-writer.js` + `spark-vault-client.js` — the Spark flow, which uses a
   _different_ credential path (GitHub App + opaque encrypted session) and never
   touches the public repo directly.

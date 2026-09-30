@@ -1109,3 +1109,31 @@ html[data-theme="dark"] .site-settings__footer > p[data-state="success"] {
   outline: 2px solid var(--global-theme-color);
   outline-offset: 1px;
 }
+
+/* 风力滑块 */
+.site-settings__preference--wind {
+  flex-wrap: wrap;
+}
+.site-settings__wind {
+  display: flex;
+  flex: 1 1 100%;
+  gap: 12px;
+  align-items: center;
+  margin-top: 10px;
+}
+.site-settings__wind input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--global-theme-color);
+}
+.site-settings__wind output {
+  min-width: 3.2em;
+  color: var(--global-text-color-light);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.site-settings__wind .site-settings__button {
+  flex: none;
+  padding-block: 6px;
+}

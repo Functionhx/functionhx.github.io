@@ -1,4 +1,4 @@
-/* global toggleThemeSetting: writable, transTheme: writable */
+/* global toggleThemeSetting: writable, transTheme: writable, determineThemeSetting: readonly, determineComputedTheme: readonly */
 (function initializeAtmosphere() {
   "use strict";
 
@@ -29,8 +29,18 @@
       return { x: window.innerWidth - 40, y: 40 };
     }
 
+    // 点一下之后主题会变成什么（光/暗），与现在的比：一样就只切设置，不播扩散和风。
+    // 例如「跟随系统」与当前显示的主题相同，切过去画面根本没有变化，播动画反而奇怪。
+    function willChangeAppearance() {
+      if (typeof determineThemeSetting !== "function" || typeof determineComputedTheme !== "function") return true;
+      const now = determineComputedTheme();
+      const next = { system: "light", light: "dark", dark: "system" }[determineThemeSetting()] || "light";
+      const after = next === "system" ? (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light") : next;
+      return now !== after;
+    }
+
     toggleThemeSetting = function toggleWithReveal() {
-      if (reducedMotion.matches || document.visibilityState !== "visible") return originalToggle();
+      if (reducedMotion.matches || document.visibilityState !== "visible" || !willChangeAppearance()) return originalToggle();
       const { x, y } = origin();
       const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
       root.classList.add("is-theme-revealing");
@@ -308,13 +318,20 @@
   let draining = false;
   let drainStart = 0;
   const GUST_FORCE = { leaves: 1, sakura: 0.8, snow: 0.45, rain: 0.2 };
+  // 风力倍数（0–2）：站长在站点设置里调，0 表示不起风。
+  let windStrength = 1;
+
+  function setWind(percent) {
+    const value = Number(percent);
+    windStrength = Number.isFinite(value) ? Math.min(Math.max(value, 0), 200) / 100 : 1;
+  }
 
   // 与揭开动画 cubic-bezier(0.22, 1, 0.36, 1) 近似的缓出曲线。
   const easeOut = (t) => 1 - Math.pow(1 - Math.min(Math.max(t, 0), 1), 3.6);
 
   function gust(x, y, radius, duration) {
-    if (!canvas || !kind || reducedMotion.matches) return;
-    wind = { x, y, radius, duration, start: window.performance.now(), force: GUST_FORCE[current] ?? 0.4 };
+    if (!canvas || !kind || reducedMotion.matches || windStrength <= 0) return;
+    wind = { x, y, radius, duration, start: window.performance.now(), force: (GUST_FORCE[current] ?? 0.4) * windStrength };
     for (const item of items) item.swept = false;
   }
 
@@ -514,6 +531,12 @@
   reducedMotion.addEventListener?.("change", apply);
   new MutationObserver(apply).observe(root, { attributes: true, attributeFilter: ["data-turbo"] });
 
-  window.functionhxSeasons = Object.freeze({ set, resolve: resolveEffect, gust });
+  // 站长调风力时「试吹一阵」：从右上角（主题按钮的位置）吹起，扫过整个画面。
+  function testGust() {
+    gust(window.innerWidth - 40, 40, Math.hypot(window.innerWidth, window.innerHeight), 520);
+  }
+
+  window.functionhxSeasons = Object.freeze({ set, setWind, testGust, resolve: resolveEffect, gust });
+  setWind(root.dataset.publishedWindStrength ?? 100);
   set(root.dataset.publishedSeasonEffect || "off");
 })();

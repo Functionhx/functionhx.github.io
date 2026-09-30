@@ -51,9 +51,9 @@
   {% assign settings_auth_verify = 'Verify and connect' %}
 {% else %}
   {% assign settings_heading = '站点设置' %}
-  {% assign settings_intro = '字体、加载文案与栏目由站长设置，保存并发布后对所有访客生效。' %}
+  {% assign settings_intro = '外观改动马上对所有访客生效；栏目的显示与隐藏需要「保存并发布」。' %}
   {% assign settings_personalization = '阅读体验' %}
-  {% assign settings_personalization_note = '即时预览 · 发布后对所有访客生效' %}
+  {% assign settings_personalization_note = '修改后立即生效，不用等构建' %}
   {% assign settings_font = '阅读字体' %}
   {% assign settings_font_note = '应用于所有页面' %}
   {% assign settings_loading_copy = '加载文案' %}
@@ -62,7 +62,7 @@
   {% assign settings_owner_note = '栏目与发布' %}
   {% assign settings_existing = '栏目' %}
   {% assign settings_layout = '导航布局' %}
-  {% assign settings_layout_intro = '即时预览导航间距，保存并发布后对所有访客生效。' %}
+  {% assign settings_layout_intro = '导航间距改动马上生效；显示或隐藏栏目需要「保存并发布」。' %}
   {% assign settings_density_auto = '自动' %}
   {% assign settings_density_auto_note = '根据可用宽度与栏目数量自动平衡。' %}
   {% assign settings_density_compact = '紧凑' %}
@@ -87,7 +87,7 @@
   {% assign settings_connect = '连接 GitHub' %}
   {% assign settings_commit = '保存并发布' %}
   {% assign settings_close = '关闭设置' %}
-  {% assign settings_idle = '修改暂时只保留在这个面板中，保存并发布后才会更新站点。' %}
+  {% assign settings_idle = '栏目的修改暂时只保留在这个面板中，保存并发布后才会更新站点。' %}
   {% assign settings_auth_heading = '连接 GitHub' %}
   {% assign settings_auth_intro = '创建时选择“Only select repositories → functionhx.github.io”，权限只开启 Contents: write 与 Actions: read。' %}
   {% assign settings_auth_create = '在 GitHub 创建受限令牌' %}
@@ -110,6 +110,7 @@
     data-initial-site-font="{{ site.data.site_ui.site_font | default: 'system' | escape }}"
     data-initial-loading-copy="{{ site.data.site_ui.loading_copy | default: 'thinking' | escape }}"
     data-initial-season-effect="{{ site.data.site_ui.season_effect | default: 'off' | escape }}"
+    data-initial-wind-strength="{{ site.data.site_ui.wind_strength | default: 100 | escape }}"
     data-ui-settings-path="_data/site_ui.yml"
   >
     <header class="site-settings__header">
@@ -215,6 +216,25 @@
                   </span>
                 </label>
               {% endfor %}
+            </div>
+            <div class="site-settings__preference site-settings__preference--wind">
+              <div>
+                <strong>风力</strong>
+                <small>切换日夜时那阵风的力度：0 是不起风，100 是默认，200 最猛</small>
+              </div>
+              <div class="site-settings__wind">
+                <input
+                  id="site-settings-wind"
+                  type="range"
+                  min="0"
+                  max="200"
+                  step="10"
+                  value="{{ site.data.site_ui.wind_strength | default: 100 }}"
+                  aria-label="风力"
+                >
+                <output id="site-settings-wind-value" for="site-settings-wind">{{ site.data.site_ui.wind_strength | default: 100 }}%</output>
+                <button id="site-settings-wind-test" class="site-settings__button site-settings__button--quiet" type="button">试吹一阵</button>
+              </div>
             </div>
           </div>
         </div>
@@ -322,7 +342,7 @@
           >
             <div class="site-settings__section-heading">
               <h3 id="site-settings-eggs-heading">彩蛋</h3>
-              <span>在图鉴里公开触发线索</span>
+              <span>改动即时生效 · 在图鉴里公开触发线索</span>
             </div>
             <ul class="site-settings__egg-list">
               {% assign egg_rows = 'turbo:⚡ Turbo 模式|dog:🐕 机器狗|terminal:⌨️ 终端|fx:ƒ f(x)|night:🌙 深夜来访|idle:🖥️ 屏保|console:🛠️ 控制台|tab:👀 标签页|letter:✉️ 一封信'

@@ -172,6 +172,10 @@ def main() -> int:
         errors.append(
             f"_data/site_ui.yml: loading_copy must be one of {sorted(LOADING_COPY)}"
         )
+    # 风力是 0–200 的整数百分比（站长在站点设置里调）。
+    wind = site_ui.get("wind_strength")
+    if not isinstance(wind, int) or isinstance(wind, bool) or not 0 <= wind <= 200:
+        errors.append("_data/site_ui.yml: wind_strength must be an integer from 0 to 200")
     # 季节氛围同样由站长发布（2026-09-27）。
     if site_ui.get("season_effect") not in SEASON_EFFECTS:
         errors.append(
