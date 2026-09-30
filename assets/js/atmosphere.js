@@ -80,35 +80,55 @@
 
   // 每种效果：make(width, height, scatter) 生成一个粒子；step 更新；draw 画出来。
   const KINDS = {
+    // 飘雪：参照 Voyager 的做法——三层景深（尘埃 / 中景 / 前景）共约 240 颗，尘埃层是极细的亚像素小点，
+    // 每颗有自己的缓慢正弦飘移，水平方向出屏后从另一侧绕回来。
     snow: {
       layers: [
-        { count: 70, size: [0.6, 1.2], speed: [0.25, 0.55], alpha: [0.25, 0.45], drift: [0.1, 0.3] },
-        { count: 55, size: [1.2, 2], speed: [0.55, 1.1], alpha: [0.4, 0.65], drift: [0.2, 0.5] },
-        { count: 22, size: [2.2, 3.4], speed: [1, 1.7], alpha: [0.55, 0.85], drift: [0.3, 0.7] },
+        { count: 100, size: [0.3, 0.75], speed: [0.15, 0.4], alpha: [0.2, 0.42], drift: [0.05, 0.2] },
+        { count: 80, size: [0.7, 1.3], speed: [0.4, 1], alpha: [0.35, 0.65], drift: [0.15, 0.45] },
+        { count: 60, size: [1.4, 2.7], speed: [0.8, 1.6], alpha: [0.55, 0.85], drift: [0.25, 0.6] },
       ],
       make(layer, width, height, scatter) {
         return {
           x: random(0, width),
-          y: scatter ? random(0, height) : random(-40, -8),
+          y: scatter ? random(0, height) : -random(2, 40),
           size: random(...layer.size),
           speed: random(...layer.speed),
           alpha: random(...layer.alpha),
           drift: random(...layer.drift),
-          freq: random(0.6, 1.4),
+          freq: random(0.3, 1.2),
           phase: random(0, Math.PI * 2),
         };
       },
       step(item, dt, time) {
-        item.y += item.speed * dt * 60;
-        item.x += Math.sin(time * item.freq + item.phase) * item.drift * dt * 60;
+        const frames = dt * 60;
+        item.y += item.speed * frames;
+        item.x += Math.sin(item.phase + time * item.freq) * item.drift * frames;
+        const width = window.innerWidth;
+        if (item.x > width + item.size) item.x = -item.size;
+        else if (item.x < -item.size) item.x = width + item.size;
       },
       draw(context, items) {
-        const color = isDark() ? "255, 255, 255" : "132, 150, 176";
+        const dark = isDark();
         for (const item of items) {
-          context.fillStyle = `rgba(${color}, ${item.alpha})`;
+          if (dark) {
+            context.fillStyle = `rgba(255, 255, 255, ${item.alpha})`;
+            context.beginPath();
+            context.arc(item.x, item.y, item.size, 0, Math.PI * 2);
+            context.fill();
+            continue;
+          }
+          // 浅色背景上白色的雪看不见：改成实心的浅蓝灰，大一点的再点一粒高光，像有体积的雪球。
+          context.fillStyle = `rgba(132, 158, 196, ${Math.min(1, item.alpha + 0.12)})`;
           context.beginPath();
           context.arc(item.x, item.y, item.size, 0, Math.PI * 2);
           context.fill();
+          if (item.size > 1.2) {
+            context.fillStyle = `rgba(255, 255, 255, ${Math.min(1, item.alpha + 0.2)})`;
+            context.beginPath();
+            context.arc(item.x - item.size * 0.28, item.y - item.size * 0.28, item.size * 0.42, 0, Math.PI * 2);
+            context.fill();
+          }
         }
       },
     },
@@ -284,6 +304,9 @@
   let requested = "off";
   // 一阵风：从 (x, y) 起，前沿半径按揭开动画的节奏扩大，被前沿扫到的粒子获得一个向外的冲量。
   let wind = null;
+  // 关闭时不让粒子突然消失：不再生成新的，已有的继续落出屏幕，落完再撤掉画布。
+  let draining = false;
+  let drainStart = 0;
   const GUST_FORCE = { leaves: 1, sakura: 0.8, snow: 0.45, rain: 0.2 };
 
   // 与揭开动画 cubic-bezier(0.22, 1, 0.36, 1) 近似的缓出曲线。
@@ -377,21 +400,45 @@
     const height = window.innerHeight;
     if (wind && window.performance.now() - wind.start > 2200) wind = null;
     for (const item of items) {
-      kind.step(item, dt, clock);
+      if (item.dead) continue;
+      // 落完之前越落越快：最细的尘埃层每秒只落几像素，不加速的话要一分多钟才撤得干净。
+      const boost = draining ? Math.min(1 + ((window.performance.now() - drainStart) / 1000) * 0.9, 9) : 1;
+      kind.step(item, dt * boost, clock);
       applyWind(item, dt);
       // 被吹出屏幕左边或上边的，回到顶部重新飘下来。
       const gone = item.x + item.size < -120 || item.y + item.size < -220;
       if (gone || item.y - item.size > height || item.x - item.size > width + 80) {
+        if (draining) {
+          item.dead = true;
+          continue;
+        }
         if (item.splash && splashes.length < 24 && Math.random() < 0.5) splashes.push({ x: item.x, y: height - random(2, 14), age: 0 });
         Object.assign(item, kind.make(item.layer, width, height, false), { layer: item.layer });
         // 重新飘下来的叶子不带走旧的风势，也不再被这一阵风卷第二次。
         Object.assign(item, { kx: 0, ky: 0, gustSpin: 0, swept: true });
       }
     }
+    if (draining) {
+      items = items.filter((item) => !item.dead);
+      if (!items.length) {
+        finishDrain();
+        return;
+      }
+    }
     splashes = splashes.filter((splash) => (splash.age += dt) < 0.4);
     context.clearRect(0, 0, width, height);
     kind.draw(context, items, splashes);
     frame = window.requestAnimationFrame(tick);
+  }
+
+  function finishDrain() {
+    draining = false;
+    stop();
+    canvas?.remove();
+    canvas = null;
+    context = null;
+    kind = null;
+    items = [];
   }
 
   function start() {
@@ -415,7 +462,14 @@
     if (target === current) return;
     current = target;
     const next = KINDS[target] || null;
+    // 关成「关闭」时让已有的粒子自然落完；减少动态效果或进入 Turbo 时则立刻撤掉。
+    if (!next && allowed() && canvas && kind) {
+      draining = true;
+      drainStart = window.performance.now();
+      return;
+    }
     const swap = () => {
+      draining = false;
       stop();
       kind = next;
       if (!kind) {
