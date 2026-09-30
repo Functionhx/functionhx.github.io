@@ -109,11 +109,11 @@ after owner verification (`owner-unlock.js`, `github-auth-vault.js`,
     is unreachable, e.g. mainland China, and on a visitor's very first load).
   - **Structure** (showing/hiding sections, creating a section) changes generated
     pages, so it still goes through "保存并发布" as a commit to `main`.
-  Anything new that is purely presentational should join the first path: add it to
-  `sanitize()` in `runtime-settings.js` (allow-list: the file is public and only the
-  owner can write it, but pages still trust only known fields and values), to
-  `liveSettingsFromForm()` / `adoptLiveSettings()` in `site-settings.js`, and keep a
-  baked default in `_data/site_ui.yml` with a check in `validate_content.py`.
+    Anything new that is purely presentational should join the first path: add it to
+    `sanitize()` in `runtime-settings.js` (allow-list: the file is public and only the
+    owner can write it, but pages still trust only known fields and values), to
+    `liveSettingsFromForm()` / `adoptLiveSettings()` in `site-settings.js`, and keep a
+    baked default in `_data/site_ui.yml` with a check in `validate_content.py`.
 - `spark-writer.js` + `spark-vault-client.js` — the Spark flow, which uses a
   _different_ credential path (GitHub App + opaque encrypted session) and never
   touches the public repo directly.
