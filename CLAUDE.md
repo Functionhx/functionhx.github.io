@@ -123,6 +123,23 @@ first two run on the owner's Tencent Cloud server:
   after checking the secret phrase. Gmail credentials, the phrase and the PIN
   live only in Worker secrets; see `letter-mailer/README.md`.
 
+## Performance plumbing
+
+- `_plugins/async_external_styles.rb` rewrites the built HTML: third-party
+  stylesheets load asynchronously (with a `<noscript>` fallback), Google Fonts is
+  replaced by a `<meta>` that `site-preferences.js` loads only for fonts that need
+  it, and MathJax becomes `async` and is moved after `mathjax-setup.js`. Never add
+  a render-blocking or synchronous third-party resource back to `<head>`.
+- `_layouts/default.liquid` carries Speculation Rules (hover prerender of site
+  links); `navigation-performance.js` keeps hover prefetch for other browsers and
+  registers the Service Worker.
+- `sw.js` (root, Liquid front matter, excluded from Prettier) caches versioned
+  `/assets/…?v=` files cache-first, other `/assets/` files stale-while-revalidate,
+  and site pages network-first with a 1.2 s fallback to cache. It only touches
+  routes listed at build time, so other projects under the same origin
+  (`/contrail/` …) are untouched. Emergency stop: set `KILL_SWITCH = true` and
+  deploy; per-browser debugging: `?sw=off` / `?sw=on`.
+
 ## Deployment
 
 Pushing to `main` builds once and deploys to two targets: GitHub Pages, and a
