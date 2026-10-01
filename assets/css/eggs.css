@@ -269,16 +269,97 @@
   height: auto;
   animation: egg-hop 280ms steps(2) infinite;
 }
-.egg-dog .egg-legs-a {
-  animation: egg-legs 280ms steps(1) infinite;
+/* 小跑步态：大腿绕髋前后摆，小腿绕膝弯曲抬脚；对角两条腿同相（延迟在行内样式里）。 */
+.egg-dog .dog-leg {
+  animation: dog-thigh 340ms ease-in-out infinite;
 }
-.egg-dog .egg-legs-b {
-  animation: egg-legs 280ms steps(1) infinite reverse;
+.egg-dog .dog-shin {
+  animation: dog-shin 340ms ease-in-out infinite;
 }
-@keyframes egg-legs {
-  50% {
-    opacity: 0;
+@keyframes dog-thigh {
+  0%,
+  100% {
+    transform: rotate(24deg);
   }
+  50% {
+    transform: rotate(-24deg);
+  }
+}
+@keyframes dog-shin {
+  0% {
+    transform: rotate(8deg);
+  }
+  25% {
+    transform: rotate(56deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+  75% {
+    transform: rotate(-4deg);
+  }
+  100% {
+    transform: rotate(8deg);
+  }
+}
+
+/* 机器狗的配色：浅色外壳、深色的腿，暖橙色的饰条和状态灯。 */
+.dog-shell {
+  fill: #eef1f5;
+  stroke: #a9b3bf;
+  stroke-width: 0.9;
+}
+.dog-belly {
+  fill: #c8d0da;
+}
+.dog-dark {
+  fill: #2d343d;
+}
+.dog-visor {
+  fill: #9fb3c8;
+}
+.dog-dome {
+  fill: #566271;
+}
+.dog-accent,
+.dog-led {
+  fill: #ef8a3a;
+}
+.dog-thigh,
+.dog-calf {
+  fill: none;
+  stroke: #3a424d;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dog-thigh {
+  stroke-width: 6;
+}
+.dog-thigh--rest {
+  stroke-width: 5;
+}
+.dog-calf {
+  stroke-width: 3.6;
+}
+.dog-leg--far .dog-thigh,
+.dog-leg--far .dog-calf {
+  stroke: #242a31;
+}
+.dog-knee {
+  fill: #bcc5d0;
+  stroke: #2d343d;
+  stroke-width: 1;
+}
+.dog-hip {
+  fill: #aeb8c4;
+  stroke: #2d343d;
+  stroke-width: 1;
+}
+.dog-foot {
+  fill: #1b2026;
+}
+.dog-shadow {
+  fill: rgba(30, 25, 20, 0.14);
 }
 @keyframes egg-hop {
   50% {
@@ -1317,6 +1398,8 @@
   .egg-pen,
   .egg-dog,
   .egg-dog svg,
+  .egg-dog .dog-leg,
+  .egg-dog .dog-shin,
   .egg-pin.is-wrong .egg-pin-boxes,
   #site-settings-toggle.is-egg-done {
     animation-duration: 1ms !important;
@@ -1649,23 +1732,31 @@
   display: block;
   width: 100%;
   height: auto;
-  filter: grayscale(0.75);
-  opacity: 0.88;
-  transform: translateY(6px) scaleY(0.84);
-  transform-origin: bottom;
+  filter: grayscale(0.55);
+  opacity: 0.92;
   transition:
     filter 0.4s,
-    opacity 0.4s,
-    transform 0.4s;
+    opacity 0.4s;
 }
-.egg-dog-lying .egg-legs-a,
-.egg-dog-lying .egg-legs-b {
-  display: none;
+.egg-dog-lying .dog-led {
+  fill: #98a1ad;
+}
+.egg-dog-rest.is-charging .egg-dog-lying .dog-led {
+  animation: dog-charge-blink 0.6s ease-in-out infinite;
+  fill: #5bc98a;
 }
 .egg-dog-rest.is-awake .egg-dog-lying svg {
   filter: none;
   opacity: 1;
-  transform: none;
+}
+.egg-dog-rest.is-awake .egg-dog-lying .dog-led {
+  animation: none;
+  fill: #ef8a3a;
+}
+@keyframes dog-charge-blink {
+  50% {
+    opacity: 0.3;
+  }
 }
 .egg-dog-lying .egg-dog-bubble {
   right: 0;

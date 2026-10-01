@@ -1,41 +1,37 @@
+/* Turbo 模式：克制的「疾行」。
+   鼠标拖出一条渐隐的长曝光光迹，光标是一个小圆点加一圈跟随的细环，点击漾开一圈涟漪。
+   颜色是站点强调色（紫）过渡到暖金，没有霓虹、网格和 HUD。画布只在鼠标动过之后才重绘。 */
 :root {
-  --turbo-void: #050a0f;
-  --turbo-cyan: #00dff5;
-  --turbo-cyan-soft: #7df4ff;
-  --turbo-magenta: #ef1bc8;
-  --turbo-amber: #ffc247;
-  --turbo-danger: #ff365f;
-  --turbo-steel: #7892a8;
-  --turbo-panel: color-mix(in srgb, var(--global-bg-color) 88%, transparent);
+  --turbo-accent: #6434b2;
+  --turbo-warm: #e08a3c;
 }
 
 html[data-theme="dark"] {
-  --turbo-cyan: #35efff;
-  --turbo-cyan-soft: #a7f9ff;
-  --turbo-magenta: #ff45dc;
-  --turbo-amber: #ffd166;
-  --turbo-danger: #ff4f72;
-  --turbo-steel: #95abc0;
+  --turbo-accent: #a58bff;
+  --turbo-warm: #ffb066;
 }
 
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) {
+    --turbo-accent: #a58bff;
+    --turbo-warm: #ffb066;
+  }
+}
+
+/* ---------- 光标：小圆点 + 跟随的细环 ---------- */
 .turbo-cursor {
   --turbo-cursor-core-x: 50vw;
   --turbo-cursor-core-y: 50vh;
   --turbo-cursor-ring-x: 50vw;
   --turbo-cursor-ring-y: 50vh;
-  color: color-mix(in srgb, var(--turbo-cyan) 68%, #006172);
+  color: var(--turbo-accent);
   inset: 0;
   opacity: 0;
   pointer-events: none;
   position: fixed;
-  transition: opacity 80ms ease;
+  transition: opacity 120ms ease;
   visibility: hidden;
   z-index: 2147483645;
-}
-
-html[data-theme="dark"] .turbo-cursor,
-html:not([data-theme="light"]) .turbo-cursor {
-  color: var(--turbo-cyan);
 }
 
 .turbo-cursor[data-visible="true"] {
@@ -54,286 +50,71 @@ html:not([data-theme="light"]) .turbo-cursor {
 }
 
 .turbo-cursor__lock {
-  background:
-    linear-gradient(currentColor 0 0) left top / 0.56rem 1px no-repeat,
-    linear-gradient(currentColor 0 0) left top / 1px 0.56rem no-repeat,
-    linear-gradient(currentColor 0 0) right top / 0.56rem 1px no-repeat,
-    linear-gradient(currentColor 0 0) right top / 1px 0.56rem no-repeat,
-    linear-gradient(currentColor 0 0) left bottom / 0.56rem 1px no-repeat,
-    linear-gradient(currentColor 0 0) left bottom / 1px 0.56rem no-repeat,
-    linear-gradient(currentColor 0 0) right bottom / 0.56rem 1px no-repeat,
-    linear-gradient(currentColor 0 0) right bottom / 1px 0.56rem no-repeat;
-  filter: drop-shadow(0 0 0.2rem color-mix(in srgb, currentColor 82%, transparent))
-    drop-shadow(0 1px 0 color-mix(in srgb, var(--turbo-void) 55%, transparent));
-  height: 1.75rem;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, currentColor 52%, transparent);
+  border-radius: 50%;
+  height: 1.7rem;
   transform: translate3d(var(--turbo-cursor-ring-x), var(--turbo-cursor-ring-y), 0) translate(-50%, -50%);
   transition:
-    color 100ms ease,
-    filter 100ms ease;
-  width: 1.75rem;
-}
-
-.turbo-cursor__lock::before {
-  animation: turbo-cursor-orbit 2.7s linear infinite;
-  background: repeating-conic-gradient(from 10deg, currentColor 0 16deg, transparent 16deg 45deg);
-  content: "";
-  inset: 0.33rem;
-  mask: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 calc(100% - 1px));
-  opacity: 0.72;
-  position: absolute;
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 calc(100% - 1px));
-}
-
-.turbo-cursor__lock::after {
-  color: currentColor;
-  content: "LOCK";
-  font-family: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
-  font-size: 0.38rem;
-  font-weight: 700;
-  left: calc(100% + 0.42rem);
-  letter-spacing: 0.12em;
-  opacity: 0;
-  position: absolute;
-  text-shadow: 0 0 0.45rem currentColor;
-  top: 50%;
-  transform: translateY(-50%);
-  transition: opacity 80ms ease;
+    transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 160ms ease,
+    border-color 160ms ease;
+  width: 1.7rem;
 }
 
 .turbo-cursor__core {
   background: currentColor;
-  box-shadow:
-    0 0 0.42rem currentColor,
-    0 1px 0 color-mix(in srgb, var(--turbo-void) 65%, transparent);
-  height: 0.24rem;
-  transform: translate3d(var(--turbo-cursor-core-x), var(--turbo-cursor-core-y), 0) translate(-50%, -50%) rotate(45deg);
-  transition:
-    background-color 80ms ease,
-    color 80ms ease;
-  width: 0.24rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--global-bg-color) 78%, transparent);
+  height: 0.34rem;
+  transform: translate3d(var(--turbo-cursor-core-x), var(--turbo-cursor-core-y), 0) translate(-50%, -50%);
+  transition: transform 120ms ease;
+  width: 0.34rem;
 }
 
-.turbo-cursor__core::before,
-.turbo-cursor__core::after {
-  background: currentColor;
-  content: "";
-  left: 50%;
-  opacity: 0.7;
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%) rotate(-45deg);
-}
-
-.turbo-cursor__core::before {
-  height: 1px;
-  width: 0.9rem;
-}
-
-.turbo-cursor__core::after {
-  height: 0.9rem;
-  width: 1px;
-}
-
-.turbo-cursor[data-state="locked"] {
-  color: color-mix(in srgb, var(--turbo-magenta) 78%, #7d146e);
-}
-
-html[data-theme="dark"] .turbo-cursor[data-state="locked"],
-html:not([data-theme="light"]) .turbo-cursor[data-state="locked"] {
-  color: var(--turbo-magenta);
-}
-
+/* 悬在可点击的东西上：细环像是把它轻轻托起来 */
 .turbo-cursor[data-state="locked"] .turbo-cursor__lock {
-  filter: drop-shadow(0 0 0.42rem color-mix(in srgb, currentColor 88%, transparent))
-    drop-shadow(0 1px 0 color-mix(in srgb, var(--turbo-void) 65%, transparent));
-  transform: translate3d(var(--turbo-cursor-ring-x), var(--turbo-cursor-ring-y), 0) translate(-50%, -50%) scale(0.82);
+  background: color-mix(in srgb, currentColor 11%, transparent);
+  border-color: color-mix(in srgb, var(--turbo-warm) 70%, transparent);
+  transform: translate3d(var(--turbo-cursor-ring-x), var(--turbo-cursor-ring-y), 0) translate(-50%, -50%) scale(1.32);
 }
 
-.turbo-cursor[data-state="locked"] .turbo-cursor__lock::before {
-  animation-duration: 1.2s;
-}
-
-.turbo-cursor[data-state="locked"] .turbo-cursor__lock::after {
-  opacity: 0.88;
-  transform: translateY(-50%);
-}
-
-.turbo-cursor[data-pressed="true"] {
-  color: color-mix(in srgb, var(--turbo-amber) 72%, #875100);
-}
-
-html[data-theme="dark"] .turbo-cursor[data-pressed="true"],
-html:not([data-theme="light"]) .turbo-cursor[data-pressed="true"] {
-  color: var(--turbo-amber);
+.turbo-cursor[data-state="locked"] .turbo-cursor__core {
+  transform: translate3d(var(--turbo-cursor-core-x), var(--turbo-cursor-core-y), 0) translate(-50%, -50%) scale(0.8);
 }
 
 .turbo-cursor[data-pressed="true"] .turbo-cursor__lock {
-  filter: drop-shadow(0 0 0.7rem currentColor);
-  transform: translate3d(var(--turbo-cursor-ring-x), var(--turbo-cursor-ring-y), 0) translate(-50%, -50%) scale(0.58) rotate(90deg);
+  transform: translate3d(var(--turbo-cursor-ring-x), var(--turbo-cursor-ring-y), 0) translate(-50%, -50%) scale(0.74);
 }
 
 .turbo-cursor[data-pressed="true"] .turbo-cursor__core {
-  transform: translate3d(var(--turbo-cursor-core-x), var(--turbo-cursor-core-y), 0) translate(-50%, -50%) rotate(45deg) scale(1.8);
+  transform: translate3d(var(--turbo-cursor-core-x), var(--turbo-cursor-core-y), 0) translate(-50%, -50%) scale(1.5);
 }
 
-.turbo-cursor[data-pressed="true"] .turbo-cursor__lock::after {
-  opacity: 0;
-}
-
-/* 系统光标始终保留：Turbo 的瞄准框只是跟随的装饰。
+/* 系统光标始终保留：细环只是跟随的装饰。
    若隐藏系统光标，用户看到的「鼠标」就是一个由 JS 移动的元素，天然比真实指针慢一拍。 */
 
-@keyframes turbo-cursor-orbit {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* 性能：全屏 Canvas 每帧都在重画，不能再挂 filter / mix-blend-mode——
-   那会让浏览器每一帧对整屏重新做滤镜和混合，鼠标因此发涩。 */
+/* ---------- 光迹画布：盖在页面上、不挡操作 ---------- */
 .turbo-canvas {
   height: 100vh;
   inset: 0;
   opacity: 0;
   pointer-events: none;
   position: fixed;
-  transition: opacity 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: opacity 320ms ease;
   visibility: hidden;
   width: 100vw;
-  z-index: 0;
+  z-index: 1000;
 }
 
 html[data-turbo="on"] .turbo-canvas {
-  opacity: 0.9;
-  visibility: visible;
-}
-
-html[data-turbo="on"] body > header,
-html[data-turbo="on"] body > .container,
-html[data-turbo="on"] body > footer {
-  position: relative;
-  z-index: 1;
-}
-
-/* 导航栏下面就是逐帧重画的 Canvas，毛玻璃会让它每帧重新模糊整条导航；换成接近不透明的底色。 */
-html[data-turbo="on"] #navbar {
-  background: color-mix(in srgb, var(--global-bg-color) 94%, transparent);
-  border-bottom-color: color-mix(in srgb, var(--turbo-cyan) 28%, transparent);
-  box-shadow:
-    0 1px 0 color-mix(in srgb, var(--turbo-magenta) 20%, transparent),
-    0 10px 42px color-mix(in srgb, var(--turbo-cyan) 8%, transparent);
-}
-
-.turbo-chrome {
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  position: fixed;
-  transition: opacity 260ms ease;
-  visibility: hidden;
-  z-index: 4;
-}
-
-html[data-turbo="on"] .turbo-chrome {
   opacity: 1;
   visibility: visible;
 }
 
-.turbo-chrome::before {
-  background:
-    repeating-linear-gradient(0deg, transparent 0, transparent 3px, color-mix(in srgb, var(--turbo-cyan) 10%, transparent) 4px),
-    radial-gradient(
-      circle at 50% 58%,
-      transparent 0 38%,
-      color-mix(in srgb, var(--turbo-void) 36%, transparent) 74%,
-      color-mix(in srgb, var(--turbo-void) 70%, transparent) 100%
-    );
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--turbo-cyan) 13%, transparent),
-    inset 0 0 11rem color-mix(in srgb, var(--turbo-void) 38%, transparent);
-  content: "";
-  inset: 0;
-  opacity: 0.2;
-  position: absolute;
-}
-
-html[data-theme="dark"] .turbo-chrome::before {
-  opacity: 0.27;
-}
-
-.turbo-chrome::after {
-  animation: turbo-scanline 4.8s linear infinite;
-  background: linear-gradient(90deg, transparent, var(--turbo-cyan) 22%, var(--turbo-magenta) 78%, transparent);
-  box-shadow: 0 0 1.1rem color-mix(in srgb, var(--turbo-cyan) 55%, transparent);
-  content: "";
-  height: 1px;
-  left: 0;
-  opacity: 0.3;
-  position: absolute;
-  right: 0;
-  top: 12%;
-}
-
-.turbo-chrome__label {
-  color: var(--turbo-cyan);
-  font-family: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
-  font-size: 0.56rem;
-  font-weight: 650;
-  letter-spacing: 0.16em;
-  line-height: 1;
-  position: absolute;
-  text-shadow: 0 0 0.7rem color-mix(in srgb, var(--turbo-cyan) 85%, transparent);
-  white-space: nowrap;
-}
-
-.turbo-chrome__label::before {
-  background: currentColor;
-  box-shadow: 0 0 0.5rem currentColor;
-  content: "";
-  display: inline-block;
-  height: 0.36rem;
-  margin-right: 0.48rem;
-  width: 0.12rem;
-}
-
-.turbo-chrome__label--system {
-  left: 1.85rem;
-  top: 5.8rem;
-}
-
-.turbo-chrome__label--core {
-  color: var(--turbo-amber);
-  right: 1.85rem;
-  top: 5.8rem;
-}
-
-.turbo-chrome__label--unit-a {
-  bottom: 1.7rem;
-  left: 1.85rem;
-}
-
-.turbo-chrome__label--unit-b {
-  bottom: 1.7rem;
-  color: var(--turbo-magenta);
-  right: 1.85rem;
-}
-
-.turbo-chrome__label--exit {
-  bottom: 1.7rem;
-  color: var(--turbo-steel);
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.turbo-chrome__label--exit::before {
-  display: none;
-}
-
+/* ---------- 开机：一圈柔和的光从按钮处漾开，没有文字 ---------- */
 .turbo-boot {
-  align-items: center;
-  display: flex;
   inset: 0;
-  justify-content: center;
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
@@ -342,147 +123,33 @@ html[data-theme="dark"] .turbo-chrome::before {
   z-index: 100002;
 }
 
+.turbo-boot::before {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--turbo-accent) 20%, transparent) 0,
+    color-mix(in srgb, var(--turbo-warm) 11%, transparent) 30%,
+    transparent 62%
+  );
+  border-radius: 50%;
+  content: "";
+  height: 220vmax;
+  left: var(--turbo-boot-x, 50%);
+  position: absolute;
+  top: var(--turbo-boot-y, 4rem);
+  transform: translate(-50%, -50%) scale(0.02);
+  width: 220vmax;
+}
+
 html[data-turbo-boot="true"] .turbo-boot {
-  opacity: 1;
+  animation: turbo-boot-fade 1000ms ease-out forwards;
   visibility: visible;
 }
 
-.turbo-boot__aperture {
-  background:
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--turbo-cyan) 14%, transparent),
-      transparent 17% 83%,
-      color-mix(in srgb, var(--turbo-magenta) 14%, transparent)
-    ),
-    var(--turbo-void);
-  clip-path: polygon(0 49%, 100% 49%, 100% 51%, 0 51%);
-  inset: 0;
-  position: absolute;
+html[data-turbo-boot="true"] .turbo-boot::before {
+  animation: turbo-bloom 900ms cubic-bezier(0.16, 0.8, 0.2, 1) forwards;
 }
 
-html[data-turbo-boot="true"] .turbo-boot__aperture {
-  animation: turbo-aperture 1.18s cubic-bezier(0.72, 0, 0.24, 1) both;
-}
-
-.turbo-boot__aperture::before,
-.turbo-boot__aperture::after {
-  background: linear-gradient(90deg, transparent, var(--turbo-cyan), transparent);
-  box-shadow: 0 0 1.8rem var(--turbo-cyan);
-  content: "";
-  height: 1px;
-  left: 0;
-  position: absolute;
-  right: 0;
-}
-
-.turbo-boot__aperture::before {
-  top: 38%;
-}
-
-.turbo-boot__aperture::after {
-  bottom: 38%;
-  filter: hue-rotate(105deg);
-}
-
-.turbo-boot__console {
-  align-items: center;
-  color: #ecfdff;
-  display: flex;
-  flex-direction: column;
-  font-family: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
-  gap: 0.34rem;
-  isolation: isolate;
-  letter-spacing: 0.1em;
-  position: relative;
-  text-align: center;
-}
-
-html[data-turbo-boot="true"] .turbo-boot__console {
-  animation: turbo-console 1.18s ease both;
-}
-
-.turbo-boot__sigil {
-  color: var(--turbo-magenta);
-  font-family: Georgia, serif;
-  font-size: clamp(3rem, 8vw, 5.6rem);
-  font-style: italic;
-  line-height: 0.9;
-  text-shadow:
-    -0.1rem 0 var(--turbo-cyan),
-    0.1rem 0 var(--turbo-danger),
-    0 0 1.8rem var(--turbo-magenta);
-}
-
-.turbo-boot__eyebrow {
-  color: var(--turbo-cyan-soft);
-  font-size: clamp(0.55rem, 1.4vw, 0.72rem);
-}
-
-.turbo-boot__title {
-  color: #edfdff;
-  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
-  font-size: clamp(2.2rem, 7vw, 5rem);
-  font-stretch: condensed;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  line-height: 0.96;
-  text-shadow: 0 0 1.4rem color-mix(in srgb, var(--turbo-cyan) 45%, transparent);
-  -webkit-text-stroke: 1px color-mix(in srgb, var(--turbo-cyan) 38%, transparent);
-}
-
-.turbo-boot__copy {
-  color: #8394a5;
-  font-size: clamp(0.52rem, 1.2vw, 0.65rem);
-  margin-top: 0.3rem;
-}
-
-.turbo-boot__progress {
-  display: grid;
-  gap: 0.2rem;
-  grid-template-columns: repeat(8, 1fr);
-  margin-top: 0.55rem;
-  width: min(19rem, 70vw);
-}
-
-.turbo-boot__progress i {
-  background: #20303e;
-  clip-path: polygon(0.22rem 0, 100% 0, calc(100% - 0.22rem) 100%, 0 100%);
-  height: 0.28rem;
-}
-
-html[data-turbo-boot="true"] .turbo-boot__progress i {
-  animation: turbo-progress 700ms steps(1, end) both;
-}
-
-.turbo-boot__progress i:nth-child(2) {
-  animation-delay: 70ms;
-}
-
-.turbo-boot__progress i:nth-child(3) {
-  animation-delay: 140ms;
-}
-
-.turbo-boot__progress i:nth-child(4) {
-  animation-delay: 210ms;
-}
-
-.turbo-boot__progress i:nth-child(5) {
-  animation-delay: 280ms;
-}
-
-.turbo-boot__progress i:nth-child(6) {
-  animation-delay: 350ms;
-}
-
-.turbo-boot__progress i:nth-child(7) {
-  animation-delay: 420ms;
-}
-
-.turbo-boot__progress i:nth-child(8) {
-  animation-delay: 490ms;
-}
-
+/* ---------- 主题按钮：长按的进度环、开启后的小圆点、悬停提示 ---------- */
 #light-toggle[data-turbo-trigger] {
   isolation: isolate;
   position: relative;
@@ -492,7 +159,7 @@ html[data-turbo-boot="true"] .turbo-boot__progress i {
 }
 
 #light-toggle[data-turbo-trigger]::before {
-  background: conic-gradient(from -90deg, transparent 0 10%, var(--turbo-cyan) 34%, var(--turbo-magenta) 68%, transparent 92%);
+  background: conic-gradient(from -90deg, transparent 0 10%, var(--turbo-accent) 34%, var(--turbo-warm) 68%, transparent 92%);
   border-radius: 50%;
   content: "";
   inset: -0.52rem;
@@ -515,41 +182,36 @@ html[data-turbo-boot="true"] .turbo-boot__progress i {
 }
 
 html[data-turbo="on"] #light-toggle[data-turbo-trigger] {
-  color: var(--turbo-cyan);
-  filter: drop-shadow(0 0 0.48rem color-mix(in srgb, var(--turbo-cyan) 80%, transparent));
+  color: var(--turbo-accent);
 }
 
 html[data-turbo="on"] #light-toggle[data-turbo-trigger]::after {
-  animation: turbo-core-pulse 1.3s ease-in-out infinite;
-  background: var(--turbo-danger);
+  animation: turbo-breathe 2.6s ease-in-out infinite;
+  background: var(--turbo-warm);
   border-radius: 50%;
-  box-shadow:
-    0 0 0.45rem var(--turbo-danger),
-    0 0 1rem var(--turbo-danger);
+  box-shadow: 0 0 0 2px var(--global-bg-color);
   content: "";
-  height: 0.28rem;
+  height: 0.3rem;
   position: absolute;
-  right: -0.36rem;
-  top: -0.16rem;
-  width: 0.28rem;
+  right: -0.34rem;
+  top: -0.14rem;
+  width: 0.3rem;
 }
 
 .turbo-trigger-hint {
-  background: color-mix(in srgb, var(--turbo-void) 92%, transparent);
-  border: 1px solid color-mix(in srgb, var(--turbo-cyan) 58%, transparent);
-  clip-path: polygon(0.38rem 0, 100% 0, 100% calc(100% - 0.38rem), calc(100% - 0.38rem) 100%, 0 100%, 0 0.38rem);
-  color: var(--turbo-cyan-soft);
-  font-family: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
-  font-size: 0.6rem;
-  font-weight: 650;
+  background: color-mix(in srgb, var(--global-bg-color) 96%, transparent);
+  border: 1px solid var(--global-divider-color);
+  border-radius: 8px;
+  box-shadow: 0 6px 22px rgba(20, 20, 19, 0.1);
+  color: var(--global-text-color-light);
+  font-size: 0.72rem;
   left: 50%;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   opacity: 0;
-  padding: 0.4rem 0.58rem;
+  padding: 0.36rem 0.62rem;
   pointer-events: none;
   position: absolute;
-  text-shadow: 0 0 0.65rem var(--turbo-cyan);
-  top: calc(100% + 0.68rem);
+  top: calc(100% + 0.6rem);
   transform: translate(-50%, -0.2rem);
   transition:
     opacity 120ms ease,
@@ -565,39 +227,39 @@ html[data-turbo="on"] #light-toggle[data-turbo-trigger]::after {
   visibility: visible;
 }
 
+/* ---------- 提示：一枚平实的小药丸 ---------- */
 .turbo-status {
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--turbo-cyan) 10%, transparent), transparent 68%),
-    color-mix(in srgb, var(--turbo-void) 92%, transparent);
-  border: 1px solid color-mix(in srgb, var(--turbo-cyan) 62%, transparent);
+  align-items: center;
+  background: color-mix(in srgb, var(--global-bg-color) 95%, transparent);
+  border: 1px solid var(--global-divider-color);
+  border-radius: 999px;
   bottom: 1.2rem;
-  box-shadow:
-    inset 0 0 1.2rem color-mix(in srgb, var(--turbo-cyan) 8%, transparent),
-    0 0 1.8rem color-mix(in srgb, var(--turbo-cyan) 16%, transparent);
-  clip-path: polygon(0.72rem 0, 100% 0, 100% calc(100% - 0.72rem), calc(100% - 0.72rem) 100%, 0 100%, 0 0.72rem);
-  color: #defcff;
-  font-family: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
-  font-size: 0.68rem;
-  font-weight: 650;
+  box-shadow: 0 8px 28px rgba(20, 20, 19, 0.12);
+  color: var(--global-text-color);
+  display: inline-flex;
+  font-size: 0.82rem;
+  gap: 0.55rem;
   left: 1.2rem;
-  letter-spacing: 0.08em;
   max-width: min(25rem, calc(100vw - 2.4rem));
   opacity: 0;
-  padding: 0.78rem 0.95rem;
+  padding: 0.55rem 1rem 0.55rem 0.85rem;
   pointer-events: none;
   position: fixed;
   transform: translateY(0.7rem);
   transition:
-    opacity 160ms ease,
-    transform 160ms ease;
+    opacity 180ms ease,
+    transform 180ms ease;
   visibility: hidden;
   z-index: 100003;
 }
 
 .turbo-status::before {
-  color: var(--turbo-danger);
-  content: "● ";
-  text-shadow: 0 0 0.55rem currentColor;
+  background: linear-gradient(135deg, var(--turbo-accent), var(--turbo-warm));
+  border-radius: 50%;
+  content: "";
+  flex: none;
+  height: 0.5rem;
+  width: 0.5rem;
 }
 
 .turbo-status[data-visible="true"] {
@@ -606,103 +268,40 @@ html[data-turbo="on"] #light-toggle[data-turbo-trigger]::after {
   visibility: visible;
 }
 
-@keyframes turbo-aperture {
+@keyframes turbo-bloom {
+  to {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes turbo-boot-fade {
   0% {
-    clip-path: polygon(0 49.7%, 100% 49.7%, 100% 50.3%, 0 50.3%);
-  }
-
-  18%,
-  72% {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-  }
-
-  100% {
-    clip-path: polygon(0 49.7%, 100% 49.7%, 100% 50.3%, 0 50.3%);
-  }
-}
-
-@keyframes turbo-console {
-  0%,
-  12% {
-    filter: blur(0.3rem);
     opacity: 0;
-    transform: scaleX(1.45) scaleY(0.1);
   }
 
-  24%,
-  72% {
-    filter: none;
+  18% {
     opacity: 1;
-    transform: scale(1);
   }
 
-  76% {
-    transform: translateX(-0.22rem) skewX(8deg);
-  }
-
-  80% {
-    transform: translateX(0.25rem) skewX(-5deg);
-  }
-
-  88%,
   100% {
-    filter: blur(0.16rem);
     opacity: 0;
-    transform: scaleX(1.2) scaleY(0.08);
-  }
-}
-
-@keyframes turbo-progress {
-  0%,
-  38% {
-    background: #20303e;
-    box-shadow: none;
-  }
-
-  39%,
-  100% {
-    background: var(--turbo-cyan);
-    box-shadow: 0 0 0.7rem var(--turbo-cyan);
   }
 }
 
 @keyframes turbo-charge-ring {
-  0% {
-    filter: hue-rotate(0deg) drop-shadow(0 0 0 transparent);
+  from {
     transform: scale(0.72) rotate(-90deg);
   }
 
-  72% {
-    filter: hue-rotate(35deg) drop-shadow(0 0 0.5rem var(--turbo-cyan));
-    transform: scale(1.1) rotate(205deg);
-  }
-
-  100% {
-    filter: hue-rotate(65deg) drop-shadow(0 0 0.78rem var(--turbo-magenta));
+  to {
     transform: scale(1) rotate(270deg);
   }
 }
 
-@keyframes turbo-core-pulse {
-  0%,
-  100% {
-    opacity: 0.52;
-    transform: scale(0.72);
-  }
-
+@keyframes turbo-breathe {
   50% {
-    opacity: 1;
-    transform: scale(1.18);
-  }
-}
-
-@keyframes turbo-scanline {
-  from {
-    top: 11%;
-  }
-
-  to {
-    top: 92%;
+    opacity: 0.45;
+    transform: scale(0.8);
   }
 }
 
@@ -713,35 +312,6 @@ html[data-turbo="on"] #light-toggle[data-turbo-trigger]::after {
 }
 
 @media (max-width: 720px) {
-  .turbo-chrome__label {
-    font-size: 0.44rem;
-    letter-spacing: 0.11em;
-  }
-
-  .turbo-chrome__label--system,
-  .turbo-chrome__label--core {
-    top: 3.85rem;
-  }
-
-  .turbo-chrome__label--system,
-  .turbo-chrome__label--unit-a {
-    left: 1rem;
-  }
-
-  .turbo-chrome__label--core,
-  .turbo-chrome__label--unit-b {
-    right: 1rem;
-  }
-
-  .turbo-chrome__label--unit-a,
-  .turbo-chrome__label--unit-b {
-    display: none;
-  }
-
-  .turbo-chrome__label--exit {
-    display: none;
-  }
-
   .turbo-status {
     bottom: 0.9rem;
     left: 0.9rem;
@@ -750,27 +320,22 @@ html[data-turbo="on"] #light-toggle[data-turbo-trigger]::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .turbo-cursor {
+  .turbo-cursor,
+  .turbo-boot {
     display: none;
   }
 
   .turbo-canvas,
-  .turbo-chrome,
   .turbo-status,
   .turbo-trigger-hint {
     transition: none;
   }
 
-  .turbo-chrome::after,
   html[data-turbo="on"] #light-toggle[data-turbo-trigger]::after {
     animation: none;
   }
 
   #light-toggle[data-turbo-trigger].is-turbo-charging::before {
     animation-duration: 1ms;
-  }
-
-  .turbo-boot {
-    display: none;
   }
 }

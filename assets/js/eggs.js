@@ -375,13 +375,45 @@
   }
 
   // ---------- 机器狗 ----------
-  const DOG_SVG = `<svg viewBox="0 0 52 30" aria-hidden="true" shape-rendering="crispEdges">
-    <rect x="8" y="8" width="30" height="10" fill="#2b2733"/><rect x="10" y="9" width="26" height="3" fill="#4d4659"/>
-    <rect x="36" y="4" width="12" height="9" fill="#2b2733"/><rect x="44" y="7" width="4" height="3" fill="#c5a2ff"/>
-    <rect x="46" y="2" width="2" height="3" fill="#2b2733"/><rect x="4" y="9" width="5" height="2" fill="#2b2733"/>
-    <rect x="18" y="12" width="10" height="2" fill="#6434b2"/>
-    <g class="egg-legs-a" fill="#2b2733"><rect x="11" y="18" width="3" height="8"/><rect x="31" y="18" width="3" height="8"/><rect x="9" y="26" width="5" height="2"/><rect x="31" y="26" width="5" height="2"/></g>
-    <g class="egg-legs-b" fill="#2b2733"><rect x="15" y="18" width="3" height="8"/><rect x="27" y="18" width="3" height="8"/><rect x="15" y="26" width="5" height="2"/><rect x="27" y="26" width="5" height="2"/></g>
+  // 机器狗：宇树 Go2 / 云深处那一类四足机器人的侧视画法——浅色外壳、深色的腿，膝盖朝后，
+  // 头上一条视觉传感器，身上一道暖橙色的饰条和一盏状态灯。奔跑时对角两条腿同相（小跑步态）。
+  const dogLeg = (hipX, far, delay) => {
+    const kneeX = hipX - 4;
+    return `<g class="dog-leg${far ? " dog-leg--far" : ""}" style="transform-origin:${hipX}px 29px;animation-delay:${delay}s">
+      <path class="dog-thigh" d="M${hipX} 29 L${kneeX} 40"/>
+      <g class="dog-shin" style="transform-origin:${kneeX}px 40px;animation-delay:${delay}s">
+        <path class="dog-calf" d="M${kneeX} 40 L${hipX + 1} 54"/>
+        <circle class="dog-foot" cx="${hipX + 1}" cy="54" r="2.6"/>
+      </g>
+      <circle class="dog-knee" cx="${kneeX}" cy="40" r="2.5"/>
+    </g>`;
+  };
+  const DOG_HEAD = `<path class="dog-dark" d="M71 12h11a7 7 0 0 1 7 7v5a5 5 0 0 1-5 5H71z"/>
+    <rect class="dog-visor" x="77" y="16" width="10" height="7" rx="3.5"/><circle class="dog-led dog-eye" cx="82.5" cy="19.5" r="1.4"/>
+    <circle class="dog-dome" cx="75" cy="14.5" r="2.6"/>`;
+  const DOG_SVG = `<svg viewBox="0 0 96 60" aria-hidden="true">
+    <ellipse class="dog-shadow" cx="48" cy="57" rx="30" ry="2.4"/>
+    ${dogLeg(70, true, -0.17)}${dogLeg(34, true, 0)}
+    <rect class="dog-dark" x="16" y="16" width="6" height="10" rx="3"/>
+    <rect class="dog-shell" x="20" y="13" width="54" height="18" rx="8"/>
+    <rect class="dog-belly" x="25" y="26" width="44" height="5" rx="2.5"/>
+    <rect class="dog-dark" x="33" y="10.5" width="22" height="4" rx="2"/>
+    <rect class="dog-accent" x="26" y="19" width="28" height="2.4" rx="1.2"/><circle class="dog-led" cx="61" cy="20" r="1.9"/>
+    ${DOG_HEAD}
+    ${dogLeg(64, false, 0)}${dogLeg(28, false, -0.17)}
+    <circle class="dog-hip" cx="64" cy="29" r="3.4"/><circle class="dog-hip" cx="28" cy="29" r="3.4"/>
+  </svg>`;
+  // 没电时趴着：腿收在身下，头搁在前爪上，状态灯熄了。
+  const DOG_REST_SVG = `<svg viewBox="0 0 96 60" aria-hidden="true">
+    <ellipse class="dog-shadow" cx="48" cy="57" rx="32" ry="2.4"/>
+    <path class="dog-thigh dog-thigh--rest" d="M30 44 L18 50 L32 52"/><path class="dog-thigh dog-thigh--rest" d="M62 44 L78 51 L66 52"/>
+    <rect class="dog-dark" x="16" y="33" width="6" height="9" rx="3"/>
+    <rect class="dog-shell" x="20" y="31" width="54" height="17" rx="8"/>
+    <rect class="dog-belly" x="25" y="43" width="44" height="5" rx="2.5"/>
+    <rect class="dog-dark" x="33" y="28.5" width="22" height="4" rx="2"/>
+    <rect class="dog-accent" x="26" y="37" width="28" height="2.4" rx="1.2"/><circle class="dog-led" cx="61" cy="38" r="1.9"/>
+    <path class="dog-dark" d="M70 33h12a7 7 0 0 1 7 7v4a5 5 0 0 1-5 5H70z"/>
+    <rect class="dog-visor dog-visor--rest" x="77" y="39" width="10" height="5" rx="2.5"/>
   </svg>`;
 
   // 机器狗的电量：跑满三趟就没电，趴在角落等你充电（把插头拖到充电口，或者打开 Turbo 模式）。
@@ -452,7 +484,7 @@
       <svg class="egg-dog-cable" aria-hidden="true"><path d=""/></svg>
       <div class="egg-socket" aria-hidden="true">${SOCKET_SVG}</div>
       <button class="egg-plug" type="button" aria-label="把插头拖到左边的充电口。键盘用户按回车直接插上">${PLUG_SVG}</button>
-      <div class="egg-dog-lying">${DOG_SVG}<span class="egg-dog-bubble">电量 0%……</span><span class="egg-dog-zzz" aria-hidden="true">z z z</span></div>`;
+      <div class="egg-dog-lying">${DOG_REST_SVG}<span class="egg-dog-bubble">电量 0%……</span><span class="egg-dog-zzz" aria-hidden="true">z z z</span></div>`;
     document.body.append(rest);
     const plug = rest.querySelector(".egg-plug");
     const socket = rest.querySelector(".egg-socket");
@@ -491,6 +523,9 @@
           () => {
             bubble.textContent = message;
             rest.classList.add("is-awake");
+            // 站起来：换成站立的姿势（静止；奔跑的动画只在跑道上）。
+            const standing = document.createRange().createContextualFragment(DOG_SVG);
+            rest.querySelector(".egg-dog-lying svg")?.replaceWith(standing);
           },
           250 + steps.length * 550
         )

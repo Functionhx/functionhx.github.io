@@ -155,13 +155,32 @@ try {
   await page.keyboard.press("Shift+T");
   assert.equal((await turboState()).active, "off", "Turbo shortcut must not fire while typing");
 
-  await page.goto(new URL("en/", baseUrl).href, { waitUntil: "networkidle" });
-  const englishLabel = await page.locator("[data-turbo-trigger]").getAttribute("aria-label");
-  assert.match(englishLabel, /hold to toggle Turbo/i, "English pages must explain the Turbo gesture");
+  await page.goto(baseUrl, { waitUntil: "networkidle" });
+  const label = await page.locator("[data-turbo-trigger]").getAttribute("aria-label");
+  assert.match(label, /Turbo/, "The appearance control must explain the Turbo gesture");
   await page.keyboard.press("Shift+T");
   await assert.doesNotReject(async () => {
-    await page.locator("#turbo-status").filter({ hasText: "ROBOT ARENA READY" }).waitFor({ state: "visible" });
-  }, "English pages must announce Turbo in English");
+    await page.locator("#turbo-status").filter({ hasText: "Turbo 已开启" }).waitFor({ state: "visible" });
+  }, "Turbo must announce itself in plain Chinese");
+
+  // 光迹：鼠标划过之后画布上应当有像素，静止一会儿后淡出（画布不再重绘）。
+  await page.mouse.move(300, 300);
+  for (let step = 0; step < 14; step += 1) await page.mouse.move(300 + step * 24, 300 + Math.sin(step / 2) * 40);
+  const painted = await page.evaluate(() => {
+    const canvas = document.getElementById("turbo-canvas");
+    const data = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+    for (let index = 3; index < data.length; index += 4) if (data[index] > 0) return true;
+    return false;
+  });
+  assert.equal(painted, true, "Moving the pointer must leave a light trail on the Turbo canvas");
+  await page.waitForTimeout(900);
+  const faded = await page.evaluate(() => {
+    const canvas = document.getElementById("turbo-canvas");
+    const data = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+    for (let index = 3; index < data.length; index += 4) if (data[index] > 0) return false;
+    return true;
+  });
+  assert.equal(faded, true, "The light trail must fade out completely once the pointer is still");
 
   const reducedContext = await browser.newContext({
     viewport: { width: 1440, height: 900 },
