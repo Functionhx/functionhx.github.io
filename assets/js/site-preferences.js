@@ -2,7 +2,7 @@
   "use strict";
 
   const root = document.documentElement;
-  const supportedFonts = new Set(["anthropic-serif", "anthropic-sans", "system", "dyslexic"]);
+  const supportedFonts = new Set(["anthropic-serif", "anthropic-sans", "system", "dyslexic", "wenkai"]);
   const loadingCopy = Object.freeze({
     loading: "Loading...",
     "loading-zh": "正在载入...",
@@ -30,8 +30,26 @@
 
   // Roboto、Roboto Slab、Atkinson Hyperlegible 来自 Google Fonts：只有选了这些字体才加载，
   // 系统字体用不到它（国内也常常连不上），构建时已把它从 <head> 里拿掉，换成一个 <meta> 记着地址。
+  const googleFonts = new Set(["anthropic-serif", "anthropic-sans", "dyslexic"]);
+  // 霞鹜文楷（SIL OFL 1.1）：字体文件按字切片、按 unicode-range 取用，页面只下载用到的字；
+  // 加载不到时退回系统楷体。和 Google Fonts 一样，只有选了它才会请求。
+  const fontStylesheets = Object.freeze({
+    wenkai: [
+      "https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css",
+      "https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-bold.css",
+    ],
+  });
+
   function ensureFontStylesheet(font) {
-    if (font === "system" || document.querySelector("link[data-google-fonts]")) return;
+    (fontStylesheets[font] || []).forEach((href) => {
+      if (document.querySelector(`link[data-font-stylesheet="${font}"][href="${href}"]`)) return;
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      link.dataset.fontStylesheet = font;
+      document.head.append(link);
+    });
+    if (!googleFonts.has(font) || document.querySelector("link[data-google-fonts]")) return;
     const href = document.querySelector('meta[name="functionhx:google-fonts"]')?.content;
     if (!href) return;
     const link = document.createElement("link");

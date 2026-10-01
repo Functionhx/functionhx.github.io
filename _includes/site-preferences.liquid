@@ -1,7 +1,7 @@
 <script>
   (() => {
     const root = document.documentElement;
-    const supportedFonts = new Set(['anthropic-serif', 'anthropic-sans', 'system', 'dyslexic']);
+    const supportedFonts = new Set(['anthropic-serif', 'anthropic-sans', 'system', 'dyslexic', 'wenkai']);
     const supportedLoadingCopy = new Set(['thinking', 'loading', 'thinking-zh', 'loading-zh']);
     const supportedSeasonEffects = new Set(['off', 'auto', 'snow', 'sakura', 'rain', 'leaves']);
     root.classList.add('js');
@@ -21,6 +21,9 @@
     root.dataset.publishedSeasonEffect = supportedSeasonEffects.has(publishedSeasonEffect) ? publishedSeasonEffect : 'off';
     const publishedWind = Number({{ site.data.site_ui.wind_strength | default: 100 | jsonify }});
     root.dataset.publishedWindStrength = String(Number.isFinite(publishedWind) ? Math.min(Math.max(publishedWind, 0), 200) : 100);
+    const clampAwayDelay = (value) => Math.min(Math.max(Math.round(value), 0), 5000);
+    const publishedAwayDelay = Number({{ site.data.site_ui.away_title_delay | default: 500 | jsonify }});
+    root.dataset.publishedAwayTitleDelay = String(Number.isFinite(publishedAwayDelay) ? clampAwayDelay(publishedAwayDelay) : 500);
     // 站长在站点设置里改的外观会实时生效：runtime-settings.js 把最近一次取到的值存在本地，
     // 这里先用它，回访的访客一打开就是最新的，不会先闪一下构建时写死的旧值。
     try {
@@ -31,11 +34,13 @@
         if (supportedLoadingCopy.has(live.loading_copy)) root.dataset.publishedLoadingCopy = live.loading_copy;
         if (supportedSeasonEffects.has(live.season_effect)) root.dataset.publishedSeasonEffect = live.season_effect;
         if (Number.isFinite(live.wind_strength)) root.dataset.publishedWindStrength = String(Math.min(Math.max(live.wind_strength, 0), 200));
+        if (Number.isFinite(live.away_title_delay)) root.dataset.publishedAwayTitleDelay = String(clampAwayDelay(live.away_title_delay));
         if (['auto', 'compact', 'relaxed'].includes(live.navigation_density)) root.dataset.navDensity = live.navigation_density;
       }
     } catch (_error) {
       /* 读不到缓存就用构建时写进页面的值。 */
     }
+    root.dataset.awayTitleDelay = root.dataset.publishedAwayTitleDelay;
     root.dataset.siteFont = root.dataset.publishedSiteFont;
     root.dataset.loadingCopy = root.dataset.publishedLoadingCopy;
     try {

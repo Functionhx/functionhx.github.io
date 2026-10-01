@@ -698,7 +698,7 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
 }
 
 /* The reading-preference fonts replace the sans voice everywhere. */
-html[data-site-font="dyslexic"]
+html:is([data-site-font="dyslexic"], [data-site-font="wenkai"])
   :is(.post--article, .post-paper)
   :is(.post-title, .post-description, #markdown-content, .post-paper__title, .post-paper__summary, .post-prose) {
   font-family: var(--site-font-family);

@@ -266,6 +266,10 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+.site-settings__select--font option[value="wenkai"] {
+  font-family: "LXGW WenKai", "Kaiti SC", STKaiti, KaiTi, serif;
+}
+
 .site-settings__select--font option[value="dyslexic"] {
   font-family: "Atkinson Hyperlegible", OpenDyslexic, Verdana, sans-serif;
 }

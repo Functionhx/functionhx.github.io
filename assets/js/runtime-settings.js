@@ -1,7 +1,7 @@
 (function initializeRuntimeSettings() {
   "use strict";
 
-  // 站长在站点设置里改的「外观」（字体、加载文案、季节氛围、风力、导航间距、彩蛋线索和那封信）
+  // 站长在站点设置里改的「外观」（字体、加载文案、季节氛围、风力、离开提示延迟、导航间距、彩蛋线索和那封信）
   // 不需要重新构建：它们存在仓库 site-settings 分支的 settings.json 里，页面直接读它。
   // 读不到时（网络不通、GitHub API 限流）沿用上次缓存的值，再不行就用构建时写进页面的值，页面照常可用。
   // 只有栏目的显示与隐藏这类需要重新生成页面的改动，才走「保存并发布」。
@@ -11,7 +11,7 @@
   const CACHE_KEY = "functionhx:runtime-settings:v1";
   const REFRESH_AFTER = 120000;
   const TIMEOUT = 5000;
-  const FONTS = new Set(["anthropic-serif", "anthropic-sans", "system", "dyslexic"]);
+  const FONTS = new Set(["anthropic-serif", "anthropic-sans", "system", "dyslexic", "wenkai"]);
   const LOADING_COPY = new Set(["thinking", "loading", "thinking-zh", "loading-zh"]);
   const SEASONS = new Set(["off", "auto", "snow", "sakura", "rain", "leaves"]);
   const DENSITIES = new Set(["auto", "compact", "relaxed"]);
@@ -28,6 +28,7 @@
     if (SEASONS.has(source.season_effect)) settings.season_effect = source.season_effect;
     if (DENSITIES.has(source.navigation_density)) settings.navigation_density = source.navigation_density;
     if (Number.isFinite(source.wind_strength)) settings.wind_strength = Math.round(Math.min(Math.max(source.wind_strength, 0), 200));
+    if (Number.isFinite(source.away_title_delay)) settings.away_title_delay = Math.round(Math.min(Math.max(source.away_title_delay, 0), 5000));
     const eggs = source.eggs && typeof source.eggs === "object" ? source.eggs : null;
     if (eggs) {
       settings.eggs = {};
@@ -80,6 +81,10 @@
     if (settings.wind_strength !== undefined) {
       root.dataset.publishedWindStrength = String(settings.wind_strength);
       window.functionhxSeasons?.setWind?.(settings.wind_strength);
+    }
+    if (settings.away_title_delay !== undefined) {
+      root.dataset.publishedAwayTitleDelay = String(settings.away_title_delay);
+      root.dataset.awayTitleDelay = String(settings.away_title_delay);
     }
     if (settings.season_effect) {
       root.dataset.publishedSeasonEffect = settings.season_effect;

@@ -25,7 +25,7 @@ CONTENT_DIRECTORIES = (
 # removed and must not return (their old /en/ URLs deliberately 404).
 LANGUAGES = {"zh"}
 # 站长可选的站点字体与加载文案；与 site-preferences.liquid / site-preferences.js 保持一致。
-SITE_FONTS = {"system", "anthropic-serif", "anthropic-sans", "dyslexic"}
+SITE_FONTS = {"system", "anthropic-serif", "anthropic-sans", "dyslexic", "wenkai"}
 LOADING_COPY = {"thinking", "loading", "thinking-zh", "loading-zh"}
 SEASON_EFFECTS = {"off", "auto", "snow", "sakura", "rain", "leaves"}
 
@@ -176,6 +176,10 @@ def main() -> int:
     wind = site_ui.get("wind_strength")
     if not isinstance(wind, int) or isinstance(wind, bool) or not 0 <= wind <= 200:
         errors.append("_data/site_ui.yml: wind_strength must be an integer from 0 to 200")
+    # 离开标签页后标题变化的延迟，单位毫秒，0–5000。
+    away_delay = site_ui.get("away_title_delay")
+    if not isinstance(away_delay, int) or isinstance(away_delay, bool) or not 0 <= away_delay <= 5000:
+        errors.append("_data/site_ui.yml: away_title_delay must be an integer from 0 to 5000")
     # 季节氛围同样由站长发布（2026-09-27）。
     if site_ui.get("season_effect") not in SEASON_EFFECTS:
         errors.append(

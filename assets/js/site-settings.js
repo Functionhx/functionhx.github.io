@@ -119,6 +119,8 @@
   const windInput = document.getElementById("site-settings-wind");
   const windValue = document.getElementById("site-settings-wind-value");
   const windTest = document.getElementById("site-settings-wind-test");
+  const awayInput = document.getElementById("site-settings-away-delay");
+  const awayValue = document.getElementById("site-settings-away-delay-value");
   const eggIds = ["turbo", "dog", "terminal", "fx", "night", "idle", "console", "tab", "letter"];
   let initialEggPublic = {};
   let publishedLetter = null;
@@ -146,6 +148,7 @@
     loadingCopy: root.dataset.initialLoadingCopy,
     season: root.dataset.initialSeasonEffect,
     wind: Number(root.dataset.initialWindStrength ?? 100),
+    away: Number(root.dataset.initialAwayTitleDelay ?? 500),
     eggPublic: { ...initialEggPublic },
     letter: publishedLetter,
   };
@@ -356,7 +359,8 @@
       root.dataset.initialSiteFont,
       root.dataset.initialLoadingCopy,
       root.dataset.initialSeasonEffect,
-      Number(root.dataset.initialWindStrength ?? 100)
+      Number(root.dataset.initialWindStrength ?? 100),
+      Number(root.dataset.initialAwayTitleDelay ?? 500)
     );
     closeDialog(dialog);
     toggle.setAttribute("aria-expanded", "false");
@@ -614,7 +618,23 @@
     return selectedWind() !== Number(root.dataset.initialWindStrength ?? 100);
   }
 
-  function previewPersonalization(font = selectedFont(), copy = selectedLoadingCopy(), season = selectedSeason(), wind = selectedWind()) {
+  function selectedAway() {
+    const value = awayInput ? Number(awayInput.value) : Number(root.dataset.initialAwayTitleDelay ?? 500);
+    return Number.isFinite(value) ? Math.min(Math.max(Math.round(value), 0), 5000) : 500;
+  }
+
+  function awayChanged() {
+    return selectedAway() !== Number(root.dataset.initialAwayTitleDelay ?? 500);
+  }
+
+  function previewPersonalization(
+    font = selectedFont(),
+    copy = selectedLoadingCopy(),
+    season = selectedSeason(),
+    wind = selectedWind(),
+    away = selectedAway()
+  ) {
+    document.documentElement.dataset.awayTitleDelay = String(away);
     window.functionhxSitePreferences?.setFont?.(font);
     window.functionhxSitePreferences?.setLoadingCopy?.(copy);
     window.functionhxSeasons?.setWind?.(wind);
@@ -625,12 +645,20 @@
     if (!hasOption(elements.font, elements.font.value)) elements.font.value = root.dataset.initialSiteFont;
     if (!hasOption(elements.loadingCopy, elements.loadingCopy.value)) elements.loadingCopy.value = root.dataset.initialLoadingCopy;
     if (windInput && windValue) windValue.textContent = selectedWind() === 0 ? "关" : `${selectedWind()}%`;
+    if (awayInput && awayValue) awayValue.textContent = selectedAway() === 0 ? "立即" : `${(selectedAway() / 1000).toFixed(1)} 秒`;
   }
 
   // ---------- 实时生效的外观设置 ----------
   function liveDirty() {
     return (
-      fontChanged() || loadingCopyChanged() || seasonChanged() || windChanged() || navigationDensityChanged() || eggsChanged() || letterChanged()
+      fontChanged() ||
+      loadingCopyChanged() ||
+      seasonChanged() ||
+      windChanged() ||
+      awayChanged() ||
+      navigationDensityChanged() ||
+      eggsChanged() ||
+      letterChanged()
     );
   }
 
@@ -653,6 +681,7 @@
       loading_copy: selectedLoadingCopy(),
       season_effect: selectedSeason(),
       wind_strength: selectedWind(),
+      away_title_delay: selectedAway(),
       navigation_density: selectedNavigationDensity(),
       eggs: { public: publicMap, letter: sealedLetter || publishedLetter || null },
     };
@@ -763,6 +792,7 @@
     root.dataset.initialLoadingCopy = settings.loading_copy;
     root.dataset.initialSeasonEffect = settings.season_effect;
     root.dataset.initialWindStrength = String(settings.wind_strength);
+    root.dataset.initialAwayTitleDelay = String(settings.away_title_delay);
     root.dataset.initialNavigationDensity = settings.navigation_density;
     initialEggPublic = { ...settings.eggs.public };
     if (sealedLetter) {
@@ -781,6 +811,7 @@
     if (page.publishedLoadingCopy) root.dataset.initialLoadingCopy = page.publishedLoadingCopy;
     if (page.publishedSeasonEffect) root.dataset.initialSeasonEffect = page.publishedSeasonEffect;
     if (page.publishedWindStrength !== undefined) root.dataset.initialWindStrength = page.publishedWindStrength;
+    if (page.publishedAwayTitleDelay !== undefined) root.dataset.initialAwayTitleDelay = page.publishedAwayTitleDelay;
     if (live.navigation_density) root.dataset.initialNavigationDensity = live.navigation_density;
     if (live.eggs?.public) initialEggPublic = { ...initialEggPublic, ...live.eggs.public };
     if (live.eggs && "letter" in live.eggs) publishedLetter = live.eggs.letter;
@@ -788,6 +819,7 @@
     elements.loadingCopy.value = root.dataset.initialLoadingCopy;
     checkSeason(root.dataset.initialSeasonEffect);
     if (windInput) windInput.value = root.dataset.initialWindStrength ?? "100";
+    if (awayInput) awayInput.value = root.dataset.initialAwayTitleDelay ?? "500";
     navigationDensityInputs.forEach((input) => {
       input.checked = input.value === root.dataset.initialNavigationDensity;
     });
@@ -813,12 +845,14 @@
   // ---------- 把实时设置同步回主分支（后备） ----------
   function bakedDrift() {
     const liveWind = Number(root.dataset.initialWindStrength ?? 100);
+    const liveAway = Number(root.dataset.initialAwayTitleDelay ?? 500);
     return (
       root.dataset.initialNavigationDensity !== baked.density ||
       root.dataset.initialSiteFont !== baked.font ||
       root.dataset.initialLoadingCopy !== baked.loadingCopy ||
       root.dataset.initialSeasonEffect !== baked.season ||
       liveWind !== baked.wind ||
+      liveAway !== baked.away ||
       eggIds.some((id) => (initialEggPublic[id] === true) !== (baked.eggPublic[id] === true)) ||
       JSON.stringify(publishedLetter || null) !== JSON.stringify(baked.letter || null)
     );
@@ -832,12 +866,14 @@
   async function bakedEntries(headSha) {
     const entries = [];
     const liveWind = Number(root.dataset.initialWindStrength ?? 100);
+    const liveAway = Number(root.dataset.initialAwayTitleDelay ?? 500);
     const uiChanged =
       root.dataset.initialNavigationDensity !== baked.density ||
       root.dataset.initialSiteFont !== baked.font ||
       root.dataset.initialLoadingCopy !== baked.loadingCopy ||
       root.dataset.initialSeasonEffect !== baked.season ||
-      liveWind !== baked.wind;
+      liveWind !== baked.wind ||
+      liveAway !== baked.away;
     if (uiChanged) {
       let source = await fetchFileAt(uiSettingsPath, headSha);
       if (root.dataset.initialNavigationDensity !== baked.density) source = setNavigationDensity(source, root.dataset.initialNavigationDensity);
@@ -845,6 +881,7 @@
       if (root.dataset.initialLoadingCopy !== baked.loadingCopy) source = setSiteUiValue(source, "loading_copy", root.dataset.initialLoadingCopy);
       if (root.dataset.initialSeasonEffect !== baked.season) source = setSiteUiValue(source, "season_effect", root.dataset.initialSeasonEffect);
       if (liveWind !== baked.wind) source = setSiteUiValue(source, "wind_strength", String(liveWind));
+      if (liveAway !== baked.away) source = setSiteUiValue(source, "away_title_delay", String(liveAway));
       entries.push({ content: source, mode: "100644", path: uiSettingsPath, type: "blob" });
     }
     const eggsDiffer =
@@ -860,6 +897,7 @@
     baked.loadingCopy = root.dataset.initialLoadingCopy;
     baked.season = root.dataset.initialSeasonEffect;
     baked.wind = Number(root.dataset.initialWindStrength ?? 100);
+    baked.away = Number(root.dataset.initialAwayTitleDelay ?? 500);
     baked.eggPublic = { ...initialEggPublic };
     baked.letter = publishedLetter;
   }
@@ -1072,6 +1110,7 @@
   const siteUiChoices = Object.freeze({
     loading_copy: /^(?:thinking|loading|thinking-zh|loading-zh)$/,
     wind_strength: /^(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|200)$/,
+    away_title_delay: /^(?:[0-9]|[1-9][0-9]{1,2}|[1-4][0-9]{3}|5000)$/,
     season_effect: /^(?:off|auto|snow|sakura|rain|leaves)$/,
     site_font: /^[a-z][a-z0-9-]{1,40}$/,
   });
@@ -1451,7 +1490,8 @@
       root.dataset.initialSiteFont,
       root.dataset.initialLoadingCopy,
       root.dataset.initialSeasonEffect,
-      Number(root.dataset.initialWindStrength ?? 100)
+      Number(root.dataset.initialWindStrength ?? 100),
+      Number(root.dataset.initialAwayTitleDelay ?? 500)
     );
     toggle.setAttribute("aria-expanded", "false");
     restoreSettingsFocus();
@@ -1505,6 +1545,11 @@
     settingsChanged();
   });
   windTest?.addEventListener("click", () => window.functionhxSeasons?.testGust?.());
+  awayInput?.addEventListener("input", () => {
+    previewPersonalization();
+    syncPersonalization();
+    settingsChanged();
+  });
   newSectionInputs.forEach((input) => {
     input.addEventListener("input", () => {
       if (input === elements.slug) slugIsAutomatic = false;

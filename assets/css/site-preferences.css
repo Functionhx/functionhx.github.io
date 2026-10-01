@@ -18,12 +18,22 @@ html[data-site-font="dyslexic"] {
   --site-font-family: "Atkinson Hyperlegible", OpenDyslexic, Verdana, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
+/* 霞鹜文楷：正文和标题（--function-serif）都换成它，缺字或没加载到时退回系统楷体。 */
+html[data-site-font="wenkai"] {
+  --site-font-family: "LXGW WenKai", "霞鹜文楷", "Kaiti SC", STKaiti, KaiTi, "楷体", "AR PL UKai CN", serif;
+  --function-serif: var(--site-font-family);
+}
+
 html[data-site-font] body,
 html[data-site-font] button,
 html[data-site-font] input,
 html[data-site-font] select,
 html[data-site-font] textarea {
   font-family: var(--site-font-family);
+}
+
+html[data-site-font="wenkai"] body {
+  letter-spacing: 0.02em;
 }
 
 html[data-site-font="dyslexic"] body {

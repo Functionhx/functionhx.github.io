@@ -99,7 +99,7 @@ after owner verification (`owner-unlock.js`, `github-auth-vault.js`,
   sections in place, committing to this repo via the GitHub Contents/Git APIs
   with a fine-grained token encrypted in IndexedDB.
 - `site-settings.js` — the settings panel. Two kinds of change, two paths:
-  - **Appearance** (font, loading copy, season effect, wind strength, navigation
+  - **Appearance** (font, loading copy, season effect, wind strength, away-title delay, navigation
     spacing, easter-egg hints and the sealed letter) applies **instantly**: the panel
     auto-saves `settings.json` on the `site-settings` branch, and every page reads it
     through `runtime-settings.js` (GitHub contents API, cached in localStorage and
@@ -150,6 +150,10 @@ first two run on the owner's Tencent Cloud server:
   (`.gitignore` swallows it). Upgrading means a new directory plus the `?v=` in the config URL.
   Noto Serif SC (sliced into ~100 files) and the easter-egg fonts still come from jsDelivr and
   fall back to system fonts.
+- `eggs.js` times the "在等你回来" tab title in `away-timer-worker.js`: main-thread timers in a
+  background tab are aligned to ~1 s, so a 0.5 s setting would show after 1 s. It must stay a
+  same-origin file (the theme CSP in `head.liquid` has no `blob:`/`data:` worker source) and the
+  code falls back to a plain timer if the Worker cannot start.
 - `deploy/nginx/fanyuchen.com.cn.conf` caches any `/assets/…?v=<hash>` URL for a year
   (`immutable`); URLs without `?v=` are revalidated. The file is applied to the server by hand,
   CI does not deploy it.

@@ -111,6 +111,7 @@
     data-initial-loading-copy="{{ site.data.site_ui.loading_copy | default: 'thinking' | escape }}"
     data-initial-season-effect="{{ site.data.site_ui.season_effect | default: 'off' | escape }}"
     data-initial-wind-strength="{{ site.data.site_ui.wind_strength | default: 100 | escape }}"
+    data-initial-away-title-delay="{{ site.data.site_ui.away_title_delay | default: 500 | escape }}"
     data-ui-settings-path="_data/site_ui.yml"
   >
     <header class="site-settings__header">
@@ -158,11 +159,13 @@
                   <option value="anthropic-sans">Anthropic Sans</option>
                   <option value="system">System</option>
                   <option value="dyslexic">Dyslexic friendly</option>
+                  <option value="wenkai">LXGW WenKai</option>
                 {% else %}
                   <option value="system">系统字体</option>
                   <option value="anthropic-serif">衬线字体</option>
                   <option value="anthropic-sans">无衬线字体</option>
                   <option value="dyslexic">易读字体</option>
+                  <option value="wenkai">文楷（手写楷体）</option>
                 {% endif %}
               </select>
               <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
@@ -183,6 +186,27 @@
               </select>
               <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
             </label>
+          </div>
+          <div class="site-settings__preference site-settings__preference--wind">
+            <div>
+              <strong>离开提示</strong>
+              <small>切到别的标签页多久后，标题变成「在等你回来」：0 是立即，最长 5 秒。浏览器可能让后台标签页的计时稍有延迟</small>
+            </div>
+            <div class="site-settings__wind">
+              <input
+                id="site-settings-away-delay"
+                type="range"
+                min="0"
+                max="5000"
+                step="100"
+                value="{{ site.data.site_ui.away_title_delay | default: 500 }}"
+                aria-label="离开提示延迟"
+              >
+              {%- assign away_delay_ms = site.data.site_ui.away_title_delay | default: 500 -%}
+              <output id="site-settings-away-delay-value" for="site-settings-away-delay">
+                {%- if away_delay_ms == 0 -%}立即{%- else -%}{{ away_delay_ms | divided_by: 1000.0 }} 秒{%- endif -%}
+              </output>
+            </div>
           </div>
           <div class="site-settings__preference site-settings__preference--season">
             <div>

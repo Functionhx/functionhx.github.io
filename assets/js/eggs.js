@@ -1399,11 +1399,55 @@
   const originalTitle = document.title;
   const AWAY_TITLE = "ƒ 在等你回来…";
   let titleTimer = 0;
-  document.addEventListener("visibilitychange", () => {
+  // 后台标签页里主线程的定时器会被浏览器对齐到约 1 秒一次，设 0.5 秒也要等到 1 秒；
+  // Worker 里的定时器不受影响，所以延迟交给 away-timer-worker.js 计时，到点再回主线程改标题。
+  // Worker 起不来（被拦截、文件取不到）就退回普通定时器，只是后台里可能慢一点。
+  let awayWorker = null;
+  let awayWorkerBroken = false;
+  let awayToken = 0;
+  let awayCallback = null;
+  let awayDeadline = 0;
+  function startAwayTimer(delay, callback) {
+    awayToken += 1;
+    awayCallback = callback;
+    awayDeadline = window.performance.now() + delay;
+    if (!awayWorkerBroken) {
+      try {
+        if (!awayWorker) {
+          awayWorker = new Worker("/assets/js/away-timer-worker.js");
+          awayWorker.onmessage = (event) => {
+            if (event.data === awayToken) awayCallback?.();
+          };
+          awayWorker.onerror = () => {
+            awayWorkerBroken = true;
+            awayWorker = null;
+            const pending = awayCallback;
+            if (pending) titleTimer = window.setTimeout(pending, Math.max(0, awayDeadline - window.performance.now()));
+          };
+        }
+        awayWorker.postMessage({ token: awayToken, delay });
+        return;
+      } catch (_error) {
+        awayWorkerBroken = true;
+      }
+    }
+    titleTimer = window.setTimeout(callback, delay);
+  }
+  function cancelAwayTimer() {
+    awayToken += 1;
+    awayCallback = null;
     window.clearTimeout(titleTimer);
+  }
+  document.addEventListener("visibilitychange", () => {
+    cancelAwayTimer();
     if (document.hidden) {
-      // 立刻改：后台标签页里的定时器会被浏览器节流，延迟一改就要等好几秒才看得到。
-      document.title = AWAY_TITLE;
+      // 延迟由站长在站点设置里调（默认 0.5 秒，0 为立即）。
+      const delay = Number(document.documentElement.dataset.awayTitleDelay ?? 500);
+      const showAway = () => {
+        if (document.hidden) document.title = AWAY_TITLE;
+      };
+      if (delay > 0) startAwayTimer(delay, showAway);
+      else showAway();
       return;
     }
     if (document.title !== AWAY_TITLE) return;
