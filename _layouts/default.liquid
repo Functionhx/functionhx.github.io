@@ -248,22 +248,27 @@
       </div>
     </div>
 
-    <!-- JavaScripts -->
-    <script src="{{ '/assets/js/site-preferences.js' | relative_url | bust_file_cache }}"></script>
-    <script src="{{ '/assets/js/dialog-interactions.js' | relative_url | bust_file_cache }}"></script>
-    <script src="{{ '/assets/js/owner-ui.js' | relative_url | bust_file_cache }}"></script>
+    <!--
+      JavaScripts：全部 defer。页面带 CSP <meta> 时 Chrome 的预加载扫描器不会提前下载后面的脚本，
+      同步脚本于是一个接一个地「下载 → 执行 → 才发现下一个」，GitHub Pages 上每个约一次往返，
+      十几个串起来让 DOMContentLoaded（也就是加载遮罩消失）晚了好几秒。defer 后解析器一次发现全部脚本并行下载，
+      执行顺序仍按文档顺序，依赖关系不变。
+    -->
+    <script src="{{ '/assets/js/site-preferences.js' | relative_url | bust_file_cache }}" defer></script>
+    <script src="{{ '/assets/js/dialog-interactions.js' | relative_url | bust_file_cache }}" defer></script>
+    <script src="{{ '/assets/js/owner-ui.js' | relative_url | bust_file_cache }}" defer></script>
     {% include scripts.liquid %}
-    <script src="{{ '/assets/js/turbo-mode.js' | relative_url | bust_file_cache }}"></script>
+    <script src="{{ '/assets/js/turbo-mode.js' | relative_url | bust_file_cache }}" defer></script>
     {% if page.home %}
-      <script src="{{ '/assets/js/home-contact.js' | relative_url | bust_file_cache }}"></script>
+      <script src="{{ '/assets/js/home-contact.js' | relative_url | bust_file_cache }}" defer></script>
     {% endif %}
     {% if page_lang != 'en' %}
-      <script src="{{ '/assets/js/function.js' | relative_url | bust_file_cache }}"></script>
+      <script src="{{ '/assets/js/function.js' | relative_url | bust_file_cache }}" defer></script>
       {% include eggs.liquid %}
       <script src="{{ '/assets/js/atmosphere.js' | relative_url | bust_file_cache }}" defer></script>
       <script src="{{ '/assets/js/runtime-settings.js' | relative_url | bust_file_cache }}" defer></script>
     {% endif %}
-    <script src="{{ '/assets/js/navigation-performance.js' | relative_url | bust_file_cache }}"></script>
-    <script src="{{ '/assets/js/admin-loader.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+    <script src="{{ '/assets/js/navigation-performance.js' | relative_url | bust_file_cache }}" defer></script>
+    <script src="{{ '/assets/js/admin-loader.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   </body>
 </html>
