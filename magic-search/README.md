@@ -5,6 +5,29 @@ search index. It does not call DeepSeek or another generative model and never
 produces an answer. The browser merges its chunk rankings with local BM25
 results, so search keeps working if this service is offline.
 
+This is now a pure enhancement, not the baseline. The baseline is build-time
+query expansion (see "Search expansions" below), which needs no server at all
+and runs identically on GitHub Pages and the Tencent mirror. This service only
+improves ranking further when it happens to be reachable (it is self-hosted on
+the Tencent server and has no uptime guarantee).
+
+## Search expansions (no server required)
+
+`_data/search_expansions.yml` maps a chunk's `content_hash` to a short list of
+alternate phrasings or related keywords a visitor might type instead of the
+chunk's own wording (e.g. a chunk about "批量更新加速 Point-LIO" also indexed
+under "LIO 性能优化"). `_plugins/magic_search_generator.rb` folds these into the
+chunk's BM25 postings at build time — they never appear in the visible
+title/excerpt, and nothing is fetched at query time. A chunk without an entry
+still works; it just only matches its own wording.
+
+Run `python3 scripts/list_search_expansion_gaps.py` after a build to see which
+current chunks have no entry (and which entries are stale and can be deleted).
+Filling gaps is a manual step — read the listed text and write a few phrases by
+hand (normally via Claude Code while editing the content) — there is no script
+that calls a model to generate them automatically, so this never depends on
+network access or an API key during the build.
+
 At startup and after each site deployment it reads
 `/var/www/functionhx/current/assets/search/index-{zh,en}.json`. Vectors are
 stored in SQLite by `content_hash`; only new or changed chunks are embedded.

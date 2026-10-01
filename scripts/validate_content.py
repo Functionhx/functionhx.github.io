@@ -214,6 +214,26 @@ def main() -> int:
         if plaintext_key in eggs_text:
             errors.append(f"_data/eggs.yml: plaintext field {plaintext_key!r} must never be committed")
 
+    # 搜索的同义/相关问法扩展词：key 必须是 sha256 content_hash，value 必须是字符串
+    # 列表，且不依赖任何运行时网络请求（这是它替代语义检索服务的前提）。
+    expansions_path = ROOT / "_data" / "search_expansions.yml"
+    try:
+        expansions = yaml.safe_load(expansions_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as error:
+        errors.append(f"_data/search_expansions.yml: {error}")
+        expansions = {}
+    if not isinstance(expansions, dict):
+        errors.append("_data/search_expansions.yml: must be a mapping of content_hash to a list of phrases")
+    else:
+        content_hash_pattern = re.compile(r"^[0-9a-f]{64}$")
+        for content_hash, phrases in expansions.items():
+            if not isinstance(content_hash, str) or not content_hash_pattern.match(content_hash):
+                errors.append(f"_data/search_expansions.yml: key {content_hash!r} is not a sha256 content_hash")
+            if not isinstance(phrases, list) or not phrases or not all(
+                isinstance(phrase, str) and phrase.strip() for phrase in phrases
+            ):
+                errors.append(f"_data/search_expansions.yml: {content_hash!r} must map to a non-empty list of phrases")
+
     socials_path = ROOT / "_data" / "socials.yml"
     try:
         socials = yaml.safe_load(socials_path.read_text(encoding="utf-8"))
@@ -588,6 +608,7 @@ def main() -> int:
         "content_hash",
         "postings",
         "search_path",
+        "search_expansions",
     ):
         if contract not in search_generator_text:
             errors.append(

@@ -77,6 +77,9 @@ module Functionhx
         # offered by visitor search. Confidential content belongs in the vault.
         @visible_sections = site.pages.select { |page| page.data["lang"] == "zh" && page.data["nav"] == true }
           .map { |page| page.data["translation_key"] }.to_set
+        # 同义/相关问法扩展词，按 chunk 的 content_hash 匹配；见 _data/search_expansions.yml
+        # 顶部注释。缺失条目不是错误，只是该 chunk 没有额外召回加成。
+        @search_expansions = site.data["search_expansions"].is_a?(Hash) ? site.data["search_expansions"] : {}
         site.data["public_search_documents"] = {}
 
         LANGUAGES.each do |language|
@@ -111,10 +114,12 @@ module Functionhx
         postings = Hash.new { |hash, token| hash[token] = [] }
         chunks.each_with_index do |chunk, chunk_index|
           frequencies = Hash.new(0)
+          expansions = Array(@search_expansions[chunk[:content_hash]])
           weighted_text = [
             chunk[:title], chunk[:title], chunk[:title],
             chunk[:chain].join(" "), chunk[:chain].join(" "),
             chunk[:tags].join(" "), chunk[:categories].join(" "),
+            expansions.join(" "),
             chunk[:text]
           ].join(" ")
           tokens = tokenize(weighted_text)

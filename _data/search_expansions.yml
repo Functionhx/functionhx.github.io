@@ -1,0 +1,150 @@
+# 搜索的同义/相关问法扩展词，key 是 chunk 的 content_hash（见
+# _plugins/magic_search_generator.rb、scripts/list_search_expansion_gaps.py 的输出），
+# value 是这个 chunk 可能被问到的同义说法或相关关键词，只参与 BM25 分词、提升召回，
+# 不会出现在搜索结果的标题/摘要里，也不经过任何运行时网络请求——本文件在 build
+# 时被静态读入，访客搜索时零额外开销。
+#
+# 缺失条目不是错误：没有扩展词的 chunk 仍然可以被原文关键词精确搜到，只是换一种
+# 问法时召回会差一些。写完/改完一篇内容后，运行
+# `python3 scripts/list_search_expansion_gaps.py` 看哪些 chunk 还没有对应条目，
+# 让 Claude Code 读一遍正文补上即可，不需要调用任何外部 API。
+
+fa8f7e4d679860ca67a26895829f8294bc584b801cb79a02829d4e1210c2c55d:
+  - 个人简介
+  - 站长是谁
+  - 作者是谁
+  - 北京理工大学 机器人工程
+  - 自主系统 具身智能 三维场景智能
+
+a371073b175398aad1eb91cca86f61de35aed1abacccf78ef8f3e252b38d94e6:
+  - 激光雷达惯性里程计加速
+  - LIO 性能优化
+  - 点云里程计提速
+  - Point-LIO 加速方案
+
+e16ee70002ef297f961706e461449c44ffb35bbb9d44d044a254a1aed2156fe6:
+  - Point-LIO 逐点更新原理
+  - 点云运动畸变
+  - EKF 更新计算开销
+  - 近邻搜索 平面拟合 残差构建
+
+9fb445610d3aa00b22a744ef6d0de5cba45998ac2d11f51169d43fa41513b2bb:
+  - batch_dt 参数
+  - 加速比测试数据
+  - ROS 2 Humble 测试结果
+  - Livox 激光雷达测试
+
+fec35b004f7b067b3e5092d53c742bb580162093b1cf175d68018d0e87dad7b8:
+  - 时间窗口分组
+  - 点云分组策略
+  - 减少 EKF 更新次数
+
+f1ff4b8f33c3bd6b78744d447cf46f3a29073dcc95503fd55d9c94afe3bd521b:
+  - 运动补偿公式
+  - 点云去畸变
+  - 坐标系转换 旋转平移补偿
+
+8dd062b9df9b4be96ff7fe1af2f9f75b1cb61c8bf2b57c413b6c1cce0a4eab0a:
+  - 联合 EKF 更新流程
+  - OpenMP 并行加速
+  - 点到平面残差
+  - Jacobian 构建
+
+2efb0bec10e6912724f5678fb868d007f06c1e751da23c1f4057d8972076f993:
+  - 项目的不足
+  - 尚未完成的验证
+  - ATE RPE 精度评价
+  - 滤波器稳定性问题
+
+dc5514799fca40068313e1e5a43529d1430b7929bafdedcf1bd42c6ace5783b5:
+  - 后续开发计划
+  - 未来工作安排
+
+3ff417e9f9521c54a8af6e392fc34ff9f3b4c6317510b9385a6d2f8049cec4a0:
+  - CPU 性能优化
+  - 体素地图内存优化
+
+756e61442648900cc2e9e50323adb18dd97640e9ae8ac3ac2431732276b43e26:
+  - CUDA GPU 加速
+  - GPU 点云处理
+  - CPU GPU 分流阈值
+
+a9946cf219a87e6f91886221040bad5984625a0ff6fa49821c95e87de82fb232:
+  - 鲁棒点云匹配
+  - 稀疏 GICP
+  - 自适应点云密度
+
+0a4b5876fe5be1c5c60e9418690d8fef256fe6c414468990a25d2091a2e867ab:
+  - Jetson 平台部署
+  - 嵌入式实时性测试
+  - 功耗与延迟测试
+  - TensorRT 并发运行
+
+0dea5c9b2d8e6de06dca4467fd529d23825181610f7dea0e45b864d00ae2c9da:
+  - ROS 2 Jazzy 支持计划
+  - 真实机器人精度测试
+
+181b1108a982636c9a4358506d0e81d9fb5b46e2e4a5d3a96f7804367dac7a81:
+  - 开源代码仓库
+  - GitHub 地址
+  - ROS1 Noetic 版本
+
+2f11d1778423eb02652935ed3a6aa4551e11231f746c209e4a936ebfaa5dcf42:
+  - 参考文献
+  - Point-LIO 论文引用
+
+b369b38cbac7675a4fd1e44de32e25325b8446c20fe323ddf0a3beee67f38dfd:
+  - FAR-LIO 论文引用
+  - 发布时间与许可协议
+
+36e69c4375d5365705fc52e61fb4d32f44769ca7b41d477d62ba1e33c926240d:
+  - 具身智能争议
+  - VLA 泡沫讨论
+  - 控制理论 vs 纯 CS 背景
+  - 机器人控制叙事批评
+
+a5c3fefa210ae9509031ca5b20a56ebbd2c213d0b9086cfeb184091e8f55d24b:
+  - VLA 是不是伪命题
+  - 纯 CS 背景做机器人控制
+  - 具身智能的认知误区
+  - 控制理论学习建议
+
+0ff58dc89ceae38254ecf50722a1a60a3f3d3b85a1f67134118e7205774e21bf:
+  - VLA 融资叙事批评
+  - 具身智能行业泡沫
+  - 端到端学习质疑
+
+392db2504387bf6b6074ce21b49b12abb90cbde95cb2c91154108ba330b6dbd0:
+  - VLA 的积极意义
+  - 端到端取代状态估计的说法
+  - 开放世界语义理解
+
+50dfc281e1b49180a031d96922ee04d4d1431da66a65d248d69911e682a1402a:
+  - 第一性原理的真正含义
+  - 牛顿欧拉方程 刚体动力学
+  - 可控性 可观测性 稳定性
+  - 马斯克式第一性原理批评
+
+12811a99e7204df1873ec8b1b0a02d530a7a6a129634d96446981653e2dacd8b:
+  - CS 与控制学科的边界
+  - 跨学科认知差异
+  - 不同专业的优势领域
+
+7855e5e9727ea5b77bf16577249e0534584a5dd4e27259cbef138467154e1803:
+  - 博客首页
+  - 文章列表
+
+8b3205819a34584b8d84bd21f62d32520535826dc696993bd422dfeb7880a870:
+  - 飞书文档
+  - 云文档
+  - 在线文档入口
+
+039bd508aa727cebeef9d9ee982cc86a7480686499d5620ae01bb3654a946f1c:
+  - Spark 思考
+  - 研究笔记
+  - 观点随笔
+
+49b2d962ba50c283b2a096e8f0821dc6d1b7c321f99ae7e48445e494da308c78:
+  - 论文笔记
+  - 文献阅读记录
+  - paper notes
