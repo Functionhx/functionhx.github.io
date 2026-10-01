@@ -366,6 +366,10 @@ def main() -> int:
             errors.append(f"{route}: usage monitor must not render on the homepage")
         if "https://functionhx.github.io/usage-agent/data/" in html:
             errors.append(f"{route}: usage monitor script must not load on the homepage")
+        # 训练进度卡片不发任何网络请求（纯本地按时间计算），但仍然要求懒加载脚本存在，
+        # 和 Contrail 卡片一样只在接近视口时启动计时器，首屏不跑动画。
+        if 'data-training-card' not in html or "/assets/js/training-card.js" not in html:
+            errors.append(f"{route}: Training progress card or its lazy loader is missing")
         if "https://github.com/Functionhx/magic-site-blueprint" not in html:
             errors.append(f"{route}: public Magic site architecture link missing")
         for required_asset in (

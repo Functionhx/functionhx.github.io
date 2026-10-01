@@ -1,0 +1,71 @@
+{% comment %}
+  首页的模型训练进度卡片，和 contrail-card.liquid 并排，复用同一套卡片视觉语言
+  （.usage-card / .usage-figure）。曲线和数字完全由浏览器按真实经过的时间在本地
+  计算，不发任何网络请求：同一时刻打开页面，所有访客看到的 step/loss/lr 都一致。
+  懒加载规则和 contrail-card 一样：接近视口才启动，离开视口暂停更新。
+{% endcomment %}
+<section class="function-usage" aria-labelledby="training-heading" data-training-card>
+  <h2 id="training-heading" class="sr-only">模型训练进度</h2>
+  <div class="usage-grid">
+    <div class="usage-card usage-stats">
+      <div class="usage-figure usage-figure--hero">
+        <span class="usage-figure-label">Loss</span>
+        <span class="usage-figure-value" data-training-field="loss">—</span>
+      </div>
+      <div class="usage-figure">
+        <span class="usage-figure-label">Step</span>
+        <span class="usage-figure-value" data-training-field="step">—</span>
+      </div>
+      <div class="training-minor-stats">
+        <div class="training-minor-stat">
+          <span class="training-minor-label">Tokens</span>
+          <span class="training-minor-value" data-training-field="tokens">—</span>
+        </div>
+        <div class="training-minor-stat">
+          <span class="training-minor-label">LR</span>
+          <span class="training-minor-value" data-training-field="lr">—</span>
+        </div>
+        <div class="training-minor-stat">
+          <span class="training-minor-label">GPU</span>
+          <span class="training-minor-value" data-training-field="gpu">—</span>
+        </div>
+        <div class="training-minor-stat">
+          <span class="training-minor-label">吞吐</span>
+          <span class="training-minor-value" data-training-field="throughput">—</span>
+        </div>
+      </div>
+      <div class="usage-footer">
+        <span>开始于 <span class="usage-footer-value" data-training-field="started">—</span></span>
+      </div>
+    </div>
+    <div class="usage-card usage-heatmap training-chart-card">
+      <div class="usage-heatmap-header">
+        <h3>Training Loss</h3>
+        <span>log step</span>
+      </div>
+      <div class="training-chart-wrap" data-training-chart-wrap>
+        <svg
+          class="training-chart"
+          data-training-loss-svg
+          viewBox="0 0 600 180"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label="训练 loss 曲线"
+        ></svg>
+        <div class="training-chart-tooltip" data-training-tooltip hidden></div>
+      </div>
+      <div class="training-lr-wrap">
+        <span class="training-lr-label">Learning rate</span>
+        <svg
+          class="training-lr-chart"
+          data-training-lr-svg
+          viewBox="0 0 600 40"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label="学习率曲线"
+        ></svg>
+      </div>
+    </div>
+  </div>
+</section>
+<script src="{{ '/assets/js/training-card.js' | relative_url | bust_file_cache }}" defer></script>
