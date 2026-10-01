@@ -1402,9 +1402,8 @@
   document.addEventListener("visibilitychange", () => {
     window.clearTimeout(titleTimer);
     if (document.hidden) {
-      titleTimer = window.setTimeout(() => {
-        if (document.hidden) document.title = AWAY_TITLE;
-      }, 1500);
+      // 立刻改：后台标签页里的定时器会被浏览器节流，延迟一改就要等好几秒才看得到。
+      document.title = AWAY_TITLE;
       return;
     }
     if (document.title !== AWAY_TITLE) return;
