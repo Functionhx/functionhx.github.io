@@ -29,6 +29,7 @@
     if (DENSITIES.has(source.navigation_density)) settings.navigation_density = source.navigation_density;
     if (Number.isFinite(source.wind_strength)) settings.wind_strength = Math.round(Math.min(Math.max(source.wind_strength, 0), 200));
     if (Number.isFinite(source.away_title_delay)) settings.away_title_delay = Math.round(Math.min(Math.max(source.away_title_delay, 0), 5000));
+    if (typeof source.training_card_visible === "boolean") settings.training_card_visible = source.training_card_visible;
     const eggs = source.eggs && typeof source.eggs === "object" ? source.eggs : null;
     if (eggs) {
       settings.eggs = {};
@@ -89,6 +90,9 @@
     if (settings.season_effect) {
       root.dataset.publishedSeasonEffect = settings.season_effect;
       window.functionhxSeasons?.set?.(settings.season_effect);
+    }
+    if (settings.training_card_visible !== undefined) {
+      root.dataset.publishedTrainingCardVisible = String(settings.training_card_visible);
     }
     window.dispatchEvent(new CustomEvent("functionhx:runtime-settings", { detail: { settings } }));
   }

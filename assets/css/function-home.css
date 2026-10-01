@@ -687,8 +687,13 @@ html[lang="zh-CN"][data-theme="dark"] .function-usage {
   background: var(--usage-level-4);
 }
 
-/* 训练进度卡片：复用上面 .usage-card / .usage-figure 的卡片语言，曲线颜色取全局
-   主题色（--global-theme-color），不新增调色板。 */
+/* 训练进度卡片：站长在设置面板关闭后，对所有访客隐藏（实时生效，见
+   site-preferences.liquid 里 data-published-training-card-visible 的写入）。 */
+html[data-published-training-card-visible="false"] [data-training-card] {
+  display: none;
+}
+/* 复用上面 .usage-card / .usage-figure 的卡片语言，曲线颜色取全局主题色
+   （--global-theme-color），不新增调色板。 */
 .training-minor-stats {
   display: flex;
   flex-wrap: wrap;

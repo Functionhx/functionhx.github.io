@@ -24,6 +24,8 @@
     const clampAwayDelay = (value) => Math.min(Math.max(Math.round(value), 0), 5000);
     const publishedAwayDelay = Number({{ site.data.site_ui.away_title_delay | default: 500 | jsonify }});
     root.dataset.publishedAwayTitleDelay = String(Number.isFinite(publishedAwayDelay) ? clampAwayDelay(publishedAwayDelay) : 500);
+    const publishedTrainingCardVisible = {{ site.data.site_ui.training_card_visible | default: true | jsonify }};
+    root.dataset.publishedTrainingCardVisible = String(publishedTrainingCardVisible !== false);
     // 站长在站点设置里改的外观会实时生效：runtime-settings.js 把最近一次取到的值存在本地，
     // 这里先用它，回访的访客一打开就是最新的，不会先闪一下构建时写死的旧值。
     try {
@@ -36,6 +38,7 @@
         if (Number.isFinite(live.wind_strength)) root.dataset.publishedWindStrength = String(Math.min(Math.max(live.wind_strength, 0), 200));
         if (Number.isFinite(live.away_title_delay)) root.dataset.publishedAwayTitleDelay = String(clampAwayDelay(live.away_title_delay));
         if (['auto', 'compact', 'relaxed'].includes(live.navigation_density)) root.dataset.navDensity = live.navigation_density;
+        if (typeof live.training_card_visible === 'boolean') root.dataset.publishedTrainingCardVisible = String(live.training_card_visible);
       }
     } catch (_error) {
       /* 读不到缓存就用构建时写进页面的值。 */

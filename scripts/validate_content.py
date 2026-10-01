@@ -185,6 +185,9 @@ def main() -> int:
         errors.append(
             f"_data/site_ui.yml: season_effect must be one of {sorted(SEASON_EFFECTS)}"
         )
+    # 首页训练进度卡片的显示开关，同样走实时发布。
+    if not isinstance(site_ui.get("training_card_visible"), bool):
+        errors.append("_data/site_ui.yml: training_card_visible must be true or false")
 
     # 首页彩蛋：公开线索开关，以及只含密文的信（暗号、密码、信的明文绝不能进仓库）。
     eggs_path = ROOT / "_data" / "eggs.yml"

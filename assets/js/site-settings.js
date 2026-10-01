@@ -121,6 +121,7 @@
   const windTest = document.getElementById("site-settings-wind-test");
   const awayInput = document.getElementById("site-settings-away-delay");
   const awayValue = document.getElementById("site-settings-away-delay-value");
+  const trainingCardVisibleInput = document.getElementById("site-settings-training-card-visible");
   const eggIds = ["turbo", "dog", "terminal", "fx", "love", "night", "idle", "console", "tab", "bottle", "archive", "letter"];
   let initialEggPublic = {};
   let publishedLetter = null;
@@ -149,6 +150,7 @@
     season: root.dataset.initialSeasonEffect,
     wind: Number(root.dataset.initialWindStrength ?? 100),
     away: Number(root.dataset.initialAwayTitleDelay ?? 500),
+    trainingCardVisible: root.dataset.initialTrainingCardVisible !== "false",
     eggPublic: { ...initialEggPublic },
     letter: publishedLetter,
   };
@@ -627,6 +629,14 @@
     return selectedAway() !== Number(root.dataset.initialAwayTitleDelay ?? 500);
   }
 
+  function selectedTrainingCardVisible() {
+    return trainingCardVisibleInput ? trainingCardVisibleInput.checked : root.dataset.initialTrainingCardVisible !== "false";
+  }
+
+  function trainingCardVisibleChanged() {
+    return selectedTrainingCardVisible() !== (root.dataset.initialTrainingCardVisible !== "false");
+  }
+
   function previewPersonalization(
     font = selectedFont(),
     copy = selectedLoadingCopy(),
@@ -657,6 +667,7 @@
       windChanged() ||
       awayChanged() ||
       navigationDensityChanged() ||
+      trainingCardVisibleChanged() ||
       eggsChanged() ||
       letterChanged()
     );
@@ -683,6 +694,7 @@
       wind_strength: selectedWind(),
       away_title_delay: selectedAway(),
       navigation_density: selectedNavigationDensity(),
+      training_card_visible: selectedTrainingCardVisible(),
       eggs: { public: publicMap, letter: sealedLetter || publishedLetter || null },
     };
   }
@@ -794,6 +806,7 @@
     root.dataset.initialWindStrength = String(settings.wind_strength);
     root.dataset.initialAwayTitleDelay = String(settings.away_title_delay);
     root.dataset.initialNavigationDensity = settings.navigation_density;
+    root.dataset.initialTrainingCardVisible = String(settings.training_card_visible);
     initialEggPublic = { ...settings.eggs.public };
     if (sealedLetter) {
       publishedLetter = sealedLetter;
@@ -812,12 +825,15 @@
     if (page.publishedSeasonEffect) root.dataset.initialSeasonEffect = page.publishedSeasonEffect;
     if (page.publishedWindStrength !== undefined) root.dataset.initialWindStrength = page.publishedWindStrength;
     if (page.publishedAwayTitleDelay !== undefined) root.dataset.initialAwayTitleDelay = page.publishedAwayTitleDelay;
+    if (page.publishedTrainingCardVisible !== undefined) root.dataset.initialTrainingCardVisible = page.publishedTrainingCardVisible;
     if (live.navigation_density) root.dataset.initialNavigationDensity = live.navigation_density;
+    if (typeof live.training_card_visible === "boolean") root.dataset.initialTrainingCardVisible = String(live.training_card_visible);
     if (live.eggs?.public) initialEggPublic = { ...initialEggPublic, ...live.eggs.public };
     if (live.eggs && "letter" in live.eggs) publishedLetter = live.eggs.letter;
     elements.font.value = root.dataset.initialSiteFont;
     elements.loadingCopy.value = root.dataset.initialLoadingCopy;
     checkSeason(root.dataset.initialSeasonEffect);
+    if (trainingCardVisibleInput) trainingCardVisibleInput.checked = root.dataset.initialTrainingCardVisible !== "false";
     if (windInput) windInput.value = root.dataset.initialWindStrength ?? "100";
     if (awayInput) awayInput.value = root.dataset.initialAwayTitleDelay ?? "500";
     navigationDensityInputs.forEach((input) => {
@@ -846,6 +862,7 @@
   function bakedDrift() {
     const liveWind = Number(root.dataset.initialWindStrength ?? 100);
     const liveAway = Number(root.dataset.initialAwayTitleDelay ?? 500);
+    const liveTrainingCardVisible = root.dataset.initialTrainingCardVisible !== "false";
     return (
       root.dataset.initialNavigationDensity !== baked.density ||
       root.dataset.initialSiteFont !== baked.font ||
@@ -853,6 +870,7 @@
       root.dataset.initialSeasonEffect !== baked.season ||
       liveWind !== baked.wind ||
       liveAway !== baked.away ||
+      liveTrainingCardVisible !== baked.trainingCardVisible ||
       eggIds.some((id) => (initialEggPublic[id] === true) !== (baked.eggPublic[id] === true)) ||
       JSON.stringify(publishedLetter || null) !== JSON.stringify(baked.letter || null)
     );
@@ -867,13 +885,15 @@
     const entries = [];
     const liveWind = Number(root.dataset.initialWindStrength ?? 100);
     const liveAway = Number(root.dataset.initialAwayTitleDelay ?? 500);
+    const liveTrainingCardVisible = root.dataset.initialTrainingCardVisible !== "false";
     const uiChanged =
       root.dataset.initialNavigationDensity !== baked.density ||
       root.dataset.initialSiteFont !== baked.font ||
       root.dataset.initialLoadingCopy !== baked.loadingCopy ||
       root.dataset.initialSeasonEffect !== baked.season ||
       liveWind !== baked.wind ||
-      liveAway !== baked.away;
+      liveAway !== baked.away ||
+      liveTrainingCardVisible !== baked.trainingCardVisible;
     if (uiChanged) {
       let source = await fetchFileAt(uiSettingsPath, headSha);
       if (root.dataset.initialNavigationDensity !== baked.density) source = setNavigationDensity(source, root.dataset.initialNavigationDensity);
@@ -882,6 +902,9 @@
       if (root.dataset.initialSeasonEffect !== baked.season) source = setSiteUiValue(source, "season_effect", root.dataset.initialSeasonEffect);
       if (liveWind !== baked.wind) source = setSiteUiValue(source, "wind_strength", String(liveWind));
       if (liveAway !== baked.away) source = setSiteUiValue(source, "away_title_delay", String(liveAway));
+      if (liveTrainingCardVisible !== baked.trainingCardVisible) {
+        source = setSiteUiValue(source, "training_card_visible", String(liveTrainingCardVisible));
+      }
       entries.push({ content: source, mode: "100644", path: uiSettingsPath, type: "blob" });
     }
     const eggsDiffer =
@@ -898,6 +921,7 @@
     baked.season = root.dataset.initialSeasonEffect;
     baked.wind = Number(root.dataset.initialWindStrength ?? 100);
     baked.away = Number(root.dataset.initialAwayTitleDelay ?? 500);
+    baked.trainingCardVisible = root.dataset.initialTrainingCardVisible !== "false";
     baked.eggPublic = { ...initialEggPublic };
     baked.letter = publishedLetter;
   }
@@ -1113,6 +1137,7 @@
     away_title_delay: /^(?:[0-9]|[1-9][0-9]{1,2}|[1-4][0-9]{3}|5000)$/,
     season_effect: /^(?:off|auto|snow|sakura|rain|leaves)$/,
     site_font: /^[a-z][a-z0-9-]{1,40}$/,
+    training_card_visible: /^(?:true|false)$/,
   });
 
   function setSiteUiValue(source, key, value) {

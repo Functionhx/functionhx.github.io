@@ -112,6 +112,7 @@
     data-initial-season-effect="{{ site.data.site_ui.season_effect | default: 'off' | escape }}"
     data-initial-wind-strength="{{ site.data.site_ui.wind_strength | default: 100 | escape }}"
     data-initial-away-title-delay="{{ site.data.site_ui.away_title_delay | default: 500 | escape }}"
+    data-initial-training-card-visible="{{ site.data.site_ui.training_card_visible | default: true | escape }}"
     data-ui-settings-path="_data/site_ui.yml"
   >
     <header class="site-settings__header">
@@ -260,6 +261,23 @@
                 <button id="site-settings-wind-test" class="site-settings__button site-settings__button--quiet" type="button">试吹一阵</button>
               </div>
             </div>
+          </div>
+          <div class="site-settings__preference site-settings__preference--training-card">
+            <div>
+              <strong>模型训练进度卡片</strong>
+              <small>首页的 Loss/学习率曲线卡片；关闭后对所有访客隐藏</small>
+            </div>
+            <label class="site-settings__switch">
+              <span class="sr-only">显示模型训练进度卡片</span>
+              <input
+                id="site-settings-training-card-visible"
+                type="checkbox"
+                {% if site.data.site_ui.training_card_visible != false %}
+                  checked
+                {% endif %}
+              >
+              <span aria-hidden="true"></span>
+            </label>
           </div>
         </div>
       </section>

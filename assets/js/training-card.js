@@ -216,9 +216,16 @@
     renderLrChart(data.step);
   }
 
+  // 站长在设置面板里关掉这张卡片是实时生效的（见 site-preferences.liquid /
+  // runtime-settings.js 写入的 data-published-training-card-visible）。CSS 已经按
+  // 这个属性隐藏了卡片本身，这里只是不浪费计时器去算一个看不见的图表。
+  function cardEnabled() {
+    return document.documentElement.dataset.publishedTrainingCardVisible !== "false";
+  }
+
   let timer = 0;
   function startTicking() {
-    if (timer) return;
+    if (timer || !cardEnabled()) return;
     render();
     timer = window.setInterval(render, 1000);
   }
@@ -232,6 +239,10 @@
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) stopTicking();
     else if (card.getAttribute("data-training-visible") === "true") startTicking();
+  });
+  window.addEventListener("functionhx:runtime-settings", () => {
+    if (!cardEnabled()) stopTicking();
+    else if (card.getAttribute("data-training-visible") === "true" && !document.hidden) startTicking();
   });
 
   // 开发/测试用的只读接口：给定任意时间戳算出当时的数字，不依赖计时器或 DOM。
