@@ -5,7 +5,8 @@
   // 已验证的站长点齿轮直接打开站点设置（由 site-settings.js 处理）。
   // 彩蛋：Turbo（长按主题按钮，turbo-mode.js）、机器狗（↑↑↓↓←→←→BA）、终端（` 键）、
   // f(x)（首页连点 ƒ 五下，ƒ 依次求导：ƒ′ ƒ″ ∂ƒ ?）、追到最后（追逐曲线连追上三个问号，画出爱心和 LOVE）、
-  // 404 漂流瓶（不同的错误地址各捡一个，三个拼成一张）、一封信（暗号拿到信封，六位密码拆信）。
+  // 404 漂流瓶（不同的错误地址各捡一个，三个拼成一张）、页面考古（点文章的发布日期）、
+  // 机器狗跑满三趟会没电（拖插头到充电口，或开 Turbo）、一封信（暗号拿到信封，六位密码拆信）。
 
   const root = document.documentElement;
   const configNode = document.getElementById("function-eggs-config");
@@ -31,6 +32,7 @@
     { id: "console", icon: "🛠️", name: "控制台", hint: "开发者工具里，也有人在等你。" },
     { id: "tab", icon: "👀", name: "标签页", hint: "切到别的标签页，再回来看看。" },
     { id: "bottle", icon: "🍾", name: "漂流瓶", hint: "走丢的时候，失物招领处也许有人留了东西。迷路不止一次的话。" },
+    { id: "archive", icon: "🕰️", name: "页面考古", hint: "一篇文章的发布日期，也许可以点一点。" },
     { id: "letter", icon: "✉️", name: "一封信", hint: "只有一个人知道暗号。", phrase: true },
   ];
   const publicHints = config.public && typeof config.public === "object" ? config.public : {};
@@ -382,18 +384,185 @@
     <g class="egg-legs-b" fill="#2b2733"><rect x="15" y="18" width="3" height="8"/><rect x="27" y="18" width="3" height="8"/><rect x="15" y="26" width="5" height="2"/><rect x="27" y="26" width="5" height="2"/></g>
   </svg>`;
 
+  // 机器狗的电量：跑满三趟就没电，趴在角落等你充电（把插头拖到充电口，或者打开 Turbo 模式）。
+  // 计数只记在这次浏览会话里；Turbo 开着时它有用不完的电。
+  const DOG_MAX_RUNS = 3;
+  const DOG_RUNS_KEY = "functionhx:eggs:dog-runs";
+  let dogRunsMemory = 0;
+  const readDogRuns = () => {
+    try {
+      return Math.min(Math.max(Number(window.sessionStorage.getItem(DOG_RUNS_KEY)) || 0, 0), DOG_MAX_RUNS);
+    } catch (_error) {
+      return dogRunsMemory;
+    }
+  };
+  const writeDogRuns = (value) => {
+    dogRunsMemory = value;
+    try {
+      window.sessionStorage.setItem(DOG_RUNS_KEY, String(value));
+    } catch (_error) {
+      /* 存不下就只记在内存里。 */
+    }
+  };
+  const turboOn = () => root.dataset.turbo === "on";
+
   function runDog() {
     markFound("dog");
-    if (document.querySelector(".egg-dog-lane")) return;
+    if (document.querySelector(".egg-dog-lane, .egg-dog-rest")) return;
+    if (readDogRuns() >= DOG_MAX_RUNS && !turboOn()) {
+      restDog();
+      return;
+    }
+    let bubble = "汪！Turbo 供电中 ⚡";
+    let runs = 0;
+    if (!turboOn()) {
+      runs = readDogRuns() + 1;
+      writeDogRuns(runs);
+      bubble = `汪！电量 ${Math.round(((DOG_MAX_RUNS - runs) / DOG_MAX_RUNS) * 100)}%`;
+    } else {
+      writeDogRuns(0);
+    }
     const lane = document.createElement("div");
     lane.className = "egg-dog-lane";
     lane.setAttribute("aria-hidden", "true");
-    lane.innerHTML = `<div class="egg-dog">${DOG_SVG}<span class="egg-dog-bubble">汪！0 1 0 1</span></div>`;
+    lane.innerHTML = `<div class="egg-dog">${DOG_SVG}<span class="egg-dog-bubble">${bubble}</span></div>`;
     document.body.append(lane);
     const dog = lane.querySelector(".egg-dog");
-    const finish = () => lane.remove();
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      lane.remove();
+      if (runs >= DOG_MAX_RUNS && !turboOn()) restDog();
+    };
     dog.addEventListener("animationend", finish, { once: true });
     window.setTimeout(finish, 6000);
+  }
+
+  const PLUG_SVG = `<svg viewBox="0 0 30 30" aria-hidden="true"><rect x="9" y="2" width="3" height="9" rx="1" fill="currentColor"/><rect x="18" y="2" width="3" height="9" rx="1" fill="currentColor"/><rect x="6" y="10" width="18" height="11" rx="3" fill="currentColor"/><rect x="12" y="21" width="6" height="7" rx="1" fill="currentColor"/></svg>`;
+  const SOCKET_SVG = `<svg viewBox="0 0 38 38" aria-hidden="true"><rect x="2" y="2" width="34" height="34" rx="8" fill="none" stroke="currentColor" stroke-width="2"/><rect x="11" y="10" width="4" height="9" rx="1.5" fill="currentColor"/><rect x="23" y="10" width="4" height="9" rx="1.5" fill="currentColor"/><circle cx="19" cy="27" r="2.6" fill="currentColor"/></svg>`;
+
+  function restDog() {
+    if (document.querySelector(".egg-dog-rest")) return;
+    const rest = document.createElement("div");
+    rest.className = "egg-dog-rest";
+    rest.setAttribute("role", "group");
+    rest.setAttribute("aria-label", "没电的机器狗");
+    rest.innerHTML = `
+      <svg class="egg-dog-cable" aria-hidden="true"><path d=""/></svg>
+      <div class="egg-socket" aria-hidden="true">${SOCKET_SVG}</div>
+      <button class="egg-plug" type="button" aria-label="把插头拖到左边的充电口。键盘用户按回车直接插上">${PLUG_SVG}</button>
+      <div class="egg-dog-lying">${DOG_SVG}<span class="egg-dog-bubble">电量 0%……</span><span class="egg-dog-zzz" aria-hidden="true">z z z</span></div>`;
+    document.body.append(rest);
+    const plug = rest.querySelector(".egg-plug");
+    const socket = rest.querySelector(".egg-socket");
+    const bubble = rest.querySelector(".egg-dog-bubble");
+    const cable = rest.querySelector(".egg-dog-cable path");
+    const timers = [];
+    let charging = false;
+    let observer = null;
+    let drag = null;
+
+    const center = (node) => {
+      const box = node.getBoundingClientRect();
+      return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+    };
+    // 电缆从狗背上垂到插头，插头拖到哪儿，线就跟到哪儿。
+    const drawCable = () => {
+      const box = rest.getBoundingClientRect();
+      const plugCenter = center(plug);
+      const startX = box.width - 28;
+      const startY = box.height - 34;
+      const endX = plugCenter.x - box.left;
+      const endY = plugCenter.y - box.top;
+      cable.setAttribute("d", `M ${startX} ${startY} C ${startX - 70} ${startY + 30}, ${endX + 60} ${endY + 36}, ${endX} ${endY}`);
+    };
+
+    const finishCharging = (message) => {
+      if (charging) return;
+      charging = true;
+      observer?.disconnect();
+      socket.classList.add("is-on");
+      rest.classList.add("is-charging");
+      const steps = ["充电中 ▮▯▯", "充电中 ▮▮▯", "充电中 ▮▮▮"];
+      steps.forEach((text, index) => timers.push(window.setTimeout(() => (bubble.textContent = text), 250 + index * 550)));
+      timers.push(
+        window.setTimeout(
+          () => {
+            bubble.textContent = message;
+            rest.classList.add("is-awake");
+          },
+          250 + steps.length * 550
+        )
+      );
+      timers.push(
+        window.setTimeout(
+          () => {
+            window.removeEventListener("resize", drawCable);
+            rest.remove();
+            writeDogRuns(0);
+            runDog();
+          },
+          250 + steps.length * 550 + 1100
+        )
+      );
+    };
+
+    const plugIn = () => {
+      const target = center(socket);
+      const own = center(plug);
+      plug.style.transition = "transform 160ms ease-out";
+      plug.style.transform = `translate(${(drag?.dx || 0) + target.x - own.x}px, ${(drag?.dy || 0) + target.y - own.y}px)`;
+      drawCable();
+      finishCharging("满电！汪！");
+    };
+
+    plug.addEventListener("pointerdown", (event) => {
+      if (charging || event.button > 0) return;
+      event.preventDefault();
+      plug.setPointerCapture(event.pointerId);
+      plug.style.transition = "none";
+      drag = { x: event.clientX, y: event.clientY, dx: 0, dy: 0, moved: false };
+    });
+    plug.addEventListener("pointermove", (event) => {
+      if (!drag) return;
+      drag.dx = event.clientX - drag.x;
+      drag.dy = event.clientY - drag.y;
+      if (Math.hypot(drag.dx, drag.dy) > 4) drag.moved = true;
+      plug.style.transform = `translate(${drag.dx}px, ${drag.dy}px)`;
+      socket.classList.toggle("is-near", Math.hypot(center(plug).x - center(socket).x, center(plug).y - center(socket).y) < 54);
+      drawCable();
+    });
+    const release = () => {
+      if (!drag) return;
+      const near = Math.hypot(center(plug).x - center(socket).x, center(plug).y - center(socket).y) < 54;
+      const moved = drag.moved;
+      socket.classList.remove("is-near");
+      if (near && moved) {
+        plugIn();
+      } else {
+        // 没对准：插头弹回原位。
+        plug.style.transition = "transform 220ms ease-out";
+        plug.style.transform = "";
+        window.requestAnimationFrame(() => window.requestAnimationFrame(drawCable));
+        window.setTimeout(drawCable, 240);
+      }
+      drag = null;
+    };
+    plug.addEventListener("pointerup", release);
+    plug.addEventListener("pointercancel", release);
+    // 键盘或读屏用户：回车 / 空格（click 的 detail 为 0）直接插上；鼠标和触屏点一下不算，得拖过去。
+    plug.addEventListener("click", (event) => {
+      if (event.detail === 0 && !charging) plugIn();
+    });
+
+    // 打开 Turbo 模式也能把它「过载充电」。
+    observer = new MutationObserver(() => {
+      if (turboOn()) finishCharging("过载充电！⚡ 汪！");
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ["data-turbo"] });
+    window.requestAnimationFrame(drawCable);
+    window.addEventListener("resize", drawCable);
   }
 
   // ---------- 字体：打开彩蛋时才按需加载，加载不到就用系统字体 ----------
@@ -1592,6 +1761,178 @@
   resetIdle();
 
   // ---------- 控制台：给打开开发者工具的人 ----------
+  // ---------- 页面考古 ----------
+  // 点文章页上的发布日期，打开一个仿 Wayback Machine 的窗口，停在「那一天」网站所处的版本。
+  // 版本和提交都取自这个站点真实的 git 历史（哈希可以点开看）；预览图是按当时的设计风格画的示意，不是截图。
+  const REPO_COMMIT_URL = "https://github.com/Functionhx/functionhx.github.io/commit/";
+  const ARCHIVE = [
+    {
+      name: "Hugo + PaperMod",
+      start: "2026-06-14",
+      look: "list-white",
+      note: "最早的样子：用 Hugo 搭的博客，套着 PaperMod 主题，推送后由 GitHub Pages 自动部署。之后加了隐藏的编辑后台，页头改成两行。",
+      commits: [
+        ["53902ce", "2026-06-14", "初始化 Hugo 博客 + PaperMod 主题 + GitHub Pages 自动部署"],
+        ["0ee0c91", "2026-06-19", "加隐藏编辑后台 (Sveltia CMS)，零服务器"],
+        ["0eec28d", "2026-06-21", "顶部重构：顶端搜索框 + 居中导航（两行 header）"],
+      ],
+    },
+    {
+      name: "双语研究作品集",
+      start: "2026-07-16",
+      look: "grid-dark",
+      note: "改成中英双语的研究作品集首页，两天里先后试了苹果式的编辑风格和「液态玻璃」风格。",
+      commits: [
+        ["3926b4b", "2026-07-16", "add bilingual Hugo structure"],
+        ["26bebc8", "2026-07-16", "build research portfolio homepage"],
+        ["4fb1418", "2026-07-19", "adopt Apple-inspired editorial design"],
+        ["6d0fbf7", "2026-07-19", "build liquid glass portfolio experience"],
+      ],
+    },
+    {
+      name: "个人中心",
+      start: "2026-07-30",
+      look: "grid-light",
+      note: "同一天里先清空成一个空壳，再重做成「个人中心」，首页加了 Kaggle 进度卡片。",
+      commits: [
+        ["b1964cb", "2026-07-30", "reset site to empty bilingual shell"],
+        ["d203903", "2026-07-30", "rebuild site as personal hub"],
+        ["326c3f4", "2026-07-30", "add Kaggle progress card"],
+      ],
+    },
+    {
+      name: "al-folio",
+      start: "2026-07-31",
+      look: "split-purple",
+      note: "换到 Jekyll 和 al-folio 主题。先照着它的演示站完整搭了一遍，随后又恢复成 al-folio 的原版呈现。",
+      commits: [
+        ["5d949b6", "2026-07-31", "adopt bilingual al-folio portfolio"],
+        ["b91d2cd", "2026-07-31", "reproduce the full al-folio demo structure"],
+        ["a2c9dec", "2026-07-31", "Restore original al-folio presentation"],
+      ],
+    },
+    {
+      name: "Function 首页",
+      start: "2026-09-05",
+      look: "split-light",
+      note: "中文站重做成「Function」首页，用肖像打头的构图。",
+      commits: [
+        ["206ad01", "2026-09-05", "Redesign Chinese site with the Function homepage"],
+        ["f769308", "2026-09-05", "Give the Chinese homepage a portrait-led composition"],
+      ],
+    },
+    {
+      name: "报刊式暖白",
+      start: "2026-09-27",
+      look: "list-paper",
+      note: "首页与博客改成报刊式版面，全站换成暖白底和衬线标题。同一天，首页有了第一批彩蛋。",
+      commits: [
+        ["1c8e785", "2026-09-27", "首页与博客改为报刊式版面，全站换成暖白底和衬线标题"],
+        ["15a7729", "2026-09-27", "首页彩蛋、齿轮访客图鉴与「一封信」"],
+        ["d086c7d", "2026-09-27", "首页目录改为书目式索引，突出 GitHub"],
+      ],
+    },
+    {
+      name: "现在",
+      start: "2026-09-30",
+      look: "split-paper",
+      note: "外观设置不用发布就能生效、页面预渲染、新字体，还有你眼前的这些彩蛋。",
+      commits: [
+        ["5ad3683", "2026-09-30", "外观设置实时生效（运行时设置）、风力滑块"],
+        ["368cb35", "2026-09-30", "预渲染首页与博客，导航页提前进缓存"],
+        ["70bbd16", "2026-09-30", "站点字体新增 Anthropic Sans"],
+        ["b90e210", "2026-09-30", "新增彩蛋「追到最后」「404 漂流瓶」"],
+      ],
+    },
+  ];
+
+  function archiveEraAt(day) {
+    let index = 0;
+    ARCHIVE.forEach((era, position) => {
+      if (day && era.start <= day) index = position;
+    });
+    return index;
+  }
+
+  function archiveMock(look) {
+    return `<div class="egg-archive-mock egg-archive-mock--${look}" aria-hidden="true">
+      <b class="m-nav"></b><b class="m-hero"></b><b class="m-line"></b><b class="m-line"></b><b class="m-line m-short"></b>
+      <b class="m-card"></b><b class="m-card"></b><b class="m-card"></b>
+    </div>`;
+  }
+
+  function openArchive(day = "") {
+    markFound("archive");
+    if (document.querySelector(".egg-archive")) return;
+    loadFont("hand", "type");
+    const startIndex = day ? archiveEraAt(day) : ARCHIVE.length - 1;
+    const overlay = openOverlay(
+      "egg-fx-backdrop egg-archive-backdrop",
+      `<div class="egg-archive" role="document">
+        <div class="egg-archive-bar">
+          <span class="egg-archive-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="egg-archive-url">https://functionhx.github.io/</span>
+          <span class="egg-archive-captured"></span>
+          <button class="egg-archive-close" type="button" aria-label="关闭">×</button>
+        </div>
+        <ol class="egg-archive-timeline" aria-label="网站的版本时间线">${ARCHIVE.map(
+          (era, index) =>
+            `<li><button type="button" data-era="${index}" aria-pressed="false"><i aria-hidden="true"></i><time datetime="${era.start}">${era.start.slice(5).replace("-", ".")}</time></button></li>`
+        ).join("")}</ol>
+        <p class="egg-archive-banner egg-hand" role="status"></p>
+        <div class="egg-archive-body"></div>
+        <p class="egg-archive-foot egg-type">预览是按当时的设计风格画的示意，不是当时页面的截图；提交取自这个站点真实的 git 历史。</p>
+      </div>`,
+      "页面考古"
+    );
+    const body = overlay.querySelector(".egg-archive-body");
+    const banner = overlay.querySelector(".egg-archive-banner");
+    const captured = overlay.querySelector(".egg-archive-captured");
+    const buttons = [...overlay.querySelectorAll("[data-era]")];
+    let current = -1;
+    const show = (index) => {
+      current = Math.min(Math.max(index, 0), ARCHIVE.length - 1);
+      const era = ARCHIVE[current];
+      buttons.forEach((button, position) => button.setAttribute("aria-pressed", String(position === current)));
+      captured.textContent = `Captured ${era.start}`;
+      body.innerHTML = `${archiveMock(era.look)}
+        <div class="egg-archive-info">
+          <h3 class="egg-archive-name">${escapeHtml(era.name)}</h3>
+          <p class="egg-archive-note">${escapeHtml(era.note)}</p>
+          <ul class="egg-archive-commits">${era.commits
+            .map(
+              ([hash, date, title]) =>
+                `<li><a href="${REPO_COMMIT_URL}${hash}" target="_blank" rel="noopener noreferrer"><code>${hash}</code></a><time datetime="${date}">${date}</time><span>${escapeHtml(title)}</span></li>`
+            )
+            .join("")}</ul>
+        </div>`;
+    };
+    buttons.forEach((button) => button.addEventListener("click", () => show(Number(button.dataset.era))));
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        event.preventDefault();
+        show(current + (event.key === "ArrowRight" ? 1 : -1));
+        buttons[current]?.focus({ preventScroll: true });
+      }
+    });
+    overlay.querySelector(".egg-archive-close").addEventListener("click", () => overlay.egg.close());
+    if (day) {
+      banner.textContent = `你点的是 ${day} 的日期。那一天，这个网站是「${ARCHIVE[startIndex].name}」。`;
+    } else {
+      banner.textContent = "从 2026 年 6 月到现在，这个网站换过几次样子。";
+    }
+    show(startIndex);
+    buttons[startIndex]?.focus({ preventScroll: true });
+  }
+
+  // 文章页 hero 里的发布日期 / 更新日期可以点。
+  document.addEventListener("click", (event) => {
+    const time = event.target.closest?.(".post--article .post-meta time[datetime]");
+    if (!time) return;
+    const day = (time.getAttribute("datetime") || "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(day)) openArchive(day);
+  });
+
   // ---------- 404 漂流瓶 ----------
   // 页面不存在时，失物招领处会漂来一个瓶子；每个不同的错误地址捡到不同的一个，三个拼成完整的一张。
   // 进度只存在这台浏览器里（每个地址对应哪一个瓶子，换回来还是它），不上传任何东西。
@@ -1772,6 +2113,7 @@
     fx: showFunction,
     love: () => showFunction({ love: true }),
     bottle: showBottleNote,
+    archive: () => openArchive(""),
     night: showNight,
     idle: startScreensaver,
     console: showConsoleToast,

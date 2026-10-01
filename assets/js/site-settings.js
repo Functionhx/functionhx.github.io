@@ -121,7 +121,7 @@
   const windTest = document.getElementById("site-settings-wind-test");
   const awayInput = document.getElementById("site-settings-away-delay");
   const awayValue = document.getElementById("site-settings-away-delay-value");
-  const eggIds = ["turbo", "dog", "terminal", "fx", "love", "night", "idle", "console", "tab", "bottle", "letter"];
+  const eggIds = ["turbo", "dog", "terminal", "fx", "love", "night", "idle", "console", "tab", "bottle", "archive", "letter"];
   let initialEggPublic = {};
   let publishedLetter = null;
   try {

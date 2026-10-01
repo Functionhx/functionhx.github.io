@@ -1,7 +1,7 @@
 /* 隐藏彩蛋（assets/js/eggs.js）。颜色全部取自站点主题变量，深浅色自动跟随。 */
 
 /* 主题 main.css 给所有 span/div/p 设了正文颜色；彩蛋容器内改回继承，颜色由下面的类决定。 */
-:where(.egg-gallery, .egg-overlay, .egg-dog-lane) :where(p, h2, h3, div, span, strong, b, small, i, label) {
+:where(.egg-gallery, .egg-overlay, .egg-dog-lane, .egg-dog-rest) :where(p, h2, h3, div, span, strong, b, small, i, label) {
   color: inherit;
 }
 
@@ -1626,5 +1626,477 @@
 @media (prefers-reduced-motion: reduce) {
   .egg-bottle {
     transform: none;
+  }
+}
+
+/* ---------- 机器狗没电：趴下、插头与充电口 ---------- */
+.egg-dog-rest {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  z-index: 1095;
+  width: min(440px, calc(100vw - 24px));
+  height: 104px;
+  pointer-events: none;
+}
+.egg-dog-lying {
+  position: absolute;
+  right: 0;
+  bottom: 4px;
+  width: 104px;
+}
+.egg-dog-lying svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: grayscale(0.75);
+  opacity: 0.88;
+  transform: translateY(6px) scaleY(0.84);
+  transform-origin: bottom;
+  transition:
+    filter 0.4s,
+    opacity 0.4s,
+    transform 0.4s;
+}
+.egg-dog-lying .egg-legs-a,
+.egg-dog-lying .egg-legs-b {
+  display: none;
+}
+.egg-dog-rest.is-awake .egg-dog-lying svg {
+  filter: none;
+  opacity: 1;
+  transform: none;
+}
+.egg-dog-lying .egg-dog-bubble {
+  right: 0;
+  bottom: 58px;
+  left: auto;
+}
+.egg-dog-zzz {
+  position: absolute;
+  right: 86px;
+  bottom: 48px;
+  color: var(--global-text-color-light);
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  white-space: nowrap;
+  animation: egg-zzz 2.6s ease-in-out infinite;
+}
+.egg-dog-rest.is-charging .egg-dog-zzz {
+  display: none;
+}
+@keyframes egg-zzz {
+  50% {
+    opacity: 0.25;
+    transform: translateY(-5px);
+  }
+}
+.egg-dog-cable {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.egg-dog-cable path {
+  fill: none;
+  stroke: var(--global-text-color);
+  stroke-linecap: round;
+  stroke-width: 2.2;
+  opacity: 0.65;
+}
+.egg-plug {
+  position: absolute;
+  bottom: 12px;
+  left: calc(100% - 214px);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--global-text-color);
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+}
+.egg-plug:active {
+  cursor: grabbing;
+}
+.egg-plug:focus-visible {
+  border-radius: 6px;
+  outline: 2px solid var(--global-theme-color);
+  outline-offset: 3px;
+}
+.egg-plug svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.egg-socket {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  width: 38px;
+  height: 38px;
+  color: var(--global-text-color-light);
+  transition:
+    color 0.2s,
+    filter 0.2s;
+}
+.egg-socket svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.egg-socket.is-near {
+  color: var(--global-theme-color);
+}
+.egg-socket.is-on {
+  color: #e8a317;
+  filter: drop-shadow(0 0 6px rgba(255, 207, 92, 0.9));
+}
+@media (prefers-reduced-motion: reduce) {
+  .egg-dog-zzz {
+    animation: none;
+  }
+  .egg-dog-lying svg,
+  .egg-socket {
+    transition: none;
+  }
+}
+
+/* ---------- 页面考古：仿 Wayback Machine 的窗口 ---------- */
+.egg-archive-backdrop .egg-archive {
+  --arc-bg: #f6f6f4;
+  --arc-ink: #1f2933;
+  --arc-soft: #66707a;
+  --arc-line: #d8d9d6;
+  --arc-accent: #2a5db0;
+  width: min(760px, 100%);
+  max-height: min(86vh, 680px);
+  overflow: auto;
+  border: 1px solid var(--arc-line);
+  border-radius: 10px;
+  background: var(--arc-bg);
+  box-shadow: 0 24px 60px rgba(20, 20, 20, 0.45);
+  color: var(--arc-ink);
+}
+.egg-archive-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--arc-line);
+  background: #ecedea;
+}
+.egg-archive-dots {
+  display: flex;
+  gap: 6px;
+}
+.egg-archive-dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #c9cbc6;
+}
+.egg-archive-url {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 12px;
+  overflow: hidden;
+  border: 1px solid var(--arc-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--arc-soft);
+  font:
+    12px/1.4 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.egg-archive-captured {
+  color: var(--arc-soft);
+  font:
+    12px/1 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  white-space: nowrap;
+}
+.egg-archive-close {
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--arc-soft);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.egg-archive-timeline {
+  position: relative;
+  display: flex;
+  margin: 0;
+  padding: 16px 22px 6px;
+  list-style: none;
+}
+.egg-archive-timeline::before {
+  content: "";
+  position: absolute;
+  top: 25px;
+  right: 40px;
+  left: 40px;
+  height: 2px;
+  background: var(--arc-line);
+}
+.egg-archive-timeline li {
+  position: relative;
+  flex: 1;
+  margin: 0;
+  text-align: center;
+}
+.egg-archive-timeline button {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--arc-soft);
+  font:
+    11px/1 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  cursor: pointer;
+}
+.egg-archive-timeline button i {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--arc-soft);
+  border-radius: 50%;
+  background: var(--arc-bg);
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+}
+.egg-archive-timeline button[aria-pressed="true"] {
+  color: var(--arc-accent);
+}
+.egg-archive-timeline button[aria-pressed="true"] i {
+  border-color: var(--arc-accent);
+  background: var(--arc-accent);
+  transform: scale(1.25);
+}
+.egg-archive-timeline button:focus-visible {
+  border-radius: 6px;
+  outline: 2px solid var(--arc-accent);
+  outline-offset: 3px;
+}
+.egg-archive-banner {
+  margin: 8px 22px 0;
+  color: var(--arc-ink);
+  font-size: 19px;
+}
+.egg-archive-body {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 22px;
+  padding: 14px 22px 8px;
+}
+.egg-archive-name {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+.egg-archive-note {
+  margin: 0 0 12px;
+  color: var(--arc-soft);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.egg-archive-commits {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+.egg-archive-commits li {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 10px;
+  justify-content: start;
+  margin: 0;
+}
+.egg-archive-commits code {
+  color: var(--arc-accent);
+  font-size: 12px;
+}
+.egg-archive-commits time {
+  color: var(--arc-soft);
+  font-size: 12px;
+}
+.egg-archive-commits span {
+  grid-column: 1 / -1;
+  line-height: 1.5;
+}
+.egg-archive-foot {
+  margin: 8px 22px 16px;
+  color: var(--arc-soft);
+  font-size: 11px;
+  line-height: 1.6;
+}
+@media (max-width: 640px) {
+  .egg-archive-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .egg-archive-captured {
+    display: none;
+  }
+}
+
+/* 示意预览：七个版本各画一个小页面。 */
+.egg-archive-mock {
+  --m-bg: #fff;
+  --m-ink: #d3d6da;
+  --m-hero: #b8bec6;
+  --m-card: #eef0f2;
+  --m-radius: 3px;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: 10px;
+  border: 1px solid #d8d9d6;
+  border-radius: 6px;
+  background: var(--m-bg);
+  aspect-ratio: 16 / 11;
+}
+.egg-archive-mock b {
+  display: block;
+  border-radius: var(--m-radius);
+}
+.egg-archive-mock .m-nav {
+  height: 8px;
+  background: var(--m-ink);
+}
+.egg-archive-mock .m-hero {
+  height: 20px;
+  background: var(--m-hero);
+}
+.egg-archive-mock .m-line {
+  height: 6px;
+  background: var(--m-ink);
+}
+.egg-archive-mock .m-short {
+  width: 60%;
+}
+.egg-archive-mock .m-card {
+  display: none;
+  min-height: 34px;
+  background: var(--m-card);
+}
+.egg-archive-mock--list-white .m-hero {
+  width: 45%;
+  height: 12px;
+}
+.egg-archive-mock--grid-dark {
+  --m-bg: linear-gradient(135deg, #1b2440, #3b2a5c);
+  --m-ink: rgba(255, 255, 255, 0.32);
+  --m-hero: rgba(255, 255, 255, 0.55);
+  --m-card: rgba(255, 255, 255, 0.16);
+  --m-radius: 8px;
+  grid-template-columns: repeat(3, 1fr);
+}
+.egg-archive-mock--grid-light {
+  --m-bg: #f4f6f8;
+  --m-ink: #cbd2da;
+  --m-hero: #9aa6b4;
+  --m-card: #fff;
+  --m-radius: 8px;
+  grid-template-columns: repeat(3, 1fr);
+}
+.egg-archive-mock--grid-dark .m-nav,
+.egg-archive-mock--grid-dark .m-hero,
+.egg-archive-mock--grid-light .m-nav,
+.egg-archive-mock--grid-light .m-hero {
+  grid-column: 1 / -1;
+}
+.egg-archive-mock--grid-dark .m-line,
+.egg-archive-mock--grid-light .m-line {
+  display: none;
+}
+.egg-archive-mock--grid-dark .m-card,
+.egg-archive-mock--grid-light .m-card {
+  display: block;
+  min-height: 46px;
+  border: 1px solid rgba(160, 170, 185, 0.35);
+}
+.egg-archive-mock--split-purple,
+.egg-archive-mock--split-light,
+.egg-archive-mock--split-paper {
+  grid-template-columns: 38% 1fr;
+}
+.egg-archive-mock--split-purple .m-nav,
+.egg-archive-mock--split-light .m-nav,
+.egg-archive-mock--split-paper .m-nav {
+  grid-column: 1 / -1;
+}
+.egg-archive-mock--split-purple .m-hero,
+.egg-archive-mock--split-light .m-hero,
+.egg-archive-mock--split-paper .m-hero {
+  grid-row: 2 / span 3;
+  height: auto;
+  min-height: 70px;
+}
+.egg-archive-mock--split-purple {
+  --m-hero: #c7a0cf;
+  --m-ink: #e0d4e4;
+}
+.egg-archive-mock--split-purple .m-hero {
+  border-radius: 50%;
+  aspect-ratio: 1;
+  align-self: start;
+}
+.egg-archive-mock--split-light {
+  --m-bg: #faf9f6;
+  --m-hero: #cdbfae;
+  --m-radius: 10px;
+}
+.egg-archive-mock--list-paper,
+.egg-archive-mock--split-paper {
+  --m-bg: #faf9f5;
+  --m-ink: #d9d5ca;
+  --m-hero: #3b3a35;
+  --m-radius: 1px;
+}
+.egg-archive-mock--list-paper .m-hero {
+  width: 70%;
+  height: 16px;
+}
+.egg-archive-mock--split-paper {
+  --m-hero: #cfc8b8;
+}
+@media (prefers-color-scheme: dark) {
+  .egg-archive-backdrop .egg-archive {
+    --arc-bg: #1d1e1f;
+    --arc-ink: #e8eaec;
+    --arc-soft: #9aa3ab;
+    --arc-line: #34373a;
+    --arc-accent: #7aa7ff;
+  }
+  .egg-archive-bar {
+    background: #26282a;
+  }
+  .egg-archive-url {
+    background: #151617;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .egg-archive-timeline button i {
+    transition: none;
   }
 }

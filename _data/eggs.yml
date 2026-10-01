@@ -11,6 +11,7 @@ public:
   console: true
   tab: true
   bottle: true
+  archive: true
   letter: true
 letter:
   v: 2
