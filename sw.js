@@ -8,7 +8,7 @@ sitemap: false
  * - 带版本号的静态资源（/assets/…?v=内容哈希，以及 jsDelivr 上钉死版本的包）：本地优先。
  *   内容一变链接就变，所以命中缓存的一定是对的，不必再问服务器。
  * - 其它 /assets/ 下的文件（图片、字体、搜索索引）：先用缓存显示，同时在后台更新。
- * - 本站页面：优先取最新；网络 1.2 秒还没回来，就先给上次缓存的版本，后台照样更新。
+ * - 本站页面：优先取最新；网络 0.6 秒还没回来，就先给上次缓存的版本，后台照样更新。
  * - 其余一律不碰：同域名下别的项目（/contrail/ 等）、GitHub API、站长编辑与登录、非 GET 请求。
  *
  * 每次构建都会生成新的 VERSION，新 Service Worker 接管时清掉旧缓存。
@@ -18,7 +18,7 @@ const VERSION = "{{ site.time | date: '%Y%m%d%H%M%S' }}";
 const KILL_SWITCH = false;
 const STATIC_CACHE = `functionhx-static-${VERSION}`;
 const PAGE_CACHE = `functionhx-pages-${VERSION}`;
-const PAGE_TIMEOUT = 1200;
+const PAGE_TIMEOUT = 600;
 const MAX_PAGES = 60;
 const MAX_STATIC = 240;
 
@@ -141,6 +141,37 @@ self.addEventListener("message", (event) => {
           if (response.ok) await cache.put(url.href, response);
         } catch (_error) {
           // 预热失败没关系，下次用到时会再存。
+        }
+      }
+    })()
+  );
+});
+
+// 页面把导航栏里的站内页面发过来，提前存进页面缓存；已经存过的不重复取（访问时会照常更新）。
+self.addEventListener("message", (event) => {
+  if (event.origin && event.origin !== self.location.origin) return;
+  if (event.data?.type !== "warm-pages" || !Array.isArray(event.data.urls)) return;
+  const urls = event.data.urls
+    .slice(0, 12)
+    .map((value) => {
+      try {
+        return new URL(value, self.location.origin);
+      } catch (_error) {
+        return null;
+      }
+    })
+    .filter((url) => url && url.origin === self.location.origin && !url.search && ROUTES.has(normalizedPath(url)));
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(PAGE_CACHE);
+      for (const url of urls) {
+        url.hash = "";
+        if (await cache.match(url.href)) continue;
+        try {
+          const response = await fetch(url.href);
+          if (response.ok && response.type === "basic" && !response.redirected) await cache.put(url.href, response);
+        } catch (_error) {
+          // 预热失败没关系，点进去时会正常走网络。
         }
       }
     })()

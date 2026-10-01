@@ -34,5 +34,5 @@ overrides:
     gem_version: 1.0.12
     upstream_path: _layouts/default.liquid
     upstream_sha256: 4b713c35f7383692b99f4f1086123acbc3cb247e775a4cebe39985b5302fb9b2
-    local_sha256: d70cce1ddd702e8d5008cafb14c017e2f00d6c103667c0480a03bbb1318eb4fd
+    local_sha256: 891b9a364381c90b31e740dc70303af51e570ca73b330fd0ea3775291b173d22
     acknowledged_at: "2026-07-31"

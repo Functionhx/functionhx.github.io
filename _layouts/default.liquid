@@ -114,12 +114,27 @@
       }
     </style>
     <!--
-      站内链接：悬停约 200ms 后在后台预渲染目标页，点下去即时切换（Chromium 系浏览器）。
-      带查询参数的链接、新窗口、下载和站长专用入口不预渲染；其它浏览器仍由 navigation-performance.js 悬停预取。
+      预加载（Chromium 系浏览器）：
+      - 首页和博客是最常来回切换的两页：页面空闲后立刻在后台预渲染（当前所在的那页除外），点下去即时切换；
+      - 导航栏里的其它站内页面立刻预取；
+      - 其余站内链接悬停约 200ms 后预渲染。
+      带查询参数的链接、新窗口、下载和站长专用入口都不预渲染；其它浏览器仍由 navigation-performance.js 悬停预取。
     -->
+    {% assign speculation_here = page.url | replace: 'index.html', '' -%}
+    {% assign speculation_pages = '/|/blog/index.html' | split: '|' -%}
+    {% assign speculation_eager = '' | split: '' -%}
+    {% for speculation_page in speculation_pages -%}
+      {% assign speculation_normal = speculation_page | replace: 'index.html', '' -%}
+      {% unless speculation_normal == speculation_here -%}
+        {% assign speculation_eager = speculation_eager | push: speculation_page -%}
+      {% endunless -%}
+    {% endfor -%}
     <script type="speculationrules">
       {
         "prerender": [
+          {% if speculation_eager.size > 0 -%}
+          { "urls": ["{{ speculation_eager | join: '", "' }}"], "eagerness": "immediate" },
+          {% endif -%}
           {
             "where": {
               "and": [
@@ -134,6 +149,18 @@
               ]
             },
             "eagerness": "moderate"
+          }
+        ],
+        "prefetch": [
+          {
+            "where": {
+              "and": [
+                { "selector_matches": "#navbar a[href^='/']" },
+                { "not": { "href_matches": "/*\\?*" } },
+                { "not": { "selector_matches": "[target=_blank], [download], [data-no-prefetch], .owner-only-control, .owner-only-control *" } }
+              ]
+            },
+            "eagerness": "immediate"
           }
         ]
       }

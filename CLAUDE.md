@@ -158,7 +158,7 @@ first two run on the owner's Tencent Cloud server:
   registers the Service Worker.
 - `sw.js` (root, Liquid front matter, excluded from Prettier) caches versioned
   `/assets/…?v=` files cache-first, other `/assets/` files stale-while-revalidate,
-  and site pages network-first with a 1.2 s fallback to cache. It only touches
+  and site pages network-first with a 0.6 s fallback to cache, and pre-fetches the navbar pages into the page cache after load. It only touches
   routes listed at build time, so other projects under the same origin
   (`/contrail/` …) are untouched. Emergency stop: set `KILL_SWITCH = true` and
   deploy; per-browser debugging: `?sw=off` / `?sw=on`.

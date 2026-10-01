@@ -106,6 +106,12 @@
               return url.origin === window.location.origin && url.pathname.startsWith("/assets/") && url.searchParams.has("v");
             });
           if (urls.length) registration.active?.postMessage({ type: "warm", urls });
+          // 导航栏里的页面（含当前页，返回首页时用得上）也提前存好：首次点进博客等页面时不必等网络，慢网络下差别最明显。
+          const pages = [...document.querySelectorAll("#navbar a[href]")]
+            .map((anchor) => new URL(anchor.href, window.location.href))
+            .filter((url) => url.origin === window.location.origin && !url.search)
+            .map((url) => url.href);
+          if (pages.length) registration.active?.postMessage({ type: "warm-pages", urls: [...new Set(pages)] });
         });
       });
     }
