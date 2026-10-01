@@ -8,8 +8,12 @@
 # 显式 preload 由解析器自己处理，不依赖扫描器，HTML 一到全部资源就并行开始下载。
 #
 # - 样式表：本页阻塞渲染的同源样式表（没有 media 或 media 为空），优先级照常；
-# - 脚本：同源、没有 integrity/crossorigin 的外链脚本（preload 的请求模式必须和真正的请求一致才能复用），
-#   带 fetchpriority="low"，不和样式表、首屏图片抢带宽；
+# - 脚本：同源、没有 integrity/crossorigin 的外链脚本（preload 的请求模式必须和真正的请求一致才能复用）。
+#   defer/async 脚本带 fetchpriority="low"，不和样式表、首屏图片抢带宽；同步脚本保持默认优先级——它们
+#   会挡住解析器，必须尽快到。同步脚本保持同步是有意的：function.js 的入场动画、site-preferences.js 的
+#   字体等要在首帧前生效，改成 defer 会先画出完整页面再闪一下（实测首页 LCP 推迟约 1 s）。
+# - 首屏图片：页面里标了 fetchpriority="high" 的 <img>（首页头像）排在最前面高优先级预加载，
+#   否则它要和上面这些资源抢带宽，LCP 反而变慢；
 # - 写在 CSP <meta> 及其事件代理脚本之后，所以预加载同样受 CSP 约束。
 # 必须在 css_bundles.rb 之后运行（文件名按字母序加载，preload_hints 在 css_bundles 之后注册）。
 module Functionhx
@@ -27,6 +31,15 @@ module Functionhx
       return html unless head_end && anchor
 
       hints = []
+      html.scan(/<img\b[^>]*\bfetchpriority=["']high["'][^>]*>/i) do |tag|
+        href = same_origin(tag[/\bsrc=["']([^"']+)["']/i, 1])
+        next unless href
+
+        srcset = tag[/\bsrcset=["']([^"']+)["']/i, 1]
+        sizes = tag[/\bsizes=["']([^"']+)["']/i, 1]
+        responsive = srcset ? %( imagesrcset="#{srcset}"#{%( imagesizes="#{sizes}") if sizes}) : ""
+        hints << %(<link rel="preload" href="#{href}" as="image"#{responsive} fetchpriority="high" #{MARKER}>)
+      end
       html[0...head_end].scan(/<link\b[^>]*>/i) do |tag|
         next unless tag.match?(/\brel=["']?stylesheet\b/i)
         next if tag.match?(/\bmedia=["'](?!["'])/i) || tag.match?(/\s(?:integrity|crossorigin|disabled)\b/i)
@@ -38,7 +51,10 @@ module Functionhx
         next if tag.match?(/\s(?:integrity|crossorigin|nomodule)\b|type=["']?module/i)
 
         href = same_origin(tag[/\bsrc=["']([^"']+)["']/i, 1])
-        hints << %(<link rel="preload" href="#{href}" as="script" fetchpriority="low" #{MARKER}>) if href
+        next unless href
+
+        priority = tag.match?(/\s(?:defer|async)\b/i) ? ' fetchpriority="low"' : ""
+        hints << %(<link rel="preload" href="#{href}" as="script"#{priority} #{MARKER}>)
       end
       return html if hints.empty?
 

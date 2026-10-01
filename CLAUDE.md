@@ -189,9 +189,10 @@ first two run on the owner's Tencent Cloud server:
   the CSP plugin's delegated listener flips them to `all` once loaded.
 - A CSP `<meta>` stops Chrome's preload scanner, so every parser-blocking script used to cost one
   round trip in series (≈4 s DOMContentLoaded at GitHub Pages latency, and the page loader stays up
-  until DOMContentLoaded). Hence: all body scripts are `defer` (keep it that way; document order
-  is the dependency order), and `_plugins/preload_hints.rb` writes `<link rel="preload">` for the
-  page's same-origin stylesheets and scripts at the top of `<head>`.
+  until DOMContentLoaded). `_plugins/preload_hints.rb` therefore writes `<link rel="preload">` for
+  the page's same-origin stylesheets and scripts at the top of `<head>`. Do not "fix" this by making
+  the body scripts `defer`: `function.js` (hero reveal) and `site-preferences.js` (font) must run
+  before first paint, otherwise the page paints fully and then flashes.
 - `eggs.js` times the "在等你回来" tab title in `away-timer-worker.js`: main-thread timers in a
   background tab are aligned to ~1 s, so a 0.5 s setting would show after 1 s. It must stay a
   same-origin file (the site CSP allows workers only from `'self'`) and the
