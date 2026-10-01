@@ -161,6 +161,10 @@ spark_vault:
 feishu_documents:
   endpoint: https://functionhx-spark-vault.functionhx.workers.dev
 
+# 首页「一封信」彩蛋的发信服务（letter-mailer/，Cloudflare Worker）。
+letter_mailer:
+  endpoint: https://functionhx-letter.functionhx.workers.dev
+
 # -----------------------------------------------------------------------------
 # Newsletter
 # -----------------------------------------------------------------------------

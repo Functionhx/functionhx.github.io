@@ -27,6 +27,7 @@ LANGUAGES = {"zh"}
 # 站长可选的站点字体与加载文案；与 site-preferences.liquid / site-preferences.js 保持一致。
 SITE_FONTS = {"system", "anthropic-serif", "anthropic-sans", "dyslexic"}
 LOADING_COPY = {"thinking", "loading", "thinking-zh", "loading-zh"}
+SEASON_EFFECTS = {"off", "auto", "snow", "sakura", "rain", "leaves"}
 
 REQUIRED_ROUTES = {
     "home": {"/"},
@@ -171,6 +172,43 @@ def main() -> int:
         errors.append(
             f"_data/site_ui.yml: loading_copy must be one of {sorted(LOADING_COPY)}"
         )
+    # 风力是 0–200 的整数百分比（站长在站点设置里调）。
+    wind = site_ui.get("wind_strength")
+    if not isinstance(wind, int) or isinstance(wind, bool) or not 0 <= wind <= 200:
+        errors.append("_data/site_ui.yml: wind_strength must be an integer from 0 to 200")
+    # 季节氛围同样由站长发布（2026-09-27）。
+    if site_ui.get("season_effect") not in SEASON_EFFECTS:
+        errors.append(
+            f"_data/site_ui.yml: season_effect must be one of {sorted(SEASON_EFFECTS)}"
+        )
+
+    # 首页彩蛋：公开线索开关，以及只含密文的信（暗号、密码、信的明文绝不能进仓库）。
+    eggs_path = ROOT / "_data" / "eggs.yml"
+    try:
+        eggs = yaml.safe_load(eggs_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as error:
+        errors.append(f"_data/eggs.yml: {error}")
+        eggs = {}
+    egg_ids = {"turbo", "dog", "terminal", "fx", "night", "idle", "console", "tab", "letter"}
+    public = eggs.get("public") if isinstance(eggs, dict) else None
+    if not isinstance(public, dict) or set(public) != egg_ids or not all(
+        isinstance(value, bool) for value in public.values()
+    ):
+        errors.append(f"_data/eggs.yml: public must map exactly {sorted(egg_ids)} to true/false")
+    letter = eggs.get("letter") if isinstance(eggs, dict) else None
+    if letter is not None:
+        base64_value = re.compile(r"^[A-Za-z0-9+/=]+$")
+        if (
+            not isinstance(letter, dict)
+            or set(letter) != {"v", "salt", "iv", "data"}
+            or letter.get("v") != 2
+            or not all(isinstance(letter.get(key), str) and base64_value.match(letter[key]) for key in ("salt", "iv", "data"))
+        ):
+            errors.append("_data/eggs.yml: letter must be empty or a v2 ciphertext {v, salt, iv, data}")
+    eggs_text = eggs_path.read_text(encoding="utf-8") if eggs_path.exists() else ""
+    for plaintext_key in ("phrase:", "pin:", "text:", "title:"):
+        if plaintext_key in eggs_text:
+            errors.append(f"_data/eggs.yml: plaintext field {plaintext_key!r} must never be committed")
 
     socials_path = ROOT / "_data" / "socials.yml"
     try:

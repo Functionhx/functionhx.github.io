@@ -952,3 +952,188 @@ html[data-theme="dark"] .site-settings__footer > p[data-state="success"] {
     display: none;
   }
 }
+
+/* 彩蛋：公开线索开关与写信 */
+.site-settings__egg-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.site-settings__egg-list label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--function-wash, var(--global-code-bg-color));
+  font-size: 14px;
+  cursor: pointer;
+}
+.site-settings__egg-list input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--global-theme-color);
+}
+.site-settings__letter {
+  margin-top: 14px;
+}
+.site-settings__letter summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.site-settings__letter summary small {
+  color: var(--global-text-color-light);
+  font-weight: 400;
+}
+.site-settings__letter-note {
+  margin: 10px 0 12px;
+  color: var(--global-text-color-light);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.site-settings__letter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  margin-bottom: 12px;
+}
+.site-settings__letter-grid label {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  color: var(--global-text-color-light);
+  font-size: 13px;
+}
+.site-settings__letter-grid .site-settings__letter-wide {
+  grid-column: 1 / -1;
+}
+.site-settings__letter-grid input,
+.site-settings__letter-grid textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 10px;
+  background: var(--global-bg-color);
+  color: var(--global-text-color);
+  font: inherit;
+  font-size: 14px;
+}
+.site-settings__letter-grid textarea {
+  resize: vertical;
+  line-height: 1.7;
+}
+.site-settings__letter-status {
+  min-height: 1.4em;
+  margin: 8px 0 0;
+  color: var(--global-text-color-light);
+  font-size: 13px;
+}
+@media (max-width: 560px) {
+  .site-settings__letter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 季节氛围：分段选择器 */
+.site-settings__preference--season {
+  flex-wrap: wrap;
+}
+.site-settings__preference--season > div:first-child {
+  flex: 1 1 100%;
+}
+.site-settings__segmented {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  margin-top: 10px;
+  border-radius: 14px;
+  background: var(--function-wash, rgba(0, 0, 0, 0.05));
+}
+.site-settings__segmented label {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 72px;
+  margin: 0;
+  cursor: pointer;
+}
+.site-settings__segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.site-settings__segmented span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: var(--global-text-color-light);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+.site-settings__segmented svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.site-settings__segmented label:hover span {
+  color: var(--global-text-color);
+}
+.site-settings__segmented input:checked + span {
+  background: var(--global-card-bg-color, #fff);
+  color: var(--global-text-color);
+  box-shadow: 0 1px 4px rgba(20, 20, 19, 0.12);
+}
+.site-settings__segmented input:focus-visible + span {
+  outline: 2px solid var(--global-theme-color);
+  outline-offset: 1px;
+}
+
+/* 风力滑块 */
+.site-settings__preference--wind {
+  flex-wrap: wrap;
+}
+.site-settings__wind {
+  display: flex;
+  flex: 1 1 100%;
+  gap: 12px;
+  align-items: center;
+  margin-top: 10px;
+}
+.site-settings__wind input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--global-theme-color);
+}
+.site-settings__wind output {
+  min-width: 3.2em;
+  color: var(--global-text-color-light);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.site-settings__wind .site-settings__button {
+  flex: none;
+  padding-block: 6px;
+}

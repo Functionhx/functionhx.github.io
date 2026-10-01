@@ -160,7 +160,7 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
 }
 :is(.post--article .post-title, .post-paper__title) {
   color: var(--post-ink);
-  font-family: var(--post-sans);
+  font-family: var(--function-serif, var(--post-sans));
   font-size: clamp(27px, 19.8px + 1vw, 36px);
   font-weight: 500;
   letter-spacing: 0;

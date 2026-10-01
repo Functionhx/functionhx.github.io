@@ -28,8 +28,22 @@
     return Object.hasOwn(loadingCopy, value) ? value : "thinking";
   }
 
+  // Roboto、Roboto Slab、Atkinson Hyperlegible 来自 Google Fonts：只有选了这些字体才加载，
+  // 系统字体用不到它（国内也常常连不上），构建时已把它从 <head> 里拿掉，换成一个 <meta> 记着地址。
+  function ensureFontStylesheet(font) {
+    if (font === "system" || document.querySelector("link[data-google-fonts]")) return;
+    const href = document.querySelector('meta[name="functionhx:google-fonts"]')?.content;
+    if (!href) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.dataset.googleFonts = "";
+    document.head.append(link);
+  }
+
   function setFont(value) {
     const font = supportedFonts.has(value) ? value : "system";
+    ensureFontStylesheet(font);
     root.dataset.siteFont = font;
     window.dispatchEvent(new CustomEvent("functionhx:font-changed", { detail: { font } }));
     return font;
@@ -158,6 +172,7 @@
   document.querySelectorAll("[data-loading-placeholder]").forEach((element) => {
     element.textContent = loadingCopy[root.dataset.loadingCopy];
   });
+  ensureFontStylesheet(publishedFont());
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", hideLoading, { once: true });
   else hideLoading();
 })();

@@ -3,6 +3,7 @@
     const root = document.documentElement;
     const supportedFonts = new Set(['anthropic-serif', 'anthropic-sans', 'system', 'dyslexic']);
     const supportedLoadingCopy = new Set(['thinking', 'loading', 'thinking-zh', 'loading-zh']);
+    const supportedSeasonEffects = new Set(['off', 'auto', 'snow', 'sakura', 'rain', 'leaves']);
     root.classList.add('js');
     const loaderState = window.functionhxPageLoaderState || { hideTimer: 0, showTimer: 0, visibleAt: 0 };
     window.functionhxPageLoaderState = loaderState;
@@ -16,6 +17,25 @@
     const publishedLoadingCopy = {{ site.data.site_ui.loading_copy | default: 'thinking' | jsonify }};
     root.dataset.publishedSiteFont = supportedFonts.has(publishedFont) ? publishedFont : 'system';
     root.dataset.publishedLoadingCopy = supportedLoadingCopy.has(publishedLoadingCopy) ? publishedLoadingCopy : 'thinking';
+    const publishedSeasonEffect = {{ site.data.site_ui.season_effect | default: 'off' | jsonify }};
+    root.dataset.publishedSeasonEffect = supportedSeasonEffects.has(publishedSeasonEffect) ? publishedSeasonEffect : 'off';
+    const publishedWind = Number({{ site.data.site_ui.wind_strength | default: 100 | jsonify }});
+    root.dataset.publishedWindStrength = String(Number.isFinite(publishedWind) ? Math.min(Math.max(publishedWind, 0), 200) : 100);
+    // 站长在站点设置里改的外观会实时生效：runtime-settings.js 把最近一次取到的值存在本地，
+    // 这里先用它，回访的访客一打开就是最新的，不会先闪一下构建时写死的旧值。
+    try {
+      const cached = JSON.parse(window.localStorage.getItem('functionhx:runtime-settings:v1') || 'null');
+      const live = cached && cached.settings;
+      if (live) {
+        if (supportedFonts.has(live.site_font)) root.dataset.publishedSiteFont = live.site_font;
+        if (supportedLoadingCopy.has(live.loading_copy)) root.dataset.publishedLoadingCopy = live.loading_copy;
+        if (supportedSeasonEffects.has(live.season_effect)) root.dataset.publishedSeasonEffect = live.season_effect;
+        if (Number.isFinite(live.wind_strength)) root.dataset.publishedWindStrength = String(Math.min(Math.max(live.wind_strength, 0), 200));
+        if (['auto', 'compact', 'relaxed'].includes(live.navigation_density)) root.dataset.navDensity = live.navigation_density;
+      }
+    } catch (_error) {
+      /* 读不到缓存就用构建时写进页面的值。 */
+    }
     root.dataset.siteFont = root.dataset.publishedSiteFont;
     root.dataset.loadingCopy = root.dataset.publishedLoadingCopy;
     try {

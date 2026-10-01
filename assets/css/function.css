@@ -1,16 +1,24 @@
-/* The approved Function design, applied only to Chinese pages. */
+/* The approved Function design, applied only to Chinese pages.
+   暖白纸色底、近黑正文、衬线标题；ƒ 的紫色只留给标识、链接和当前位置。 */
 html[lang="zh-CN"] {
   color-scheme: light;
-  --global-bg-color: #fff;
-  --global-text-color: #17171c;
-  --global-text-color-light: #4f4c56;
+  --global-bg-color: #faf9f5;
+  --global-text-color: #141413;
+  --global-text-color-light: #5e5d59;
   --global-theme-color: #6434b2;
   --global-hover-color: #6434b2;
-  --global-divider-color: #d9d6dd;
-  --global-card-bg-color: #fff;
-  --global-code-bg-color: #f5f3f7;
-  --function-wash: #f0eaf8;
-  --function-mark: #bba2da;
+  --global-divider-color: #e6e3d9;
+  --global-card-bg-color: #fdfcf9;
+  --global-code-bg-color: #f0eee6;
+  --function-wash: #f0eee6;
+  --function-mark: #d8cdea;
+  --function-serif: "Source Serif 4", "Noto Serif SC", "Source Han Serif SC", "Songti SC", STSong, serif;
+  --function-ink: #141413;
+  --function-art-terracotta: #d97757;
+  --function-art-sky: #6a9bcc;
+  --function-art-olive: #7d8c5e;
+  --function-art-lavender: #cbc8dd;
+  --function-art-sand: #d9c4a3;
   --site-nav-gap: clamp(14px, 1.7vw, 24px);
   scroll-padding-top: 116px;
   scroll-behavior: smooth;
@@ -27,30 +35,32 @@ html[lang="zh-CN"][data-site-font="system"] {
 }
 html[lang="zh-CN"][data-theme="dark"] {
   color-scheme: dark;
-  --global-bg-color: #19191d;
-  --global-text-color: #f6f4f8;
-  --global-text-color-light: #c5bfd0;
+  --global-bg-color: #1f1e1d;
+  --global-text-color: #f0efe8;
+  --global-text-color-light: #b9b6ab;
   --global-theme-color: #c5a2ff;
   --global-hover-color: #c5a2ff;
-  --global-divider-color: #45424b;
-  --global-card-bg-color: #19191d;
-  --global-code-bg-color: #26222b;
-  --function-wash: #26222b;
-  --function-mark: #80698e;
+  --global-divider-color: #3a3935;
+  --global-card-bg-color: #262624;
+  --global-code-bg-color: #2b2a27;
+  --function-wash: #2b2a27;
+  --function-mark: #5d4d78;
+  --function-ink: #f0efe8;
 }
 @media (prefers-color-scheme: dark) {
   html[lang="zh-CN"]:not([data-theme]) {
     color-scheme: dark;
-    --global-bg-color: #19191d;
-    --global-text-color: #f6f4f8;
-    --global-text-color-light: #c5bfd0;
+    --global-bg-color: #1f1e1d;
+    --global-text-color: #f0efe8;
+    --global-text-color-light: #b9b6ab;
     --global-theme-color: #c5a2ff;
     --global-hover-color: #c5a2ff;
-    --global-divider-color: #45424b;
-    --global-card-bg-color: #19191d;
-    --global-code-bg-color: #26222b;
-    --function-wash: #26222b;
-    --function-mark: #80698e;
+    --global-divider-color: #3a3935;
+    --global-card-bg-color: #262624;
+    --global-code-bg-color: #2b2a27;
+    --function-wash: #2b2a27;
+    --function-mark: #5d4d78;
+    --function-ink: #f0efe8;
   }
   html[lang="zh-CN"]:not([data-theme]) .social .contact-icons .fa-github::before {
     color: #f0f6fc !important;
@@ -146,25 +156,32 @@ html[data-function-scrolled="true"] .function-page #navbar {
   align-items: center;
   min-height: 40px;
   padding: 8px 0;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--global-text-color);
-  font-weight: 500;
+  font-weight: 400;
   white-space: nowrap;
   text-decoration: none;
   transition: color 160ms ease;
 }
-.function-page #navbar .navbar-menu-list .active > .nav-link,
 .function-page #navbar .navbar-menu-list .nav-link:hover {
-  color: var(--global-theme-color);
+  color: var(--global-text-color-light);
+}
+.function-page #navbar .navbar-menu-list .active > .nav-link {
+  color: var(--global-text-color);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 8px;
 }
 .function-wordmark,
 .function-mobile-brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: var(--global-text-color);
-  font-size: 14px;
-  font-weight: 600;
+  font-family: var(--function-serif);
+  font-size: 23px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 .function-wordmark > span,
 .function-mobile-brand > span {
@@ -417,9 +434,10 @@ html[data-function-scrolled="true"] .function-page #navbar {
   margin-bottom: 38px;
 }
 .function-page .post-header:not(.post-hero) .post-title {
-  font-size: clamp(34px, 4.5vw, 52px);
-  font-weight: 650;
-  letter-spacing: -0.04em;
+  font-family: var(--function-serif);
+  font-size: clamp(38px, 5vw, 60px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
 }
 .function-page .post-header:not(.post-hero) .post-description {
   max-width: 740px;
@@ -664,4 +682,94 @@ html[data-function-scrolled="true"] .function-page #navbar {
     display: inline-block;
     margin-top: 12px;
   }
+}
+
+/* 标题统一用衬线体（对话框、设置面板等界面文字不受影响）。 */
+/* 用 :where 把优先级压到最低，各组件可以用普通类名覆盖。 */
+:where(.function-page [role="main"]) :where(h1, h2):where(:not(dialog *, .egg-overlay *)) {
+  font-family: var(--function-serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* 通用按钮：实心黑与描边两种，首页与博客共用。 */
+.function-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--function-ink);
+  border-radius: 10px;
+  background: var(--function-ink);
+  color: var(--global-bg-color) !important;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none !important;
+  transition:
+    transform 160ms ease,
+    opacity 160ms ease;
+}
+.function-button:hover {
+  opacity: 0.86;
+}
+.function-button:active {
+  transform: translateY(1px);
+}
+.function-button--ghost {
+  border-color: var(--global-divider-color);
+  background: transparent;
+  color: var(--global-text-color) !important;
+}
+.function-button--ghost:hover {
+  border-color: var(--global-text-color-light);
+  opacity: 1;
+}
+
+/* 季节氛围画布（assets/js/atmosphere.js）：盖在正文上方、导航栏下方，不挡任何点击。 */
+.season-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transition: opacity 450ms ease;
+  animation: season-in 900ms ease both;
+}
+.season-canvas.is-leaving {
+  opacity: 0;
+}
+@keyframes season-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* 日夜切换：关掉默认的整页淡入淡出，由脚本让新主题从按钮处圆形扩散。 */
+html.is-theme-revealing::view-transition-old(root),
+html.is-theme-revealing::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html.is-theme-revealing::view-transition-new(root) {
+  z-index: 1;
+}
+/* 季节氛围在切换主题时单独成一层、叠在最上面实时飘落：圆圈外的旧画面是静态截图，
+   落叶一直在动，画面就不会像定格一样。 */
+html.is-theme-revealing .season-canvas {
+  view-transition-name: season-canvas;
+}
+html.is-theme-revealing::view-transition-group(season-canvas),
+html.is-theme-revealing::view-transition-new(season-canvas) {
+  z-index: 2;
+  animation: none;
+}
+html.is-theme-revealing::view-transition-old(season-canvas) {
+  display: none;
+}
+/* 翻页过渡给导航栏和正文单独起了名字；切换主题时收回，让整页一起跟着圆形扩散。 */
+html.is-theme-revealing #navbar,
+html.is-theme-revealing #site-rendered-content {
+  view-transition-name: none;
 }

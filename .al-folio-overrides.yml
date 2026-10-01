@@ -6,7 +6,7 @@ overrides:
     gem_version: 1.0.12
     upstream_path: _includes/header.liquid
     upstream_sha256: c8663513baded68d9fa5fbe4d6363a976535bbe201efe5138243d0ff03101058
-    local_sha256: e493809586b4e3d2ecb48d89b1298f791f23fa13fbe40b8b9f7ad90fbb569e2c
+    local_sha256: 9b96936b0509863c2565b01d6854d6ae1f00feddd0097633543ea9e13c737afe
     acknowledged_at: "2026-07-31"
   _includes/latest_posts.liquid:
     owner: al_folio_core
@@ -34,5 +34,5 @@ overrides:
     gem_version: 1.0.12
     upstream_path: _layouts/default.liquid
     upstream_sha256: 4b713c35f7383692b99f4f1086123acbc3cb247e775a4cebe39985b5302fb9b2
-    local_sha256: cb92e7bcf42e806634528321073dc76c97ab2a6cd94460fc1b1a263dc4a7a3b9
+    local_sha256: ec5a1e1e58de6df4a9299c58cd1561e588f0ebaaadf9e6bb06bbc7d088936509
     acknowledged_at: "2026-07-31"

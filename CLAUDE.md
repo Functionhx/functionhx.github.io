@@ -98,8 +98,22 @@ after owner verification (`owner-unlock.js`, `github-auth-vault.js`,
 - `inline-editor.js` / `content-creator.js` — edit and create pages, posts and
   sections in place, committing to this repo via the GitHub Contents/Git APIs
   with a fine-grained token encrypted in IndexedDB.
-- `site-settings.js` — section manager; publishes navigation layout into
-  `_data/site_ui.yml`.
+- `site-settings.js` — the settings panel. Two kinds of change, two paths:
+  - **Appearance** (font, loading copy, season effect, wind strength, navigation
+    spacing, easter-egg hints and the sealed letter) applies **instantly**: the panel
+    auto-saves `settings.json` on the `site-settings` branch, and every page reads it
+    through `runtime-settings.js` (GitHub contents API, cached in localStorage and
+    applied from the head script before first paint). Nothing here needs a rebuild. A
+    quiet background commit later syncs the same values into `_data/site_ui.yml` /
+    `_data/eggs.yml` on `main` so the built-in fallback catches up (used when the API
+    is unreachable, e.g. mainland China, and on a visitor's very first load).
+  - **Structure** (showing/hiding sections, creating a section) changes generated
+    pages, so it still goes through "保存并发布" as a commit to `main`.
+    Anything new that is purely presentational should join the first path: add it to
+    `sanitize()` in `runtime-settings.js` (allow-list: the file is public and only the
+    owner can write it, but pages still trust only known fields and values), to
+    `liveSettingsFromForm()` / `adoptLiveSettings()` in `site-settings.js`, and keep a
+    baked default in `_data/site_ui.yml` with a check in `validate_content.py`.
 - `spark-writer.js` + `spark-vault-client.js` — the Spark flow, which uses a
   _different_ credential path (GitHub App + opaque encrypted session) and never
   touches the public repo directly.
@@ -122,6 +136,23 @@ first two run on the owner's Tencent Cloud server:
   reach Gmail) that emails the six-digit PIN for the homepage letter easter egg
   after checking the secret phrase. Gmail credentials, the phrase and the PIN
   live only in Worker secrets; see `letter-mailer/README.md`.
+
+## Performance plumbing
+
+- `_plugins/async_external_styles.rb` rewrites the built HTML: third-party
+  stylesheets load asynchronously (with a `<noscript>` fallback), Google Fonts is
+  replaced by a `<meta>` that `site-preferences.js` loads only for fonts that need
+  it, and MathJax becomes `async` and is moved after `mathjax-setup.js`. Never add
+  a render-blocking or synchronous third-party resource back to `<head>`.
+- `_layouts/default.liquid` carries Speculation Rules (hover prerender of site
+  links); `navigation-performance.js` keeps hover prefetch for other browsers and
+  registers the Service Worker.
+- `sw.js` (root, Liquid front matter, excluded from Prettier) caches versioned
+  `/assets/…?v=` files cache-first, other `/assets/` files stale-while-revalidate,
+  and site pages network-first with a 1.2 s fallback to cache. It only touches
+  routes listed at build time, so other projects under the same origin
+  (`/contrail/` …) are untouched. Emergency stop: set `KILL_SWITCH = true` and
+  deploy; per-browser debugging: `?sw=off` / `?sw=on`.
 
 ## Deployment
 

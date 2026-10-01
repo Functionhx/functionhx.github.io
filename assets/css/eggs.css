@@ -1,0 +1,1567 @@
+/* 隐藏彩蛋（assets/js/eggs.js）。颜色全部取自站点主题变量，深浅色自动跟随。 */
+
+/* 主题 main.css 给所有 span/div/p 设了正文颜色；彩蛋容器内改回继承，颜色由下面的类决定。 */
+:where(.egg-gallery, .egg-overlay, .egg-dog-lane) :where(p, h2, h3, div, span, strong, b, small, i, label) {
+  color: inherit;
+}
+
+/* ---------- 齿轮：长按进度 ---------- */
+#site-settings-toggle .egg-hold-ring {
+  position: absolute;
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
+  overflow: visible;
+  pointer-events: none;
+}
+#site-settings-toggle .egg-hold-ring rect {
+  fill: none;
+  stroke: var(--global-theme-color);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: 100;
+  opacity: 0;
+  transition:
+    stroke-dashoffset 160ms ease,
+    opacity 160ms ease;
+}
+#site-settings-toggle.is-egg-holding .egg-hold-ring rect {
+  opacity: 1;
+  stroke-dashoffset: 0;
+  transition:
+    stroke-dashoffset 700ms cubic-bezier(0.4, 0, 0.6, 1),
+    opacity 80ms ease;
+}
+#site-settings-toggle > .function-icon {
+  transition: transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+#site-settings-toggle.is-egg-holding > .function-icon {
+  transform: rotate(150deg);
+  transition: transform 700ms cubic-bezier(0.55, 0, 0.8, 0.6);
+}
+#site-settings-toggle.is-egg-done {
+  animation: egg-gear-pop 380ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+@keyframes egg-gear-pop {
+  40% {
+    transform: scale(1.14);
+  }
+}
+#site-settings-toggle .egg-hold-tip {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  z-index: 5;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--global-text-color);
+  color: var(--global-bg-color);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -4px);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+#site-settings-toggle.is-egg-holding .egg-hold-tip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition-delay: 250ms;
+}
+#site-settings-toggle.is-egg-holding .function-control-tip {
+  opacity: 0 !important;
+}
+
+/* ---------- 图鉴 ---------- */
+.egg-gallery {
+  position: fixed;
+  z-index: 1090;
+  width: min(380px, calc(100vw - 24px));
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  padding: 20px 20px 16px;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 20px;
+  background: var(--global-card-bg-color, var(--global-bg-color));
+  box-shadow:
+    0 18px 48px #17171c1f,
+    0 2px 8px #17171c0d;
+  color: var(--global-text-color);
+  font-size: 15px;
+  line-height: 1.7;
+  transform-origin: top right;
+  animation: egg-pop 180ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes egg-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+.egg-gallery header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.egg-gallery h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.egg-gallery header span {
+  color: var(--global-text-color-light);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.egg-progress {
+  height: 4px;
+  margin: 12px 0 14px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--function-wash);
+}
+.egg-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--function-mark), var(--global-theme-color));
+  transition: width 400ms ease;
+}
+.egg-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.egg-item {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--function-wash) 55%, transparent);
+}
+.egg-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 11px;
+  background: var(--global-bg-color);
+  font-size: 18px;
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+.egg-item[data-found="true"] .egg-icon {
+  border-color: var(--function-mark);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--function-mark) 30%, transparent);
+  filter: none;
+  opacity: 1;
+}
+.egg-item strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.egg-item[data-found="false"] strong {
+  color: var(--global-text-color-light);
+  letter-spacing: 0.12em;
+}
+.egg-item p {
+  margin: 2px 0 0;
+  color: var(--global-text-color-light);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.egg-found {
+  margin-left: 6px;
+  color: var(--global-theme-color) !important;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.egg-phrase {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.egg-phrase input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 9px;
+  background: var(--global-bg-color);
+  color: var(--global-text-color);
+  font-size: 13px;
+}
+.egg-phrase button,
+.egg-button {
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--global-theme-color);
+  color: var(--global-bg-color);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.egg-gallery .egg-phrase-status {
+  min-height: 1em;
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+.egg-secret-count {
+  margin: 12px 2px 0;
+  color: var(--global-text-color-light);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ---------- 通用浮层 ---------- */
+.egg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  animation: egg-fade 180ms ease both;
+}
+@keyframes egg-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- 机器狗 ---------- */
+.egg-dog-lane {
+  position: fixed;
+  right: 0;
+  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  left: 0;
+  z-index: 1095;
+  height: 74px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.egg-dog {
+  position: absolute;
+  bottom: 4px;
+  left: -140px;
+  width: 104px;
+  animation: egg-run 4.6s cubic-bezier(0.35, 0.05, 0.4, 1) forwards;
+}
+.egg-dog svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  animation: egg-hop 280ms steps(2) infinite;
+}
+.egg-dog .egg-legs-a {
+  animation: egg-legs 280ms steps(1) infinite;
+}
+.egg-dog .egg-legs-b {
+  animation: egg-legs 280ms steps(1) infinite reverse;
+}
+@keyframes egg-legs {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes egg-hop {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes egg-run {
+  to {
+    left: calc(100vw + 40px);
+  }
+}
+.egg-dog-bubble {
+  position: absolute;
+  bottom: 64px;
+  left: 58px;
+  padding: 4px 10px;
+  border-radius: 10px 10px 10px 2px;
+  background: var(--global-text-color);
+  color: var(--global-bg-color) !important;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* ---------- 复古手账：纸、胶带、邮票、字体 ---------- */
+.egg-overlay {
+  --egg-paper: #fbf6ea;
+  --egg-paper-edge: #efe4cc;
+  --egg-kraft: #c9a57a;
+  --egg-kraft-dark: #a8845a;
+  --egg-ink: #20344f;
+  --egg-ink-soft: #5d6776;
+  --egg-red: #b4463d;
+  --egg-hand-font: "Long Cang", "Kaiti SC", STKaiti, KaiTi, "Klee One", cursive;
+  --egg-type-font: "Special Elite", "Courier New", ui-monospace, monospace;
+}
+.egg-hand {
+  font-family: var(--egg-hand-font);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+.egg-type {
+  font-family: var(--egg-type-font);
+  letter-spacing: 0.08em;
+}
+.egg-tape {
+  position: absolute;
+  z-index: 3;
+  width: 104px;
+  height: 26px;
+  background: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.28) 0 6px, transparent 6px 12px), rgba(222, 184, 135, 0.78);
+  box-shadow: 0 1px 2px rgba(60, 40, 20, 0.15);
+  clip-path: polygon(3% 0, 97% 0, 100% 18%, 97% 36%, 100% 55%, 97% 75%, 100% 100%, 3% 100%, 0 80%, 3% 60%, 0 40%, 3% 20%);
+  pointer-events: none;
+}
+.egg-tape--left {
+  top: -12px;
+  left: 18px;
+  transform: rotate(-7deg);
+}
+.egg-tape--right {
+  top: -10px;
+  right: 22px;
+  transform: rotate(5deg);
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.35) 0 4px, transparent 4px 10px), rgba(170, 196, 186, 0.8);
+}
+/* 邮票：外层是一圈打孔，里面是月亮和 ƒ */
+.egg-postage {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 66px;
+  height: 80px;
+  background: radial-gradient(circle, transparent 2.4px, #fffaf0 2.8px) -5px -5px / 10px 10px;
+  filter: drop-shadow(0 1px 1.5px rgba(60, 40, 20, 0.25));
+  transform: rotate(4deg);
+}
+.egg-postage-inner {
+  position: absolute;
+  inset: 5px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(160deg, #2e4a6b, #1d2f47);
+  color: #f5e6c4;
+  border: 1.5px solid #fffaf0;
+  outline: 1px solid rgba(29, 47, 71, 0.4);
+}
+.egg-postage-moon {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: -4px 2px 0 0 #f3d78a;
+}
+.egg-postage b {
+  margin-top: 6px;
+  font:
+    italic 700 30px/1 Georgia,
+    "Times New Roman",
+    serif;
+}
+.egg-postage small {
+  position: absolute;
+  bottom: 5px;
+  font: 6px/1 var(--egg-type-font, monospace);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+/* 前缀 .egg-overlay：压过站点字体设置里的 html[data-site-font] button/input */
+.egg-overlay .egg-tag {
+  position: relative;
+  padding: 7px 16px 7px 24px;
+  border: 0;
+  border-radius: 4px 12px 12px 4px;
+  background: var(--egg-kraft);
+  color: #3b2a18;
+  font: 15px/1.2 var(--egg-hand-font);
+  box-shadow: 0 2px 0 var(--egg-kraft-dark);
+  cursor: pointer;
+}
+.egg-tag::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 9px;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 50%;
+  background: #fbf6ea;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+.egg-tag:hover {
+  transform: translateY(-1px);
+}
+
+/* ---------- 终端：复古 CRT ---------- */
+.egg-terminal-backdrop {
+  background: rgb(10 9 8 / 0.74);
+}
+.egg-crt {
+  --phosphor: #8dffb0;
+  width: min(760px, 100%);
+  padding: 22px 22px 14px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, #e3dccb, #c9c0ab 70%, #b9af98);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.12),
+    0 30px 80px rgba(0, 0, 0, 0.55);
+  animation: egg-crt-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.egg-crt[data-phosphor="amber"] {
+  --phosphor: #ffc864;
+}
+@keyframes egg-crt-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+}
+.egg-crt.is-shaking {
+  animation: egg-crt-shake 520ms ease both;
+}
+@keyframes egg-crt-shake {
+  15%,
+  55% {
+    transform: translate(-6px, 2px) rotate(-0.6deg);
+  }
+  35%,
+  75% {
+    transform: translate(6px, -2px) rotate(0.6deg);
+  }
+}
+.egg-crt-screen {
+  position: relative;
+  height: min(440px, 64vh);
+  overflow: hidden;
+  border-radius: 22px / 26px;
+  background: radial-gradient(ellipse at 50% 45%, #0f2718 0%, #07140b 65%, #030805 100%);
+  box-shadow:
+    inset 0 0 0 3px #2a2822,
+    inset 0 0 50px rgba(0, 0, 0, 0.85),
+    0 0 0 6px #a59b85;
+  color: var(--phosphor);
+  font:
+    20px/1.35 VT323,
+    "Sarasa Mono SC",
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  text-shadow: 0 0 5px color-mix(in srgb, var(--phosphor) 55%, transparent);
+  transform-origin: center;
+  animation: egg-crt-on 520ms ease-out both;
+}
+[data-phosphor="amber"] .egg-crt-screen {
+  background: radial-gradient(ellipse at 50% 45%, #2a1d0b 0%, #140d05 65%, #080502 100%);
+}
+@keyframes egg-crt-on {
+  0% {
+    transform: scale(1, 0.004);
+    filter: brightness(4);
+  }
+  45% {
+    transform: scale(1, 0.004);
+    filter: brightness(4);
+  }
+  70% {
+    transform: scale(1, 1.02);
+    filter: brightness(1.6);
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+.egg-crt-screen.is-off {
+  animation: egg-crt-off 420ms ease-in both;
+}
+@keyframes egg-crt-off {
+  0% {
+    transform: none;
+    filter: none;
+  }
+  55% {
+    transform: scale(1, 0.004);
+    filter: brightness(4);
+  }
+  100% {
+    transform: scale(0, 0.004);
+    filter: brightness(6);
+  }
+}
+/* 扫描线与暗角 */
+.egg-crt-screen::before,
+.egg-crt-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.egg-crt-screen::before {
+  background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px);
+  animation: egg-crt-flicker 5s steps(1) infinite;
+}
+.egg-crt-screen::after {
+  background: radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, 0.55) 100%);
+}
+@keyframes egg-crt-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  48% {
+    opacity: 0.86;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+/* 主题给 div 设了正文色；屏幕里的一切都跟随荧光粉颜色 */
+.egg-crt-screen :is(div, span, label) {
+  color: inherit;
+}
+/* 像真的终端一样：输入行紧跟在最后一行输出后面，写满了整屏一起往上滚。 */
+.egg-crt-content {
+  position: absolute;
+  inset: 0;
+  padding: 22px 26px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.egg-crt-content::-webkit-scrollbar {
+  display: none;
+}
+.egg-line {
+  color: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.egg-dim {
+  opacity: 0.62;
+}
+.egg-accent {
+  color: color-mix(in srgb, var(--phosphor) 70%, white);
+}
+.egg-terminal-input {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin: 0;
+}
+.egg-terminal-input label {
+  flex: none;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+}
+.egg-overlay .egg-terminal-input input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-shadow: inherit;
+  caret-color: var(--phosphor);
+  caret-shape: block;
+}
+.egg-crt-train {
+  position: absolute;
+  bottom: 18%;
+  left: 100%;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font:
+    15px/1.1 VT323,
+    ui-monospace,
+    monospace;
+  white-space: pre;
+  animation: egg-crt-train 3.6s linear forwards;
+}
+@keyframes egg-crt-train {
+  to {
+    transform: translateX(calc(-100% - 780px));
+  }
+}
+.egg-crt-rain {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  opacity: 0.9;
+  transition: opacity 500ms ease;
+}
+.egg-crt-rain.is-fading {
+  opacity: 0;
+}
+.egg-crt-panel {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 8px 0;
+  color: #6e6553;
+}
+.egg-crt-brand {
+  font: 700 13px/1 var(--egg-type-font);
+  letter-spacing: 0.24em;
+}
+.egg-crt-brand small {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+.egg-crt-hint {
+  margin-left: auto;
+  font: 12px/1 var(--egg-type-font);
+  opacity: 0.8;
+}
+.egg-crt-power {
+  position: relative;
+  width: 34px;
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  background: linear-gradient(#d6cfbe, #b3aa94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 2px 0 #948a73;
+  cursor: pointer;
+}
+.egg-crt-power:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.egg-crt-power i {
+  position: absolute;
+  top: 50%;
+  left: -12px;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: var(--phosphor);
+  box-shadow: 0 0 8px var(--phosphor);
+}
+
+/* ---------- f(x)：画在方格纸上的追逐曲线 ---------- */
+.egg-fx-backdrop {
+  background: rgb(38 30 22 / 0.6);
+}
+.egg-fx {
+  position: relative;
+  width: min(640px, 100%);
+  padding: 26px 28px 20px;
+  border-radius: 3px;
+  background:
+    linear-gradient(rgba(64, 110, 160, 0.13) 1px, transparent 1px) 0 0 / 20px 20px,
+    linear-gradient(90deg, rgba(64, 110, 160, 0.13) 1px, transparent 1px) 0 0 / 20px 20px,
+    var(--egg-paper);
+  box-shadow:
+    0 1px 0 var(--egg-paper-edge),
+    0 24px 60px rgba(30, 20, 10, 0.45);
+  color: var(--egg-ink);
+  transform: rotate(-0.8deg);
+  animation: egg-drop-in 420ms cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
+}
+@keyframes egg-drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-26px) rotate(-3deg);
+  }
+}
+.egg-fx-head {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.egg-fx-head p {
+  margin: 0;
+  color: var(--egg-ink-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.egg-fx-head h3 {
+  margin: 2px 0 0;
+  color: var(--egg-ink);
+  font-size: 40px;
+  line-height: 1.1;
+}
+.egg-fx-plot {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-top: 8px;
+}
+.egg-fx-formula {
+  margin: 8px 0 0;
+  color: var(--egg-ink);
+  font:
+    16px/1.4 Georgia,
+    "Times New Roman",
+    serif;
+  text-align: center;
+}
+.egg-fx-formula b {
+  font-weight: 700;
+}
+.egg-fx-foot {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+.egg-fx-caption {
+  margin: 0;
+  color: var(--egg-ink);
+  font-size: 24px;
+  line-height: 1.3;
+}
+.egg-fx-count {
+  margin: 2px 0 0;
+  color: var(--egg-red);
+  font-size: 17px;
+}
+
+/* ---------- 一封信 ---------- */
+.egg-letter {
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(255, 196, 120, 0.16), transparent 60%),
+    radial-gradient(ellipse at 50% 40%, #3a2c22 0%, #1d1611 72%, #120d0a 100%);
+}
+.egg-letter canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.egg-letter-stage {
+  position: relative;
+  display: grid;
+  gap: 30px;
+  justify-items: center;
+  transition: opacity 400ms ease;
+}
+.egg-letter-stage.is-done {
+  opacity: 0;
+  pointer-events: none;
+}
+.egg-envelope {
+  position: relative;
+  width: min(380px, 84vw);
+  aspect-ratio: 1.58;
+  perspective: 1000px;
+  animation: egg-float-in 700ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+  transition:
+    transform 600ms ease,
+    opacity 600ms ease;
+}
+@keyframes egg-float-in {
+  from {
+    opacity: 0;
+    transform: translateY(30px) rotate(-4deg);
+  }
+}
+.egg-envelope.is-gone {
+  opacity: 0;
+  transform: translateY(60px) scale(0.92);
+}
+.egg-envelope-body,
+.egg-envelope-pocket,
+.egg-envelope-flap {
+  position: absolute;
+  inset: 0;
+  border-radius: 5px;
+  background:
+    repeating-linear-gradient(12deg, rgba(90, 60, 30, 0.06) 0 1px, transparent 1px 5px),
+    linear-gradient(160deg, #d4b287, var(--egg-kraft) 55%, #b99466);
+}
+.egg-envelope-body {
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.5);
+}
+.egg-envelope-sheet {
+  position: absolute;
+  inset: 7% 8% 12%;
+  z-index: 1;
+  border-radius: 2px;
+  background: repeating-linear-gradient(transparent 0 13px, rgba(64, 110, 160, 0.2) 13px 14px), var(--egg-paper);
+  transition: transform 650ms cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+.egg-envelope.is-sliding .egg-envelope-sheet {
+  transform: translateY(-62%);
+}
+.egg-envelope-pocket {
+  z-index: 2;
+  clip-path: polygon(0 0, 50% 52%, 100% 0, 100% 100%, 0 100%);
+  background: repeating-linear-gradient(-12deg, rgba(90, 60, 30, 0.06) 0 1px, transparent 1px 5px), linear-gradient(0deg, #b89163, #cfac80);
+  filter: drop-shadow(0 -1px 1px rgba(60, 40, 20, 0.25));
+}
+.egg-envelope-to {
+  position: absolute;
+  bottom: 14%;
+  left: 9%;
+  color: #3b2a18;
+  font-size: 24px;
+  transform: rotate(-3deg);
+}
+.egg-envelope-flap {
+  z-index: 3;
+  height: 58%;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  background: linear-gradient(180deg, #c29d70, #d6b68b);
+  transform-origin: top;
+  transition:
+    transform 600ms cubic-bezier(0.4, 0, 0.2, 1),
+    z-index 0s linear 300ms;
+}
+.egg-envelope.is-open .egg-envelope-flap {
+  z-index: 0;
+  transform: rotateX(180deg);
+}
+.egg-envelope .egg-postage {
+  position: absolute;
+  top: 30%;
+  right: 6%;
+  z-index: 5;
+  transform: rotate(5deg) scale(0.82);
+  transform-origin: top right;
+}
+.egg-postmark {
+  position: absolute;
+  top: 43%;
+  right: 9%;
+  z-index: 6;
+  width: 124px;
+  color: rgba(40, 32, 60, 0.55);
+  font-family: var(--egg-type-font);
+  transform: rotate(-12deg);
+  pointer-events: none;
+}
+.egg-tape--corner {
+  top: 4px;
+  left: -26px;
+  z-index: 5;
+  width: 92px;
+  transform: rotate(-38deg);
+}
+/* 火漆印：两半拼成，拆信时裂开掉落 */
+.egg-seal {
+  position: absolute;
+  top: calc(58% - 34px);
+  left: calc(50% - 34px);
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  filter: drop-shadow(0 3px 3px rgba(40, 10, 5, 0.45));
+}
+.egg-seal-half {
+  position: absolute;
+  inset: 0;
+  border-radius: 48% 52% 46% 54% / 53% 47% 55% 45%;
+  background:
+    radial-gradient(circle, transparent 0 56%, rgba(60, 10, 8, 0.28) 57% 61%, transparent 62%),
+    radial-gradient(circle at 35% 30%, #d9655a, #a3302a 52%, #6f1c17);
+  transition:
+    transform 600ms cubic-bezier(0.5, 0, 0.75, 0),
+    opacity 600ms ease;
+}
+.egg-seal-half--a {
+  clip-path: polygon(0 0, 54% 0, 45% 28%, 57% 50%, 43% 72%, 52% 100%, 0 100%);
+}
+.egg-seal-half--b {
+  clip-path: polygon(54% 0, 100% 0, 100% 100%, 52% 100%, 43% 72%, 57% 50%, 45% 28%);
+}
+.egg-seal b {
+  position: relative;
+  color: #7a211b;
+  font:
+    italic 700 34px/1 Georgia,
+    "Times New Roman",
+    serif;
+  text-shadow:
+    1px 1px 0 rgba(255, 190, 170, 0.35),
+    -1px -1px 0 rgba(50, 5, 3, 0.45);
+  transition: opacity 200ms ease;
+}
+.egg-envelope.is-locked .egg-seal {
+  animation: egg-seal-glint 3.2s ease-in-out 1s infinite;
+}
+@keyframes egg-seal-glint {
+  0%,
+  100% {
+    transform: none;
+  }
+  6% {
+    transform: rotate(-6deg) scale(1.04);
+  }
+  12% {
+    transform: rotate(4deg);
+  }
+  18% {
+    transform: none;
+  }
+}
+.egg-envelope.is-unsealed .egg-seal b {
+  opacity: 0;
+}
+.egg-envelope.is-unsealed .egg-seal-half--a {
+  opacity: 0;
+  transform: translate(-40px, 90px) rotate(-50deg);
+}
+.egg-envelope.is-unsealed .egg-seal-half--b {
+  opacity: 0;
+  transform: translate(40px, 100px) rotate(40deg);
+}
+/* 密码卡：像一张车票 */
+.egg-pin {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  width: min(360px, 88vw);
+  padding: 18px 22px 16px;
+  border-radius: 8px;
+  background: var(--egg-paper);
+  color: var(--egg-ink);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  mask:
+    radial-gradient(circle at 0 50%, transparent 11px, #000 11.5px) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, transparent 11px, #000 11.5px) right / 51% 100% no-repeat;
+  animation: egg-float-in 700ms 120ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
+}
+.egg-pin::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1.5px dashed rgba(93, 103, 118, 0.35);
+  border-radius: 5px;
+  pointer-events: none;
+}
+.egg-pin.is-open {
+  opacity: 0;
+  transform: translateY(16px);
+  pointer-events: none;
+}
+.egg-pin-kicker {
+  margin: 0;
+  color: var(--egg-ink-soft);
+  font-size: 11px;
+}
+.egg-pin-title {
+  margin: -4px 0 2px;
+  font-size: 30px;
+  line-height: 1.2;
+}
+.egg-pin-boxes {
+  display: flex;
+  gap: 9px;
+}
+.egg-overlay .egg-pin-boxes input {
+  width: 40px;
+  height: 50px;
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid var(--egg-ink);
+  border-radius: 0;
+  background: linear-gradient(rgba(64, 110, 160, 0.08), rgba(64, 110, 160, 0.08));
+  color: var(--egg-ink);
+  font: 28px/1 var(--egg-type-font);
+  text-align: center;
+  caret-color: var(--egg-red);
+}
+.egg-pin-boxes input:focus {
+  outline: none;
+  border-bottom-color: var(--egg-red);
+  background: rgba(180, 70, 61, 0.08);
+}
+.egg-pin.is-wrong .egg-pin-boxes {
+  animation: egg-shake 380ms ease both;
+}
+@keyframes egg-shake {
+  20%,
+  60% {
+    transform: translateX(-7px);
+  }
+  40%,
+  80% {
+    transform: translateX(7px);
+  }
+}
+.egg-pin-status {
+  min-height: 1.3em;
+  margin: 0;
+  color: var(--egg-red);
+  font-size: 18px;
+  text-align: center;
+}
+.egg-pin-mail-toggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--egg-ink-soft);
+  font-size: 13px;
+  text-decoration: underline wavy rgba(180, 70, 61, 0.55);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.egg-pin-mail {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.egg-pin-mail[hidden] {
+  display: none;
+}
+.egg-pin-mail input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 2px;
+  border: 0;
+  border-bottom: 1.5px solid var(--egg-ink-soft);
+  background: transparent;
+  color: var(--egg-ink);
+  font-size: 15px;
+}
+.egg-pin-mail input:focus {
+  outline: none;
+  border-bottom-color: var(--egg-red);
+}
+.egg-overlay .egg-pin-mail button {
+  padding: 6px 14px;
+  border: 1.5px solid var(--egg-red);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--egg-red);
+  font: 13px/1 var(--egg-type-font);
+  cursor: pointer;
+}
+.egg-pin-mail button:disabled {
+  opacity: 0.5;
+}
+.egg-letter-dismiss {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 240, 220, 0.1);
+  color: #f1e3cc;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.egg-letter-dismiss:hover {
+  background: rgba(255, 240, 220, 0.2);
+}
+/* 信纸：横线、红色页边线、两段胶带 */
+.egg-paper {
+  --line: 36px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 4;
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100dvh - 64px);
+  overflow-y: auto;
+  padding: 44px 40px 26px 70px;
+  border-radius: 2px;
+  background:
+    linear-gradient(90deg, transparent 50px, rgba(196, 80, 70, 0.4) 50px 51.5px, transparent 51.5px),
+    repeating-linear-gradient(transparent 0 calc(var(--line) - 1px), rgba(64, 110, 160, 0.22) calc(var(--line) - 1px) var(--line)) 0 12px,
+    var(--egg-paper);
+  background-attachment: local;
+  box-shadow:
+    0 1px 0 var(--egg-paper-edge),
+    0 30px 80px rgba(0, 0, 0, 0.55);
+  color: var(--egg-ink);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -42%) rotate(-1.5deg) scale(0.96);
+  transition:
+    opacity 600ms ease,
+    transform 700ms cubic-bezier(0.2, 0.9, 0.25, 1);
+  scrollbar-width: thin;
+}
+.egg-paper.is-shown {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) rotate(-0.6deg);
+}
+.egg-paper .egg-tape--left {
+  top: 8px;
+  left: -18px;
+  transform: rotate(-32deg);
+}
+.egg-paper .egg-tape--right {
+  top: 6px;
+  right: -20px;
+  transform: rotate(28deg);
+}
+.egg-paper h3 {
+  margin: 0 0 4px;
+  color: var(--egg-ink);
+  font-size: 36px;
+  line-height: calc(var(--line) * 1.25);
+}
+.egg-paper-text {
+  min-height: calc(var(--line) * 3);
+  font-size: 25px;
+  line-height: var(--line);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.egg-pen {
+  display: inline-block;
+  width: 2px;
+  height: 0.9em;
+  margin-left: 2px;
+  background: var(--egg-ink);
+  vertical-align: -0.1em;
+  animation: egg-pen 800ms steps(1) infinite;
+}
+@keyframes egg-pen {
+  50% {
+    opacity: 0;
+  }
+}
+.egg-paper-end {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: end;
+  align-items: center;
+  column-gap: 6px;
+  margin-top: 10px;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+.egg-paper.is-signed .egg-paper-end {
+  opacity: 1;
+}
+.egg-paper-sign {
+  margin: 0;
+  font-size: 28px;
+  line-height: var(--line);
+}
+.egg-paper-doodle {
+  width: 30px;
+  height: 26px;
+}
+.egg-paper-doodle path {
+  fill: none;
+  stroke: var(--egg-red);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.egg-paper.is-signed .egg-paper-doodle path {
+  transition: stroke-dashoffset 1100ms 400ms ease;
+  stroke-dashoffset: 0;
+}
+.egg-paper-date {
+  grid-column: 1 / -1;
+  justify-self: end;
+  margin: 0;
+  color: var(--egg-ink-soft);
+  font-size: 13px;
+}
+.egg-paper-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 18px;
+}
+.egg-overlay .egg-paper-skip {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--egg-ink-soft);
+  font: 13px/1 var(--egg-type-font);
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.egg-paper-skip[hidden] {
+  display: none;
+}
+.egg-overlay .egg-paper-close {
+  padding: 8px 16px;
+  border: 2px double var(--egg-red);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--egg-red);
+  font: 20px/1 var(--egg-hand-font);
+  transform: rotate(-3deg);
+  cursor: pointer;
+}
+.egg-paper-close:hover {
+  background: rgba(180, 70, 61, 0.08);
+}
+
+@media (max-width: 560px) {
+  .egg-crt {
+    padding: 12px 12px 10px;
+    border-radius: 20px;
+  }
+  .egg-crt-screen {
+    font-size: 17px;
+  }
+  .egg-crt-content {
+    padding: 16px 16px;
+  }
+  .egg-crt-hint {
+    display: none;
+  }
+  .egg-fx {
+    padding: 22px 16px 16px;
+  }
+  .egg-fx-head h3 {
+    font-size: 32px;
+  }
+  .egg-fx-formula {
+    font-size: 14px;
+  }
+  .egg-fx-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .egg-fx-foot .egg-tag {
+    align-self: flex-end;
+  }
+  .egg-paper {
+    --line: 32px;
+    padding: 38px 20px 22px 44px;
+    background:
+      linear-gradient(90deg, transparent 30px, rgba(196, 80, 70, 0.4) 30px 31.5px, transparent 31.5px),
+      repeating-linear-gradient(transparent 0 calc(var(--line) - 1px), rgba(64, 110, 160, 0.22) calc(var(--line) - 1px) var(--line)) 0 10px,
+      var(--egg-paper);
+    background-attachment: local;
+  }
+  .egg-paper h3 {
+    font-size: 30px;
+  }
+  .egg-paper-text {
+    font-size: 22px;
+  }
+  .egg-postmark {
+    width: 108px;
+  }
+}
+@media (max-width: 400px) {
+  .egg-pin-boxes {
+    gap: 6px;
+  }
+  .egg-pin-boxes input {
+    width: 34px;
+    height: 44px;
+    font-size: 23px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .egg-gallery,
+  .egg-overlay,
+  .egg-crt,
+  .egg-crt-screen,
+  .egg-crt-screen::before,
+  .egg-fx,
+  .egg-envelope,
+  .egg-envelope.is-locked .egg-seal,
+  .egg-pin,
+  .egg-pen,
+  .egg-dog,
+  .egg-dog svg,
+  .egg-pin.is-wrong .egg-pin-boxes,
+  #site-settings-toggle.is-egg-done {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .egg-paper,
+  .egg-paper-end,
+  .egg-paper-doodle path,
+  .egg-envelope,
+  .egg-envelope-flap,
+  .egg-envelope-sheet,
+  .egg-seal-half,
+  .egg-letter-stage,
+  #site-settings-toggle .egg-hold-ring rect,
+  #site-settings-toggle > .function-icon {
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* ---------- 小纸条 ---------- */
+.egg-toast {
+  --egg-paper: #fbf6ea;
+  --egg-ink: #20344f;
+  --egg-hand-font: "Long Cang", "Kaiti SC", STKaiti, KaiTi, cursive;
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 1080;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  width: min(340px, calc(100vw - 32px));
+  padding: 20px 40px 16px 18px;
+  border-radius: 3px;
+  background: var(--egg-paper);
+  color: var(--egg-ink);
+  box-shadow: 0 16px 40px rgb(30 20 10 / 0.22);
+  transform: rotate(-1deg);
+  animation: egg-toast-in 420ms cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
+}
+.egg-toast.is-leaving {
+  opacity: 0;
+  transform: translateY(12px) rotate(-1deg);
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
+}
+@keyframes egg-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) rotate(-3deg);
+  }
+}
+.egg-toast .egg-tape--left {
+  top: -12px;
+  left: 50%;
+  width: 84px;
+  margin-left: -42px;
+  transform: rotate(-3deg);
+}
+.egg-toast p {
+  margin: 0;
+  color: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.egg-toast .egg-toast-title {
+  margin-bottom: 2px;
+  font-family: var(--egg-hand-font);
+  font-size: 22px;
+  line-height: 1.3;
+}
+.egg-toast-icon {
+  flex: none;
+  font-size: 24px;
+  line-height: 1.4;
+}
+.egg-toast-moon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  margin-top: 4px;
+  border-radius: 50%;
+  box-shadow: -7px 3px 0 0 #e8b94a;
+  transform: translateX(8px);
+}
+.egg-toast--night {
+  --egg-paper: #1f2a40;
+  --egg-ink: #f3ead4;
+}
+.egg-toast-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 18px;
+  opacity: 0.6;
+  cursor: pointer;
+}
+.egg-toast-close:hover {
+  opacity: 1;
+}
+
+.egg-toast :is(div, span, b),
+.egg-saver :is(div, span, b) {
+  color: inherit;
+}
+
+/* ---------- 屏保 ---------- */
+.egg-saver {
+  position: fixed;
+  inset: 0;
+  z-index: 1095;
+  overflow: hidden;
+  background: rgb(8 8 10 / 0.94);
+  animation: egg-saver-in 900ms ease both;
+  cursor: none;
+}
+.egg-saver.is-leaving {
+  opacity: 0;
+  transition: opacity 380ms ease;
+}
+@keyframes egg-saver-in {
+  from {
+    opacity: 0;
+  }
+}
+.egg-saver-logo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  justify-items: center;
+  padding: 10px 22px 12px;
+  border: 3px solid currentColor;
+  border-radius: 50% / 40%;
+  transition: color 200ms ease;
+  will-change: transform;
+}
+.egg-saver-logo b {
+  font:
+    italic 700 60px/1 Georgia,
+    "Times New Roman",
+    serif;
+}
+.egg-saver-logo span {
+  margin-top: 4px;
+  font:
+    700 12px/1 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  letter-spacing: 0.3em;
+}
+.egg-saver-corner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: 0;
+  color: #f3d78a;
+  font-size: 22px;
+  font-weight: 600;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.egg-saver-corner.is-shown {
+  animation: egg-saver-corner 1800ms ease both;
+}
+@keyframes egg-saver-corner {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -30%) scale(0.8);
+  }
+  20%,
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+}
+.egg-saver-hint {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  margin: 0;
+  color: rgb(255 255 255 / 0.35);
+  font-size: 12px;
+  transform: translateX(-50%);
+}
+.egg-saver .egg-saver-logo {
+  top: calc(50% - 50px);
+  left: calc(50% - 70px);
+}
+.egg-saver .egg-saver-logo[style*="translate"] {
+  top: 0;
+  left: 0;
+}
+
+/* 图鉴里已发现的彩蛋可以点击重玩 */
+.egg-item[data-egg-replay] {
+  cursor: pointer;
+}
+.egg-item[data-egg-replay]:hover .egg-icon {
+  transform: rotate(-8deg) scale(1.06);
+}
+.egg-icon {
+  transition: transform 200ms ease;
+}
+
+@media (max-width: 560px) {
+  .egg-toast {
+    bottom: 16px;
+    left: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .egg-toast,
+  .egg-saver,
+  .egg-saver-corner.is-shown {
+    animation-duration: 1ms !important;
+  }
+}
+
+/* 焦点样式：用主题色描边代替浏览器默认的黑框；信纸是程序聚焦（便于读屏），不画描边。 */
+.egg-phrase input:focus {
+  border-color: var(--global-theme-color);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--global-theme-color) 22%, transparent);
+}
+.egg-paper:focus {
+  outline: none;
+}
+.egg-gallery :focus-visible,
+.egg-overlay button:focus-visible {
+  outline: 2px solid var(--global-theme-color);
+  outline-offset: 2px;
+}

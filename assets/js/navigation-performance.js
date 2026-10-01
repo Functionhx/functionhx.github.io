@@ -66,4 +66,48 @@
 
   document.addEventListener("focusin", (event) => prefetch(triggerFromEvent(event)));
   document.addEventListener("touchstart", (event) => prefetch(triggerFromEvent(event)), { passive: true });
+
+  // Service Worker（/sw.js）：回访和站内切换时，带版本号的样式与脚本直接用本地缓存。
+  // 排查用：地址后加 ?sw=off 会在这台浏览器上关掉它（注销并清空缓存），?sw=on 重新打开。
+  if ("serviceWorker" in navigator && window.isSecureContext) {
+    const offKey = "functionhx:sw:off";
+    const toggle = new URLSearchParams(window.location.search).get("sw");
+    let disabled = false;
+    try {
+      if (toggle === "off") window.localStorage.setItem(offKey, "1");
+      if (toggle === "on") window.localStorage.removeItem(offKey);
+      disabled = window.localStorage.getItem(offKey) === "1";
+    } catch (_error) {
+      disabled = toggle === "off";
+    }
+    const whenLoaded = (callback) => {
+      if (document.readyState === "complete") callback();
+      else window.addEventListener("load", callback, { once: true });
+    };
+    if (disabled) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => registrations.forEach((registration) => registration.unregister()));
+      // 这一页可能还被旧的 Service Worker 接管着，等它的请求都结束再清缓存，免得被重新写回去。
+      whenLoaded(() =>
+        window.setTimeout(() => {
+          window.caches?.keys().then((names) => names.filter((name) => name.startsWith("functionhx-")).forEach((name) => window.caches.delete(name)));
+        }, 1500)
+      );
+    } else {
+      whenLoaded(() => {
+        navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+        // 第一次访问时 Service Worker 还没接管这一页：把这页已经用到的带版本号资源告诉它，
+        // 让它提前存好，下一页就能直接从缓存拿。
+        navigator.serviceWorker.ready.then((registration) => {
+          const urls = window.performance
+            .getEntriesByType("resource")
+            .map((entry) => entry.name)
+            .filter((name) => {
+              const url = new URL(name);
+              return url.origin === window.location.origin && url.pathname.startsWith("/assets/") && url.searchParams.has("v");
+            });
+          if (urls.length) registration.active?.postMessage({ type: "warm", urls });
+        });
+      });
+    }
+  }
 })();

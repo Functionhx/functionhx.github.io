@@ -51,9 +51,9 @@
   {% assign settings_auth_verify = 'Verify and connect' %}
 {% else %}
   {% assign settings_heading = '站点设置' %}
-  {% assign settings_intro = '字体、加载文案与栏目由站长设置，保存并发布后对所有访客生效。' %}
+  {% assign settings_intro = '外观改动马上对所有访客生效；栏目的显示与隐藏需要「保存并发布」。' %}
   {% assign settings_personalization = '阅读体验' %}
-  {% assign settings_personalization_note = '即时预览 · 发布后对所有访客生效' %}
+  {% assign settings_personalization_note = '修改后立即生效，不用等构建' %}
   {% assign settings_font = '阅读字体' %}
   {% assign settings_font_note = '应用于所有页面' %}
   {% assign settings_loading_copy = '加载文案' %}
@@ -62,7 +62,7 @@
   {% assign settings_owner_note = '栏目与发布' %}
   {% assign settings_existing = '栏目' %}
   {% assign settings_layout = '导航布局' %}
-  {% assign settings_layout_intro = '即时预览导航间距，保存并发布后对所有访客生效。' %}
+  {% assign settings_layout_intro = '导航间距改动马上生效；显示或隐藏栏目需要「保存并发布」。' %}
   {% assign settings_density_auto = '自动' %}
   {% assign settings_density_auto_note = '根据可用宽度与栏目数量自动平衡。' %}
   {% assign settings_density_compact = '紧凑' %}
@@ -87,7 +87,7 @@
   {% assign settings_connect = '连接 GitHub' %}
   {% assign settings_commit = '保存并发布' %}
   {% assign settings_close = '关闭设置' %}
-  {% assign settings_idle = '修改暂时只保留在这个面板中，保存并发布后才会更新站点。' %}
+  {% assign settings_idle = '栏目的修改暂时只保留在这个面板中，保存并发布后才会更新站点。' %}
   {% assign settings_auth_heading = '连接 GitHub' %}
   {% assign settings_auth_intro = '创建时选择“Only select repositories → functionhx.github.io”，权限只开启 Contents: write 与 Actions: read。' %}
   {% assign settings_auth_create = '在 GitHub 创建受限令牌' %}
@@ -109,6 +109,8 @@
     data-initial-navigation-density="{{ site.data.site_ui.navigation_density | default: 'auto' | escape }}"
     data-initial-site-font="{{ site.data.site_ui.site_font | default: 'system' | escape }}"
     data-initial-loading-copy="{{ site.data.site_ui.loading_copy | default: 'thinking' | escape }}"
+    data-initial-season-effect="{{ site.data.site_ui.season_effect | default: 'off' | escape }}"
+    data-initial-wind-strength="{{ site.data.site_ui.wind_strength | default: 100 | escape }}"
     data-ui-settings-path="_data/site_ui.yml"
   >
     <header class="site-settings__header">
@@ -181,6 +183,59 @@
               </select>
               <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
             </label>
+          </div>
+          <div class="site-settings__preference site-settings__preference--season">
+            <div>
+              <strong>季节氛围</strong>
+              <small>为页面增添季节的氛围；「自动」按月份换：冬雪、春樱、夏雨、秋叶</small>
+            </div>
+            <div class="site-settings__segmented" role="radiogroup" aria-label="季节氛围">
+              {% assign season_rows = 'off:关闭|auto:自动|snow:飘雪|sakura:樱花|rain:雨|leaves:落叶' | split: '|' %}
+              {% for row in season_rows %}
+                {% assign season_pair = row | split: ':' %}
+                <label>
+                  <input type="radio" name="site-settings-season" value="{{ season_pair[0] }}">
+                  <span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      {%- case season_pair[0] -%}
+                        {%- when 'off' -%}
+                          <circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/>
+                        {%- when 'auto' -%}
+                          <circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/>
+                        {%- when 'snow' -%}
+                          <path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5 12 7l2.5-2.5M9.5 19.5 12 17l2.5 2.5"/>
+                        {%- when 'sakura' -%}
+                          <path d="M12 11c-2.5-2-3-5.5-1-7.5l1 1.5 1-1.5c2 2 1.5 5.5-1 7.5zM12 11c3-.8 6 .7 6.5 3.6l-1.8.2.9 1.6c-2.6 1.4-5.6-.4-5.6-5.4zM12 11c-3-.8-6 .7-6.5 3.6l1.8.2-.9 1.6c2.6 1.4 5.6-.4 5.6-5.4z"/>
+                        {%- when 'rain' -%}
+                          <path d="M8 4 5 14M14 4l-3 10M20 4l-3 10M11 16l-1.5 4M17 16l-1.5 4"/>
+                        {%- else -%}
+                          <path d="M5 19C5 11 10 5 19 5c0 9-6 14-14 14zM5 19l8-8"/>
+                      {%- endcase -%}
+                    </svg>
+                    {{- season_pair[1] -}}
+                  </span>
+                </label>
+              {% endfor %}
+            </div>
+            <div class="site-settings__preference site-settings__preference--wind">
+              <div>
+                <strong>风力</strong>
+                <small>切换日夜时那阵风的力度：0 是不起风，100 是默认，200 最猛</small>
+              </div>
+              <div class="site-settings__wind">
+                <input
+                  id="site-settings-wind"
+                  type="range"
+                  min="0"
+                  max="200"
+                  step="10"
+                  value="{{ site.data.site_ui.wind_strength | default: 100 }}"
+                  aria-label="风力"
+                >
+                <output id="site-settings-wind-value" for="site-settings-wind">{{ site.data.site_ui.wind_strength | default: 100 }}%</output>
+                <button id="site-settings-wind-test" class="site-settings__button site-settings__button--quiet" type="button">试吹一阵</button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -274,6 +329,70 @@
                 >
               </label>
             </fieldset>
+          </section>
+
+          {% comment %} 彩蛋：图鉴里公开哪些线索，以及那封加密的信（assets/js/eggs.js）。 {% endcomment %}
+          {% assign egg_settings = site.data.eggs %}
+          <section
+            id="site-settings-eggs"
+            class="site-settings__section site-settings__eggs"
+            aria-labelledby="site-settings-eggs-heading"
+            data-initial-egg-public="{{ egg_settings.public | jsonify | escape }}"
+            data-initial-letter="{{ egg_settings.letter | jsonify | escape }}"
+          >
+            <div class="site-settings__section-heading">
+              <h3 id="site-settings-eggs-heading">彩蛋</h3>
+              <span>改动即时生效 · 在图鉴里公开触发线索</span>
+            </div>
+            <ul class="site-settings__egg-list">
+              {% assign egg_rows = 'turbo:⚡ Turbo 模式|dog:🐕 机器狗|terminal:⌨️ 终端|fx:ƒ f(x)|night:🌙 深夜来访|idle:🖥️ 屏保|console:🛠️ 控制台|tab:👀 标签页|letter:✉️ 一封信'
+                | split: '|'
+              %}
+              {% for row in egg_rows %}
+                {% assign egg_pair = row | split: ':' %}
+                {% assign egg_id = egg_pair[0] %}
+                <li>
+                  <label>
+                    <span>{{ egg_pair[1] }}</span>
+                    <input
+                      type="checkbox"
+                      role="switch"
+                      data-egg-public="{{ egg_id }}"
+                      {% if egg_settings.public[egg_id] %}
+                        checked
+                      {% endif %}
+                    >
+                  </label>
+                </li>
+              {% endfor %}
+            </ul>
+            <details id="site-settings-letter" class="site-settings__letter">
+              <summary>
+                <span>写一封信</span>
+                <small>
+                  {%- if egg_settings.letter %}已写好，可以重写{% else %}还没写{% endif -%}
+                </small>
+              </summary>
+              <p class="site-settings__letter-note">
+                暗号和六位密码只在这台浏览器里用来加密，不会上传；发布到仓库的只有密文。两者要与发信服务的 LETTER_PHRASE、LETTER_PIN 保持一致。
+              </p>
+              <div class="site-settings__letter-grid">
+                <label>暗号<input id="site-settings-letter-phrase" type="text" autocomplete="off" spellcheck="false" maxlength="64"></label>
+                <label
+                  >六位密码<input id="site-settings-letter-pin" type="text" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}"
+                ></label>
+                <label class="site-settings__letter-wide"
+                  >密码提示（输错三次后出现，可留空）<input id="site-settings-letter-hint" type="text" maxlength="80"
+                ></label>
+                <label class="site-settings__letter-wide">标题<input id="site-settings-letter-title" type="text" value="给你" maxlength="40"></label>
+                <label class="site-settings__letter-wide"
+                  >信的内容<textarea id="site-settings-letter-text" rows="8" maxlength="4000"></textarea>
+                </label>
+                <label class="site-settings__letter-wide">落款<input id="site-settings-letter-sign" type="text" value="—— ƒ" maxlength="40"></label>
+              </div>
+              <button id="site-settings-letter-seal" class="site-settings__button" type="button">加密这封信</button>
+              <p id="site-settings-letter-status" class="site-settings__letter-status" role="status" aria-live="polite"></p>
+            </details>
           </section>
 
           <section class="site-settings__section" aria-labelledby="site-settings-existing-heading">

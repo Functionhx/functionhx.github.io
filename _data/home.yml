@@ -22,8 +22,8 @@ updates:
     description: 按 Reviewer 串起初始评审、作者回复与评分变化，方便回看论文 rebuttal。
     url: /tools/rebuttal-reader/
   post-batch-lio:
-    title: 公开 Batch-LIO
-    description: 以批量更新加速 Point-LIO，公开实现思路、测试结果与代码。
+    title: 开源 Batch-LIO
+    description: 以批量更新加速 Point-LIO，开源实现思路、测试结果与代码。
   news-embodied-ai-control-story-repost:
     description: 获「自动驾驶之心」推出的「具身智能之心 TechDaily」转载。
   post-embodied-ai-control-story:
