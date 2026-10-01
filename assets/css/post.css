@@ -704,6 +704,51 @@ html:is([data-site-font="dyslexic"], [data-site-font="wenkai"])
   font-family: var(--site-font-family);
 }
 
+/* 文楷风格（站长在站点设置里选了「文楷」才会出现）：标题前缀 # 号，加粗文字像荧光笔划过。 */
+html[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) :is(h2, h3, h4) {
+  font-family: var(--site-font-family);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+html[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) h3 {
+  font-size: 19.5px;
+}
+html[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) h4 {
+  font-size: 17px;
+}
+html[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) :is(h2, h3, h4)::before {
+  color: var(--post-ink-4);
+  font-weight: 400;
+  margin-right: 0.35em;
+}
+html[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) h2::before {
+  content: "#";
+}
+html[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) h3::before {
+  content: "##";
+}
+html[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) h4::before {
+  content: "###";
+}
+html[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) strong {
+  --post-marker: rgba(255, 196, 82, 0.5);
+  background: linear-gradient(transparent 56%, var(--post-marker) 56%);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  font-weight: 700;
+  padding: 0 0.12em;
+}
+html[data-theme="dark"][data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) strong {
+  --post-marker: rgba(96, 190, 202, 0.32);
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme])[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) strong {
+    --post-marker: rgba(96, 190, 202, 0.32);
+  }
+}
+
 /* ---------- responsive ---------- */
 @media (max-width: 1100px) {
   .post-hero__content,
