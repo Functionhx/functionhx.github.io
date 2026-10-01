@@ -4,7 +4,7 @@
   // 隐藏彩蛋。访客点导航栏的齿轮打开「彩蛋图鉴」，长按齿轮（或 Alt+Enter）才是站长登录；
   // 已验证的站长点齿轮直接打开站点设置（由 site-settings.js 处理）。
   // 彩蛋：Turbo（长按主题按钮，turbo-mode.js）、机器狗（↑↑↓↓←→←→BA）、终端（` 键）、
-  // f(x)（首页连点 ƒ 五下，ƒ 依次求导：ƒ′ ƒ″ ∂ƒ ?）、追到最后（追逐曲线连追上三个问号，画出爱心和 LOVE）、
+  // f(x)（首页连点 ƒ 五下，ƒ 依次求导：ƒ′ ƒ″ ∂ƒ ?）、无心之笔（追逐曲线追着追着，轨迹里不经意出现一个爱心）、
   // 404 漂流瓶（不同的错误地址各捡一个，三个拼成一张）、页面考古（点文章的发布日期）、
   // 机器狗跑满三趟会没电（拖插头到充电口，或开 Turbo）、一封信（暗号拿到信封，六位密码拆信）。
 
@@ -26,7 +26,7 @@
     { id: "dog", icon: "🐕", name: "机器狗", hint: "一段三十多年前的游戏秘籍，用方向键和 B、A。" },
     { id: "terminal", icon: "⌨️", name: "终端", hint: "键盘左上角，数字 1 的旁边。" },
     { id: "fx", icon: "ƒ", name: "f(x)", hint: "首页左上角的 ƒ 好像不只是个标志。" },
-    { id: "love", icon: "❤️", name: "追到最后", hint: "追逐曲线里，连着追上三个未知之后，它会给出一个答案。" },
+    { id: "love", icon: "❤️", name: "无心之笔", hint: "追逐的轨迹，有时会不经意写下点什么。" },
     { id: "night", icon: "🌙", name: "深夜来访", hint: "有些话，只在午夜之后说。" },
     { id: "idle", icon: "🖥️", name: "屏保", hint: "什么都别做，静静等上一分钟。" },
     { id: "console", icon: "🛠️", name: "控制台", hint: "开发者工具里，也有人在等你。" },
@@ -908,32 +908,25 @@
     let flash = null;
     let frame = 0;
     let lastTime = 0;
-    // 追上几个问号之后，问号不再乱走，改为沿爱心曲线匀速行走；追踪者照旧朝它追，
-    // 稳态下墨迹几乎贴着这条曲线，画出一个爱心，随后写下 LOVE。
-    const LOVE_LAP = 7;
-    const LOVE_WORD = "LOVE";
-    const LOVE_INK = "194, 65, 93";
-    const staticMode = reducedMotion();
-    let mode = "wander";
+    // 追上第二个问号之后，下一个问号会悄悄沿着一条爱心曲线走一圈；追踪者照旧朝它追，
+    // 墨迹就在不经意间画出一个爱心。没有任何提示，走完被追上，一切照旧。
+    const HEART_AFTER = 2;
+    const HEART_LAP = 7;
+    let catches = 0;
+    let heartDone = false;
     let heart = null;
-    let loveClock = 0;
-    let loveSpeed = 0;
-    let wordClock = -1;
-    let wordDone = false;
-    let sparks = [];
-    let sparkClock = 0;
 
     const buildHeart = () => {
-      const scale = Math.min(width / 42, height / 33);
-      const cx = width / 2;
-      const cy = height / 2 - scale * 2.5;
+      const scale = Math.min(width / 46, height / 36);
+      const angle = (Math.random() - 0.5) * 0.3;
+      const cx = width * (0.5 + (Math.random() - 0.5) * 0.1);
+      const cy = height * (0.5 + (Math.random() - 0.5) * 0.06);
       const raw = [];
       for (let index = 0; index < 1440; index += 1) {
         const t = (index / 1440) * 2 * Math.PI;
-        raw.push({
-          x: cx + 16 * Math.sin(t) ** 3 * scale,
-          y: cy - (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * scale,
-        });
+        const lx = 16 * Math.sin(t) ** 3 * scale;
+        const ly = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t) + 2.5) * scale;
+        raw.push({ x: cx + lx * Math.cos(angle) - ly * Math.sin(angle), y: cy + lx * Math.sin(angle) + ly * Math.cos(angle) });
       }
       // 按弧长重新取点，问号才能匀速走。
       const cumulative = [0];
@@ -953,18 +946,23 @@
         const to = raw[(cursor + 1) % raw.length];
         points.push({ x: from.x + (to.x - from.x) * fraction, y: from.y + (to.y - from.y) * fraction });
       }
-      heart = { points, length, scale, cx, cy };
-      loveSpeed = length / LOVE_LAP;
+      return { points, length, speed: length / HEART_LAP, scale, walked: 0 };
     };
 
     const heartAt = (distance) => {
       const total = heart.points.length;
-      const position = ((((distance % heart.length) + heart.length) % heart.length) / heart.length) * total;
+      const position = (Math.min(distance, heart.length - 1e-6) / heart.length) * total;
       const index = Math.floor(position);
       const fraction = position - index;
       const from = heart.points[index];
       const to = heart.points[(index + 1) % total];
       return { x: from.x + (to.x - from.x) * fraction, y: from.y + (to.y - from.y) * fraction };
+    };
+
+    const startHeart = () => {
+      heart = buildHeart();
+      target = heartAt(0);
+      targetTrail = [{ ...target }];
     };
 
     const targetAt = (time) => ({
@@ -980,86 +978,21 @@
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
       pursuer = { x: width * 0.08, y: height * 0.88 };
       trail = [{ ...pursuer }];
-      if (mode === "love") {
-        buildHeart();
-        target = heartAt(loveClock * loveSpeed);
-      } else {
-        target = targetAt(clock);
-      }
+      target = targetAt(clock);
       targetTrail = [{ ...target }];
-    };
-
-    const stepLove = (dt) => {
-      loveClock += dt;
-      target = heartAt(loveClock * loveSpeed);
-      targetTrail.push({ ...target });
-      if (targetTrail.length > 150) targetTrail.shift();
-      const dx = target.x - pursuer.x;
-      const dy = target.y - pursuer.y;
-      const distance = Math.hypot(dx, dy);
-      // 离得远就加速赶过来，贴近之后比问号略慢，始终落后一小段。
-      const move = Math.min(distance, loveSpeed * (0.9 + Math.min(distance / (heart.scale * 12), 2.2)) * dt);
-      if (distance > 0) pursuer = { x: pursuer.x + (dx / distance) * move, y: pursuer.y + (dy / distance) * move };
-      trail.push({ ...pursuer });
-      if (trail.length > 1400) trail.shift();
-      if (wordClock < 0 && loveClock > LOVE_LAP * 1.7) wordClock = 0;
-      if (wordClock >= 0) {
-        wordClock += dt;
-        if (!wordDone && wordClock > LOVE_WORD.length * 0.55 + 0.6) {
-          wordDone = true;
-          hooks.onLoveWord?.();
-        }
-        if (wordDone) {
-          sparkClock += dt;
-          while (sparkClock > 0.3) {
-            sparkClock -= 0.3;
-            sparks.push({
-              x: heart.cx + (Math.random() - 0.5) * heart.scale * 24,
-              y: heart.cy + heart.scale * (4 + Math.random() * 8),
-              vy: -(26 + Math.random() * 34),
-              size: 11 + Math.random() * 13,
-              phase: Math.random() * 6,
-              age: 0,
-              life: 3 + Math.random() * 1.5,
-            });
-          }
-        }
-      }
-      sparks = sparks.filter((spark) => {
-        spark.age += dt;
-        spark.y += spark.vy * dt;
-        spark.x += Math.sin(spark.age * 2 + spark.phase) * 8 * dt;
-        return spark.age < spark.life;
-      });
-    };
-
-    const beginLove = () => {
-      if (mode === "love") return;
-      mode = "love";
-      buildHeart();
-      loveClock = 0;
-      wordClock = -1;
-      wordDone = false;
-      sparks = [];
-      flash = null;
-      trail = [{ ...pursuer }];
-      target = heartAt(0);
-      targetTrail = [{ ...target }];
-      hooks.onLoveStart?.();
-      if (staticMode) {
-        for (let index = 0; index < 60 * LOVE_LAP * 3; index += 1) stepLove(1 / 60);
-        draw();
-      }
+      if (heart) startHeart();
     };
 
     const step = (dt) => {
-      if (mode === "love") {
-        stepLove(dt);
-        return;
-      }
       clock += dt * 0.5;
       sinceCatch += dt;
-      const next = targetAt(clock);
+      let next;
+      if (heart) {
+        heart.walked = Math.min(heart.walked + heart.speed * dt, heart.length);
+        next = heartAt(heart.walked);
+      } else {
+        next = targetAt(clock);
+      }
       const targetSpeed = Math.hypot(next.x - target.x, next.y - target.y) / Math.max(dt, 1e-3);
       smoothed = smoothed ? smoothed * 0.95 + targetSpeed * 0.05 : targetSpeed;
       target = next;
@@ -1070,18 +1003,30 @@
       const dx = target.x - pursuer.x;
       const dy = target.y - pursuer.y;
       const distance = Math.hypot(dx, dy);
-      const move = Math.min(distance, smoothed * factor * dt);
+      // 走爱心的那一圈里，追踪者贴得更紧：离得远就加速赶上，贴近后比问号略慢，始终落后一小段。
+      const speed = heart ? heart.speed * (0.92 + Math.min(distance / (heart.scale * 12), 2.2)) : smoothed * factor;
+      const move = Math.min(distance, speed * dt);
       if (distance > 0) {
         pursuer = { x: pursuer.x + (dx / distance) * move, y: pursuer.y + (dy / distance) * move };
       }
       trail.push({ ...pursuer });
       if (trail.length > 1400) trail.shift();
-      if (distance < 9) {
+      if (distance < 9 && (!heart || heart.walked >= heart.length)) {
         flash = { x: pursuer.x, y: pursuer.y, age: 0 };
         sinceCatch = 0;
         phase += 2 + Math.random() * 3;
-        target = targetAt(clock);
-        targetTrail = [{ ...target }];
+        catches += 1;
+        if (heart) {
+          heart = null;
+          heartDone = true;
+          hooks.onHeart?.();
+        }
+        if (!heartDone && catches >= HEART_AFTER) {
+          startHeart();
+        } else {
+          target = targetAt(clock);
+          targetTrail = [{ ...target }];
+        }
         onCatch?.();
       }
       if (flash) {
@@ -1105,24 +1050,12 @@
       context.font = "italic 13px Georgia, serif";
       context.fillText("x", width - 20, height - 20);
       context.fillText("y", 20, 18);
-      const loving = mode === "love";
-      const inkRgb = loving ? LOVE_INK : "32, 52, 79";
-      // 写完 LOVE 之后，爱心里慢慢填上颜色。
-      if (loving && wordClock >= 0) {
-        context.fillStyle = `rgba(${LOVE_INK}, ${Math.min(wordClock / 1.6, 1) * 0.11})`;
-        context.beginPath();
-        heart.points.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
-        context.closePath();
-        context.fill();
-      }
-      // 问号走过的路：红铅笔虚线（爱心阶段是整条爱心曲线）
+      // 问号走过的路：红铅笔虚线
       context.setLineDash([4, 6]);
-      context.strokeStyle = loving ? "rgba(180, 70, 61, 0.3)" : "rgba(180, 70, 61, 0.45)";
+      context.strokeStyle = "rgba(180, 70, 61, 0.45)";
       context.lineWidth = 1.4;
       context.beginPath();
-      (loving ? [...heart.points, heart.points[0]] : targetTrail).forEach((point, index) =>
-        index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)
-      );
+      targetTrail.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
       context.stroke();
       context.setLineDash([]);
       // 追踪者的墨迹：越新越浓
@@ -1133,7 +1066,7 @@
       for (let part = 0; part < segments; part += 1) {
         const slice = trail.slice(part * chunk, (part + 1) * chunk + 1);
         if (slice.length < 2) continue;
-        context.strokeStyle = `rgba(${inkRgb}, ${0.18 + (0.82 * (part + 1)) / segments})`;
+        context.strokeStyle = `rgba(32, 52, 79, ${0.18 + (0.82 * (part + 1)) / segments})`;
         context.lineWidth = 2.2;
         context.beginPath();
         slice.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
@@ -1153,7 +1086,7 @@
       context.font = "26px 'Long Cang', 'Kaiti SC', STKaiti, KaiTi, cursive";
       context.textAlign = "center";
       context.textBaseline = "middle";
-      context.fillText(loving ? "♥" : "?", target.x, target.y - 1);
+      context.fillText("?", target.x, target.y - 1);
       context.strokeStyle = "rgba(180, 70, 61, 0.55)";
       context.beginPath();
       context.arc(target.x, target.y, 14, 0, Math.PI * 2);
@@ -1165,28 +1098,6 @@
       context.fill();
       context.font = "italic 17px Georgia, 'Times New Roman', serif";
       context.fillText("ƒ", pursuer.x - 11, pursuer.y - 13);
-      if (loving) {
-        // 一个字一个字写出 LOVE
-        const size = Math.round(heart.scale * 6.5);
-        context.font = `${size}px 'Long Cang', 'Kaiti SC', STKaiti, KaiTi, cursive`;
-        context.textAlign = "left";
-        const widths = [...LOVE_WORD].map((letter) => context.measureText(letter).width + size * 0.08);
-        let left = heart.cx - widths.reduce((sum, width) => sum + width, 0) / 2;
-        [...LOVE_WORD].forEach((letter, index) => {
-          const progress = wordClock < 0 ? 0 : Math.min(Math.max((wordClock - index * 0.55) / 0.6, 0), 1);
-          if (progress > 0) {
-            context.fillStyle = `rgba(${LOVE_INK}, ${progress})`;
-            context.fillText(letter, left, heart.cy + heart.scale * 3.5 + size * 0.34 + (1 - progress) * 10);
-          }
-          left += widths[index];
-        });
-        context.textAlign = "center";
-        sparks.forEach((spark) => {
-          context.fillStyle = `rgba(200, 70, 90, ${Math.min(1, (spark.life - spark.age) / 1) * 0.75})`;
-          context.font = `${spark.size}px Georgia, serif`;
-          context.fillText("♥", spark.x, spark.y);
-        });
-      }
       if (flash) {
         const progress = flash.age / 0.9;
         context.strokeStyle = `rgba(180, 70, 61, ${1 - progress})`;
@@ -1203,12 +1114,11 @@
     };
 
     reset();
-    if (staticMode) {
+    if (hooks.heartFirst) startHeart();
+    if (reducedMotion()) {
       for (let index = 0; index < 900; index += 1) step(1 / 60);
       draw();
-      const idle = () => {};
-      idle.love = beginLove;
-      return idle;
+      return () => {};
     }
     const loop = (time) => {
       const dt = lastTime ? Math.min((time - lastTime) / 1000, 0.05) : 1 / 60;
@@ -1220,15 +1130,11 @@
     frame = window.requestAnimationFrame(loop);
     const onResize = () => reset();
     window.addEventListener("resize", onResize);
-    const stop = () => {
+    return () => {
       window.cancelAnimationFrame(frame);
       window.removeEventListener("resize", onResize);
     };
-    stop.love = beginLove;
-    return stop;
   }
-
-  const HEART_FORMULA = "<i>x</i> = 16 sin³<i>t</i>，&nbsp;<i>y</i> = 13 cos <i>t</i> − 5 cos 2<i>t</i> − 2 cos 3<i>t</i> − cos 4<i>t</i>";
 
   const DERIVATIVES = ["ƒ′", "ƒ″", "∂ƒ", "?"];
   let glyphTimer = 0;
@@ -1261,46 +1167,17 @@
       "f(x) 追逐曲线"
     );
     const count = overlay.querySelector(".egg-fx-count");
-    const caption = overlay.querySelector(".egg-fx-caption");
-    const formula = overlay.querySelector(".egg-fx-formula");
-    const plot = overlay.querySelector("canvas");
-    const LOVE_AFTER = 3;
     let caught = 0;
-    let loving = false;
-    let loveTimer = 0;
     const stop = pursuit(
-      plot,
+      overlay.querySelector("canvas"),
       () => {
         caught += 1;
-        if (loving) return;
-        // 追上第三个之后，下一个问号停下来，改走一条爱心曲线（减少动态效果时不自动进入，图鉴里仍可回放）。
-        if (caught === LOVE_AFTER && !reducedMotion()) {
-          count.textContent = `追上了第 ${caught} 个未知。咦，下一个问号停下来了……`;
-          loveTimer = window.setTimeout(() => stop.love?.(), 1800);
-          return;
-        }
         count.textContent = `追上了第 ${caught} 个未知 —— 新的问号又出现了。`;
       },
-      {
-        onLoveStart() {
-          loving = true;
-          markFound("love");
-          formula.innerHTML = HEART_FORMULA;
-          caption.textContent = "它不再乱跑了，开始沿着一条曲线转圈。";
-          count.textContent = "追着它，一圈，又一圈……";
-          plot.setAttribute("aria-label", "追踪者追着一个沿爱心曲线行走的符号，墨迹渐渐画出一个爱心，最后写下 LOVE。");
-        },
-        onLoveWord() {
-          caption.textContent = "追到最后，答案是——";
-          count.textContent = "LOVE ♥";
-        },
-      }
+      // 悄悄走过一圈爱心之后，只在图鉴里记一笔，页面上没有任何提示。
+      { heartFirst: love, onHeart: () => markFound("love") }
     );
-    overlay.addEventListener("egg:close", () => {
-      window.clearTimeout(loveTimer);
-      stop();
-    });
-    if (love) stop.love?.();
+    overlay.addEventListener("egg:close", stop);
     const button = overlay.querySelector(".egg-tag");
     button.addEventListener("click", () => overlay.egg.close());
     button.focus({ preventScroll: true });
