@@ -60,9 +60,9 @@
       <link rel="stylesheet" href="{{ '/assets/css/media-embeds.css' | relative_url | bust_file_cache }}">
     {% endif %}
     {% if page_lang != 'en' %}
-      <!-- 标题衬线体：按 unicode-range 切片，页面只下载用到的字；加载不到时退回系统宋体。 -->
+      <!-- 标题衬线体：拉丁字母自托管；中文衬线体体积太大，仍按 unicode-range 切片从 CDN 取，页面只下载用到的字，加载不到时退回系统宋体。 -->
       <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-serif-4@5.3.0/latin-500.css">
+      <link rel="stylesheet" href="{{ '/assets/third-party/source-serif-4-5.3.0/latin-500.css' | relative_url | bust_file_cache }}">
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.3.0/500.css">
       <link rel="stylesheet" href="{{ '/assets/css/function.css' | relative_url | bust_file_cache }}">
       <link rel="stylesheet" href="{{ '/assets/css/function-settings.css' | relative_url | bust_file_cache }}">

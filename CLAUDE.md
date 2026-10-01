@@ -144,6 +144,15 @@ first two run on the owner's Tencent Cloud server:
   replaced by a `<meta>` that `site-preferences.js` loads only for fonts that need
   it, and MathJax becomes `async` and is moved after `mathjax-setup.js`. Never add
   a render-blocking or synchronous third-party resource back to `<head>`.
+- Icon fonts (Font Awesome, Academicons, Scholar Icons) and the Latin heading serif are
+  self-hosted in `assets/third-party/<name>-<version>/`, wired through `_config.yml`
+  `third_party_libraries` and `_layouts/default.liquid`. Do not name the directory `vendor`
+  (`.gitignore` swallows it). Upgrading means a new directory plus the `?v=` in the config URL.
+  Noto Serif SC (sliced into ~100 files) and the easter-egg fonts still come from jsDelivr and
+  fall back to system fonts.
+- `deploy/nginx/fanyuchen.com.cn.conf` caches any `/assets/…?v=<hash>` URL for a year
+  (`immutable`); URLs without `?v=` are revalidated. The file is applied to the server by hand,
+  CI does not deploy it.
 - `_layouts/default.liquid` carries Speculation Rules (hover prerender of site
   links); `navigation-performance.js` keeps hover prefetch for other browsers and
   registers the Service Worker.

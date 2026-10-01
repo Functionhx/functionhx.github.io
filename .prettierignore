@@ -10,3 +10,4 @@ _data/citations.yml
 
 # sw.js 带 Jekyll front matter（构建时写入版本号与页面清单），Prettier 解析不了；正文已按 Prettier 格式化
 sw.js
+assets/third-party/
