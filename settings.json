@@ -3,7 +3,7 @@
   "site_font": "system",
   "loading_copy": "loading",
   "season_effect": "sakura",
-  "wind_strength": 200,
+  "wind_strength": 110,
   "navigation_density": "relaxed",
   "eggs": {
     "public": {
