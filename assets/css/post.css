@@ -704,6 +704,11 @@ html:is([data-site-font="dyslexic"], [data-site-font="wenkai"])
   font-family: var(--site-font-family);
 }
 
+/* 选了 Anthropic Sans 时，文章里的小标签和标题连同等宽字体一起换成 Anthropic Mono。 */
+html[data-site-font="anthropic-sans"] :is(.post--article, .post-paper) {
+  --post-mono: "Anthropic Mono", "SF Mono", ui-monospace, Menlo, Consolas, "PingFang SC", "Microsoft YaHei", monospace;
+}
+
 /* 文楷风格（站长在站点设置里选了「文楷」才会出现）：标题前缀 # 号，加粗文字像荧光笔划过。 */
 html[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) :is(h2, h3, h4) {
   font-family: var(--site-font-family);

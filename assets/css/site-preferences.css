@@ -6,8 +6,39 @@ html[data-site-font="anthropic-serif"] {
   --site-font-family: "Roboto Slab", "Iowan Old Style", "Palatino Linotype", "Songti SC", STSong, serif;
 }
 
+/* Anthropic Sans / Anthropic Mono：站长持有授权的自托管字体（站长决定 2026-10-01，见 AGENTS.md）。
+   只有选了「Anthropic Sans」才会下载；它只含拉丁字母，中文由后面的系统字体接上。 */
+@font-face {
+  font-family: "Anthropic Sans";
+  src: url("/assets/fonts/anthropic/anthropic-sans-roman.woff2") format("woff2");
+  font-weight: 300 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anthropic Sans";
+  src: url("/assets/fonts/anthropic/anthropic-sans-italic.woff2") format("woff2");
+  font-weight: 300 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anthropic Mono";
+  src: url("/assets/fonts/anthropic/anthropic-mono-roman.woff2") format("woff2");
+  font-weight: 300 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anthropic Mono";
+  src: url("/assets/fonts/anthropic/anthropic-mono-italic.woff2") format("woff2");
+  font-weight: 300 800;
+  font-style: italic;
+  font-display: swap;
+}
+
 html[data-site-font="anthropic-sans"] {
-  --site-font-family: Roboto, "Avenir Next", Avenir, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --site-font-family: "Anthropic Sans", Roboto, "Avenir Next", Avenir, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 html[data-site-font="system"] {
