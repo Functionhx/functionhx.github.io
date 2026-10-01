@@ -29,3 +29,6 @@ __pycache__/
 
 # 编辑器本地配置（含 .env，不入库）
 .vscode/
+
+# 本地草稿工具，与站点构建无关
+_prototypes/
