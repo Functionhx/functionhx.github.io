@@ -5,10 +5,12 @@ public:
   dog: true
   terminal: true
   fx: true
+  love: true
   night: true
   idle: true
   console: true
   tab: true
+  bottle: true
   letter: true
 letter:
   v: 2

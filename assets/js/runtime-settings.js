@@ -15,7 +15,7 @@
   const LOADING_COPY = new Set(["thinking", "loading", "thinking-zh", "loading-zh"]);
   const SEASONS = new Set(["off", "auto", "snow", "sakura", "rain", "leaves"]);
   const DENSITIES = new Set(["auto", "compact", "relaxed"]);
-  const EGG_IDS = ["turbo", "dog", "terminal", "fx", "night", "idle", "console", "tab", "letter"];
+  const EGG_IDS = ["turbo", "dog", "terminal", "fx", "love", "night", "idle", "console", "tab", "bottle", "letter"];
   const BASE64 = /^[A-Za-z0-9+/=]+$/;
   const root = document.documentElement;
 

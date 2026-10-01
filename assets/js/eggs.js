@@ -4,7 +4,8 @@
   // 隐藏彩蛋。访客点导航栏的齿轮打开「彩蛋图鉴」，长按齿轮（或 Alt+Enter）才是站长登录；
   // 已验证的站长点齿轮直接打开站点设置（由 site-settings.js 处理）。
   // 彩蛋：Turbo（长按主题按钮，turbo-mode.js）、机器狗（↑↑↓↓←→←→BA）、终端（` 键）、
-  // f(x)（首页连点 ƒ 五下）、一封信（暗号拿到信封，六位密码拆信）。
+  // f(x)（首页连点 ƒ 五下，ƒ 依次求导：ƒ′ ƒ″ ∂ƒ ?）、追到最后（追逐曲线连追上三个问号，画出爱心和 LOVE）、
+  // 404 漂流瓶（不同的错误地址各捡一个，三个拼成一张）、一封信（暗号拿到信封，六位密码拆信）。
 
   const root = document.documentElement;
   const configNode = document.getElementById("function-eggs-config");
@@ -24,10 +25,12 @@
     { id: "dog", icon: "🐕", name: "机器狗", hint: "一段三十多年前的游戏秘籍，用方向键和 B、A。" },
     { id: "terminal", icon: "⌨️", name: "终端", hint: "键盘左上角，数字 1 的旁边。" },
     { id: "fx", icon: "ƒ", name: "f(x)", hint: "首页左上角的 ƒ 好像不只是个标志。" },
+    { id: "love", icon: "❤️", name: "追到最后", hint: "追逐曲线里，连着追上三个未知之后，它会给出一个答案。" },
     { id: "night", icon: "🌙", name: "深夜来访", hint: "有些话，只在午夜之后说。" },
     { id: "idle", icon: "🖥️", name: "屏保", hint: "什么都别做，静静等上一分钟。" },
     { id: "console", icon: "🛠️", name: "控制台", hint: "开发者工具里，也有人在等你。" },
     { id: "tab", icon: "👀", name: "标签页", hint: "切到别的标签页，再回来看看。" },
+    { id: "bottle", icon: "🍾", name: "漂流瓶", hint: "走丢的时候，失物招领处也许有人留了东西。迷路不止一次的话。" },
     { id: "letter", icon: "✉️", name: "一封信", hint: "只有一个人知道暗号。", phrase: true },
   ];
   const publicHints = config.public && typeof config.public === "object" ? config.public : {};
@@ -718,7 +721,7 @@
   // ---------- f(x)：首页连点 ƒ 五下 → 追逐曲线 ----------
   // 追踪者 P 始终朝着目标 Q 的方向前进：dP/dt = v·(Q−P)/|Q−P|。Q 是一个四处游走的问号，
   // 每追上一个，新的问号就会出现在别处。
-  function pursuit(canvas, onCatch) {
+  function pursuit(canvas, onCatch, hooks = {}) {
     const context = canvas.getContext("2d");
     if (!context) return () => {};
     const ink = "#20344f";
@@ -736,6 +739,64 @@
     let flash = null;
     let frame = 0;
     let lastTime = 0;
+    // 追上几个问号之后，问号不再乱走，改为沿爱心曲线匀速行走；追踪者照旧朝它追，
+    // 稳态下墨迹几乎贴着这条曲线，画出一个爱心，随后写下 LOVE。
+    const LOVE_LAP = 7;
+    const LOVE_WORD = "LOVE";
+    const LOVE_INK = "194, 65, 93";
+    const staticMode = reducedMotion();
+    let mode = "wander";
+    let heart = null;
+    let loveClock = 0;
+    let loveSpeed = 0;
+    let wordClock = -1;
+    let wordDone = false;
+    let sparks = [];
+    let sparkClock = 0;
+
+    const buildHeart = () => {
+      const scale = Math.min(width / 42, height / 33);
+      const cx = width / 2;
+      const cy = height / 2 - scale * 2.5;
+      const raw = [];
+      for (let index = 0; index < 1440; index += 1) {
+        const t = (index / 1440) * 2 * Math.PI;
+        raw.push({
+          x: cx + 16 * Math.sin(t) ** 3 * scale,
+          y: cy - (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * scale,
+        });
+      }
+      // 按弧长重新取点，问号才能匀速走。
+      const cumulative = [0];
+      for (let index = 1; index <= raw.length; index += 1) {
+        const from = raw[index - 1];
+        const to = raw[index % raw.length];
+        cumulative.push(cumulative[index - 1] + Math.hypot(to.x - from.x, to.y - from.y));
+      }
+      const length = cumulative[cumulative.length - 1];
+      const points = [];
+      let cursor = 0;
+      for (let index = 0; index < 720; index += 1) {
+        const distance = (index * length) / 720;
+        while (cumulative[cursor + 1] < distance) cursor += 1;
+        const fraction = (distance - cumulative[cursor]) / (cumulative[cursor + 1] - cumulative[cursor]);
+        const from = raw[cursor];
+        const to = raw[(cursor + 1) % raw.length];
+        points.push({ x: from.x + (to.x - from.x) * fraction, y: from.y + (to.y - from.y) * fraction });
+      }
+      heart = { points, length, scale, cx, cy };
+      loveSpeed = length / LOVE_LAP;
+    };
+
+    const heartAt = (distance) => {
+      const total = heart.points.length;
+      const position = ((((distance % heart.length) + heart.length) % heart.length) / heart.length) * total;
+      const index = Math.floor(position);
+      const fraction = position - index;
+      const from = heart.points[index];
+      const to = heart.points[(index + 1) % total];
+      return { x: from.x + (to.x - from.x) * fraction, y: from.y + (to.y - from.y) * fraction };
+    };
 
     const targetAt = (time) => ({
       x: width * (0.5 + 0.37 * Math.sin(0.83 * time + phase) + 0.06 * Math.sin(2.3 * time + phase)),
@@ -750,11 +811,83 @@
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
       pursuer = { x: width * 0.08, y: height * 0.88 };
       trail = [{ ...pursuer }];
-      target = targetAt(clock);
+      if (mode === "love") {
+        buildHeart();
+        target = heartAt(loveClock * loveSpeed);
+      } else {
+        target = targetAt(clock);
+      }
       targetTrail = [{ ...target }];
     };
 
+    const stepLove = (dt) => {
+      loveClock += dt;
+      target = heartAt(loveClock * loveSpeed);
+      targetTrail.push({ ...target });
+      if (targetTrail.length > 150) targetTrail.shift();
+      const dx = target.x - pursuer.x;
+      const dy = target.y - pursuer.y;
+      const distance = Math.hypot(dx, dy);
+      // 离得远就加速赶过来，贴近之后比问号略慢，始终落后一小段。
+      const move = Math.min(distance, loveSpeed * (0.9 + Math.min(distance / (heart.scale * 12), 2.2)) * dt);
+      if (distance > 0) pursuer = { x: pursuer.x + (dx / distance) * move, y: pursuer.y + (dy / distance) * move };
+      trail.push({ ...pursuer });
+      if (trail.length > 1400) trail.shift();
+      if (wordClock < 0 && loveClock > LOVE_LAP * 1.7) wordClock = 0;
+      if (wordClock >= 0) {
+        wordClock += dt;
+        if (!wordDone && wordClock > LOVE_WORD.length * 0.55 + 0.6) {
+          wordDone = true;
+          hooks.onLoveWord?.();
+        }
+        if (wordDone) {
+          sparkClock += dt;
+          while (sparkClock > 0.3) {
+            sparkClock -= 0.3;
+            sparks.push({
+              x: heart.cx + (Math.random() - 0.5) * heart.scale * 24,
+              y: heart.cy + heart.scale * (4 + Math.random() * 8),
+              vy: -(26 + Math.random() * 34),
+              size: 11 + Math.random() * 13,
+              phase: Math.random() * 6,
+              age: 0,
+              life: 3 + Math.random() * 1.5,
+            });
+          }
+        }
+      }
+      sparks = sparks.filter((spark) => {
+        spark.age += dt;
+        spark.y += spark.vy * dt;
+        spark.x += Math.sin(spark.age * 2 + spark.phase) * 8 * dt;
+        return spark.age < spark.life;
+      });
+    };
+
+    const beginLove = () => {
+      if (mode === "love") return;
+      mode = "love";
+      buildHeart();
+      loveClock = 0;
+      wordClock = -1;
+      wordDone = false;
+      sparks = [];
+      flash = null;
+      trail = [{ ...pursuer }];
+      target = heartAt(0);
+      targetTrail = [{ ...target }];
+      hooks.onLoveStart?.();
+      if (staticMode) {
+        for (let index = 0; index < 60 * LOVE_LAP * 3; index += 1) stepLove(1 / 60);
+        draw();
+      }
+    };
+
     const step = (dt) => {
+      if (mode === "love") {
+        stepLove(dt);
+        return;
+      }
       clock += dt * 0.5;
       sinceCatch += dt;
       const next = targetAt(clock);
@@ -803,12 +936,24 @@
       context.font = "italic 13px Georgia, serif";
       context.fillText("x", width - 20, height - 20);
       context.fillText("y", 20, 18);
-      // 问号走过的路：红铅笔虚线
+      const loving = mode === "love";
+      const inkRgb = loving ? LOVE_INK : "32, 52, 79";
+      // 写完 LOVE 之后，爱心里慢慢填上颜色。
+      if (loving && wordClock >= 0) {
+        context.fillStyle = `rgba(${LOVE_INK}, ${Math.min(wordClock / 1.6, 1) * 0.11})`;
+        context.beginPath();
+        heart.points.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
+        context.closePath();
+        context.fill();
+      }
+      // 问号走过的路：红铅笔虚线（爱心阶段是整条爱心曲线）
       context.setLineDash([4, 6]);
-      context.strokeStyle = "rgba(180, 70, 61, 0.45)";
+      context.strokeStyle = loving ? "rgba(180, 70, 61, 0.3)" : "rgba(180, 70, 61, 0.45)";
       context.lineWidth = 1.4;
       context.beginPath();
-      targetTrail.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
+      (loving ? [...heart.points, heart.points[0]] : targetTrail).forEach((point, index) =>
+        index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)
+      );
       context.stroke();
       context.setLineDash([]);
       // 追踪者的墨迹：越新越浓
@@ -819,7 +964,7 @@
       for (let part = 0; part < segments; part += 1) {
         const slice = trail.slice(part * chunk, (part + 1) * chunk + 1);
         if (slice.length < 2) continue;
-        context.strokeStyle = `rgba(32, 52, 79, ${0.18 + (0.82 * (part + 1)) / segments})`;
+        context.strokeStyle = `rgba(${inkRgb}, ${0.18 + (0.82 * (part + 1)) / segments})`;
         context.lineWidth = 2.2;
         context.beginPath();
         slice.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
@@ -839,7 +984,7 @@
       context.font = "26px 'Long Cang', 'Kaiti SC', STKaiti, KaiTi, cursive";
       context.textAlign = "center";
       context.textBaseline = "middle";
-      context.fillText("?", target.x, target.y - 1);
+      context.fillText(loving ? "♥" : "?", target.x, target.y - 1);
       context.strokeStyle = "rgba(180, 70, 61, 0.55)";
       context.beginPath();
       context.arc(target.x, target.y, 14, 0, Math.PI * 2);
@@ -851,6 +996,28 @@
       context.fill();
       context.font = "italic 17px Georgia, 'Times New Roman', serif";
       context.fillText("ƒ", pursuer.x - 11, pursuer.y - 13);
+      if (loving) {
+        // 一个字一个字写出 LOVE
+        const size = Math.round(heart.scale * 6.5);
+        context.font = `${size}px 'Long Cang', 'Kaiti SC', STKaiti, KaiTi, cursive`;
+        context.textAlign = "left";
+        const widths = [...LOVE_WORD].map((letter) => context.measureText(letter).width + size * 0.08);
+        let left = heart.cx - widths.reduce((sum, width) => sum + width, 0) / 2;
+        [...LOVE_WORD].forEach((letter, index) => {
+          const progress = wordClock < 0 ? 0 : Math.min(Math.max((wordClock - index * 0.55) / 0.6, 0), 1);
+          if (progress > 0) {
+            context.fillStyle = `rgba(${LOVE_INK}, ${progress})`;
+            context.fillText(letter, left, heart.cy + heart.scale * 3.5 + size * 0.34 + (1 - progress) * 10);
+          }
+          left += widths[index];
+        });
+        context.textAlign = "center";
+        sparks.forEach((spark) => {
+          context.fillStyle = `rgba(200, 70, 90, ${Math.min(1, (spark.life - spark.age) / 1) * 0.75})`;
+          context.font = `${spark.size}px Georgia, serif`;
+          context.fillText("♥", spark.x, spark.y);
+        });
+      }
       if (flash) {
         const progress = flash.age / 0.9;
         context.strokeStyle = `rgba(180, 70, 61, ${1 - progress})`;
@@ -867,10 +1034,12 @@
     };
 
     reset();
-    if (reducedMotion()) {
+    if (staticMode) {
       for (let index = 0; index < 900; index += 1) step(1 / 60);
       draw();
-      return () => {};
+      const idle = () => {};
+      idle.love = beginLove;
+      return idle;
     }
     const loop = (time) => {
       const dt = lastTime ? Math.min((time - lastTime) / 1000, 0.05) : 1 / 60;
@@ -882,14 +1051,20 @@
     frame = window.requestAnimationFrame(loop);
     const onResize = () => reset();
     window.addEventListener("resize", onResize);
-    return () => {
+    const stop = () => {
       window.cancelAnimationFrame(frame);
       window.removeEventListener("resize", onResize);
     };
+    stop.love = beginLove;
+    return stop;
   }
 
+  const HEART_FORMULA = "<i>x</i> = 16 sin³<i>t</i>，&nbsp;<i>y</i> = 13 cos <i>t</i> − 5 cos 2<i>t</i> − 2 cos 3<i>t</i> − cos 4<i>t</i>";
+
+  const DERIVATIVES = ["ƒ′", "ƒ″", "∂ƒ", "?"];
+  let glyphTimer = 0;
   let taps = [];
-  function showFunction() {
+  function showFunction({ love = false } = {}) {
     markFound("fx");
     loadFont("hand", "type");
     const overlay = openOverlay(
@@ -917,12 +1092,46 @@
       "f(x) 追逐曲线"
     );
     const count = overlay.querySelector(".egg-fx-count");
+    const caption = overlay.querySelector(".egg-fx-caption");
+    const formula = overlay.querySelector(".egg-fx-formula");
+    const plot = overlay.querySelector("canvas");
+    const LOVE_AFTER = 3;
     let caught = 0;
-    const stop = pursuit(overlay.querySelector("canvas"), () => {
-      caught += 1;
-      count.textContent = `追上了第 ${caught} 个未知 —— 新的问号又出现了。`;
+    let loving = false;
+    let loveTimer = 0;
+    const stop = pursuit(
+      plot,
+      () => {
+        caught += 1;
+        if (loving) return;
+        // 追上第三个之后，下一个问号停下来，改走一条爱心曲线（减少动态效果时不自动进入，图鉴里仍可回放）。
+        if (caught === LOVE_AFTER && !reducedMotion()) {
+          count.textContent = `追上了第 ${caught} 个未知。咦，下一个问号停下来了……`;
+          loveTimer = window.setTimeout(() => stop.love?.(), 1800);
+          return;
+        }
+        count.textContent = `追上了第 ${caught} 个未知 —— 新的问号又出现了。`;
+      },
+      {
+        onLoveStart() {
+          loving = true;
+          markFound("love");
+          formula.innerHTML = HEART_FORMULA;
+          caption.textContent = "它不再乱跑了，开始沿着一条曲线转圈。";
+          count.textContent = "追着它，一圈，又一圈……";
+          plot.setAttribute("aria-label", "追踪者追着一个沿爱心曲线行走的符号，墨迹渐渐画出一个爱心，最后写下 LOVE。");
+        },
+        onLoveWord() {
+          caption.textContent = "追到最后，答案是——";
+          count.textContent = "LOVE ♥";
+        },
+      }
+    );
+    overlay.addEventListener("egg:close", () => {
+      window.clearTimeout(loveTimer);
+      stop();
     });
-    overlay.addEventListener("egg:close", stop);
+    if (love) stop.love?.();
     const button = overlay.querySelector(".egg-tag");
     button.addEventListener("click", () => overlay.egg.close());
     button.focus({ preventScroll: true });
@@ -939,9 +1148,20 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
     const now = window.performance.now();
     taps = taps.filter((time) => now - time < 2000).concat(now);
+    // 每点一下，ƒ 求一次导：ƒ → ƒ′ → ƒ″ → ∂ƒ → ?，第五下才打开追逐曲线。
+    const glyph = brand.querySelector('span[aria-hidden="true"]');
+    window.clearTimeout(glyphTimer);
     if (taps.length >= 5) {
       taps = [];
+      if (glyph) glyph.textContent = "ƒ";
       showFunction();
+      return;
+    }
+    if (glyph) {
+      glyph.textContent = DERIVATIVES[taps.length - 1];
+      glyphTimer = window.setTimeout(() => {
+        glyph.textContent = "ƒ";
+      }, 2000);
     }
   });
 
@@ -1372,6 +1592,92 @@
   resetIdle();
 
   // ---------- 控制台：给打开开发者工具的人 ----------
+  // ---------- 404 漂流瓶 ----------
+  // 页面不存在时，失物招领处会漂来一个瓶子；每个不同的错误地址捡到不同的一个，三个拼成完整的一张。
+  // 进度只存在这台浏览器里（每个地址对应哪一个瓶子，换回来还是它），不上传任何东西。
+  const BOTTLES = [
+    {
+      title: "一份没有写完的实验记录",
+      text: "数据整理到一半，电机还在转，笔却停了。备注栏里只有一行：「参数明明都调好了，半夜又一个一个改了回去。」",
+    },
+    { title: "一个机器人的梦", text: "它梦见一张很大的地图，没有障碍，只有一条线，一直通向地图的边缘。它想：边缘之外，会不会还有路？" },
+    { title: "一句没写完的话", text: "如果你是顺着一个失效的链接来到这里的，那么，这一页本来想对你说的是——" },
+  ];
+  const BOTTLE_ENDING = "……后来我想明白了：路没了，才会走到这里。走丢的人，总会捡到一点别人落下的东西。";
+  const BOTTLE_KEY = "functionhx:eggs:bottles";
+
+  function readBottles() {
+    try {
+      const value = JSON.parse(window.localStorage.getItem(BOTTLE_KEY) || "{}");
+      return { paths: value && typeof value.paths === "object" && value.paths ? value.paths : {} };
+    } catch (_error) {
+      return { paths: {} };
+    }
+  }
+
+  function bottleNoteHtml() {
+    return `${BOTTLES.map((bottle) => `<p><b>${escapeHtml(bottle.title)}</b>${escapeHtml(bottle.text)}</p>`).join("")}<p class="egg-bottle__ending">${escapeHtml(BOTTLE_ENDING)}</p>`;
+  }
+
+  function showBottleNote() {
+    markFound("bottle");
+    loadFont("hand", "type");
+    const overlay = openOverlay(
+      "egg-fx-backdrop egg-bottle-backdrop",
+      `<div class="egg-fx egg-journal egg-bottle-note">
+        <span class="egg-tape egg-tape--left" aria-hidden="true"></span>
+        <span class="egg-tape egg-tape--right" aria-hidden="true"></span>
+        <p class="egg-type">LOST &amp; FOUND</p>
+        <h3 class="egg-hand">失物招领</h3>
+        <div class="egg-hand egg-bottle__body">${bottleNoteHtml()}</div>
+        <footer class="egg-fx-foot"><span></span><button class="egg-tag" type="button">收好</button></footer>
+      </div>`,
+      "失物招领"
+    );
+    const button = overlay.querySelector(".egg-tag");
+    button.addEventListener("click", () => overlay.egg.close());
+    button.focus({ preventScroll: true });
+  }
+
+  function openDriftBottle() {
+    const slot = document.querySelector("[data-drift-bottle]");
+    if (!slot) return;
+    const path = window.location.pathname.slice(0, 160);
+    const state = readBottles();
+    let index = state.paths[path];
+    if (!Number.isInteger(index) || !BOTTLES[index]) {
+      const taken = new Set(Object.values(state.paths));
+      const free = BOTTLES.map((_bottle, position) => position).filter((position) => !taken.has(position));
+      const pool = free.length ? free : BOTTLES.map((_bottle, position) => position);
+      index = pool[Math.floor(Math.random() * pool.length)];
+      state.paths[path] = index;
+      // 只留最近的几个地址，免得一直涨。
+      const keys = Object.keys(state.paths);
+      keys.slice(0, Math.max(0, keys.length - 12)).forEach((key) => delete state.paths[key]);
+      try {
+        window.localStorage.setItem(BOTTLE_KEY, JSON.stringify(state));
+      } catch (_error) {
+        /* 存不下就当这次是新的。 */
+      }
+    }
+    const collected = new Set(Object.values(state.paths).filter((position) => BOTTLES[position])).size;
+    const complete = collected >= BOTTLES.length;
+    loadFont("hand", "type");
+    const bottle = BOTTLES[index];
+    slot.innerHTML = `<aside class="egg-bottle" aria-label="失物招领">
+      <p class="egg-bottle__stamp egg-type">LOST &amp; FOUND · 失物招领</p>
+      <h3 class="egg-bottle__title egg-hand">${escapeHtml(bottle.title)}</h3>
+      <p class="egg-bottle__text egg-hand">${escapeHtml(bottle.text)}</p>
+      <p class="egg-bottle__progress egg-type" aria-live="polite">已捡到 ${collected} / ${BOTTLES.length} 个瓶子${complete ? "" : " · 换一个不存在的地址，也许能捡到别的"}</p>
+      ${complete ? `<button class="egg-tag egg-bottle__open" type="button">把三个瓶子拼起来</button>` : ""}
+    </aside>`;
+    if (complete) {
+      markFound("bottle");
+      slot.querySelector(".egg-bottle__open")?.addEventListener("click", showBottleNote);
+    }
+  }
+  openDriftBottle();
+
   function showConsoleToast() {
     markFound("console");
     toast(
@@ -1464,6 +1770,8 @@
     dog: runDog,
     terminal: openTerminal,
     fx: showFunction,
+    love: () => showFunction({ love: true }),
+    bottle: showBottleNote,
     night: showNight,
     idle: startScreensaver,
     console: showConsoleToast,

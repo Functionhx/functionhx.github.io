@@ -193,7 +193,7 @@ def main() -> int:
     except (OSError, yaml.YAMLError) as error:
         errors.append(f"_data/eggs.yml: {error}")
         eggs = {}
-    egg_ids = {"turbo", "dog", "terminal", "fx", "night", "idle", "console", "tab", "letter"}
+    egg_ids = {"turbo", "dog", "terminal", "fx", "love", "night", "idle", "console", "tab", "bottle", "letter"}
     public = eggs.get("public") if isinstance(eggs, dict) else None
     if not isinstance(public, dict) or set(public) != egg_ids or not all(
         isinstance(value, bool) for value in public.values()

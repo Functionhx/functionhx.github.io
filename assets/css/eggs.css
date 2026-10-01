@@ -1565,3 +1565,66 @@
   outline: 2px solid var(--global-theme-color);
   outline-offset: 2px;
 }
+
+/* ---------- 404 漂流瓶：失物招领 ---------- */
+.egg-bottle {
+  --egg-hand-font: "Long Cang", "Kaiti SC", STKaiti, KaiTi, "Klee One", cursive;
+  --egg-type-font: "Special Elite", "Courier New", ui-monospace, monospace;
+  position: relative;
+  max-width: 34rem;
+  margin: 2rem 0 0;
+  padding: 1.2rem 1.4rem 1.1rem;
+  border: 1px dashed color-mix(in srgb, var(--global-text-color) 38%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--global-bg-color) 93%, var(--global-text-color));
+  transform: rotate(-0.4deg);
+}
+.egg-bottle__stamp {
+  margin: 0;
+  color: var(--global-text-color-light);
+  font-size: 12px;
+}
+.egg-bottle__title {
+  margin: 0.5rem 0 0.2rem;
+  color: var(--global-text-color);
+  font-size: 1.5rem;
+}
+.egg-bottle__text {
+  margin: 0;
+  color: var(--global-text-color);
+  font-size: 1.2rem;
+  line-height: 1.7;
+}
+.egg-bottle__progress {
+  margin: 0.9rem 0 0;
+  color: var(--global-text-color-light);
+  font-size: 12px;
+}
+.egg-bottle__open {
+  margin-top: 0.8rem;
+}
+.egg-bottle-note {
+  max-height: min(80vh, 640px);
+  overflow: auto;
+}
+.egg-bottle__body {
+  margin-top: 0.6rem;
+  font-size: 1.25rem;
+  line-height: 1.75;
+}
+.egg-bottle__body p {
+  margin: 0 0 0.9rem;
+}
+.egg-bottle__body b {
+  display: block;
+  color: var(--egg-red);
+  font-weight: 400;
+}
+.egg-bottle__ending {
+  color: var(--egg-ink-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+  .egg-bottle {
+    transform: none;
+  }
+}
