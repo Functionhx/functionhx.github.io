@@ -52,10 +52,6 @@
     });
   });
 
-  // 窄屏上筛选默认收起，免得把文章挤到第二屏。
-  if (window.matchMedia("(max-width: 760px)").matches) {
-    filters.querySelectorAll("details[open]").forEach((details) => details.removeAttribute("open"));
-  }
   filters.hidden = false;
   apply();
 })();

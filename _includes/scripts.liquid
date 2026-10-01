@@ -118,7 +118,8 @@
     {% assign back_to_top_integrity = site.third_party_libraries['vanilla-back-to-top'].integrity.js %}
     {%- comment -%}
       异步加载：CDN 连不上时（国内常见）同步脚本会卡住整页解析，加载页一直不消失。
-      加载成功后才初始化「回到顶部」，失败就安静地不显示这个按钮。
+      加载成功后才初始化「回到顶部」，失败就安静地不显示这个按钮。初始化由 CSP 插件注入的
+      data-* 事件代理完成（_plugins/content_security_policy.rb），页面上不再有内联 onload。
     {%- endcomment -%}
     {% if back_to_top_integrity %}
       <script
@@ -126,10 +127,10 @@
         src="{{ back_to_top_js }}"
         integrity="{{ back_to_top_integrity }}"
         crossorigin="anonymous"
-        onload="window.addBackToTop && window.addBackToTop()"
+        data-back-to-top
       ></script>
     {% else %}
-      <script async src="{{ back_to_top_js }}" onload="window.addBackToTop && window.addBackToTop()"></script>
+      <script async src="{{ back_to_top_js }}" data-back-to-top></script>
     {% endif %}
   {% endunless %}
 {% endif %}

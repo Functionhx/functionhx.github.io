@@ -231,6 +231,9 @@ exclude:
   - scripts/
   - spark-vault/
   - letter-mailer/
+  - magic-search/
+  - deploy/
+  - requirements.txt
   - test/
   - gems/
   - migrations/
@@ -485,9 +488,11 @@ third_party_libraries:
     version: "1.22.4"
   # 图标字体自托管在 assets/third-party/（内容与 npm 包一致，只裁掉旧格式字体），不依赖公共 CDN；
   # 升级版本时换目录名和下面的 ?v=，nginx 会把带 ?v= 的文件按一年缓存。
+  # Font Awesome 只加载站内用到的图标：subset.min.css 与 *-subset.woff2 由
+  # scripts/subset_fontawesome.py 生成（它也会改写下面的 ?v=）；用了新图标时 check_built_site.py 会提示重跑。
   fontawesome:
     url:
-      css: "/assets/third-party/fontawesome-7.2.0/css/all.min.css?v=7.2.0"
+      css: "/assets/third-party/fontawesome-7.2.0/css/subset.min.css?v=f4e2f58de2da"
     version: "7.2.0"
   academicons:
     url:
@@ -628,11 +633,12 @@ third_party_libraries:
     url:
       css: "/assets/third-party/scholar-icons-1.0.3/css/scholar-icons.css?v=1.0.3"
     version: "1.0.3"
+  # 自托管（与 npm 包 dist 文件逐字节一致，integrity 照旧校验），国内不必再连 jsDelivr。
   vanilla-back-to-top:
     integrity:
       js: "sha256-uMJJ3EoTyfRBoTbR+lrfu1uRQ87RZG8AR3cVNuQVeFg="
     url:
-      js: "https://cdn.jsdelivr.net/npm/vanilla-back-to-top@{{version}}/dist/vanilla-back-to-top.min.js"
+      js: "/assets/third-party/vanilla-back-to-top-7.2.1/vanilla-back-to-top.min.js?v=7.2.1"
     version: "7.2.1"
   vanilla-cookieconsent:
     integrity:

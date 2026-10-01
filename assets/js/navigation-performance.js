@@ -107,6 +107,8 @@
             });
           if (urls.length) registration.active?.postMessage({ type: "warm", urls });
           // 导航栏里的页面（含当前页，返回首页时用得上）也提前存好：首次点进博客等页面时不必等网络，慢网络下差别最明显。
+          // 省流量模式和 2G 下不预取，和悬停预取一样。
+          if (constrainedConnection) return;
           const pages = [...document.querySelectorAll("#navbar a[href]")]
             .map((anchor) => new URL(anchor.href, window.location.href))
             .filter((url) => url.origin === window.location.origin && !url.search)

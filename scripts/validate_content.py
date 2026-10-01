@@ -683,6 +683,30 @@ def main() -> int:
     ):
         if contract not in nginx_text:
             errors.append(f"deploy/nginx/fanyuchen.com.cn.conf: {contract!r} missing")
+    # nginx discards inherited add_header directives in any block that declares its own, so each
+    # location that sets a header must re-include the security headers.
+    security_include = "include /etc/nginx/snippets/functionhx-security-headers.conf;"
+    for block in re.findall(r"location [^{]*\{[^}]*\}", nginx_text):
+        if "add_header" in block and security_include not in block:
+            errors.append(
+                "deploy/nginx/fanyuchen.com.cn.conf: location sets add_header without "
+                f"re-including the security headers: {block.splitlines()[0]!r}"
+            )
+    security_headers_path = ROOT / "deploy" / "nginx" / "functionhx-security-headers.conf"
+    security_headers = (
+        security_headers_path.read_text(encoding="utf-8") if security_headers_path.exists() else ""
+    )
+    for header in (
+        "Strict-Transport-Security",
+        "X-Content-Type-Options",
+        "X-Frame-Options",
+        "frame-ancestors 'self'",
+        "Referrer-Policy",
+    ):
+        if header not in security_headers:
+            errors.append(f"deploy/nginx/functionhx-security-headers.conf: {header!r} missing")
+    if "server_tokens off;" not in nginx_text:
+        errors.append("deploy/nginx/fanyuchen.com.cn.conf: server_tokens off; missing")
 
     license_path = ROOT / "LICENSE"
     license_text = license_path.read_text(encoding="utf-8") if license_path.exists() else ""

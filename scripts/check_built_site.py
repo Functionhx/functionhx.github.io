@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
 from html.parser import HTMLParser
 import json
 import re
@@ -139,6 +141,115 @@ def route_file(site: Path, route: str) -> Path:
     return candidate / "index.html"
 
 
+CSP_META = re.compile(r'<meta http-equiv="Content-Security-Policy" content="([^"]*)">')
+INLINE_SCRIPT = re.compile(r"<script\b([^>]*)>(.*?)</script>", re.S | re.I)
+NON_EXECUTED_TYPES = {"application/json", "application/ld+json", "text/template", "text/x-template"}
+EVENT_HANDLER = re.compile(r"<[a-zA-Z][^<>]*?\s(on[a-z]+)\s*=", re.I)
+
+
+def check_fontawesome_subset(site: Path) -> list[str]:
+    """Every Font Awesome icon a built page or script uses must exist in the subset."""
+    fa_css = site / "assets" / "third-party" / "fontawesome-7.2.0" / "css"
+    full = fa_css / "all.min.css"
+    subset = fa_css / "subset.min.css"
+    if not full.is_file() or not subset.is_file():
+        return ["Font Awesome subset or source CSS missing from the build"]
+    icon_rule = re.compile(r"((?:\.fa-[a-z0-9-]+,?)+)\{--fa:")
+    names = lambda css: {s.removeprefix(".fa-") for m in icon_rule.findall(css) for s in m.rstrip(",").split(",")}
+    all_icons = names(full.read_text(encoding="utf-8"))
+    available = names(subset.read_text(encoding="utf-8"))
+    usage = re.compile(r"(?<![\w-])fa-([a-z0-9]+(?:-[a-z0-9]+)*)")
+    missing: dict[str, str] = {}
+    for path in [*site.rglob("*.html"), *(site / "assets" / "js").rglob("*.js")]:
+        if "third-party" in path.parts:
+            continue
+        for name in usage.findall(path.read_text(encoding="utf-8", errors="ignore")):
+            if name in all_icons and name not in available:
+                missing.setdefault(name, path.relative_to(site).as_posix())
+    return [
+        f"{where}: Font Awesome icon fa-{name} is not in the subset; "
+        "run `python3 scripts/subset_fontawesome.py` after a build"
+        for name, where in sorted(missing.items())
+    ]
+
+
+def serif_subset_backlog(site: Path) -> int:
+    """Serif characters on the site that the self-hosted subset lacks (they load from jsDelivr)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from subset_serif_font import serif_codepoints
+
+    css = site / "assets" / "fonts" / "noto-serif-sc" / "noto-serif-sc-500-subset.css"
+    if not css.is_file():
+        return -1
+    covered: set[int] = set()
+    match = re.search(r"unicode-range:\s*([^;]+);", css.read_text(encoding="utf-8"))
+    for part in (match.group(1).split(",") if match else []):
+        start, _, end = part.strip().removeprefix("U+").partition("-")
+        covered.update(range(int(start, 16), int(end or start, 16) + 1))
+    return len(serif_codepoints(site) - covered)
+
+
+BUNDLE_LINK = re.compile(r'<link rel="stylesheet" href="(/assets/css/bundles/[0-9a-f]+\.css)\?v=[0-9a-f]+" data-bundled="([^"]+)">')
+
+
+def check_css_bundles(site: Path) -> list[str]:
+    """Merged head stylesheets (_plugins/css_bundles.rb) must contain every file they claim to."""
+    problems = []
+    for path in sorted(site.rglob("*.html")):
+        text = path.read_text(encoding="utf-8")
+        for bundle, sources in BUNDLE_LINK.findall(text):
+            bundle_file = site / bundle.lstrip("/")
+            if not bundle_file.is_file():
+                problems.append(f"{path.relative_to(site).as_posix()}: CSS bundle {bundle} missing")
+                continue
+            content = bundle_file.read_text(encoding="utf-8")
+            for source in sources.split():
+                if f"/* {source} */" not in content:
+                    problems.append(f"{bundle}: does not contain {source}")
+    return problems
+
+
+def check_content_security_policy(site: Path) -> list[str]:
+    """Every page carries a strict script-src that hash-allows exactly its own inline scripts."""
+    problems = []
+    for path in sorted(site.rglob("*.html")):
+        rel = path.relative_to(site).as_posix()
+        text = path.read_text(encoding="utf-8")
+        if "<head" not in text:
+            continue
+        policies = CSP_META.findall(text)
+        if len(policies) != 1:
+            problems.append(f"{rel}: expected exactly one CSP <meta>, found {len(policies)}")
+            continue
+        directives = {
+            part.strip().split(" ", 1)[0]: part.strip()
+            for part in policies[0].split(";")
+            if part.strip()
+        }
+        script_src = directives.get("script-src", "").split()[1:]
+        for forbidden in ("'unsafe-inline'", "'unsafe-eval'", "'unsafe-hashes'", "https:", "http:", "*"):
+            if forbidden in script_src:
+                problems.append(f"{rel}: script-src must not allow {forbidden}")
+        if directives.get("object-src") != "object-src 'none'":
+            problems.append(f"{rel}: CSP must set object-src 'none'")
+        if directives.get("base-uri") != "base-uri 'self'":
+            problems.append(f"{rel}: CSP must set base-uri 'self'")
+        for attributes, body in INLINE_SCRIPT.findall(text):
+            if re.search(r"\bsrc\s*=", attributes, re.I):
+                continue
+            kind = re.search(r'\btype\s*=\s*["\']([^"\']+)', attributes, re.I)
+            if kind and kind.group(1).lower() in NON_EXECUTED_TYPES:
+                continue
+            digest = base64.b64encode(hashlib.sha256(body.encode("utf-8")).digest()).decode()
+            if f"'sha256-{digest}'" not in script_src:
+                problems.append(f"{rel}: inline script {body.strip()[:40]!r} is not hash-allowed by the CSP")
+        markup = re.sub(r"<(script|style)\b.*?</\1>", "", text, flags=re.S | re.I)
+        handler = EVENT_HANDLER.search(markup)
+        if handler:
+            problems.append(f"{rel}: inline {handler.group(1)}= handler would be blocked by the CSP")
+    return problems
+
+
 def check_academic_link(site: Path) -> list[str]:
     """Every page must offer the academic homepage, and work without JavaScript."""
     # 学术主页默认进英文版（站长决定 2026-09-27）：中文站的导航也指向学术站根路径。
@@ -173,6 +284,11 @@ def main() -> int:
         for route in RETIRED_ROUTES:
             if f"{route}</loc>" in sitemap_text:
                 errors.append(f"{route}: retired template CV remains in the sitemap")
+
+    # Server-side sources and ops config live in the repo but must never be served as site files.
+    for leaked in ("magic-search", "deploy", "spark-vault", "letter-mailer", "requirements.txt"):
+        if (site / leaked).exists():
+            errors.append(f"/{leaked}: server-side file must be excluded from the build")
 
     # Owner decision 2026-09-24: the English site was removed; its URLs 404.
     english_outputs = sorted(
@@ -904,6 +1020,9 @@ def main() -> int:
             errors.append(f"built tool cover is unexpectedly large: {cover}")
 
     errors.extend(check_academic_link(site))
+    errors.extend(check_content_security_policy(site))
+    errors.extend(check_fontawesome_subset(site))
+    errors.extend(check_css_bundles(site))
 
     if errors:
         print("Built-site validation failed:", file=sys.stderr)
@@ -911,6 +1030,17 @@ def main() -> int:
             print(f"- {error}", file=sys.stderr)
         return 1
 
+    backlog = serif_subset_backlog(site)
+    if backlog < 0:
+        errors_note = "assets/fonts/noto-serif-sc subset missing from the build"
+        print(f"Built-site validation failed:\n- {errors_note}", file=sys.stderr)
+        return 1
+    if backlog:
+        # Not an error: these characters still render, from the jsDelivr slices.
+        print(
+            f"Note: {backlog} heading character(s) are not in the self-hosted serif subset yet; "
+            "run `python3 scripts/subset_serif_font.py` after a build to self-host them."
+        )
     print(f"Built-site validation passed: {len(EXPECTED_ROUTES)} routes and all internal links.")
     return 0
 

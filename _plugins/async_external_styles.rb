@@ -8,13 +8,13 @@
 #
 # 这里在构建后改写 HTML：
 # - 外部样式表改成 media="print" 先下载、加载完再切回 all 的异步写法，并保留 <noscript> 兜底；
+#   切回 all 由 content_security_policy.rb 注入的事件代理按 data-async-style 完成，页面不带内联 onload；
 # - Google Fonts 只在站长选了需要它的字体时才用得上（系统字体用不到），改成一个 <meta>，
 #   由 site-preferences.js 按需插入。
 module Functionhx
   module AsyncExternalStyles
     STYLESHEET = /<link\b(?=[^>]*\brel=["']stylesheet["'])(?=[^>]*\bhref=["'](https?:\/\/[^"']+)["'])[^>]*>/i
     GOOGLE_FONTS = %r{\Ahttps://fonts\.googleapis\.com/}
-    ONLOAD = %q(this.onload=null;this.media='all')
     # MathJax 有一兆多，写成 defer 时会让后面所有 deferred 脚本（包括关掉加载页的那个）排队等它；
     # 改成 async：它下载完再渲染公式，页面本身不用等。MathJax 3 的配置在它之前的内联脚本里，异步加载没问题。
     MATHJAX_TAG = %r{<script\b[^>]*\bid=["']MathJax-script["'][^>]*>\s*</script>}i
@@ -35,7 +35,7 @@ module Functionhx
         next %(<meta name="functionhx:google-fonts" content="#{href}">) if href.match?(GOOGLE_FONTS)
 
         async = tag.sub(/\s+defer\b/i, "").sub(/\s+media=["'][^"']*["']/i, "")
-        async = async.sub(/\s*\/?>\z/, %( media="print" onload="#{ONLOAD}">))
+        async = async.sub(/\s*\/?>\z/, %( media="print" data-async-style>))
         "#{async}<noscript>#{tag.sub(/\s+defer\b/i, '')}</noscript>"
       end
       page = (head + html[head_end..]).gsub(DEFERRED_MATHJAX) { |tag| tag.sub(/\bdefer\b/, "async") }

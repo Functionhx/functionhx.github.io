@@ -46,14 +46,14 @@
 
   <div class="writing-layout">
     <aside class="writing-filters" aria-label="筛选文章" hidden>
-      <details class="writing-filter" open>
+      <details class="writing-filter" data-open-on-wide>
         <summary>排序</summary>
         <div class="writing-filter-options" role="radiogroup" aria-label="排序">
           <button type="button" data-writing-sort="new" aria-pressed="true">最新在前</button>
           <button type="button" data-writing-sort="old" aria-pressed="false">最早在前</button>
         </div>
       </details>
-      <details class="writing-filter" open>
+      <details class="writing-filter" data-open-on-wide>
         <summary>分类</summary>
         <div class="writing-filter-options">
           <button type="button" data-writing-category="" aria-pressed="true">全部</button>
@@ -76,6 +76,17 @@
         </details>
       {% endif %}
     </aside>
+    {%- comment -%}
+      窄屏上筛选默认收起（HTML 里就是收起的），免得把文章挤到第二屏；宽屏在第一帧之前同步展开。
+      不在 blog-cards.js 里改：那时页面已经画出来，窄屏上收起会把整列文章往上拽（CLS）。
+    {%- endcomment -%}
+    <script>
+      if (!window.matchMedia('(max-width: 760px)').matches) {
+        document.querySelectorAll('.writing-filters details[data-open-on-wide]').forEach((details) => {
+          details.open = true;
+        });
+      }
+    </script>
 
     <section class="writing-feed" id="writing-grid" aria-labelledby="writing-feed-title">
       <h2 id="writing-feed-title" class="sr-only">全部文章</h2>

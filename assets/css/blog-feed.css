@@ -64,7 +64,11 @@
   align-items: start;
   padding-top: 44px;
 }
-.writing-layout:has(.writing-filters[hidden]) {
+/* 有脚本时（head 里同步加上 html.js）侧栏从第一帧就占好位置，等 blog-cards.js 去掉 hidden 时不再把文章列表往下推（移动端 CLS）。 */
+html.js .writing-filters[hidden] {
+  display: block;
+}
+html:not(.js) .writing-layout:has(.writing-filters[hidden]) {
   grid-template-columns: minmax(0, 1fr);
 }
 .writing-filters {

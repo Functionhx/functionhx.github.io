@@ -11,5 +11,9 @@
     "letter": {{ eggs.letter | jsonify }}
   }
 </script>
-<link rel="stylesheet" href="{{ '/assets/css/eggs.css' | relative_url | bust_file_cache }}">
+{%- comment -%}
+  彩蛋的样式只作用于脚本创建的元素（外加齿轮长按的过渡），不必阻塞首屏：先按 print 下载，
+  加载完由 CSP 插件注入的事件代理切回 all（data-async-style）。
+{%- endcomment -%}
+<link rel="stylesheet" href="{{ '/assets/css/eggs.css' | relative_url | bust_file_cache }}" media="print" data-async-style>
 <script src="{{ '/assets/js/eggs.js' | relative_url | bust_file_cache }}" defer></script>
