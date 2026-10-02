@@ -78,7 +78,7 @@ const server = createServer(async (request, response) => {
       data = Buffer.from(
         data
           .toString("utf8")
-          .replace('"endpoint": ""', `"endpoint": "${baseUrl}brain"`)
+          .replace(/"endpoint": "[^"]*"/, `"endpoint": "${baseUrl}brain"`)
           .replace(/("id": "claude"[^}]*?"sprites": )""/, '$1"/test-sprites/claude.json"')
       );
     }

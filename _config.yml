@@ -162,13 +162,14 @@ feishu_documents:
   endpoint: https://functionhx-spark-vault.functionhx.workers.dev
 
 # 首页「一封信」彩蛋的发信服务（letter-mailer/，Cloudflare Worker）。
-# 网站宠物 ƒ-01（assets/js/pet.js，台词与设定在 _data/pet.yml）。
-# enabled：所有访客默认是否出现。授权形象（_data/pet.yml 的 sprites）到位前保持 false，
+# 网站宠物（assets/js/pet.js；公共台词 _data/pet.yml，每只的设定 _data/pets/<id>.yml）。
+# enabled：所有访客默认是否出现。默认宠物的授权形象（_data/pets/<id>.yml 的 sprites）登记前保持 false，
 # 可以在网址后加 ?pet=on 只在自己的浏览器里预览（?pet=reset 恢复）。
 # endpoint：pet-brain/ 部署后的 Worker 地址；为空时宠物只用本地台词和站内搜索回答。
 pet:
   enabled: false
-  endpoint:
+  # 大脑（pet-brain/ 部署的 Cloudflare Worker）。密钥只在 Worker 的 secret 里。
+  endpoint: https://functionhx-pet-brain.functionhx.workers.dev
 
 letter_mailer:
   endpoint: https://functionhx-letter.functionhx.workers.dev
