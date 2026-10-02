@@ -253,6 +253,27 @@ def main() -> int:
     for social, expected_logo in expected_social_logos.items():
         if not isinstance(socials.get(social), dict) or socials[social].get("logo") != expected_logo:
             errors.append(f"_data/socials.yml: {social} must use {expected_logo}")
+    # 无头主页：终端二维码矩阵必须与当前的微信二维码图片对应（scripts/terminal_qr.py 生成）。
+    terminal_qr_path = ROOT / "_data" / "terminal_qr.yml"
+    terminal_qr = yaml.safe_load(terminal_qr_path.read_text(encoding="utf-8")) if terminal_qr_path.exists() else {}
+    wechat_png = ROOT / "assets" / "img" / "social" / "wechat-qr.png"
+    if wechat_png.is_file() and (terminal_qr or {}).get("source_sha256") != hashlib.sha256(wechat_png.read_bytes()).hexdigest():
+        errors.append("_data/terminal_qr.yml: out of date with wechat-qr.png; run python3 scripts/terminal_qr.py")
+    qr_rows = (terminal_qr or {}).get("rows") or []
+    if not qr_rows or any(len(row) != len(qr_rows) or set(row) - {"0", "1"} for row in qr_rows):
+        errors.append("_data/terminal_qr.yml: rows must be a square 0/1 module matrix")
+
+    headless_path = ROOT / "_data" / "headless.yml"
+    headless = yaml.safe_load(headless_path.read_text(encoding="utf-8")) if headless_path.exists() else {}
+    for field in ("name", "name_latin", "brand", "academic", "contacts", "sections"):
+        if not (headless or {}).get(field):
+            errors.append(f"_data/headless.yml: {field!r} is required")
+    agent_contacts = {c.get("key") for c in (headless or {}).get("contacts", []) if c.get("agent")}
+    if not agent_contacts <= {"email", "github"}:
+        errors.append(f"_data/headless.yml: only email and GitHub may be exposed to agents, got {sorted(agent_contacts)}")
+    if "  - terminal/" not in (ROOT / "_config.yml").read_text(encoding="utf-8"):
+        errors.append("_config.yml: terminal/ (the cli.py template) must be excluded from the build")
+
     expected_brand_hashes = {
         "assets/img/social/gmail.svg": "f3723647e2708fb69ca0506982e963919f7f6676f22488773898851dbb864b7f",
         "assets/img/social/huggingface.svg": "942cad1ccda905ac5a659dfd2d78b344fccfb84a8a3ac3721e08f488205638a0",

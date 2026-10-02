@@ -101,6 +101,33 @@ The Tencent mirror adds HSTS, `frame-ancestors`, `nosniff` etc. as real headers 
 drops inherited `add_header`s in any location that sets its own, so every such location
 re-includes the snippet; `validate_content.py` enforces that.
 
+## Headless homepage (terminal + agent)
+
+`_plugins/headless_site.rb` generates, after every build, two browser-free versions of the site from
+the same content (posts, `_projects`, `_news`; demo projects with `translation_key: demo-*` and any
+record with `headless: false` are excluded; identity and what each audience may see live in
+`_data/headless.yml`):
+
+- **Terminal, for humans** — `/cli.py` is an interactive curses TUI (stdlib only, Python 3.6+;
+  tabs, `/` command palette, reader, search, scannable WeChat QR), run with
+  `curl -fsSL https://functionhx.github.io/cli.py | python3 -`. Its source is `terminal/cli.py`
+  (excluded from the build; the plugin injects the content at the `DATA = None` placeholder).
+  `/cli` is the static ANSI card (`python3 cli.py --card`, so the build needs `python3`).
+- **Agent, for machines** — `/llms.txt` is the trunk; `/agent/*.md` are branches that link back
+  to it; every post / project / news item / section page gets a leaf at `<url>index.html.md`;
+  `/llms-full.txt` and `/api/*.json` complete it. No ANSI codes, Chinese only (the academic
+  homepage link is the one English exception).
+
+The WeChat QR is drawn from `_data/terminal_qr.yml` (module matrix + the PNG's SHA-256, made by
+`scripts/terminal_qr.py`, which round-trip-decodes it); `validate_content.py` fails if the PNG
+changes without regenerating it. Every HTML page starts with a comment naming both entry points
+and carries `<link rel="alternate">` to its Markdown leaf. On the Tencent mirror nginx negotiates:
+`Accept: text/markdown` → leaf, `Accept: application/json` on `/` → `/api/profile.json`,
+curl/wget/HTTPie/xh → `/cli` on `/` (also over plain HTTP) and the leaf elsewhere; set
+`mirror_negotiation: true` in `_data/headless.yml` once that config is live. `check_built_site.py`
+verifies the whole tree (links resolve, JSON parses, no ANSI in agent files, no demo content, the
+TUI compiles and prints).
+
 ## Theme override ledger
 
 The theme runtime comes from the pinned `al_folio_core` gem. Local files in

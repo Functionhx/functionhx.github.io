@@ -1,0 +1,75 @@
+# 无头主页（终端 /cli、/cli.py）与 Agent 主页（/llms.txt 及其分支）的身份与公开范围。
+# 其余内容（文章、项目、动态）都由 _plugins/headless_site.rb 从站内现有记录生成，不在这里重复。
+# 这里只放别处没有结构化字段的身份信息，数值与首页、_data/socials.yml 保持一致。
+
+name: 樊宇琛
+name_latin: Yuchen Fan
+brand: Function
+# 一句话简介取首页（_pages/about-zh.md）的 subtitle，这里不重复。
+
+# 腾讯云镜像的内容协商（deploy/nginx/fanyuchen.com.cn.conf）要手动应用到服务器。应用之后改成 true，
+# /agent/interfaces.md 才会向 Agent 说明「镜像支持 Accept: text/markdown」，避免描述还不存在的能力。
+mirror_negotiation: false
+
+# 英文学术主页：机器版里唯一的非中文内容。
+academic:
+  label: 学术主页（英文）
+  url: https://functionhx.github.io/academic/
+
+# 两个版本各自公开哪些联系方式。
+# terminal：给只有命令行的人看（/cli、/cli.py），与网页上公开的一致，含微信二维码。
+# agent：给 Agent 看（/llms.txt、/api/*.json），只给最少的入口，减少被批量抓取的面。
+contacts:
+  - key: email
+    label: 邮箱
+    value: functionhx@gmail.com
+    url: mailto:functionhx@gmail.com
+    terminal: true
+    agent: true
+  - key: github
+    label: GitHub
+    value: github.com/Functionhx
+    url: https://github.com/Functionhx
+    terminal: true
+    agent: true
+  - key: huggingface
+    label: Hugging Face
+    value: huggingface.co/Func-nano
+    url: https://huggingface.co/Func-nano
+    terminal: true
+    agent: false
+  - key: kaggle
+    label: Kaggle
+    value: kaggle.com/funcnano
+    url: https://www.kaggle.com/funcnano
+    terminal: true
+    agent: false
+  - key: qq
+    label: QQ
+    value: "2994114386"
+    terminal: true
+    agent: false
+  - key: wechat
+    label: 微信
+    value: 扫下方二维码
+    terminal: true
+    agent: false
+    qr: true
+
+# 机器版收录的栏目页（白名单）。论文页只有主题自带的示例文献，teaching / people / books 也是示例，都不收。
+sections:
+  - key: home
+    title: 首页
+    url: /
+  - key: writings
+    title: 文章
+    url: /blog/
+  - key: projects
+    title: 项目与研究
+    url: /projects/
+  - key: tools
+    title: 工具
+    url: /tools/
+  - key: news
+    title: 动态
+    url: /news/

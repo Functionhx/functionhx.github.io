@@ -7,6 +7,7 @@ import base64
 import hashlib
 from html.parser import HTMLParser
 import json
+import os
 import re
 from pathlib import Path
 import sys
@@ -206,6 +207,84 @@ def check_css_bundles(site: Path) -> list[str]:
             for source in sources.split():
                 if f"/* {source} */" not in content:
                     problems.append(f"{bundle}: does not contain {source}")
+    return problems
+
+
+# Separate GitHub Pages repositories served under the same origin; not part of this build.
+SIBLING_PROJECTS = {"academic", "contrail", "kaggle-agent", "usage-agent", "Linkage", "rustscan-tool"}
+HEADLESS_DEMO_MARKERS = ("Einstein", "project 4", "project 9", "名称很长的 project 3", "/projects/4_project/", "wave mechanics")
+
+
+def check_headless_site(site: Path) -> list[str]:
+    """The headless homepage (_plugins/headless_site.rb): agent tree, JSON, terminal card and TUI."""
+    import subprocess
+
+    problems = []
+    base = "https://functionhx.github.io"
+    agent_files = [site / "llms.txt", site / "llms-full.txt", *sorted((site / "agent").glob("*.md"))]
+    agent_files += sorted(site.rglob("index.html.md"))
+    for required in ("llms.txt", "llms-full.txt", "cli", "cli.py", "index.html.md", "api/profile.json",
+                     "api/writings.json", "api/projects.json", "api/news.json", "api/interfaces.json",
+                     *(f"agent/{name}.md" for name in ("profile", "writings", "projects", "news", "contact", "interfaces"))):
+        if not (site / required).is_file():
+            problems.append(f"/{required}: headless homepage file missing")
+    if problems:
+        return problems
+
+    linked = set()
+    for path in agent_files:
+        text = path.read_text(encoding="utf-8")
+        rel = path.relative_to(site).as_posix()
+        if "\x1b" in text:
+            problems.append(f"/{rel}: agent file must not contain ANSI escape codes")
+        for marker in HEADLESS_DEMO_MARKERS:
+            if marker in text:
+                problems.append(f"/{rel}: theme demo content {marker!r} leaked into the agent version")
+        for url in re.findall(r"\]\((" + re.escape(base) + r"/[^)\s]*)\)", text):
+            linked.add(url)
+    for url in sorted(linked):
+        target = url[len(base):].split("#")[0]
+        if target.strip("/").split("/")[0] in SIBLING_PROJECTS:
+            continue
+        candidate = site / target.lstrip("/")
+        if target.endswith("/"):
+            candidate = candidate / "index.html"
+        if not candidate.is_file():
+            problems.append(f"agent tree links to {url}, which is not in the build")
+
+    # Every writing / project leaf listed in the API must exist.
+    for name in ("writings", "projects", "news"):
+        try:
+            data = json.loads((site / "api" / f"{name}.json").read_text(encoding="utf-8"))
+        except json.JSONDecodeError as error:
+            problems.append(f"/api/{name}.json: invalid JSON ({error})")
+            continue
+        for item in data.get("items", []):
+            md = item.get("md", "")
+            if not md.startswith(base) or not (site / md[len(base):].lstrip("/")).is_file():
+                problems.append(f"/api/{name}.json: markdown leaf {md!r} missing")
+    for name in ("profile", "interfaces"):
+        try:
+            json.loads((site / "api" / f"{name}.json").read_text(encoding="utf-8"))
+        except json.JSONDecodeError as error:
+            problems.append(f"/api/{name}.json: invalid JSON ({error})")
+
+    card = (site / "cli").read_text(encoding="utf-8")
+    if "\x1b[" not in card or not card.rstrip("\n").endswith("\x1b[0m"):
+        problems.append("/cli: colour card must use ANSI codes and end with a reset")
+    if "llms.txt" not in card.splitlines()[2]:
+        problems.append("/cli: the uncoloured agent pointer must stay on the third line")
+    for marker in HEADLESS_DEMO_MARKERS:
+        if marker in card:
+            problems.append(f"/cli: theme demo content {marker!r} leaked into the terminal card")
+    try:
+        compile((site / "cli.py").read_text(encoding="utf-8"), "cli.py", "exec")
+    except SyntaxError as error:
+        problems.append(f"/cli.py: does not compile: {error}")
+        return problems
+    plain = subprocess.run([sys.executable, str(site / "cli.py"), "--plain"], capture_output=True, text=True, timeout=30)
+    if plain.returncode != 0 or "\x1b" in plain.stdout or "llms.txt" not in plain.stdout:
+        problems.append(f"/cli.py --plain failed: {plain.stderr.strip()[-200:]}")
     return problems
 
 
@@ -1023,6 +1102,7 @@ def main() -> int:
     errors.extend(check_content_security_policy(site))
     errors.extend(check_fontawesome_subset(site))
     errors.extend(check_css_bundles(site))
+    errors.extend(check_headless_site(site))
 
     if errors:
         print("Built-site validation failed:", file=sys.stderr)

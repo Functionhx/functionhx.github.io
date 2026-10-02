@@ -232,6 +232,7 @@ exclude:
   - spark-vault/
   - letter-mailer/
   - magic-search/
+  - terminal/
   - deploy/
   - requirements.txt
   - test/
