@@ -109,8 +109,10 @@ record with `headless: false` are excluded; identity and what each audience may 
 `_data/headless.yml`):
 
 - **Terminal, for humans** — `/cli.py` is an interactive curses TUI (stdlib only, Python 3.6+;
-  tabs, `/` command palette, reader, search, scannable WeChat QR), run with
-  `curl -fsSL https://functionhx.github.io/cli.py | python3 -`. Its source is `terminal/cli.py`
+  tabs, `/` command palette, reader, search, scannable WeChat QR). Visitors start it with
+  `curl -sL functionhx.github.io/sh | sh` (or `… | sh -s install` for a `functionhx` command):
+  `/sh` (source `terminal/sh`, POSIX sh) fetches the latest `cli.py` — mirror first, then GitHub
+  Pages — and runs it with the keyboard on `/dev/tty`. `cli.py`'s source is `terminal/cli.py`
   (excluded from the build; the plugin injects the content at the `DATA = None` placeholder).
   `/cli` is the static ANSI card (`python3 cli.py --card`, so the build needs `python3`).
 - **Agent, for machines** — `/llms.txt` is the trunk; `/agent/*.md` are branches that link back

@@ -7,8 +7,9 @@ require "open3"
 # 无头主页：同一份站内内容，除了给浏览器的 HTML，再生成两套给「没有浏览器的访客」的版本。
 #
 # 1. 终端（给人看）
-#    /cli.py  交互界面（Python 标准库 curses，源码 terminal/cli.py），内容在这里嵌入：
-#             curl -fsSL https://functionhx.github.io/cli.py | python3 -
+#    /sh      启动脚本（源码 terminal/sh）：每次取最新的 cli.py 并运行，也能装成 functionhx 命令：
+#             curl -sL functionhx.github.io/sh | sh          curl -sL functionhx.github.io/sh | sh -s install
+#    /cli.py  交互界面（Python 标准库 curses，源码 terminal/cli.py），内容在这里嵌入
 #    /cli     彩色名片（ANSI），就是 `python3 cli.py --card` 的输出：curl https://functionhx.github.io/cli
 #
 # 2. Agent（给机器看，不含任何颜色码）
@@ -25,6 +26,11 @@ module Functionhx
   module HeadlessSite
     KIND_LABELS = { "research" => "研究", "project" => "项目", "tool" => "工具" }.freeze
     KIND_ORDER = %w[research project tool].freeze
+
+    def launch(base)
+      "curl -sL #{base.sub(%r{\Ahttps?://}, '')}/sh | sh"
+    end
+    module_function :launch
     MARKER = "functionhx-headless"
 
     module_function
@@ -153,7 +159,7 @@ module Functionhx
       trunk << "你好，Agent。这里是#{p['name']}个人主页的机器可读版本，这份文件是主干：" \
                "下面每个分支都是一份独立的 Markdown 或 JSON，按需读取，不必一次读完。"
       trunk << "内容与网页由同一份源文件生成，不含额外信息；引用时请以各条目的原文链接为准。"
-      trunk << "终端里的人类访客请用：`curl -fsSL #{base}/cli.py | python3 -`" << ""
+      trunk << "终端里的人类访客请用：`#{launch(base)}`" << ""
       trunk << "## 分支" << ""
       branches.each { |path, title, note| trunk << "- [#{title}](#{base}#{path})：#{note}" }
       trunk << "" << "## 文章" << ""
@@ -220,7 +226,7 @@ module Functionhx
       interfaces << "- 站内搜索索引：#{base}/assets/search/index-zh.json（构建时生成的分块索引，浏览器端 BM25 检索用）"
       interfaces << "" << "## 终端（给人看，含颜色码，Agent 不必读取）" << ""
       interfaces << "- 彩色名片：#{base}/cli"
-      interfaces << "- 交互界面：`curl -fsSL #{base}/cli.py | python3 -`"
+      interfaces << "- 交互界面：`#{launch(base)}`（装成命令：`#{launch(base)} -s install`）"
       if m["mirror_negotiation"]
         interfaces << "" << "## 内容协商（国内镜像 https://fanyuchen.com.cn）" << ""
         interfaces << "- `Accept: text/markdown`：任意页面返回对应的 Markdown 版"
@@ -296,7 +302,7 @@ module Functionhx
                           "leaf_rule" => "页面网址后加 index.html.md" },
           "json" => api_index(base).map { |path, note| { "url" => base + path, "说明" => note } },
           "search_index" => "#{base}/assets/search/index-zh.json",
-          "terminal" => { "card" => "#{base}/cli", "interactive" => "curl -fsSL #{base}/cli.py | python3 -" }
+          "terminal" => { "card" => "#{base}/cli", "interactive" => launch(base), "install" => "#{launch(base)} -s install" }
         ),
       }.transform_values { |value| JSON.pretty_generate(value) + "\n" }
     end
@@ -313,6 +319,7 @@ module Functionhx
         "writings" => m["writings"],
         "projects" => m["projects"],
         "news" => m["news"],
+        "launch" => launch(m["site"]),
         "agent_entries" => [["主干", "/llms.txt"], ["全文", "/llms-full.txt"], ["文章 JSON", "/api/writings.json"],
                             ["接口说明", "/agent/interfaces.md"]],
       }
@@ -334,6 +341,7 @@ module Functionhx
         return
       end
       File.write(File.join(site.dest, "cli"), output)
+      FileUtils.cp(File.join(site.source, "terminal", "sh"), File.join(site.dest, "sh"))
     rescue Errno::ENOENT
       Jekyll.logger.warn "Headless:", "python3 not found, /cli not generated"
     end
@@ -343,7 +351,7 @@ module Functionhx
     def annotate(html, base, markdown_url)
       return html if html.include?(MARKER) || !html.include?("</head>")
 
-      comment = "<!-- #{MARKER} · 终端：curl -fsSL #{base}/cli.py | python3 - · Agent：#{base}/llms.txt -->\n"
+      comment = "<!-- #{MARKER} · 终端：#{launch(base)} · Agent：#{base}/llms.txt -->\n"
       links = %(<link rel="alternate" type="text/plain" href="#{base}/llms.txt" title="llms.txt">)
       links += %(<link rel="alternate" type="text/markdown" href="#{markdown_url}" title="Markdown">) if markdown_url
       comment + html.sub("</head>") { "#{links}</head>" }

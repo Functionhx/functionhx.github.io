@@ -1,0 +1,101 @@
+#!/bin/sh
+# ƒ Function —— 樊宇琛的终端主页
+#
+#   curl -sL functionhx.github.io/sh | sh                 打开交互界面
+#   curl -sL functionhx.github.io/sh | sh -s install      装成命令，之后输入 functionhx 即可
+#   functionhx uninstall                                  卸载
+#
+# 这个脚本每次运行都会取最新的 cli.py（Python 标准库写的终端界面，只读、不联网）并运行它；
+# 先试国内镜像，连不上再用 GitHub Pages。没有 python3 时只打印名片。
+# 一次性运行不留任何文件；install 只写 ~/.local/bin/functionhx 和 ~/.cache/functionhx/cli.py。
+# 源码：terminal/sh（https://github.com/Functionhx/functionhx.github.io）
+
+main() {
+    set -u
+    sources="${FUNCTIONHX_SOURCES:-https://fanyuchen.com.cn https://functionhx.github.io}"
+    bin_dir="${XDG_BIN_HOME:-$HOME/.local/bin}"
+    cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/functionhx"
+
+    case "${1:-}" in
+        install) install_self; return ;;
+        uninstall) rm -f "$bin_dir/functionhx"; rm -rf "$cache_dir"; echo "已卸载 functionhx。"; return ;;
+        -h | --help | help) usage; return ;;
+    esac
+    run "$@"
+}
+
+usage() {
+    cat <<'USAGE'
+functionhx —— 樊宇琛的终端主页
+  functionhx              打开交互界面（输入 / 查看命令）
+  functionhx --card       打印彩色名片
+  functionhx uninstall    卸载
+USAGE
+}
+
+# fetch_to 路径 文件：依次尝试每个来源，完整下载成功才写入目标文件（半截内容不会混进来）。
+fetch_to() {
+    for base in $sources; do
+        if command -v curl >/dev/null 2>&1; then
+            curl -fsL --connect-timeout 4 --max-time 30 -o "$2.part" "$base$1"
+        elif command -v wget >/dev/null 2>&1; then
+            wget -q -T 30 -O "$2.part" "$base$1"
+        else
+            echo "需要 curl 或 wget。" >&2
+            return 1
+        fi
+        if [ "$?" -eq 0 ] && [ -s "$2.part" ]; then
+            mv "$2.part" "$2"
+            return 0
+        fi
+        rm -f "$2.part"
+    done
+    return 1
+}
+
+run() {
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo "没有找到 python3，先看看名片（装上 python3 就能用交互界面）：" >&2
+        card="$(mktemp "${TMPDIR:-/tmp}/functionhx.XXXXXX")" || return 1
+        fetch_to /cli "$card" && cat "$card"
+        rm -f "$card"
+        return
+    fi
+    script="$(mktemp "${TMPDIR:-/tmp}/functionhx.XXXXXX")" || return 1
+    trap 'rm -f "$script" "$script.part"' EXIT INT TERM
+    if fetch_to /cli.py "$script"; then
+        # 装成命令时顺手缓存一份，断网也能打开。
+        if [ -d "$cache_dir" ]; then cp "$script" "$cache_dir/cli.py" 2>/dev/null || true; fi
+    elif [ -s "$cache_dir/cli.py" ]; then
+        echo "网络不通，打开上次缓存的版本。" >&2
+        cp "$cache_dir/cli.py" "$script"
+    else
+        echo "取不到 cli.py，请检查网络后重试。" >&2
+        return 1
+    fi
+    # 脚本本身来自管道（curl | sh），键盘输入要从终端读。
+    if [ -t 1 ] && (exec </dev/tty) 2>/dev/null; then
+        python3 "$script" "$@" </dev/tty
+    else
+        python3 "$script" --card "$@"
+    fi
+}
+
+install_self() {
+    mkdir -p "$bin_dir" "$cache_dir" || return 1
+    target="$bin_dir/functionhx"
+    if ! fetch_to /sh "$target.new"; then
+        echo "下载失败，请检查网络后重试。" >&2
+        return 1
+    fi
+    mv "$target.new" "$target" && chmod +x "$target"
+    fetch_to /cli.py "$cache_dir/cli.py" || true
+    echo "已安装：$target"
+    case ":$PATH:" in
+        *":$bin_dir:"*) echo "现在输入 functionhx 就能打开。" ;;
+        *) echo "把 $bin_dir 加进 PATH 后输入 functionhx，或者直接运行 $target" ;;
+    esac
+}
+
+# 整个脚本读完才执行：curl 中途断开时不会跑半截命令。
+main "$@"

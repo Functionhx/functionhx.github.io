@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 """ƒ Function — 樊宇琛的终端主页。
 
-    curl -fsSL https://functionhx.github.io/cli.py | python3 -
+    curl -sL functionhx.github.io/sh | sh                 （/sh 每次取最新的本文件并运行）
+    curl -sL functionhx.github.io/sh | sh -s install      装成 functionhx 命令
 
 只用 Python 标准库（curses），3.6 及以上可运行；不写任何文件、不联网，内容在构建时已嵌入本文件。
 终端不支持交互（Windows、输出被重定向）时退回打印一张静态名片。
@@ -218,8 +219,14 @@ ANSI = {
 
 
 def ansi_line(segments, color=True):
+    merged = []
+    for text, style in segments:  # 相邻同色片段合并，免得每个字都包一层颜色码
+        if merged and merged[-1][1] == style:
+            merged[-1] = (merged[-1][0] + text, style)
+        else:
+            merged.append((text, style))
     out = []
-    for text, style in segments:
+    for text, style in merged:
         code = ANSI.get(style, "") if color else ""
         out.append("\033[%sm%s\033[0m" % (code, text) if code else text)
     return "".join(out)
@@ -309,7 +316,8 @@ def card(color=True, width=78):
             add([("  ", "n"), (line, "qr" if color else "n")])
     add()
     add(rule("更多", inner))
-    add([("交互模式  ", "dim"), ("curl -fsSL " + site + "/cli.py | python3 -", "acc2")])
+    add([("交互模式  ", "dim"), (DATA["launch"], "acc2")])
+    add([("装成命令  ", "dim"), (DATA["launch"] + " -s install", "acc2"), ("  之后输入 functionhx", "dim")])
     add([(p["academic"]["label"] + "  ", "dim"), (p["academic"]["url"], "n")])
     add([("浏览器版  ", "dim"), (site + "/", "n")])
     add()

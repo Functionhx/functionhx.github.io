@@ -223,7 +223,7 @@ def check_headless_site(site: Path) -> list[str]:
     base = "https://functionhx.github.io"
     agent_files = [site / "llms.txt", site / "llms-full.txt", *sorted((site / "agent").glob("*.md"))]
     agent_files += sorted(site.rglob("index.html.md"))
-    for required in ("llms.txt", "llms-full.txt", "cli", "cli.py", "index.html.md", "api/profile.json",
+    for required in ("llms.txt", "llms-full.txt", "cli", "cli.py", "sh", "index.html.md", "api/profile.json",
                      "api/writings.json", "api/projects.json", "api/news.json", "api/interfaces.json",
                      *(f"agent/{name}.md" for name in ("profile", "writings", "projects", "news", "contact", "interfaces"))):
         if not (site / required).is_file():
@@ -282,6 +282,9 @@ def check_headless_site(site: Path) -> list[str]:
     except SyntaxError as error:
         problems.append(f"/cli.py: does not compile: {error}")
         return problems
+    launcher = subprocess.run(["sh", "-n", str(site / "sh")], capture_output=True, text=True, timeout=30)
+    if launcher.returncode != 0:
+        problems.append(f"/sh: shell syntax error: {launcher.stderr.strip()[:200]}")
     plain = subprocess.run([sys.executable, str(site / "cli.py"), "--plain"], capture_output=True, text=True, timeout=30)
     if plain.returncode != 0 or "\x1b" in plain.stdout or "llms.txt" not in plain.stdout:
         problems.append(f"/cli.py --plain failed: {plain.stderr.strip()[-200:]}")
