@@ -24,7 +24,10 @@
   const enabled = override ? override === "on" : config.enabled === true;
   if (!enabled || navigator.connection?.saveData) return;
 
+  let started = false;
   function start() {
+    if (started) return;
+    started = true;
     const style = document.createElement("link");
     style.rel = "stylesheet";
     style.href = config.style;
@@ -35,7 +38,12 @@
     document.body.append(script);
   }
   const idle = () => ("requestIdleCallback" in window ? window.requestIdleCallback(start, { timeout: 3000 }) : window.setTimeout(start, 1200));
-  const whenLoaded = () => (document.readyState === "complete" ? idle() : window.addEventListener("load", idle, { once: true }));
+  // 一般等 load 之后再来；但网络慢时某张图或第三方脚本可能拖住 load 很久，最多等 6 秒。
+  const whenLoaded = () => {
+    if (document.readyState === "complete") return idle();
+    window.addEventListener("load", idle, { once: true });
+    window.setTimeout(idle, 6000);
+  };
   // Speculation Rules 会在后台预渲染首页和博客页：那时访客还没真正打开它，宠物不能醒来，
   // 否则会多记一次来访、对着没人的页面说话。等页面真正被打开再启动。
   if (document.prerendering) document.addEventListener("prerenderingchange", whenLoaded, { once: true });
