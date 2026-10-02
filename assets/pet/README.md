@@ -94,4 +94,12 @@ python3 scripts/pet_sprites.py deepseek ~/Downloads/whale-claude-uniform --costu
 动画化、AI 辅助补帧、放进公开 GitHub 仓库、他人再分发、商业使用；角色身上的公司标志（Anthropic 图标、
 OpenAI Blossom、Gemini 星形、DeepSeek 鲸鱼）的使用许可——**改色（如 Blossom 发卡）属于修改，需要授权里明确允许**。
 
-网站上只写「同人角色 · 形象已获授权」和画师署名；不写「官方」「赞助」「合作」，除非有书面依据（见 AGENTS.md）。
+网站上只写「同人角色 · 形象已获授权」、画师署名和许可（`pet.json` 的 `credit`、`license`）；不写「官方」「赞助」「合作」，
+除非有书面依据（见 AGENTS.md）。
+
+**非商业。** 站长决定（2026-10-02）：宠物只是自己玩，不商用——不接广告、不收费、不拿形象做推广。大肥鱼一系的
+原型「溟月」（上善无形）以 CC BY-NC-SA 4.0 开放二创，女仆鲸鱼娘（ZipZipPipe）声明不得商用；用这类形象时：
+
+- 署名：原作者与改编作者都写进 `credit`，例如 `形象：ZipZipPipe（原型「溟月」：上善无形）`；
+- 许可：`license` 写 `CC BY-NC-SA 4.0`。导出的序列帧是改编作品，同样按这个许可提供，在 LICENSE.md 里写明；
+- 这些素材不受仓库代码许可证约束，以各自的 LICENSE.md 为准。

@@ -948,7 +948,8 @@
     ui.input.placeholder = namingMode ? "给它起个名字（最多 12 个字）" : CONFIG.endpoint ? "问点什么……" : "输入关键词，在站里翻翻";
     const model = brainModels[current.id] && brainModels[current.id].model;
     const disclosure = !CONFIG.endpoint ? LINES.disclosure_local : model ? fill(LINES.disclosure, { model }) : LINES.disclosure_unknown;
-    const credit = sprites ? [LINES.credit_label, sprites.credit].filter(Boolean).join(" · ") : "";
+    // 同人形象的署名与许可（如 CC BY-NC-SA 4.0）必须随形象一起显示。
+    const credit = sprites ? [LINES.credit_label, sprites.credit, sprites.license].filter(Boolean).join(" · ") : "";
     ui.footnote.textContent = [disclosure, credit].filter(Boolean).join(" ");
   }
   function renderChips() {

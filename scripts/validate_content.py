@@ -326,6 +326,8 @@ def main() -> int:
         if not (ROOT / "assets" / "pet" / pet_id / "LICENSE.md").exists():
             errors.append(f"assets/pet/{pet_id}/LICENSE.md: the licence record must be uploaded before the art goes live")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not str(manifest.get("credit", "")).strip():
+            errors.append(f"assets/pet/{pet_id}/pet.json: credit (the artist attribution) is required for licensed art")
         states = manifest.get("states") or {}
         if "idle" not in states:
             errors.append(f"assets/pet/{pet_id}/pet.json: an idle state is required")

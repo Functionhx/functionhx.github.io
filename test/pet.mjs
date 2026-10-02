@@ -31,6 +31,7 @@ const server = createServer(async (request, response) => {
         id: "claude",
         frame: { width: 256, height: 256 },
         credit: "形象：测试画师",
+        license: "CC BY-NC-SA 4.0",
         states: {
           idle: { file: "/assets/img/social/qqmail.png", frames: 4, fps: 6 },
           happy: { file: "/assets/img/social/wechat-qr.png", frames: 1, fps: 8, loop: false },
@@ -202,7 +203,7 @@ assert.ok((await page.textContent("#functionhx-pet .pet-panel header span")).inc
 await memoryWhen(page, "character", "claude");
 await page.waitForFunction(() => document.querySelector("#functionhx-pet .pet-sprite")?.style.backgroundImage.includes("qqmail.png"));
 assert.equal(await page.$eval("#functionhx-pet .pet-sprite", (node) => node.style.getPropertyValue("--frames")), "4");
-assert.ok((await page.textContent("#functionhx-pet .pet-footnote")).includes("同人角色 · 形象已获授权 · 形象：测试画师"));
+assert.ok((await page.textContent("#functionhx-pet .pet-footnote")).includes("同人角色 · 形象已获授权 · 形象：测试画师 · CC BY-NC-SA 4.0"));
 // 画师没画的动作退回最接近的：wave → happy；read → think → idle
 await page.evaluate(() => window.functionhxPet.setState("wave"));
 await page.waitForFunction(() => document.querySelector("#functionhx-pet .pet-sprite")?.style.backgroundImage.includes("wechat-qr.png"));

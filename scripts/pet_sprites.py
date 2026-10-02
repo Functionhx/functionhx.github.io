@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """把画师交付的宠物动作帧导入网站：每个状态拼成一张横向 WebP 序列帧条，并生成 / 更新 pet.json。
 
-    python3 scripts/pet_sprites.py <宠物 id> <素材文件夹> [--credit "形象：@画师"] [--costume <换装 id>]
+    python3 scripts/pet_sprites.py <宠物 id> <素材文件夹> --credit "形象：@画师" [--license "CC BY-NC-SA 4.0"] [--costume <换装 id>]
 
 素材文件夹里，每个状态是一个子文件夹（透明 PNG / WebP 序列，按文件名排序），或一个动图文件
 （GIF / APNG / 动态 WebP），名字就是状态名：idle/、walk/、think.gif ……
@@ -123,7 +123,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("pet", choices=PETS)
     parser.add_argument("source", type=Path)
-    parser.add_argument("--credit", help="面板里显示的署名，例如「形象：@画师名」")
+    parser.add_argument("--credit", help="面板里显示的署名，例如「形象：@画师名」（同人形象必须署名）")
+    parser.add_argument("--license", help="形象的许可，例如「CC BY-NC-SA 4.0」，会和署名一起显示")
     parser.add_argument("--costume", help="把这批帧登记为换装（如 claude-uniform），不覆盖默认形象")
     parser.add_argument("--frame", type=int, default=256, help="单帧边长（默认 256，网页按一半显示）")
     parser.add_argument("--quality", type=int, default=90, help="WebP 质量（默认 90）")
@@ -151,6 +152,10 @@ def main() -> None:
     manifest.setdefault("base", "sprites/")
     if args.credit:
         manifest["credit"] = args.credit
+    if args.license:
+        manifest["license"] = args.license
+    if not manifest.get("credit"):
+        print("  提醒：还没有署名（--credit），登记前必须补上", file=sys.stderr)
     manifest.setdefault("states", {})
 
     total = 0
