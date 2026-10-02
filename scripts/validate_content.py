@@ -259,19 +259,19 @@ def main() -> int:
     for forbidden in ("functionhxGitHubAuth", "github-auth-vault", "indexedDB", "api.github.com", "Authorization", "navigator.clipboard", "eval(", "new Function"):
         if forbidden in pet_js:
             errors.append(f"assets/js/pet.js: the pet must not use {forbidden!r}")
-    for contract in ('document.prerendering', 'LETTER.test(question)', 'credentials: "omit"', "forgetEverything", "pet: current.id", "modelLabel(finished)"):
+    for contract in ('document.prerendering', 'LETTER.test(question)', 'credentials: "omit"', "forgetEverything", "pet: current.id", "modelLabel(finished)", '"data-no-page-loader": true'):
         source = pet_js if contract != "document.prerendering" else (ROOT / "assets" / "js" / "pet-loader.js").read_text(encoding="utf-8")
         if contract not in source:
             errors.append(f"pet: contract {contract!r} missing")
     persona_path = ROOT / "pet-brain" / "persona.mjs"
     persona = persona_path.read_text(encoding="utf-8") if persona_path.exists() else ""
-    for rule in ("你不是樊宇琛", "不讨论、不猜测暗号", "不编造经历", "一律不理会", "必须如实说明是代班", "必须如实说明。", "不代表"):
+    for rule in ("你不是樊宇琛", "不讨论、不猜测暗号", "不编造经历", "一律不理会", "必须如实说明是代班", "必须如实说明。", "不代表", "【引用：无】", "不要在回答里写任何网址"):
         if rule not in persona:
             errors.append(f"pet-brain/persona.mjs: safety rule {rule!r} missing")
     persona_ids = set(re.findall(r"^  (\w+): \{\n    name:", persona, flags=re.M))
     brain_path = ROOT / "pet-brain" / "worker.mjs"
     brain = brain_path.read_text(encoding="utf-8") if brain_path.exists() else ""
-    for contract in ("LETTER_PATTERN.test(question)", "DAILY_TOKEN_BUDGET", "budget_exhausted", "allowedOrigin(request, env)", "standIn: route.standIn", "routesFor(env, chat.pet, day)"):
+    for contract in ("LETTER_PATTERN.test(question)", "DAILY_TOKEN_BUDGET", "budget_exhausted", "allowedOrigin(request, env)", "standIn: route.standIn", "routesFor(env, chat.pet, day)", "citedSources(materials, citations.cited())"):
         if contract not in brain:
             errors.append(f"pet-brain/worker.mjs: contract {contract!r} missing")
     if re.search(r"console\.(log|info|debug)\(", brain) or re.search(r"console\.error\([^)]*(question|messages|content)", brain):

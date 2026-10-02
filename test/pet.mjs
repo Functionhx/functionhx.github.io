@@ -174,6 +174,13 @@ assert.equal(brainRequests.length, 0, "letter questions must never leave the bro
 // 7. 提问：流式回答、附出处与「AI 生成」；请求带当前页面；本地不保存原话
 await page.fill("#functionhx-pet .pet-form input", "为什么批量更新会更快？");
 await page.press("#functionhx-pet .pet-form input", "Enter");
+// 页内表单：发送时不能盖上全站的「加载中」
+await page.waitForTimeout(400);
+assert.equal(
+  await page.evaluate(() => document.documentElement.dataset.pageLoading === "true" || document.body.getAttribute("aria-busy") === "true"),
+  false,
+  "sending a question must not show the page loader"
+);
 await page.waitForFunction(() => document.querySelector("#functionhx-pet .pet-log")?.innerText.includes("AI 生成"), null, { timeout: 8000 });
 const answer = await lastMessage(page);
 assert.ok(answer.includes("所以更快") && answer.includes("出处") && answer.includes("Batch-LIO"));

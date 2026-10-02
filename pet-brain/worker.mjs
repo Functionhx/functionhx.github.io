@@ -258,24 +258,37 @@ export function terms(text) {
   return out;
 }
 
+// 到处都有的两字组合：命中它们不说明问题和这段资料有关。
+const COMMON_TERMS = new Set(
+  "什么 为什 怎么 怎样 如何 一个 一下 这个 那个 这里 那里 知道 可以 能不 我们 你们 他们 不是 就是 还是 没有 是不 有没 你好 谢谢 吗？ 的是 了吗 是谁 你是 我是 网站 本站".split(
+    " "
+  )
+);
+
+// 只有问题本身命中了这段资料，它才算相关；当前页面和小节只用来在相关的资料里排先后。
 export function retrieve(chunks, query, page, limit = MATERIAL_CHUNKS) {
-  const wanted = terms(query);
+  const wanted = [...new Set(terms(query))].filter((term) => !COMMON_TERMS.has(term));
   const context = terms(`${page.title} ${page.section}`);
+  const aboutOwner = /站长|樊宇琛|你主人|他是谁|介绍一下/.test(query);
   const scored = chunks.map((chunk) => {
     const haystack = `${chunk.title}\n${chunk.text}`.toLowerCase();
     const title = chunk.title.toLowerCase();
-    let score = 0;
+    let relevance = 0;
     for (const term of wanted) {
-      if (haystack.includes(term)) score += 2;
-      if (title.includes(term)) score += 3;
+      if (haystack.includes(term)) relevance += 2;
+      if (title.includes(term)) relevance += 3;
     }
+    if (chunk.title === "关于站长" && aboutOwner) relevance += 6;
+    const samePage = Boolean(page.url && chunk.url && page.url.split("#")[0] === chunk.url);
+    // 「这里讲的是什么」一类问题：当前页面本身就是相关资料。
+    if (samePage && /这里|这页|这篇|本文|这段|这张|这个项目/.test(query)) relevance += 4;
+    let score = relevance;
     for (const term of context) if (haystack.includes(term)) score += 0.5;
-    if (page.url && chunk.url && page.url.split("#")[0] === chunk.url) score += 4;
-    if (chunk.title === "关于站长" && /站长|樊宇琛|你主人|他是谁|介绍/.test(query)) score += 6;
-    return { chunk, score };
+    if (samePage) score += 4;
+    return { chunk, relevance, score };
   });
   return scored
-    .filter((item) => item.score > 0)
+    .filter((item) => item.relevance >= 4)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map((item) => item.chunk);
@@ -379,9 +392,65 @@ function readEvent(format, chunk, usage) {
   return chunk?.choices?.[0]?.delta?.content || "";
 }
 
-// 把上游的流转换成 {t} 片段；结束时附上出处和「这次是谁回答的」，并把 token 用量记进预算。
-export function relay(upstream, { sources, onUsage, format = "openai", model = "", standIn = false }) {
+// 模型在回答最后写「【引用：1,3】」或「【引用：无】」，说明它实际用到了哪几条资料。
+// 这个标记不给访客看：边转发边把它拦下来（可能被拆在几个片段里），出处只列它真正引用的那几条。
+const CITATION = /\s*【引用[：:]\s*([^】]*)】/;
+export function citationFilter() {
+  let pending = "";
+  let cited = null;
+  const mayBecomeMarker = (tail) => tail.startsWith("【引用") || "【引用".startsWith(tail);
+  return {
+    push(text) {
+      pending += text;
+      let out = "";
+      for (;;) {
+        const match = pending.match(CITATION);
+        if (match) {
+          cited = (match[1].match(/\d+/g) || []).map(Number);
+          out += pending.slice(0, match.index);
+          pending = pending.slice(match.index + match[0].length);
+          continue;
+        }
+        const open = pending.lastIndexOf("【");
+        if (open !== -1 && mayBecomeMarker(pending.slice(open))) {
+          out += pending.slice(0, open);
+          pending = pending.slice(open);
+        } else {
+          out += pending;
+          pending = "";
+        }
+        break;
+      }
+      // 结尾的空白先留着：如果后面紧跟引用标记，它们一起去掉。
+      const trailing = out.match(/\s+$/);
+      if (trailing) {
+        pending = trailing[0] + pending;
+        out = out.slice(0, -trailing[0].length);
+      }
+      return out;
+    },
+    flush() {
+      const rest = pending.trimEnd();
+      pending = "";
+      return /^\s*【引用/.test(rest) ? "" : rest;
+    },
+    cited: () => cited,
+  };
+}
+
+export function citedSources(materials, cited) {
+  const sources = [];
+  for (const index of cited || []) {
+    const material = materials[index - 1];
+    if (material && material.url && !sources.some((s) => s.url === material.url)) sources.push({ title: material.title, url: material.url });
+  }
+  return sources;
+}
+
+// 把上游的流转换成 {t} 片段；结束时附上实际引用的出处和「这次是谁回答的」，并把 token 用量记进预算。
+export function relay(upstream, { materials = [], onUsage, format = "openai", model = "", standIn = false }) {
   const decoder = new TextDecoder();
+  const citations = citationFilter();
   let buffer = "";
   const usage = { total: 0, input: 0, output: 0 };
   return new ReadableStream({
@@ -404,11 +473,13 @@ export function relay(upstream, { sources, onUsage, format = "openai", model = "
             } catch {
               continue;
             }
-            const text = readEvent(format, chunk, usage);
+            const text = citations.push(readEvent(format, chunk, usage));
             if (text) controller.enqueue(sse({ t: text }));
           }
         }
-        controller.enqueue(sse({ done: true, sources, model, standIn }));
+        const rest = citations.flush();
+        if (rest) controller.enqueue(sse({ t: rest }));
+        controller.enqueue(sse({ done: true, sources: citedSources(materials, citations.cited()), model, standIn }));
       } catch (error) {
         console.error("pet-brain: stream interrupted", error?.message || "unknown");
         controller.enqueue(sse({ error: "stream_interrupted" }));
@@ -474,8 +545,6 @@ export async function handleRequest(request, env, { fetch: fetcher = fetch, wait
 
     const chunks = await loadCorpus(env, fetcher);
     const materials = retrieve(chunks, question, chat.page);
-    const sources = [];
-    for (const m of materials) if (m.url && !sources.some((s) => s.url === m.url)) sources.push({ title: m.title, url: m.url });
 
     // 自家模型出错时换 DeepSeek 代班再试一次。
     for (const route of routes) {
@@ -493,7 +562,7 @@ export async function handleRequest(request, env, { fetch: fetcher = fetch, wait
       }
       return sseResponse(
         relay(upstream, {
-          sources,
+          materials,
           format: route.format,
           model: route.label,
           standIn: route.standIn,

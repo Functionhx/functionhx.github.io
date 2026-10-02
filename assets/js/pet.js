@@ -300,7 +300,8 @@
   ui.log = element("div", { class: "pet-log", role: "log", "aria-live": "polite" });
   ui.input = element("input", { type: "text", maxlength: "300", autocomplete: "off", enterkeyhint: "send" });
   ui.send = element("button", { type: "submit", text: "发送" });
-  ui.form = element("form", { class: "pet-form" }, [ui.input, ui.send]);
+  // data-no-page-loader：这是页内表单，提交时不要盖上全站的「加载中」（site-preferences.js）。
+  ui.form = element("form", { class: "pet-form", "data-no-page-loader": true }, [ui.input, ui.send]);
   ui.footnote = element("p", { class: "pet-footnote" });
   ui.panel.append(element("header", {}, [ui.panelTitle, ui.panelSub]), ui.panelClose, ui.chips, ui.log, ui.form, ui.footnote);
   ui.tab = element("button", { type: "button", class: "pet-tab", hidden: true });

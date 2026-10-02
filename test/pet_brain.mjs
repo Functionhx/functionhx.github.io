@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { LETTER_REPLY, PETS } from "../pet-brain/persona.mjs";
-import { buildPrompt, chunkCorpus, handleRequest, retrieve, routesFor, terms } from "../pet-brain/worker.mjs";
+import { buildPrompt, chunkCorpus, citationFilter, handleRequest, retrieve, routesFor, terms } from "../pet-brain/worker.mjs";
 
 const ORIGIN = "https://functionhx.github.io";
 const CORPUS = `# 樊宇琛 · Function
@@ -81,7 +81,8 @@ function anthropicStream(parts) {
   });
 }
 
-function fakeFetch({ upstreamStatus = 200, anthropicStatus = 200, parts = ["批量更新", "把多次滤波合成一次。"] } = {}) {
+// 模型在结尾写「【引用：编号】」，这里故意拆在两个片段里。
+function fakeFetch({ upstreamStatus = 200, anthropicStatus = 200, parts = ["批量更新", "把多次滤波合成一次。\n【引", "用：1】"] } = {}) {
   const calls = [];
   const fetcher = async (url, init = {}) => {
     calls.push({ url: String(url), init });
@@ -189,6 +190,24 @@ assert.deepEqual(
   (await routesFor(env(), "deepseek", null)).map((r) => [r.id, r.standIn]),
   [["deepseek", false]]
 );
+
+// 闲聊不检索到任何资料（常见字组合不算命中）
+assert.deepEqual(retrieve(chunks, "是谁把你造出来的呀", { title: "首页", section: "", url: `${ORIGIN}/` }), []);
+assert.deepEqual(retrieve(chunks, "你好厉害呀 你知道网站怎么解锁彩蛋吗", { title: "首页", section: "", url: `${ORIGIN}/` }), []);
+
+// 引用标记：从流里拦下来，不给访客看；文章标题里的【】照常显示；被截断的半个标记也丢掉
+const stream = (pieces) => {
+  const filter = citationFilter();
+  const text = pieces.map((piece) => filter.push(piece)).join("") + filter.flush();
+  return { text, cited: filter.cited() };
+};
+assert.deepEqual(stream(["看", "【RM2026-LIO", "算法开源】这篇。\n\n", "【引用：", "1, 3】"]), {
+  text: "看【RM2026-LIO算法开源】这篇。",
+  cited: [1, 3],
+});
+assert.deepEqual(stream(["我是从网站里长出来的。", "\n【引用：无】"]), { text: "我是从网站里长出来的。", cited: [] });
+assert.deepEqual(stream(["好的。\n【引用：2"]), { text: "好的。", cited: null });
+assert.deepEqual(stream(["没有标记的回答\n"]), { text: "没有标记的回答", cited: null });
 
 // 预检只放行站点来源
 let response = await handleRequest(new Request("https://x/chat", { method: "OPTIONS", headers: { Origin: ORIGIN } }), env());
