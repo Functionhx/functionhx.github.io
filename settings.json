@@ -2,20 +2,24 @@
   "version": 1,
   "site_font": "system",
   "loading_copy": "loading",
-  "season_effect": "leaves",
+  "season_effect": "rain",
   "wind_strength": 150,
   "away_title_delay": 500,
   "navigation_density": "relaxed",
+  "training_card_visible": true,
   "eggs": {
     "public": {
       "turbo": true,
       "dog": true,
       "terminal": true,
       "fx": true,
+      "love": true,
       "night": true,
       "idle": true,
       "console": true,
       "tab": true,
+      "bottle": true,
+      "archive": true,
       "letter": true
     },
     "letter": {
