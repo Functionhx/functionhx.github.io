@@ -3,7 +3,7 @@
 navigation_density: relaxed
 site_font: system
 loading_copy: loading
-season_effect: leaves
+season_effect: sakura
 wind_strength: 150
 # 切走标签页后多少毫秒把标题改成「在等你回来」（0 为立即）。
 away_title_delay: 500
