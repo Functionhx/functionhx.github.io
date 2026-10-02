@@ -92,8 +92,75 @@ html[data-theme="dark"] .pet-root {
   animation-iteration-count: 1;
   animation-fill-mode: forwards;
 }
+/* 每个动作只有一张静止姿势（动作表导入）时，用 CSS 让它动起来：呼吸、说话、跳、晃、摇摆。 */
 .pet-sprite.is-still {
-  animation: none;
+  transform-origin: 50% 100%;
+  animation: pet-breathe 3.2s ease-in-out infinite;
+}
+.is-talk .pet-sprite.is-still {
+  animation: pet-chatter 0.46s ease-in-out infinite;
+}
+.is-happy .pet-sprite.is-still,
+.is-wave .pet-sprite.is-still,
+.is-bulb .pet-sprite.is-still,
+.is-eat .pet-sprite.is-still,
+.is-tea .pet-sprite.is-still,
+.is-split .pet-sprite.is-still {
+  animation: pet-hop 0.7s cubic-bezier(0.3, 0.7, 0.4, 1) infinite;
+}
+.is-think .pet-sprite.is-still,
+.is-unfold .pet-sprite.is-still,
+.is-bubble .pet-sprite.is-still,
+.is-read .pet-sprite.is-still,
+.is-write .pet-sprite.is-still,
+.is-note .pet-sprite.is-still,
+.is-cards .pet-sprite.is-still {
+  animation: pet-ponder 2.4s ease-in-out infinite;
+}
+.is-failed .pet-sprite.is-still,
+.is-confused .pet-sprite.is-still {
+  animation: pet-tilt 2.6s ease-in-out infinite;
+}
+.is-sleep .pet-sprite.is-still {
+  animation: pet-breathe 4.8s ease-in-out infinite;
+}
+.is-walk .pet-sprite.is-still,
+.is-swap .pet-sprite.is-still,
+.is-dive .pet-sprite.is-still {
+  animation: pet-waddle 0.6s ease-in-out infinite;
+}
+.is-drag .pet-sprite {
+  transform-origin: 50% 0;
+  animation: pet-dangle 0.5s ease-in-out infinite alternate;
+}
+.is-float .pet-sprite {
+  animation: pet-drift 2.8s ease-in-out infinite;
+}
+.pet-figure.is-shimmer .pet-sprite {
+  animation: pet-hue 3s linear;
+}
+@keyframes pet-chatter {
+  50% {
+    transform: translateY(-2px) scale(1.02, 0.98);
+  }
+}
+@keyframes pet-ponder {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg) translateY(-2px);
+  }
+}
+@keyframes pet-waddle {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg) translateY(-3px);
+  }
 }
 @keyframes pet-frames {
   from {

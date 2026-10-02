@@ -150,7 +150,8 @@ content logging.
   stand-in and the browser labels the answer «AI 生成 · DeepSeek 代班»; a pet must never claim a model that did
   not answer. `GET /health` reports who answers each pet, and the panel names that provider in its disclosure.
 - **Art.** Licensed frames are imported with `scripts/pet_sprites.py <id> <folder>` (normalises to 256 px cells,
-  bottom-aligned, WebP strips + `assets/pet/<id>/pet.json`); registering `sprites:` in the pet's yml requires
+  bottom-aligned, WebP strips + `assets/pet/<id>/pet.json`), or from one 3×3 action sheet with `--sheet 3x3`
+  (solid background keyed out; one still pose per state, animated by CSS; prompts in `assets/pet/PROMPTS.md`); registering `sprites:` in the pet's yml requires
   `assets/pet/<id>/LICENSE.md` (uploaded by the owner). A pet without registered art only appears in `?pet=on`
   previews, drawn by the built-in placeholder. Missing states fall back via `FALLBACK` in `pet.js`.
   Character masters live in `assets/pet/<id>/source/` (excluded from the build). See `assets/pet/README.md`.

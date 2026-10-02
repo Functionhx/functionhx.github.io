@@ -374,7 +374,7 @@ def main() -> int:
     # 宠物：设定母版与源文件不对外；每只宠物的台词 JSON 都要生成且能解析。
     pet_root = site / "assets" / "pet"
     if pet_root.exists():
-        for leaked in sorted(pet_root.glob("*/source")) + sorted(pet_root.glob("README.md")):
+        for leaked in sorted(pet_root.glob("*/source")) + sorted(pet_root.glob("*.md")):
             errors.append(f"/{leaked.relative_to(site).as_posix()}: pet source material must be excluded from the build")
         for lines_path in [pet_root / "lines.json", *sorted(pet_root.glob("*/lines.json"))]:
             try:

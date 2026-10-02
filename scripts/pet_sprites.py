@@ -8,6 +8,13 @@
 
 所有帧必须同一画布尺寸、背景透明。脚本把画布等比缩放进 --frame 大小（默认 256）的正方形、底边居中对齐，
 所以画师那边各动作的基准线一致，导入后也一致。需要 Pillow（pip install pillow）。
+
+也可以只给一张「动作表」：一张图里按格子排好各个动作（每格一个姿势），纯色背景也行（自动抠掉）：
+
+    python3 scripts/pet_sprites.py deepseek 大肥鱼动作表.png --sheet 3x3 --credit "形象：…"
+
+默认格子顺序（从左到右、从上到下）：idle talk think / happy failed sleep / wave waiting walk，
+可以用 --states 改。每格一个静止姿势，网页用 CSS 给它加上呼吸、跳跃、摇晃等动作。抠背景需要 numpy。
 """
 
 from __future__ import annotations
@@ -60,6 +67,77 @@ TIMING = {
     "shimmer": (8, False),
 }
 BUDGET_BYTES = 300 * 1024
+SHEET_ORDER = ("idle", "talk", "think", "happy", "failed", "sleep", "wave", "waiting", "walk")
+
+
+def background_color(image: Image.Image) -> tuple[int, int, int] | None:
+    """动作表四条边上最常见的颜色；边上本来就透明时返回 None（不用抠）。"""
+    rgba = image.convert("RGBA")
+    w, h = rgba.size
+    border = [rgba.getpixel((x, y)) for x in range(0, w, max(1, w // 64)) for y in (0, h - 1)]
+    border += [rgba.getpixel((x, y)) for y in range(0, h, max(1, h // 64)) for x in (0, w - 1)]
+    if sum(1 for px in border if px[3] < 16) > len(border) // 2:
+        return None
+    counts: dict[tuple[int, int, int], int] = {}
+    for r, g, b, _a in border:
+        key = (r // 8 * 8, g // 8 * 8, b // 8 * 8)
+        counts[key] = counts.get(key, 0) + 1
+    return max(counts, key=counts.get)
+
+
+def remove_background(image: Image.Image, color: tuple[int, int, int]) -> Image.Image:
+    """按颜色距离抠掉纯色背景，边缘渐变透明；绿幕 / 蓝幕会顺便去掉边缘的反色。"""
+    try:
+        import numpy as np
+    except ImportError:  # pragma: no cover
+        sys.exit("抠纯色背景需要 numpy：pip install numpy（或直接导出透明背景）")
+    rgb = np.asarray(image.convert("RGB")).astype(np.float32)
+    key = np.array(color, dtype=np.float32)
+    distance = np.sqrt(((rgb - key) ** 2).sum(axis=-1))
+    alpha = np.clip((distance - 48) / 72, 0, 1)
+    channel = int(np.argmax(key))
+    if key[channel] > 160 and key[channel] - np.delete(key, channel).max() > 80:
+        others = np.delete(rgb, channel, axis=-1).max(axis=-1)
+        rgb[..., channel] = np.where(alpha < 1, np.minimum(rgb[..., channel], others), rgb[..., channel])
+    out = np.dstack([rgb, alpha * 255]).astype(np.uint8)
+    return Image.fromarray(out, "RGBA")
+
+
+def cut_sheet(path: Path, grid: str, names: list[str]) -> dict[str, list[Image.Image]]:
+    """把一张动作表按格子切开，每格去背景、裁到人物，再放回同一张画布（底边居中），保证大小与基准线一致。"""
+    try:
+        cols, rows = (int(n) for n in grid.lower().split("x"))
+    except ValueError:
+        sys.exit("--sheet 的格式是 列x行，例如 3x3")
+    sheet = Image.open(path).convert("RGBA")
+    color = background_color(sheet)
+    if color:
+        print(f"  背景色 #{color[0]:02x}{color[1]:02x}{color[2]:02x}，自动抠掉")
+        sheet = remove_background(sheet, color)
+    cell_w, cell_h = sheet.width // cols, sheet.height // rows
+    if len(names) > cols * rows:
+        sys.exit(f"{len(names)} 个状态放不进 {cols}×{rows} 的格子")
+    figures: dict[str, Image.Image] = {}
+    for index, name in enumerate(names):
+        col, row = index % cols, index // cols
+        cell = sheet.crop((col * cell_w, row * cell_h, (col + 1) * cell_w, (row + 1) * cell_h))
+        bbox = cell.getchannel("A").point(lambda a: 255 if a > 24 else 0).getbbox()
+        if not bbox:
+            print(f"  跳过 {name}：第 {row + 1} 行第 {col + 1} 格是空的", file=sys.stderr)
+            continue
+        figures[name] = cell.crop(bbox)
+    if not figures:
+        sys.exit("动作表里没有找到任何人物")
+    width = max(f.width for f in figures.values())
+    height = max(f.height for f in figures.values())
+    canvas = max(width, height)
+    margin = round(canvas * 0.08)
+    states = {}
+    for name, figure in figures.items():
+        frame = Image.new("RGBA", (canvas + 2 * margin, canvas + margin), (0, 0, 0, 0))
+        frame.paste(figure, ((frame.width - figure.width) // 2, frame.height - figure.height), figure)
+        states[name] = [frame]
+    return states
 
 
 def load_state(path: Path) -> list[Image.Image]:
@@ -129,11 +207,20 @@ def main() -> None:
     parser.add_argument("--frame", type=int, default=256, help="单帧边长（默认 256，网页按一半显示）")
     parser.add_argument("--quality", type=int, default=90, help="WebP 质量（默认 90）")
     parser.add_argument("--lossless", action="store_true", help="无损 WebP（文件更大）")
+    parser.add_argument("--sheet", metavar="列x行", help="素材是一张动作表，按格子切开（例如 3x3）")
+    parser.add_argument("--states", help=f"动作表里各格的状态，逗号分隔（默认 {','.join(SHEET_ORDER)}）")
     args = parser.parse_args()
 
     if args.costume and not STATE_NAME.match(args.costume):
         sys.exit("换装 id 只能用小写字母、数字和连字符")
-    states = collect(args.source.expanduser())
+    if args.sheet:
+        names = [n.strip() for n in (args.states or ",".join(SHEET_ORDER)).split(",") if n.strip()]
+        bad = [n for n in names if not STATE_NAME.match(n)]
+        if bad:
+            sys.exit(f"状态名只能用小写字母、数字和连字符：{', '.join(bad)}")
+        states = cut_sheet(args.source.expanduser(), args.sheet, names)
+    else:
+        states = collect(args.source.expanduser())
     if not states:
         sys.exit(f"{args.source} 里没有找到任何状态（子文件夹或动图）")
     canvas = check(states)

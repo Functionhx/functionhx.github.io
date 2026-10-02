@@ -23,6 +23,17 @@ assets/pet/<id>/
 └── LICENSE.md     # 授权记录（站长上传；登记形象时 validate_content.py 要求它存在）
 ```
 
+## 最快：一张动作表
+
+没有逐帧动画时，每只出一张 3×3 动作表（9 个静止姿势）就能用，网页用 CSS 让它动起来。出图提示词和导入命令见
+[`PROMPTS.md`](PROMPTS.md)：
+
+```bash
+python3 scripts/pet_sprites.py deepseek ~/Downloads/大肥鱼动作表.png --sheet 3x3 --credit "形象：…" --license "CC BY-NC-SA 4.0"
+```
+
+纯色背景（绿幕 / 品红）会自动抠掉；每格裁到人物后放回同一画布，大小与脚底基准线一致。
+
 ## 从画师的素材到网页（一条命令）
 
 把画师交付的透明 PNG 序列按状态分文件夹放好（文件名按帧顺序排序即可），或每个状态一个透明 GIF / APNG / WebP 动图：

@@ -243,7 +243,7 @@ exclude:
   - pet-brain/
   # 宠物的设定母版与源文件（PSD 等）、素材说明不进网站；网页只加载 sprites/ 与 pet.json。
   - assets/pet/*/source
-  - assets/pet/README.md
+  - assets/pet/*.md
   - terminal/
   - deploy/
   - requirements.txt
