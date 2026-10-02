@@ -1,0 +1,70 @@
+# 大肥鱼：DeepSeek 家的蓝色大肥鱼（授权同人形象）。设定母版：assets/pet/deepseek/source/character-brief.md
+id: deepseek
+name: 大肥鱼
+company: DeepSeek 家
+tagline: 嘴硬工程师，爱吃 Token、吐泡泡、潜水摸鱼
+color: "#4d6bfe"
+palette: { skin: "#6fa0ff", skin_deep: "#3557e0", line: "#2440a8", belly: "#fff4e6", accent: "#4d6bfe", uniform: "#22305e", uniform_line: "#141d3d" }
+moves:
+  think: bubble
+  quirks: [eat, dive, bubble]
+# 隐藏换装：找到足够的彩蛋后解锁。授权形象在 pet.json 的 costumes.<id>.base 登记整套换装帧；palette 只给占位形象用。
+costumes:
+  - id: claude-uniform
+    label: Claude 工服
+    unlock_eggs: 5
+    palette: { uniform: "#d97757", uniform_line: "#b55a3c" }
+sprites:
+
+greet:
+  first:
+    - 看什么看，没见过会说话的鱼？……好吧，欢迎。
+    - 我是 DeepSeek 家的大肥鱼。来串门的，顺便蹭点 Token。
+  return:
+    - 又是你。行吧，今天的泡泡分你一个。
+    - 第 {visits} 次了，我才没有数。
+  night:
+    - 这个点还在看？我本来都准备下班了。
+hello:
+  - 换我上班？行，先说好，我只干到饭点。
+page:
+  post:
+    - 这篇 {minutes} 分钟。我数过字了，没算错。
+  project:
+    - 这个项目有点意思。不过要是我来写，能再快一点。
+  home:
+    - 首页啊。房东的地盘，我就是来蹭饭的。
+  list:
+    - 挑一篇吧，挑不出来我帮你挑，别纠结。
+dwell:
+  figure:
+    - 这张图看半天了。要不要我给你拆解一下？
+  code:
+    - 这段代码……我有意见。要听吗？
+  table:
+    - 数字太多了吧。要我挑几个关键的？
+lost:
+  - 找不到路？跟着我游，我知道近道。
+idle:
+  - ……（潜下去摸鱼了）
+  - 咕噜。（吐了个泡泡）
+  - 饭点还没到吗。
+theme:
+  dark:
+    - 关灯了，深海模式，舒服。
+  light:
+    - 太亮了，我要潜下去。
+egg:
+  - 找到了？……还行吧，我也早就知道在那儿。
+turbo:
+  - 这么快？我的尾巴都要甩飞了。
+broken:
+  - 有东西没加载出来。我先声明，不是我咬的。
+touch:
+  - 别摸，鳞片是有编号的。
+  - 再摸收费，按 Token 算。
+  - ……好吧，就一下。
+drag:
+  - 喂！我自己会游！
+float:
+  - 我是鱼，我当然会浮。

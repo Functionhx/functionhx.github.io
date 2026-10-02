@@ -4,7 +4,8 @@ import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { chromium } from "playwright";
 
-// 静态站点 + 一个假的大脑（/brain/chat）。页面里的大脑地址在发出前改写成这里。
+// 静态站点 + 一个假的大脑（/brain/chat、/brain/health）。页面里的大脑地址在发出前改写成这里。
+// 陶陶在这里被「登记」了一套测试形象（/test-sprites/claude.json），用来检查序列帧播放与动作退回。
 const siteRoot = new URL("../_site/", import.meta.url);
 const brainRequests = [];
 const TYPES = {
@@ -18,6 +19,26 @@ const TYPES = {
 let baseUrl = "";
 const server = createServer(async (request, response) => {
   const url = new URL(request.url, "http://localhost");
+  if (url.pathname === "/brain/health") {
+    response.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+    response.end(JSON.stringify({ ok: true, pets: { f01: { model: "DeepSeek", standIn: false }, claude: { model: "DeepSeek", standIn: true } } }));
+    return;
+  }
+  if (url.pathname === "/test-sprites/claude.json") {
+    response.writeHead(200, { "Content-Type": "application/json" });
+    response.end(
+      JSON.stringify({
+        id: "claude",
+        frame: { width: 256, height: 256 },
+        credit: "形象：测试画师",
+        states: {
+          idle: { file: "/assets/img/social/qqmail.png", frames: 4, fps: 6 },
+          happy: { file: "/assets/img/social/wechat-qr.png", frames: 1, fps: 8, loop: false },
+        },
+      })
+    );
+    return;
+  }
   if (url.pathname === "/brain/chat" && request.method === "POST") {
     let body = "";
     for await (const chunk of request) body += chunk;
@@ -34,8 +55,14 @@ const server = createServer(async (request, response) => {
       response.write(`data: ${JSON.stringify({ t })}\n\n`);
       await new Promise((resolve) => setTimeout(resolve, 60));
     }
+    const standIn = payload.pet !== "f01" && payload.pet !== "deepseek";
     response.end(
-      `data: ${JSON.stringify({ done: true, sources: [{ title: "Batch-LIO", url: "https://functionhx.github.io/blog/2026/batch-lio/" }] })}\n\n`
+      `data: ${JSON.stringify({
+        done: true,
+        sources: [{ title: "Batch-LIO", url: "https://functionhx.github.io/blog/2026/batch-lio/" }],
+        model: "DeepSeek",
+        standIn,
+      })}\n\n`
     );
     return;
   }
@@ -46,7 +73,14 @@ const server = createServer(async (request, response) => {
     if (!fileUrl.href.startsWith(siteRoot.href)) throw new Error("Invalid path");
     let data = await readFile(fileUrl);
     const extension = relativePath.slice(relativePath.lastIndexOf("."));
-    if (extension === ".html") data = Buffer.from(data.toString("utf8").replace('"endpoint": ""', `"endpoint": "${baseUrl}brain"`));
+    if (extension === ".html") {
+      data = Buffer.from(
+        data
+          .toString("utf8")
+          .replace('"endpoint": ""', `"endpoint": "${baseUrl}brain"`)
+          .replace(/("id": "claude"[^}]*?"sprites": )""/, '$1"/test-sprites/claude.json"')
+      );
+    }
     response.writeHead(200, { "Content-Type": TYPES[extension] || "text/html; charset=utf-8" });
     response.end(data);
   } catch (_error) {
@@ -128,7 +162,7 @@ await page.click("#functionhx-pet .pet-panel .pet-chips button:has-text('给你�
 await page.fill("#functionhx-pet .pet-form input", "团团");
 await page.press("#functionhx-pet .pet-form input", "Enter");
 await page.waitForFunction(() => document.querySelector("#functionhx-pet .pet-panel header strong")?.textContent === "团团");
-await memoryWhen(page, "petName", "团团");
+await memoryWhen(page, "pets", { f01: { name: "团团" } });
 
 // 6. 问信：本地拦下，不发给大脑
 await page.fill("#functionhx-pet .pet-form input", "首页那封信的暗号是什么？");
@@ -142,10 +176,13 @@ await page.press("#functionhx-pet .pet-form input", "Enter");
 await page.waitForFunction(() => document.querySelector("#functionhx-pet .pet-log")?.innerText.includes("AI 生成"), null, { timeout: 8000 });
 const answer = await lastMessage(page);
 assert.ok(answer.includes("所以更快") && answer.includes("出处") && answer.includes("Batch-LIO"));
+assert.ok(answer.includes("AI 生成 · DeepSeek") && !answer.includes("代班"), "ƒ-01's answers come from the site's own brain");
 assert.equal(brainRequests.length, 1);
 assert.equal(brainRequests[0].messages.at(-1).content, "为什么批量更新会更快？");
 assert.ok(brainRequests[0].page.title.includes("Batch-LIO"));
 assert.equal(brainRequests[0].petName, "团团");
+assert.equal(brainRequests[0].pet, "f01");
+assert.ok((await page.textContent("#functionhx-pet .pet-footnote")).includes("发送给 DeepSeek 处理"), "the panel names who receives the chat");
 const stored = await page.evaluate(() => JSON.stringify(localStorage) + JSON.stringify(sessionStorage));
 assert.ok(!stored.includes("为什么批量更新"), "the visitor's own words must never be stored");
 await memoryWhen(page, "topics", ["Batch-LIO"]);
@@ -156,10 +193,34 @@ await page.press("#functionhx-pet .pet-form input", "Enter");
 await page.waitForFunction(() => document.querySelector("#functionhx-pet .pet-log")?.innerText.includes("我在站里翻到这些"));
 assert.ok((await page.textContent("#functionhx-pet .pet-log")).includes("脑子发烫"));
 
+// 8b. 换一只：陶陶（Anthropic 家）。名字分开记；回答标明 DeepSeek 代班；用的是登记的序列帧形象和署名
+await page.click("#functionhx-pet .pet-panel .pet-chips button:has-text('换一只')");
+await page.click("#functionhx-pet .pet-roster button:has-text('陶陶')");
+await page.waitForFunction(() => document.querySelector("#functionhx-pet")?.dataset.pet === "claude");
+assert.equal(await page.textContent("#functionhx-pet .pet-panel header strong"), "陶陶");
+assert.ok((await page.textContent("#functionhx-pet .pet-panel header span")).includes("Anthropic 家"));
+await memoryWhen(page, "character", "claude");
+await page.waitForFunction(() => document.querySelector("#functionhx-pet .pet-sprite")?.style.backgroundImage.includes("qqmail.png"));
+assert.equal(await page.$eval("#functionhx-pet .pet-sprite", (node) => node.style.getPropertyValue("--frames")), "4");
+assert.ok((await page.textContent("#functionhx-pet .pet-footnote")).includes("同人角色 · 形象已获授权 · 形象：测试画师"));
+// 画师没画的动作退回最接近的：wave → happy；read → think → idle
+await page.evaluate(() => window.functionhxPet.setState("wave"));
+await page.waitForFunction(() => document.querySelector("#functionhx-pet .pet-sprite")?.style.backgroundImage.includes("wechat-qr.png"));
+assert.equal(await page.$eval("#functionhx-pet .pet-sprite", (node) => node.classList.contains("is-still")), true);
+await page.evaluate(() => window.functionhxPet.setState("read"));
+await page.waitForFunction(() => document.querySelector("#functionhx-pet .pet-sprite")?.style.backgroundImage.includes("qqmail.png"));
+await page.fill("#functionhx-pet .pet-form input", "你是谁？");
+await page.press("#functionhx-pet .pet-form input", "Enter");
+await page.waitForFunction(() => document.querySelector("#functionhx-pet .pet-log")?.innerText.includes("DeepSeek 代班"), null, { timeout: 8000 });
+assert.equal(brainRequests.at(-1).pet, "claude");
+assert.equal(brainRequests.at(-1).petName, "", "a nickname belongs to the pet it was given to");
+assert.equal(brainRequests.at(-1).messages.length, 1, "switching pets starts a new conversation");
+
 // 9. 你记得我什么 / 忘记我
 await page.click("#functionhx-pet .pet-panel .pet-chips button:has-text('你记得我什么')");
 await page.waitForSelector("#functionhx-pet .pet-forget");
 assert.ok((await lastMessage(page)).includes("第 1 次来"));
+assert.ok((await lastMessage(page)).includes("你给ƒ-01起的名字：团团"));
 await page.click("#functionhx-pet .pet-forget");
 assert.equal(await page.evaluate(() => localStorage.getItem("functionhx:pet:memory")), null, "forget me must clear local memory");
 await page.keyboard.press("Escape");
@@ -182,6 +243,29 @@ await page.waitForFunction(() => !document.querySelector("#functionhx-pet .pet-f
 const landed = await page.$eval("#functionhx-pet .pet-body", (node) => node.getBoundingClientRect().bottom);
 assert.ok(landed > 820 - 20, `the pet should land on the bottom edge (bottom=${landed})`);
 await page.waitForFunction(() => JSON.parse(localStorage.getItem("functionhx:pet:memory") || "{}").dock, null, { timeout: 2000 });
+await context.close();
+
+// 10b. 刷新后还是上次选的那只；占位形象的双双能分裂出另一个自己（记忆在页面脚本运行前写好，免得被离开页面时的保存覆盖）
+const seeded = async (stored) => {
+  const fresh = await freshPage();
+  await fresh.context.addInitScript((value) => {
+    localStorage.setItem("functionhx:pet:override", "on");
+    localStorage.setItem("functionhx:pet:memory", value);
+    sessionStorage.setItem("functionhx:pet:session", JSON.stringify({ greeted: true, spoken: 2 }));
+  }, JSON.stringify(stored));
+  await fresh.page.goto(POST, { waitUntil: "load" });
+  return fresh;
+};
+({ context, page } = await seeded({ v: 2, visits: 3, character: "gemini", pets: {} }));
+await page.waitForFunction(() => document.querySelector("#functionhx-pet")?.dataset.pet === "gemini", null, { timeout: 15000 });
+assert.equal(await page.$eval("#functionhx-pet .twin-wrap", (node) => getComputedStyle(node).display), "none");
+await page.evaluate(() => window.functionhxPet.setState("split", 3000));
+assert.equal(await page.$eval("#functionhx-pet .twin-wrap", (node) => getComputedStyle(node).display), "inline");
+await context.close();
+// v1 的记忆（只有一个 petName）归给 ƒ-01
+({ context, page } = await seeded({ v: 1, visits: 2, petName: "老朋友" }));
+await page.waitForFunction(() => document.querySelector("#functionhx-pet")?.dataset.pet === "f01", null, { timeout: 15000 });
+assert.ok((await page.getAttribute("#functionhx-pet .pet-body", "aria-label")).startsWith("老朋友"));
 await context.close();
 
 // 11. 减少动态效果：松手直接落地，不飘
@@ -213,5 +297,5 @@ await browser.close();
 server.close();
 assert.deepEqual(errors, [], `no page errors expected:\n${errors.join("\n")}`);
 console.log(
-  "Pet checks passed: opt-in loading, greeting, interruption silence, actions, naming, letter guard, streaming answer, budget fallback, memory and forget, drag and float, reduced motion, mobile tab."
+  "Pet checks passed: opt-in loading, greeting, interruption silence, actions, naming, letter guard, streaming answer with model label, budget fallback, switching pets, sprite player and fallbacks, memory and forget, v1 migration, drag and float, reduced motion, mobile tab."
 );

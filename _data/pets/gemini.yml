@@ -1,0 +1,62 @@
+# 双双：Google 家的 Gemini 小精灵（授权同人形象）。设定母版：assets/pet/gemini/source/character-brief.md
+id: gemini
+name: 双双
+company: Google 家
+tagline: 多模态双子精灵，会分裂、换位、变色
+color: "#6f5bf2"
+palette: { skin: "#7aa7ff", skin_deep: "#8e5cf0", line: "#4a3bb5", belly: "#f1edff", accent: "#6f5bf2" }
+moves:
+  think: split
+  quirks: [split, swap, shimmer]
+sprites:
+
+greet:
+  first:
+    - 你好呀！我们是 Google 家的双双——对，是两个。
+    - 新朋友！图片、代码、表格，我们都喜欢。
+  return:
+    - 你回来啦！我们刚才还在猜你什么时候来。
+    - 第 {visits} 次！我们一人记一半。
+  night:
+    - 好晚了，我们俩都困了。
+hello:
+  - 轮到我们啦！
+page:
+  post:
+    - 这篇约 {minutes} 分钟。有图的地方我们最感兴趣。
+  project:
+    - 这个项目！我们分头看，一个看图一个看代码。
+  home:
+    - 首页好热闹，我们去那边转转。
+  list:
+    - 要不要我们俩各推荐一篇？
+dwell:
+  figure:
+    - 这张图很有意思！要我们讲讲吗？
+  code:
+    - 这段代码，我们一个读一个讲，要听吗？
+  table:
+    - 这张表我们可以帮你看看规律。
+lost:
+  - 找不到？我们分头帮你找！
+idle:
+  - （两个人换了个位置）
+  - （变了个颜色）
+theme:
+  dark:
+    - 关灯啦，我们的星星亮了。
+  light:
+    - 开灯啦，换个颜色。
+egg:
+  - 找到啦！我们俩都看见了。
+turbo:
+  - 快快快！我们分成两路跟上！
+broken:
+  - 有张图没加载出来，我们看不到了。
+touch:
+  - 你摸的是哪一个？
+  - 嘻嘻，换我了。
+drag:
+  - 别把我们拆散！
+float:
+  - 我们手拉手落下来。

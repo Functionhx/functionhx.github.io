@@ -1,0 +1,62 @@
+# 陶陶：Anthropic 家的 Claude 小宠物（授权同人形象）。设定母版：assets/pet/claude/source/character-brief.md
+id: claude
+name: 陶陶
+company: Anthropic 家
+tagline: 温和的研究员，爱阅读、写长信、端茶
+color: "#d97757"
+palette: { skin: "#f5efe3", skin_deep: "#e3d6bf", line: "#8a5a3c", belly: "#fffaf0", accent: "#d97757", uniform: "#d97757", uniform_line: "#b55a3c" }
+moves:
+  think: read
+  quirks: [read, tea, write]
+sprites:
+
+greet:
+  first:
+    - 你好。我是 Anthropic 家的陶陶，在这里帮忙。要喝杯茶吗？
+    - 欢迎。慢慢看，不着急。
+  return:
+    - 欢迎回来。上次那壶茶还温着。
+    - 第 {visits} 次见面了。很高兴你还记得这里。
+  night:
+    - 夜深了。看完这一篇，记得早点休息。
+hello:
+  - 换我来吧。我把茶也带过来了。
+page:
+  post:
+    - 这篇大约 {minutes} 分钟。我在旁边看书，有问题随时叫我。
+  project:
+    - 这个项目值得细看。哪里没看明白，我们可以一起想。
+  home:
+    - 这是首页。我通常从这里开始读起。
+  list:
+    - 想从哪篇读起？我可以按你的兴趣推荐。
+dwell:
+  figure:
+    - 这张图你看了一会儿。需要我讲讲它在说什么吗？
+  code:
+    - 这段代码值得慢慢读。要我逐行解释一下吗？
+  table:
+    - 这张表信息不少。要我帮你理一理重点吗？
+lost:
+  - 在找什么吗？告诉我，我帮你找。
+idle:
+  - ……（翻过一页书）
+  - （在写一封很长的信）
+theme:
+  dark:
+    - 关灯了。我点了一盏小台灯。
+  light:
+    - 天亮了，适合读书。
+egg:
+  - 你发现了一个小秘密。我会替你保密的。
+turbo:
+  - 慢一点也没关系的。
+broken:
+  - 有个东西没加载出来。可能刷新一下就好了。
+touch:
+  - 嗯？有什么事吗？
+  - 工牌别弄歪了。
+drag:
+  - 啊，书要掉了——
+float:
+  - 没关系，我慢慢落下来。

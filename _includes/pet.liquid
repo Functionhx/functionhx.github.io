@@ -1,9 +1,11 @@
 {%- comment -%}
-  网站宠物 ƒ-01：只输出一小段配置和一个 defer 的加载器，形象、样式和逻辑都在页面空闲后才加载。
+  网站宠物：只输出一小段配置和一个 defer 的加载器，形象、样式和逻辑都在页面空闲后才加载。
+  characters 是 _data/pet.yml roster 里的每一只：台词地址、授权形象清单（sprites，为空表示还在用占位形象）。
   大脑地址（pet-brain/ 部署后的 Worker）为空时，宠物只用本地台词和站内搜索回答。
 {%- endcomment -%}
 {%- if site.pet -%}
-  {%- capture pet_lines_url -%}{{ '/assets/pet/lines.json' | relative_url }}?v={{ site.time | date: '%s' }}{%- endcapture -%}
+  {%- assign pet_version = site.time | date: '%s' -%}
+  {%- capture pet_lines_url -%}{{ '/assets/pet/lines.json' | relative_url }}?v={{ pet_version }}{%- endcapture -%}
   <script type="application/json" id="functionhx-pet-config">
     {
       "enabled": {{ site.pet.enabled | default: false | jsonify }},
@@ -11,7 +13,23 @@
       "script": {{ '/assets/js/pet.js' | relative_url | bust_file_cache | jsonify }},
       "style": {{ '/assets/css/pet.css' | relative_url | bust_file_cache | jsonify }},
       "lines": {{ pet_lines_url | jsonify }},
-      "sprites": {{ site.data.pet.sprites | jsonify }}
+      "default": {{ site.data.pet.default | jsonify }},
+      "characters": [
+        {%- for pet_id in site.data.pet.roster -%}
+          {%- assign pet = site.data.pets[pet_id] -%}
+          {%- capture pet_char_lines -%}{{ '/assets/pet/' | append: pet_id | append: '/lines.json' | relative_url }}?v={{ pet_version }}{%- endcapture -%}
+          {%- if pet.sprites -%}{%- capture pet_sprites -%}{{ pet.sprites | relative_url }}?v={{ pet_version }}{%- endcapture -%}{%- else -%}{%- assign pet_sprites = '' -%}{%- endif -%}
+          {
+            "id": {{ pet_id | jsonify }},
+            "name": {{ pet.name | jsonify }},
+            "company": {{ pet.company | jsonify }},
+            "tagline": {{ pet.tagline | jsonify }},
+            "color": {{ pet.color | jsonify }},
+            "lines": {{ pet_char_lines | jsonify }},
+            "sprites": {{ pet_sprites | jsonify }}
+          }{%- unless forloop.last -%},{%- endunless -%}
+        {%- endfor -%}
+      ]
     }
   </script>
   <script src="{{ '/assets/js/pet-loader.js' | relative_url | bust_file_cache }}" defer></script>

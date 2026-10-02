@@ -130,30 +130,43 @@ curl/wget/HTTPie/xh → `/cli` on `/` (also over plain HTTP) and the leaf elsewh
 verifies the whole tree (links resolve, JSON parses, no ANSI in agent files, no demo content, the
 TUI compiles and prints).
 
-## Site pet ƒ-01
+## Site pets
 
-A licensed character (「蓝色大肥鱼」) that lives on every page. Body, perception, memory and
-actions run locally in `assets/js/pet.js` (dependency-free; `pet.css`); only questions the visitor
-types go to the brain, `pet-brain/` — a Cloudflare Worker holding the DeepSeek key, with per-IP
-limits, a daily token budget, retrieval over `/llms-full.txt` (answers cite sources) and no
-content logging. Lines and story live in `_data/pet.yml` (served as `/assets/pet/lines.json`);
-the brain's persona and safety rules in `pet-brain/persona.mjs`.
+Five pets, one on screen at a time; visitors switch in the panel («换一只»). ƒ-01 (`f01`, the default) is
+the site's own original character and uses no company logo; 大肥鱼 (`deepseek`), 陶陶 (`claude`), 薄荷
+(`chatgpt`) and 双双 (`gemini`) are licensed fan characters that each see themselves as part of their own
+company. Body, perception, memory and actions run locally in `assets/js/pet.js` (dependency-free; `pet.css`);
+only questions the visitor types go to the brain, `pet-brain/` — a Cloudflare Worker holding the model keys,
+with per-IP limits, a daily token budget, retrieval over `/llms-full.txt` (answers cite sources) and no
+content logging.
 
-- `_includes/pet.liquid` emits only a config JSON and `pet-loader.js`, which loads the pet after
-  `load` + idle, and **waits for `prerenderingchange`** (Speculation Rules prerender `/` and
-  `/blog/`, which would otherwise count a visit nobody made). `?pet=on|off|reset` overrides the
-  site switch for one browser.
-- `_config.yml` `pet.enabled` stays `false` until the licensed sprites are registered in
-  `_data/pet.yml` (`validate_content.py` enforces it); until then the built-in whale is a
-  placeholder. Sprite format and the licence record: `assets/pet/README.md`.
-  `pet.endpoint` is the deployed Worker URL; empty means local lines + site search only.
-- Restraint is part of the design: at most 2 unprompted lines per visit (1 for visitors who prefer
-  quiet), 30 s apart, never while skimming; closing a bubble silences it for the visit.
-- Memory is `localStorage` only (`functionhx:pet:memory`), never the visitor's own words;
-  "你记得我什么" shows it, "忘记我" deletes it. Letter questions are answered locally and never sent.
-- `validate_content.py` forbids credentials / GitHub / IndexedDB / clipboard use in `pet.js`
-  and checks the persona's safety rules. Tests: `npm run test:pet` (Playwright, fake brain)
-  and `npm run test:pet-brain` (mocked DeepSeek + KV); both are manual, not in CI.
+- **Data.** Shared lines, menu and roster: `_data/pet.yml` → `/assets/pet/lines.json`. Each pet's personality,
+  palette, signature moves, costumes and `sprites`: `_data/pets/<id>.yml` → `/assets/pet/<id>/lines.json`
+  (`_plugins/pet_lines.rb`). Brain personas and the shared, numbered safety rules: `pet-brain/persona.mjs`.
+  The roster, `_data/pets/*.yml` and `PETS` in the persona must list the same ids (`validate_content.py`).
+- **Models.** `PROVIDERS` in `worker.mjs`: each pet's own company's model when its key + model name are set
+  (Anthropic Messages API; OpenAI / Gemini / DeepSeek via the OpenAI-compatible API), otherwise — or when that
+  provider errors or hits its `<ID>_DAILY_TOKEN_BUDGET` — **DeepSeek stands in**. The prompt then says it is a
+  stand-in and the browser labels the answer «AI 生成 · DeepSeek 代班»; a pet must never claim a model that did
+  not answer. `GET /health` reports who answers each pet, and the panel names that provider in its disclosure.
+- **Art.** Licensed frames are imported with `scripts/pet_sprites.py <id> <folder>` (normalises to 256 px cells,
+  bottom-aligned, WebP strips + `assets/pet/<id>/pet.json`); registering `sprites:` in the pet's yml requires
+  `assets/pet/<id>/LICENSE.md` (uploaded by the owner). A pet without registered art only appears in `?pet=on`
+  previews, drawn by the built-in placeholder. Missing states fall back via `FALLBACK` in `pet.js`.
+  Character masters live in `assets/pet/<id>/source/` (excluded from the build). See `assets/pet/README.md`.
+- `_includes/pet.liquid` emits only a config JSON (roster with lines / sprites URLs) and `pet-loader.js`, which
+  loads the pet after `load` + idle and **waits for `prerenderingchange`** (Speculation Rules prerender `/` and
+  `/blog/`, which would otherwise count a visit nobody made). `?pet=on|off|reset` overrides the site switch
+  for one browser. `_config.yml` `pet.enabled` stays `false` until the default pet's art is registered.
+- Restraint is part of the design: at most 2 unprompted lines per visit across all pets (1 for visitors who
+  prefer quiet), 30 s apart, never while skimming; closing a bubble silences it for the visit. Idle quirks
+  (eating tokens, reading, splitting …) are silent.
+- Memory is `localStorage` only (`functionhx:pet:memory`, v2: shared visitor facts + per-pet `pets.<id>`
+  nickname / costume), never the visitor's own words; "你记得我什么" shows it, "忘记我" deletes it. Letter
+  questions are answered locally and never sent.
+- `validate_content.py` forbids credentials / GitHub / IndexedDB / clipboard use in `pet.js` and checks the
+  persona's safety rules. Tests: `npm run test:pet` (Playwright, fake brain, a fake registered sprite set) and
+  `npm run test:pet-brain` (mocked providers + KV); both are manual, not in CI.
 
 ## Theme override ledger
 

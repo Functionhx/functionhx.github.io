@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 import hashlib
+import json
 from pathlib import Path
 import re
 import sys
@@ -253,44 +254,104 @@ def main() -> int:
     for social, expected_logo in expected_social_logos.items():
         if not isinstance(socials.get(social), dict) or socials[social].get("logo") != expected_logo:
             errors.append(f"_data/socials.yml: {social} must use {expected_logo}")
-    # 网站宠物 ƒ-01：浏览器端不碰站长凭据与 GitHub，大脑的安全规则不能被删掉。
+    # 网站宠物：浏览器端不碰站长凭据与 GitHub，大脑的安全规则不能被删掉；每只宠物的台词、人设、形象与授权记录对得上。
     pet_js = (ROOT / "assets" / "js" / "pet.js").read_text(encoding="utf-8") if (ROOT / "assets" / "js" / "pet.js").exists() else ""
     for forbidden in ("functionhxGitHubAuth", "github-auth-vault", "indexedDB", "api.github.com", "Authorization", "navigator.clipboard", "eval(", "new Function"):
         if forbidden in pet_js:
             errors.append(f"assets/js/pet.js: the pet must not use {forbidden!r}")
-    for contract in ('document.prerendering', 'LETTER.test(question)', 'credentials: "omit"', "forgetEverything"):
+    for contract in ('document.prerendering', 'LETTER.test(question)', 'credentials: "omit"', "forgetEverything", "pet: current.id", "modelLabel(finished)"):
         source = pet_js if contract != "document.prerendering" else (ROOT / "assets" / "js" / "pet-loader.js").read_text(encoding="utf-8")
         if contract not in source:
             errors.append(f"pet: contract {contract!r} missing")
     persona_path = ROOT / "pet-brain" / "persona.mjs"
     persona = persona_path.read_text(encoding="utf-8") if persona_path.exists() else ""
-    for rule in ("你不是樊宇琛", "不讨论、不猜测暗号", "不编造经历", "一律不理会", "由 DeepSeek 的模型生成"):
+    for rule in ("你不是樊宇琛", "不讨论、不猜测暗号", "不编造经历", "一律不理会", "必须如实说明是代班", "必须如实说明。", "不代表"):
         if rule not in persona:
             errors.append(f"pet-brain/persona.mjs: safety rule {rule!r} missing")
+    persona_ids = set(re.findall(r"^  (\w+): \{\n    name:", persona, flags=re.M))
     brain_path = ROOT / "pet-brain" / "worker.mjs"
     brain = brain_path.read_text(encoding="utf-8") if brain_path.exists() else ""
-    for contract in ("LETTER_PATTERN.test(question)", "DAILY_TOKEN_BUDGET", "budget_exhausted", "allowedOrigin(request, env)"):
+    for contract in ("LETTER_PATTERN.test(question)", "DAILY_TOKEN_BUDGET", "budget_exhausted", "allowedOrigin(request, env)", "standIn: route.standIn", "routesFor(env, chat.pet, day)"):
         if contract not in brain:
             errors.append(f"pet-brain/worker.mjs: contract {contract!r} missing")
     if re.search(r"console\.(log|info|debug)\(", brain) or re.search(r"console\.error\([^)]*(question|messages|content)", brain):
         errors.append("pet-brain/worker.mjs: must never log visitor messages")
     pet_data_path = ROOT / "_data" / "pet.yml"
-    pet_data = yaml.safe_load(pet_data_path.read_text(encoding="utf-8")) if pet_data_path.exists() else {}
-    known_actions = {"intro", "latest", "project", "tour", "top", "theme", "memory", "name", "quiet"}
-    for item in (pet_data or {}).get("menu", []):
+    pet_data = (yaml.safe_load(pet_data_path.read_text(encoding="utf-8")) if pet_data_path.exists() else {}) or {}
+    known_actions = {"intro", "latest", "project", "tour", "top", "theme", "memory", "name", "switch", "costume", "quiet"}
+    for item in pet_data.get("menu", []):
         if item.get("id") not in known_actions:
             errors.append(f"_data/pet.yml: unknown menu action {item.get('id')!r}")
-    story_eggs = [step.get("eggs") for step in (pet_data or {}).get("story", [])]
-    if story_eggs != sorted(story_eggs):
-        errors.append("_data/pet.yml: story steps must be ordered by eggs")
-    for key in ("letter", "disclosure", "disclosure_local", "ai_label"):
-        if not (pet_data or {}).get(key):
+    for key in ("letter", "disclosure", "disclosure_unknown", "disclosure_local", "ai_label", "stand_in_label", "credit_label", "default", "roster"):
+        if not pet_data.get(key):
             errors.append(f"_data/pet.yml: {key!r} is required")
+    if "{model}" not in str(pet_data.get("disclosure", "")):
+        errors.append("_data/pet.yml: disclosure must name the model provider ({model})")
+    roster = pet_data.get("roster") or []
+    if pet_data.get("default") not in roster:
+        errors.append("_data/pet.yml: default must be one of roster")
+    pet_files = {path.stem for path in (ROOT / "_data" / "pets").glob("*.yml")}
+    if set(roster) != pet_files:
+        errors.append(f"_data/pet.yml: roster {sorted(roster)} must match _data/pets/*.yml {sorted(pet_files)}")
+    if set(roster) != persona_ids:
+        errors.append(f"pet-brain/persona.mjs: PETS {sorted(persona_ids)} must match the roster {sorted(roster)}")
+    ready_pets = set()
+    for pet_id in roster:
+        pet_path = ROOT / "_data" / "pets" / f"{pet_id}.yml"
+        if not pet_path.exists():
+            continue
+        pet = yaml.safe_load(pet_path.read_text(encoding="utf-8")) or {}
+        label = f"_data/pets/{pet_id}.yml"
+        if pet.get("id") != pet_id:
+            errors.append(f"{label}: id must be {pet_id!r}")
+        for key in ("name", "company", "tagline", "color", "palette", "moves", "greet", "hello", "idle", "egg"):
+            if not pet.get(key):
+                errors.append(f"{label}: {key!r} is required")
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", str(pet.get("color", ""))):
+            errors.append(f"{label}: color must be a #RRGGBB value")
+        if not (ROOT / "assets" / "pet" / pet_id / "source" / "character-brief.md").exists():
+            errors.append(f"assets/pet/{pet_id}/source/character-brief.md: the character master is missing")
+        story_eggs = [step.get("eggs") for step in pet.get("story", [])]
+        if story_eggs != sorted(story_eggs):
+            errors.append(f"{label}: story steps must be ordered by eggs")
+        sprites = pet.get("sprites")
+        if not sprites:
+            continue
+        # 登记了授权形象：清单、帧文件、体积与授权记录都要在。
+        expected = f"/assets/pet/{pet_id}/pet.json"
+        manifest_path = ROOT / "assets" / "pet" / pet_id / "pet.json"
+        if sprites != expected or not manifest_path.exists():
+            errors.append(f"{label}: sprites must be {expected} and the file must exist (scripts/pet_sprites.py)")
+            continue
+        if not (ROOT / "assets" / "pet" / pet_id / "LICENSE.md").exists():
+            errors.append(f"assets/pet/{pet_id}/LICENSE.md: the licence record must be uploaded before the art goes live")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        states = manifest.get("states") or {}
+        if "idle" not in states:
+            errors.append(f"assets/pet/{pet_id}/pet.json: an idle state is required")
+        total = 0
+        tables = [(manifest.get("base", "sprites/"), states)] + [
+            (costume.get("base", f"sprites/{costume_id}/"), costume.get("states") or {}) for costume_id, costume in (manifest.get("costumes") or {}).items()
+        ]
+        for base, table in tables:
+            for state, spec in table.items():
+                frame_path = ROOT / "assets" / "pet" / pet_id / base / spec.get("file", f"{state}.webp")
+                if not frame_path.is_file():
+                    errors.append(f"assets/pet/{pet_id}/pet.json: {state} points to a missing file {frame_path.relative_to(ROOT)}")
+                    continue
+                total += frame_path.stat().st_size
+                if not isinstance(spec.get("frames"), int) or spec["frames"] < 1:
+                    errors.append(f"assets/pet/{pet_id}/pet.json: {state}.frames must be a positive integer")
+        if total > 1024 * 1024:
+            errors.append(f"assets/pet/{pet_id}: sprites total {total // 1024} KB; keep each pet under 1 MB")
+        ready_pets.add(pet_id)
     site_config = yaml.safe_load((ROOT / "_config.yml").read_text(encoding="utf-8"))
-    if (site_config.get("pet") or {}).get("enabled") and not (pet_data or {}).get("sprites"):
-        errors.append("_config.yml: pet.enabled needs the licensed sprites in _data/pet.yml (see assets/pet/README.md)")
-    if "  - pet-brain/" not in (ROOT / "_config.yml").read_text(encoding="utf-8"):
-        errors.append("_config.yml: pet-brain/ (the Worker) must be excluded from the build")
+    if (site_config.get("pet") or {}).get("enabled") and pet_data.get("default") not in ready_pets:
+        errors.append("_config.yml: pet.enabled needs the default pet's licensed sprites registered (see assets/pet/README.md)")
+    config_text = (ROOT / "_config.yml").read_text(encoding="utf-8")
+    for excluded in ("  - pet-brain/", "  - assets/pet/*/source"):
+        if excluded not in config_text:
+            errors.append(f"_config.yml: {excluded.strip()} must be excluded from the build")
 
     # 无头主页：终端二维码矩阵必须与当前的微信二维码图片对应（scripts/terminal_qr.py 生成）。
     terminal_qr_path = ROOT / "_data" / "terminal_qr.yml"

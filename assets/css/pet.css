@@ -1,4 +1,5 @@
-/* 网站宠物 ƒ-01（assets/js/pet.js）。由 pet-loader.js 在页面加载完、浏览器空闲时才插入，不参与首屏。 */
+/* 网站宠物（assets/js/pet.js）。由 pet-loader.js 在页面加载完、浏览器空闲时才插入，不参与首屏。
+ * 当前是哪一只写在 .pet-root[data-pet]；占位形象的配色由 pet.js 按 _data/pets/<id>.yml 的 palette 设在 .pet-figure 上。 */
 
 .pet-root {
   --pet-size: 76px;
@@ -78,17 +79,21 @@ html[data-theme="dark"] .pet-root {
   animation-play-state: paused !important;
 }
 
-/* 授权形象：横向序列帧条，每个状态一张图（见 assets/pet/README.md）。 */
+/* 授权形象：横向序列帧条，每个状态一张图（见 assets/pet/README.md）。
+ * background-position 的百分比是相对「图宽 − 框宽」的，所以 0%→100% 要用 jump-none：N 帧正好停在 N 个位置。 */
 .pet-sprite {
   width: 100%;
   height: 100%;
   background-repeat: no-repeat;
   background-size: calc(var(--frames) * 100%) 100%;
-  animation: pet-frames var(--duration) steps(var(--frames)) infinite;
+  animation: pet-frames var(--duration) steps(var(--frames), jump-none) infinite;
 }
 .pet-sprite.is-once {
   animation-iteration-count: 1;
   animation-fill-mode: forwards;
+}
+.pet-sprite.is-still {
+  animation: none;
 }
 @keyframes pet-frames {
   from {
@@ -99,14 +104,24 @@ html[data-theme="dark"] .pet-root {
   }
 }
 
-/* ---------------- 占位形象：团子鲸 ---------------- */
+/* ---------------- 占位形象（授权形象登记前） ---------------- */
 
+.pet-figure {
+  --pet-skin: #6fb4ff;
+  --pet-skin-deep: #2f6fe0;
+  --pet-line: #1f4fae;
+  --pet-belly: #fff4e6;
+  --pet-accent2: #29d3e6;
+  --pet-uniform: #22305e;
+  --pet-uniform-line: #141d3d;
+}
 .pet-whale {
   overflow: visible;
-  --skin: url(#pet-skin);
-  --deep: #2f6fe0;
-  --fin: #2a5fcc;
-  --line: #1f4fae;
+}
+.pet-whale .twin-wrap {
+  display: none;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
 }
 .pet-whale .rig,
 .pet-whale .body-wrap,
@@ -295,6 +310,335 @@ html[data-theme="dark"] .pet-root {
 }
 .is-float .pet-whale .shadow {
   opacity: 0;
+}
+
+/* 通用状态的补充：走、挥手、等待、失败 */
+.is-walk .pet-whale .rig {
+  animation: pet-bob 0.9s ease-in-out infinite;
+}
+.is-walk .pet-whale .tail,
+.is-walk .pet-whale .fin {
+  animation: pet-wag 0.45s ease-in-out infinite;
+}
+.is-wave .pet-whale .rig {
+  animation: pet-bob 1.6s ease-in-out infinite;
+}
+.is-wave .pet-whale .fin {
+  transform-origin: 80% 10%;
+  animation: pet-wave 0.32s ease-in-out infinite alternate;
+}
+.is-wave .pet-whale .face .eyes-open,
+.is-wave .pet-whale .face .mouth-smile {
+  display: none;
+}
+.is-wave .pet-whale .face .eyes-happy,
+.is-wave .pet-whale .face .mouth-open {
+  display: inline;
+}
+.is-waiting .pet-whale .rig {
+  animation: pet-bob 3.6s ease-in-out infinite;
+}
+.is-waiting .pet-whale .eyes {
+  animation: pet-look 3.6s ease-in-out infinite;
+}
+.is-failed .pet-whale .rig {
+  animation: pet-tilt 2.6s ease-in-out infinite;
+  translate: 0 3px;
+}
+.is-failed .pet-whale .face .eyes-open,
+.is-failed .pet-whale .face .mouth-smile {
+  display: none;
+}
+.is-failed .pet-whale .face .eyes-confused,
+.is-failed .pet-whale .face .mouth-wavy {
+  display: inline;
+}
+/* ƒ-01 的青色瞳环只在睁眼时出现 */
+.is-happy .pet-whale .rings,
+.is-sleep .pet-whale .rings,
+.is-drag .pet-whale .rings,
+.is-wave .pet-whale .rings,
+.is-confused .pet-whale .rings,
+.is-failed .pet-whale .rings,
+.is-tea .pet-whale .rings {
+  display: none;
+}
+
+/* ---- 各自的招牌动作 ---- */
+
+/* ƒ-01：展开成数据流，再缩回去 */
+.is-unfold .pet-whale .body-wrap {
+  animation: pet-unfold 1.6s ease-in-out infinite;
+}
+.is-unfold .pet-whale .fx .stream {
+  display: inline;
+}
+.pet-whale .fx .stream text {
+  transform-box: fill-box;
+  animation: pet-rise 2.2s ease-in infinite;
+}
+.pet-whale .fx .stream text:nth-child(2n) {
+  animation-delay: 0.7s;
+}
+.pet-whale .fx .stream text:nth-child(3n) {
+  animation-delay: 1.4s;
+}
+
+/* 大肥鱼：吐泡泡、吃 Token、潜水 */
+.is-bubble .pet-whale .rig,
+.is-dive .pet-whale .rig {
+  animation: pet-bob 2.4s ease-in-out infinite;
+}
+.is-bubble .pet-whale .fx .bubbles,
+.is-dive .pet-whale .fx .bubbles {
+  display: inline;
+}
+.is-bubble .pet-whale .fx .bubbles circle,
+.is-dive .pet-whale .fx .bubbles circle {
+  transform-box: fill-box;
+  animation: pet-rise 1.8s ease-in infinite;
+}
+.is-dive .pet-whale .body-wrap,
+.is-dive .pet-whale .tail {
+  animation: pet-dive 3.2s ease-in-out;
+}
+.is-eat .pet-whale .fx .coins {
+  display: inline;
+}
+.pet-whale .fx .coins > g {
+  transform-box: fill-box;
+  animation: pet-eat 1.2s ease-in infinite;
+}
+.pet-whale .fx .coins > g:nth-child(2) {
+  animation-delay: 0.6s;
+}
+.is-eat .pet-whale .face .mouth-smile {
+  display: none;
+}
+.is-eat .pet-whale .face .mouth-open {
+  display: inline;
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: pet-talk 0.3s steps(2) infinite;
+}
+
+/* 陶陶：读书、端茶、写信 */
+.is-read .pet-whale .fx .book,
+.is-tea .pet-whale .fx .tea,
+.is-write .pet-whale .fx .pencil,
+.is-write .pet-whale .fx .book {
+  display: inline;
+}
+.is-read .pet-whale .eyes,
+.is-write .pet-whale .eyes {
+  transform: translate(0, 2px);
+}
+.is-read .pet-whale .face .mouth-smile,
+.is-write .pet-whale .face .mouth-smile {
+  display: none;
+}
+.is-read .pet-whale .face .mouth-flat,
+.is-write .pet-whale .face .mouth-flat {
+  display: inline;
+}
+.is-read .pet-whale .rig {
+  animation: pet-bob 4s ease-in-out infinite;
+}
+.is-tea .pet-whale .face .eyes-open {
+  display: none;
+}
+.is-tea .pet-whale .face .eyes-happy {
+  display: inline;
+}
+.pet-whale .fx .tea .steam {
+  animation: pet-steam 2s ease-in-out infinite;
+}
+.pet-whale .fx .pencil {
+  transform-box: fill-box;
+  transform-origin: 0 100%;
+  animation: pet-scribble 0.4s ease-in-out infinite alternate;
+}
+
+/* 薄荷：记笔记、举灯泡、理卡片 */
+.is-note .pet-whale .fx .note,
+.is-bulb .pet-whale .fx .bulb,
+.is-cards .pet-whale .fx .cards {
+  display: inline;
+}
+.pet-whale .fx .note {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: pet-wag 1.2s ease-in-out infinite;
+}
+.is-bulb .pet-whale .rig {
+  animation: pet-hop 0.9s cubic-bezier(0.3, 0.7, 0.4, 1) 2;
+}
+.pet-whale .fx .bulb circle {
+  animation: pet-glow 0.9s ease-in-out infinite alternate;
+}
+.is-bulb .pet-whale .face .mouth-smile {
+  display: none;
+}
+.is-bulb .pet-whale .face .mouth-o {
+  display: inline;
+}
+.pet-whale .fx .cards rect {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: pet-shuffle 1.1s ease-in-out infinite;
+}
+.pet-whale .fx .cards rect:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.pet-whale .fx .cards rect:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* 双双：分裂、换位、变色 */
+.is-split .pet-whale .twin-wrap {
+  display: inline;
+  animation: pet-split 3.2s ease-in-out forwards;
+}
+.is-swap .pet-whale .twin-wrap {
+  display: inline;
+  animation: pet-swap-twin 2.4s ease-in-out forwards;
+}
+.is-swap .pet-whale .main {
+  animation: pet-swap-main 2.4s ease-in-out forwards;
+}
+.is-split .pet-whale .fx .sparkles,
+.is-shimmer .pet-whale .fx .sparkles {
+  display: inline;
+}
+.pet-figure.is-shimmer .pet-whale {
+  animation: pet-hue 3s linear;
+}
+.pet-whale .fx .sparkles path {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: pet-twinkle 1s ease-in-out infinite alternate;
+}
+
+@keyframes pet-wave {
+  from {
+    transform: rotate(10deg);
+  }
+  to {
+    transform: rotate(-50deg);
+  }
+}
+@keyframes pet-look {
+  0%,
+  40%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50%,
+  70% {
+    transform: translate(-2px, 0);
+  }
+  80%,
+  95% {
+    transform: translate(1.5px, -1px);
+  }
+}
+@keyframes pet-unfold {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1, 0.92);
+  }
+}
+@keyframes pet-dive {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40%,
+  60% {
+    transform: translateY(16px);
+    opacity: 0.55;
+  }
+}
+@keyframes pet-eat {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-24px, 6px) scale(0.3);
+    opacity: 0;
+  }
+}
+@keyframes pet-steam {
+  50% {
+    transform: translateY(-2px);
+    opacity: 0.4;
+  }
+}
+@keyframes pet-scribble {
+  to {
+    transform: rotate(-8deg) translateX(-2px);
+  }
+}
+@keyframes pet-glow {
+  to {
+    fill: #ffe14d;
+  }
+}
+@keyframes pet-shuffle {
+  50% {
+    transform: translateY(-5px) rotate(-6deg);
+  }
+}
+@keyframes pet-split {
+  0% {
+    transform: translate(0, 0) scale(0.82);
+    opacity: 0;
+  }
+  25%,
+  80% {
+    transform: translate(-40px, 4px) scale(0.82);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) scale(0.82);
+    opacity: 0;
+  }
+}
+@keyframes pet-swap-twin {
+  0% {
+    transform: translate(-40px, 4px) scale(0.82);
+  }
+  50% {
+    transform: translate(0, -10px) scale(0.82);
+  }
+  100% {
+    transform: translate(40px, 4px) scale(0.82);
+    opacity: 0;
+  }
+}
+@keyframes pet-swap-main {
+  50% {
+    transform: translate(-20px, -6px);
+  }
+}
+@keyframes pet-hue {
+  to {
+    filter: hue-rotate(360deg);
+  }
+}
+@keyframes pet-twinkle {
+  from {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1.15);
+    opacity: 1;
+  }
 }
 
 @keyframes pet-bob {
@@ -592,6 +936,25 @@ html[data-theme="dark"] .pet-root {
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+}
+
+/* 「换一只」里的候选：名字 + 自家公司，左边一个它的代表色圆点。 */
+.pet-roster {
+  padding: 6px 0 0;
+}
+.pet-roster button::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--pet-chip);
+  vertical-align: 1px;
+}
+.pet-roster button span {
+  color: var(--pet-muted);
+  font-size: 12px;
 }
 
 /* 收起后的小标签：贴在右下角边缘，点开叫出宠物。 */

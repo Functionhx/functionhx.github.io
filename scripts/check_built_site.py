@@ -371,6 +371,18 @@ def main() -> int:
     for leaked in ("magic-search", "deploy", "spark-vault", "letter-mailer", "pet-brain", "terminal", "requirements.txt"):
         if (site / leaked).exists():
             errors.append(f"/{leaked}: server-side file must be excluded from the build")
+    # 宠物：设定母版与源文件不对外；每只宠物的台词 JSON 都要生成且能解析。
+    pet_root = site / "assets" / "pet"
+    if pet_root.exists():
+        for leaked in sorted(pet_root.glob("*/source")) + sorted(pet_root.glob("README.md")):
+            errors.append(f"/{leaked.relative_to(site).as_posix()}: pet source material must be excluded from the build")
+        for lines_path in [pet_root / "lines.json", *sorted(pet_root.glob("*/lines.json"))]:
+            try:
+                json.loads(lines_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as error:
+                errors.append(f"/{lines_path.relative_to(site).as_posix()}: pet lines must be valid JSON ({error})")
+        if len(list(pet_root.glob("*/lines.json"))) < 2:
+            errors.append("/assets/pet/<id>/lines.json: per-pet lines are missing")
 
     # Owner decision 2026-09-24: the English site was removed; its URLs 404.
     english_outputs = sorted(

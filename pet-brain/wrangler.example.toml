@@ -12,12 +12,26 @@ id = "REPLACE_WITH_PET_LIMITS_KV_NAMESPACE_ID"
 SITE_ORIGINS = "https://functionhx.github.io,http://localhost:4000,http://127.0.0.1:4000"
 # 站内资料从这里取（/llms-full.txt）。
 SITE_URL = "https://functionhx.github.io"
+# 各家模型名。某家只有填了模型名、并用 wrangler secret 设置了它的 *_API_KEY 才算接上；
+# 没接上的那家，它的宠物由 DeepSeek 代班（回答里会如实说明）。
 DEEPSEEK_MODEL = "deepseek-flash"
+ANTHROPIC_MODEL = "claude-sonnet-5-5"
+# 填你账号可用的模型名后再设密钥。
+OPENAI_MODEL = ""
+GEMINI_MODEL = ""
 # 全站每天最多消耗的 token（输入 + 输出）；用完后宠物自动退回本地台词模式。
 DAILY_TOKEN_BUDGET = "100000000"
+# 每家单独的每日上限（可选，0 或不写表示只受上面的总预算约束）。各家单价差别很大，按账单设。
+ANTHROPIC_DAILY_TOKEN_BUDGET = "0"
+OPENAI_DAILY_TOKEN_BUDGET = "0"
+GEMINI_DAILY_TOKEN_BUDGET = "0"
 # 同一个 IP 每小时 / 每天最多几条消息；单次回答最多多少 token。
 PER_IP_HOURLY_LIMIT = "30"
 PER_IP_DAILY_LIMIT = "150"
 MAX_OUTPUT_TOKENS = "400"
 
-# 只用 `npx wrangler secret put DEEPSEEK_API_KEY` 设置密钥，不要写进这个文件，也不要提交或贴到任何聊天里。
+# 密钥只用 wrangler secret 设置，不要写进这个文件，也不要提交或贴到任何聊天里：
+#   npx wrangler secret put DEEPSEEK_API_KEY
+#   npx wrangler secret put ANTHROPIC_API_KEY   # 陶陶
+#   npx wrangler secret put OPENAI_API_KEY      # 薄荷
+#   npx wrangler secret put GEMINI_API_KEY      # 双双

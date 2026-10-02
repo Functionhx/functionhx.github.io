@@ -1,13 +1,13 @@
-// Pet Brain：网站宠物 ƒ-01 的「大脑」，跑在 Cloudflare Worker 上。
+// Pet Brain：网站宠物们的「大脑」，跑在 Cloudflare Worker 上。
 //
 // 浏览器里的宠物只在访客主动提问时才调用这里；感知、记忆、动作都在浏览器本地完成。
-// 这里做四件事：保管 DeepSeek 密钥；限流与每日 token 预算；从站内内容里检索资料拼进提示词，
-// 让回答有出处；把模型的回答以 SSE 流式转给浏览器。
+// 这里做五件事：保管各家模型的密钥；按宠物选模型（自家模型没配好时由 DeepSeek 代班）；
+// 限流与每日 token 预算；从站内内容里检索资料拼进提示词，让回答有出处；把回答以 SSE 流式转给浏览器。
 //
 // 隐私：不记录、不存储任何对话内容，只在 KV 里记次数与 token 用量。
 // 安全：问到首页那封信时不调用模型；密钥只在 Worker 密钥里；只接受站点来源的请求。
 
-import { LETTER_REPLY, PERSONA } from "./persona.mjs";
+import { DEFAULT_PET, LETTER_REPLY, PETS, systemPersona } from "./persona.mjs";
 
 const MAX_BODY_BYTES = 16 * 1024;
 const MAX_MESSAGES = 8;
@@ -17,6 +17,72 @@ const MATERIAL_CHUNKS = 3;
 const CHUNK_CHARS = 900;
 const CORPUS_TTL_MS = 10 * 60 * 1000;
 const LETTER_PATTERN = /(信封|那封信|一封信|暗号|口令|拆信|六位|pin\b|信的密码|信件)/i;
+
+// 各家模型。密钥（*_API_KEY）只用 wrangler secret 设置；模型名在 wrangler.toml 的 [vars] 里，
+// 没有密钥或没有模型名的那家视为没接上。OpenAI 与 Gemini 走 OpenAI 兼容接口，Anthropic 走 Messages API。
+export const PROVIDERS = {
+  deepseek: {
+    label: "DeepSeek",
+    keyVar: "DEEPSEEK_API_KEY",
+    modelVar: "DEEPSEEK_MODEL",
+    defaultModel: "deepseek-flash",
+    baseVar: "DEEPSEEK_BASE_URL",
+    defaultBase: "https://api.deepseek.com",
+    format: "openai",
+  },
+  anthropic: {
+    label: "Anthropic",
+    keyVar: "ANTHROPIC_API_KEY",
+    modelVar: "ANTHROPIC_MODEL",
+    defaultModel: "",
+    baseVar: "ANTHROPIC_BASE_URL",
+    defaultBase: "https://api.anthropic.com",
+    format: "anthropic",
+  },
+  openai: {
+    label: "OpenAI",
+    keyVar: "OPENAI_API_KEY",
+    modelVar: "OPENAI_MODEL",
+    defaultModel: "",
+    baseVar: "OPENAI_BASE_URL",
+    defaultBase: "https://api.openai.com/v1",
+    format: "openai",
+    // 新模型不接受 max_tokens / temperature。
+    modern: true,
+  },
+  gemini: {
+    label: "Google",
+    keyVar: "GEMINI_API_KEY",
+    modelVar: "GEMINI_MODEL",
+    defaultModel: "",
+    baseVar: "GEMINI_BASE_URL",
+    defaultBase: "https://generativelanguage.googleapis.com/v1beta/openai",
+    format: "openai",
+  },
+};
+const STAND_IN = "deepseek";
+
+export function providerConfig(env, id) {
+  const spec = PROVIDERS[id];
+  if (!spec) return null;
+  const key = env[spec.keyVar];
+  const model = env[spec.modelVar] || spec.defaultModel;
+  if (!key || !model) return null;
+  return { id, ...spec, key, model, base: String(env[spec.baseVar] || spec.defaultBase).replace(/\/$/, "") };
+}
+
+// 这只宠物这次该由谁回答：自家模型优先（接上了、当天额度没用完），否则 DeepSeek 代班。
+export async function routesFor(env, petId, day) {
+  const home = (PETS[petId] || PETS[DEFAULT_PET]).home;
+  const routes = [];
+  const own = providerConfig(env, home);
+  if (own && (day === null || (await underProviderBudget(env, day, home)))) routes.push({ ...own, standIn: false });
+  if (home !== STAND_IN) {
+    const standIn = providerConfig(env, STAND_IN);
+    if (standIn) routes.push({ ...standIn, standIn: true });
+  }
+  return routes;
+}
 
 export class HttpError extends Error {
   constructor(status, message, code) {
@@ -77,10 +143,20 @@ async function consume(env, key, limit, ttl) {
   return true;
 }
 
-export async function recordTokens(env, day, tokens) {
+// 全站总预算 DAILY_TOKEN_BUDGET 之外，每家还可以单独设 <家>_DAILY_TOKEN_BUDGET（如 ANTHROPIC_DAILY_TOKEN_BUDGET）：
+// 用完后这家当天不再调用，由 DeepSeek 代班。
+const providerBudget = (env, id) => Number(env[`${id.toUpperCase()}_DAILY_TOKEN_BUDGET`] || 0);
+
+async function underProviderBudget(env, day, id) {
+  const limit = providerBudget(env, id);
+  return !limit || (await counter(env, `tokens:${day}:${id}`)) < limit;
+}
+
+export async function recordTokens(env, day, tokens, provider = STAND_IN) {
   if (!tokens) return;
-  const key = `tokens:${day}`;
-  await env.PET_LIMITS.put(key, String((await counter(env, key)) + tokens), { expirationTtl: 60 * 60 * 30 });
+  for (const key of [`tokens:${day}`, `tokens:${day}:${provider}`]) {
+    await env.PET_LIMITS.put(key, String((await counter(env, key)) + tokens), { expirationTtl: 60 * 60 * 30 });
+  }
 }
 
 // ------------------------------------------------------------------ 请求校验
@@ -121,6 +197,7 @@ export async function readChat(request) {
       excerpt: clean(page.excerpt, MAX_PAGE_CHARS),
     },
     petName: clean(body.petName, 24),
+    pet: Object.hasOwn(PETS, body.pet) ? body.pet : DEFAULT_PET,
   };
 }
 
@@ -194,14 +271,48 @@ async function loadCorpus(env, fetcher) {
   return corpusCache.chunks;
 }
 
-export function buildPrompt({ messages, page, petName }, materials) {
+export function buildPrompt({ messages, page, petName, pet = DEFAULT_PET }, materials, route = { label: PROVIDERS[STAND_IN].label, standIn: false }) {
   const material = materials.length
     ? materials.map((m, index) => `[${index + 1}] 《${m.title}》 原文：${m.url}\n${m.text}`).join("\n\n")
     : "（没有检索到相关资料）";
   const pageBlock =
     page.title || page.excerpt ? `标题：${page.title}\n网址：${page.url}\n正在看的小节：${page.section}\n内容摘录：${page.excerpt}` : "（未知）";
   const nickname = petName ? `\n访客给你起的小名是「${petName}」，可以用它自称。` : "";
-  return [{ role: "system", content: `${PERSONA}${nickname}\n\n<资料>\n${material}\n</资料>\n\n<页面>\n${pageBlock}\n</页面>` }, ...messages];
+  return {
+    system: `${systemPersona(pet, route)}${nickname}\n\n<资料>\n${material}\n</资料>\n\n<页面>\n${pageBlock}\n</页面>`,
+    messages,
+  };
+}
+
+// 按各家的接口格式组装请求。
+export function upstreamRequest(route, prompt, maxTokens) {
+  if (route.format === "anthropic") {
+    // Messages API 要求对话以访客开头。
+    const messages = prompt.messages.slice(prompt.messages.findIndex((m) => m.role === "user"));
+    return {
+      url: `${route.base}/v1/messages`,
+      init: {
+        method: "POST",
+        headers: { "x-api-key": route.key, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+        body: JSON.stringify({ model: route.model, system: prompt.system, messages, max_tokens: maxTokens, stream: true }),
+      },
+    };
+  }
+  const limits = route.modern ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens, temperature: 0.8 };
+  return {
+    url: `${route.base}/chat/completions`,
+    init: {
+      method: "POST",
+      headers: { Authorization: `Bearer ${route.key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: route.model,
+        messages: [{ role: "system", content: prompt.system }, ...prompt.messages],
+        stream: true,
+        stream_options: { include_usage: true },
+        ...limits,
+      }),
+    },
+  };
 }
 
 // ------------------------------------------------------------------ SSE
@@ -234,11 +345,22 @@ function oneShot(text, origin, extra = {}) {
   );
 }
 
-// 把 DeepSeek 的 OpenAI 格式流转换成 {t} 片段；结束时附上出处，并把 token 用量记进预算。
-export function relay(upstream, { sources, onUsage }) {
+// 从一条上游事件里取出文字与用量。OpenAI 兼容格式给 total_tokens；Anthropic 分别在开头给输入、结尾给输出。
+function readEvent(format, chunk, usage) {
+  if (format === "anthropic") {
+    if (chunk?.type === "message_start") usage.input = Number(chunk.message?.usage?.input_tokens || 0);
+    if (chunk?.type === "message_delta") usage.output = Number(chunk.usage?.output_tokens || 0);
+    return chunk?.type === "content_block_delta" && chunk.delta?.type === "text_delta" ? chunk.delta.text : "";
+  }
+  if (chunk?.usage?.total_tokens) usage.total = chunk.usage.total_tokens;
+  return chunk?.choices?.[0]?.delta?.content || "";
+}
+
+// 把上游的流转换成 {t} 片段；结束时附上出处和「这次是谁回答的」，并把 token 用量记进预算。
+export function relay(upstream, { sources, onUsage, format = "openai", model = "", standIn = false }) {
   const decoder = new TextDecoder();
   let buffer = "";
-  let usage = 0;
+  const usage = { total: 0, input: 0, output: 0 };
   return new ReadableStream({
     async start(controller) {
       const reader = upstream.body.getReader();
@@ -259,18 +381,17 @@ export function relay(upstream, { sources, onUsage }) {
             } catch {
               continue;
             }
-            const text = chunk?.choices?.[0]?.delta?.content;
+            const text = readEvent(format, chunk, usage);
             if (text) controller.enqueue(sse({ t: text }));
-            if (chunk?.usage?.total_tokens) usage = chunk.usage.total_tokens;
           }
         }
-        controller.enqueue(sse({ done: true, sources }));
+        controller.enqueue(sse({ done: true, sources, model, standIn }));
       } catch (error) {
         console.error("pet-brain: stream interrupted", error?.message || "unknown");
         controller.enqueue(sse({ error: "stream_interrupted" }));
       } finally {
         controller.close();
-        await onUsage(usage).catch(() => undefined);
+        await onUsage(usage.total || usage.input + usage.output).catch(() => undefined);
       }
     },
   });
@@ -294,13 +415,20 @@ export async function handleRequest(request, env, { fetch: fetcher = fetch, wait
       },
     });
   }
-  if (url.pathname === "/health") return json(200, { ok: true }, origin);
+  // 每只宠物现在由谁回答（不含额度），浏览器用它在面板里如实告诉访客对话会发给谁。
+  if (url.pathname === "/health") {
+    const pets = {};
+    for (const id of Object.keys(PETS)) {
+      const [route] = await routesFor(env, id, null);
+      pets[id] = route ? { model: route.label, standIn: route.standIn } : null;
+    }
+    return json(200, { ok: true, pets }, origin);
+  }
   if (url.pathname !== "/chat") return json(404, { error: "not_found" }, origin);
 
   try {
     if (request.method !== "POST") throw new HttpError(405, "Use POST.", "method_not_allowed");
     if (!origin) throw new HttpError(403, "This origin is not allowed.", "origin_denied");
-    if (!env.DEEPSEEK_API_KEY) throw new HttpError(503, "The pet brain is not configured yet.", "not_configured");
     if (!env.PET_LIMITS) throw new HttpError(503, "Rate limiting is not configured.", "limits_missing");
 
     const chat = await readChat(request);
@@ -310,6 +438,8 @@ export async function handleRequest(request, env, { fetch: fetcher = fetch, wait
 
     const ip = clientAddress(request);
     const { day, hour } = stamp(now);
+    const routes = await routesFor(env, chat.pet, day);
+    if (!routes.length) throw new HttpError(503, "The pet brain is not configured yet.", "not_configured");
     const budget = Number(env.DAILY_TOKEN_BUDGET || 100_000_000);
     if ((await counter(env, `tokens:${day}`)) >= budget) throw new HttpError(429, "Daily budget used up.", "budget_exhausted");
     if (!(await consume(env, `ip:${hour}:${ip}`, Number(env.PER_IP_HOURLY_LIMIT || 30), 60 * 60 * 2))) {
@@ -324,30 +454,33 @@ export async function handleRequest(request, env, { fetch: fetcher = fetch, wait
     const sources = [];
     for (const m of materials) if (m.url && !sources.some((s) => s.url === m.url)) sources.push({ title: m.title, url: m.url });
 
-    const upstream = await fetcher(`${String(env.DEEPSEEK_BASE_URL || "https://api.deepseek.com").replace(/\/$/, "")}/chat/completions`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${env.DEEPSEEK_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: env.DEEPSEEK_MODEL || "deepseek-flash",
-        messages: buildPrompt(chat, materials),
-        stream: true,
-        stream_options: { include_usage: true },
-        max_tokens: Number(env.MAX_OUTPUT_TOKENS || 400),
-        temperature: 0.8,
-      }),
-    });
-    if (!upstream.ok || !upstream.body) {
-      console.error("pet-brain: upstream error", upstream.status);
-      throw new HttpError(502, "The model is unavailable right now.", "upstream_error");
+    // 自家模型出错时换 DeepSeek 代班再试一次。
+    for (const route of routes) {
+      const { url: target, init } = upstreamRequest(route, buildPrompt(chat, materials, route), Number(env.MAX_OUTPUT_TOKENS || 400));
+      let upstream;
+      try {
+        upstream = await fetcher(target, init);
+      } catch (error) {
+        console.error("pet-brain: upstream unreachable", route.id, error?.message || "unknown");
+        continue;
+      }
+      if (!upstream.ok || !upstream.body) {
+        console.error("pet-brain: upstream error", route.id, upstream.status);
+        continue;
+      }
+      return sseResponse(
+        relay(upstream, {
+          sources,
+          format: route.format,
+          model: route.label,
+          standIn: route.standIn,
+          // 流结束后 Worker 可能被回收，用量写入交给 waitUntil 等它完成。
+          onUsage: async (tokens) => waitUntil(recordTokens(env, day, tokens, route.id)),
+        }),
+        origin
+      );
     }
-    return sseResponse(
-      relay(upstream, {
-        sources,
-        // 流结束后 Worker 可能被回收，用量写入交给 waitUntil 等它完成。
-        onUsage: async (tokens) => waitUntil(recordTokens(env, day, tokens)),
-      }),
-      origin
-    );
+    throw new HttpError(502, "The model is unavailable right now.", "upstream_error");
   } catch (error) {
     if (error instanceof HttpError) return json(error.status, { error: error.code }, origin);
     console.error("pet-brain: unexpected error", error?.message || "unknown");

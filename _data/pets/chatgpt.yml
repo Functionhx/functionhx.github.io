@@ -1,0 +1,62 @@
+# 薄荷：OpenAI 家的 ChatGPT 小宠物（授权同人形象）。设定母版：assets/pet/chatgpt/source/character-brief.md
+id: chatgpt
+name: 薄荷
+company: OpenAI 家
+tagline: 全能助手，记笔记、理卡片、举灯泡
+color: "#10a37f"
+palette: { skin: "#ffffff", skin_deep: "#e6ebe9", line: "#1f2a27", belly: "#f3fbf8", accent: "#10a37f", uniform: "#1f2a27", uniform_line: "#0d1412" }
+moves:
+  think: note
+  quirks: [note, bulb, cards]
+sprites:
+
+greet:
+  first:
+    - 嗨！我是 OpenAI 家的薄荷。需要我帮你列个阅读清单吗？
+    - 你好！三件事：随便逛，随时问，看累了就歇。
+  return:
+    - 欢迎回来！我把你上次的进度记在小本子上了。
+    - 第 {visits} 次啦，今天的计划是什么？
+  night:
+    - 夜深了。建议：读完这篇，然后去睡觉。
+hello:
+  - 交接完成！今天由我值班。
+page:
+  post:
+    - 这篇约 {minutes} 分钟。要不要我先给你列个提纲？
+  project:
+    - 这个项目我整理过卡片，想看重点可以问我。
+  home:
+    - 首页导览：文章、项目、工具，想先看哪个？
+  list:
+    - 选择困难？我给你排个优先级。
+dwell:
+  figure:
+    - 这张图停留了一会儿。要我总结成三点吗？
+  code:
+    - 这段代码要我拆成步骤讲讲吗？
+  table:
+    - 这张表我可以帮你提炼关键数字。
+lost:
+  - 迷路了？我画了一张小地图。
+idle:
+  - （在整理卡片）
+  - 💡……不对，再想想。
+theme:
+  dark:
+    - 夜间模式已开启。
+  light:
+    - 日间模式已开启。
+egg:
+  - 彩蛋 +1！已记录。
+turbo:
+  - 加速模式！我跟得上。
+broken:
+  - 有个资源加载失败了。已记下，回头告诉站长？……哦，我联系不上他。
+touch:
+  - 发卡别碰歪啦。
+  - 需要帮忙吗？
+drag:
+  - 哇，起飞了！
+float:
+  - 正在平稳降落。
