@@ -205,20 +205,42 @@ export async function readChat(request) {
 
 let corpusCache = { at: 0, url: "", chunks: [] };
 
-// llms-full.txt 的每个条目以「## 标题」开头，下一段是「原文：网址」。长条目切成若干块，每块都带标题与网址。
-export function chunkCorpus(text) {
+// llms-full.txt：开头是站长简介（「# 名字」与「> 一句话」），之后每个条目以「## 标题」开头、下一段是「原文：网址」。
+// 正文里也有自己的「## 小节」标题，它们不带「原文」，属于当前条目。长条目切成若干块，每块都带条目标题与网址。
+export function chunkCorpus(text, siteUrl = "") {
+  const lines = String(text).split("\n");
+  const items = [];
+  const intro = { title: "关于站长", url: siteUrl ? `${siteUrl.replace(/\/$/, "")}/` : "", body: [] };
+  let current = intro;
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (line.startsWith("## ")) {
+      let next = index + 1;
+      while (next < lines.length && !lines[next].trim()) next += 1;
+      const source = (lines[next] || "").match(/^原文：(\S+)/);
+      if (source) {
+        current = { title: line.slice(3).trim(), url: source[1], body: [] };
+        items.push(current);
+        index = next;
+        continue;
+      }
+    } else if (/^# /.test(line)) {
+      // 第一行是站名；之后的「# 文章」「# 项目与研究」这类分组标题不属于任何条目。
+      if (index === 0) intro.body.push(line.slice(2));
+      else current = null;
+      continue;
+    }
+    if (current) current.body.push(line);
+  }
   const chunks = [];
-  for (const section of String(text).split(/^## /m).slice(1)) {
-    const lines = section.split("\n");
-    const title = lines[0].trim();
-    const source = (section.match(/^原文：(\S+)/m) || [])[1] || "";
-    const body = lines
-      .slice(1)
+  for (const item of [intro, ...items]) {
+    const body = item.body
       .join("\n")
-      .replace(/^原文：\S+\s*$/m, "")
+      .replace(/^全部公开文章.*$/m, "")
       .trim();
-    for (let start = 0; start < Math.max(body.length, 1); start += CHUNK_CHARS) {
-      chunks.push({ title, url: source, text: body.slice(start, start + CHUNK_CHARS) });
+    if (!body) continue;
+    for (let start = 0; start < body.length; start += CHUNK_CHARS) {
+      chunks.push({ title: item.title, url: item.url, text: body.slice(start, start + CHUNK_CHARS) });
     }
   }
   return chunks;
@@ -249,6 +271,7 @@ export function retrieve(chunks, query, page, limit = MATERIAL_CHUNKS) {
     }
     for (const term of context) if (haystack.includes(term)) score += 0.5;
     if (page.url && chunk.url && page.url.split("#")[0] === chunk.url) score += 4;
+    if (chunk.title === "关于站长" && /站长|樊宇琛|你主人|他是谁|介绍/.test(query)) score += 6;
     return { chunk, score };
   });
   return scored
@@ -264,7 +287,7 @@ async function loadCorpus(env, fetcher) {
   try {
     const response = await fetcher(url, { cf: { cacheTtl: 600 } });
     if (!response.ok) throw new Error(String(response.status));
-    corpusCache = { at: Date.now(), url, chunks: chunkCorpus(await response.text()) };
+    corpusCache = { at: Date.now(), url, chunks: chunkCorpus(await response.text(), env.SITE_URL || "https://functionhx.github.io") };
   } catch (error) {
     console.error("pet-brain: corpus unavailable", error?.message || "unknown");
   }

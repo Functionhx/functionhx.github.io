@@ -13,6 +13,8 @@ const CORPUS = `# 樊宇琛 · Function
 
 原文：https://functionhx.github.io/blog/2026/batch-lio/
 
+## 一、项目简介
+
 Batch-LIO 将相邻约 1 ms 内的激光点组成一个 batch，统一执行一次滤波更新，每帧平均计算耗时降低至约 1/3.5 至 1/4.7。
 
 ## 纯 CS 搞具身，正在把一个控制问题硬讲成一个融资故事
@@ -128,9 +130,19 @@ const ask = (question, extra = {}) => ({
 
 // 检索：中文按两字切分，当前页面加权
 assert.deepEqual(terms("批量更新"), ["批量", "量更", "更新"]);
-const chunks = chunkCorpus(CORPUS);
-assert.equal(chunks.length, 2);
-assert.equal(chunks[0].url, `${ORIGIN}/blog/2026/batch-lio/`);
+const chunks = chunkCorpus(CORPUS, ORIGIN);
+// 简介单独成块；正文里的「## 小节」属于所在文章，不会变成没有出处的条目
+assert.deepEqual(
+  chunks.map((c) => [c.title.slice(0, 9), c.url]),
+  [
+    ["关于站长", `${ORIGIN}/`],
+    ["【RM2026-L", `${ORIGIN}/blog/2026/batch-lio/`],
+    ["纯 CS 搞具身，", `${ORIGIN}/blog/2026/embodied-ai-control-story/`],
+  ]
+);
+assert.ok(chunks[0].text.includes("机器人工程本科生") && !chunks[0].text.includes("# 文章"));
+assert.ok(chunks[1].text.includes("## 一、项目简介") && chunks[1].text.includes("1/4.7"));
+assert.equal(retrieve(chunks, "介绍一下站长", { title: "", section: "", url: "" })[0].title, "关于站长");
 assert.equal(retrieve(chunks, "为什么批量更新更快", { title: "", section: "", url: "" })[0].title.includes("Batch-LIO"), true);
 assert.equal(retrieve(chunks, "具身智能", { title: "", section: "", url: "" })[0].url, `${ORIGIN}/blog/2026/embodied-ai-control-story/`);
 const prompt = buildPrompt(
@@ -139,7 +151,8 @@ const prompt = buildPrompt(
 );
 assert.ok(prompt.system.includes("你不是樊宇琛"), "the persona must state it is not the owner");
 assert.ok(prompt.system.includes("团团"));
-assert.ok(prompt.system.includes("<资料>") && prompt.system.includes("原文：https://functionhx.github.io/blog/2026/batch-lio/"));
+assert.ok(prompt.system.includes("<资料>") && prompt.system.includes("原文：https://functionhx.github.io/"));
+assert.ok(prompt.system.includes("不要在回答里写任何网址"), "links come from the sources list, never typed by the model");
 assert.ok(prompt.system.includes("住在 functionhx.github.io") && prompt.system.includes("不属于任何公司"), "ƒ-01 is the site's own");
 
 // 人设：每只都认自家公司；替它回答的是谁要照实说，代班要说是代班；不代表公司发言。
