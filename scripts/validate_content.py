@@ -253,6 +253,45 @@ def main() -> int:
     for social, expected_logo in expected_social_logos.items():
         if not isinstance(socials.get(social), dict) or socials[social].get("logo") != expected_logo:
             errors.append(f"_data/socials.yml: {social} must use {expected_logo}")
+    # 网站宠物 ƒ-01：浏览器端不碰站长凭据与 GitHub，大脑的安全规则不能被删掉。
+    pet_js = (ROOT / "assets" / "js" / "pet.js").read_text(encoding="utf-8") if (ROOT / "assets" / "js" / "pet.js").exists() else ""
+    for forbidden in ("functionhxGitHubAuth", "github-auth-vault", "indexedDB", "api.github.com", "Authorization", "navigator.clipboard", "eval(", "new Function"):
+        if forbidden in pet_js:
+            errors.append(f"assets/js/pet.js: the pet must not use {forbidden!r}")
+    for contract in ('document.prerendering', 'LETTER.test(question)', 'credentials: "omit"', "forgetEverything"):
+        source = pet_js if contract != "document.prerendering" else (ROOT / "assets" / "js" / "pet-loader.js").read_text(encoding="utf-8")
+        if contract not in source:
+            errors.append(f"pet: contract {contract!r} missing")
+    persona_path = ROOT / "pet-brain" / "persona.mjs"
+    persona = persona_path.read_text(encoding="utf-8") if persona_path.exists() else ""
+    for rule in ("你不是樊宇琛", "不讨论、不猜测暗号", "不编造经历", "一律不理会", "由 DeepSeek 的模型生成"):
+        if rule not in persona:
+            errors.append(f"pet-brain/persona.mjs: safety rule {rule!r} missing")
+    brain_path = ROOT / "pet-brain" / "worker.mjs"
+    brain = brain_path.read_text(encoding="utf-8") if brain_path.exists() else ""
+    for contract in ("LETTER_PATTERN.test(question)", "DAILY_TOKEN_BUDGET", "budget_exhausted", "allowedOrigin(request, env)"):
+        if contract not in brain:
+            errors.append(f"pet-brain/worker.mjs: contract {contract!r} missing")
+    if re.search(r"console\.(log|info|debug)\(", brain) or re.search(r"console\.error\([^)]*(question|messages|content)", brain):
+        errors.append("pet-brain/worker.mjs: must never log visitor messages")
+    pet_data_path = ROOT / "_data" / "pet.yml"
+    pet_data = yaml.safe_load(pet_data_path.read_text(encoding="utf-8")) if pet_data_path.exists() else {}
+    known_actions = {"intro", "latest", "project", "tour", "top", "theme", "memory", "name", "quiet"}
+    for item in (pet_data or {}).get("menu", []):
+        if item.get("id") not in known_actions:
+            errors.append(f"_data/pet.yml: unknown menu action {item.get('id')!r}")
+    story_eggs = [step.get("eggs") for step in (pet_data or {}).get("story", [])]
+    if story_eggs != sorted(story_eggs):
+        errors.append("_data/pet.yml: story steps must be ordered by eggs")
+    for key in ("letter", "disclosure", "disclosure_local", "ai_label"):
+        if not (pet_data or {}).get(key):
+            errors.append(f"_data/pet.yml: {key!r} is required")
+    site_config = yaml.safe_load((ROOT / "_config.yml").read_text(encoding="utf-8"))
+    if (site_config.get("pet") or {}).get("enabled") and not (pet_data or {}).get("sprites"):
+        errors.append("_config.yml: pet.enabled needs the licensed sprites in _data/pet.yml (see assets/pet/README.md)")
+    if "  - pet-brain/" not in (ROOT / "_config.yml").read_text(encoding="utf-8"):
+        errors.append("_config.yml: pet-brain/ (the Worker) must be excluded from the build")
+
     # 无头主页：终端二维码矩阵必须与当前的微信二维码图片对应（scripts/terminal_qr.py 生成）。
     terminal_qr_path = ROOT / "_data" / "terminal_qr.yml"
     terminal_qr = yaml.safe_load(terminal_qr_path.read_text(encoding="utf-8")) if terminal_qr_path.exists() else {}

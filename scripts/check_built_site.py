@@ -368,7 +368,7 @@ def main() -> int:
                 errors.append(f"{route}: retired template CV remains in the sitemap")
 
     # Server-side sources and ops config live in the repo but must never be served as site files.
-    for leaked in ("magic-search", "deploy", "spark-vault", "letter-mailer", "requirements.txt"):
+    for leaked in ("magic-search", "deploy", "spark-vault", "letter-mailer", "pet-brain", "terminal", "requirements.txt"):
         if (site / leaked).exists():
             errors.append(f"/{leaked}: server-side file must be excluded from the build")
 

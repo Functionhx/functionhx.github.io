@@ -1,0 +1,23 @@
+name = "functionhx-pet-brain"
+main = "worker.mjs"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+# 次数与 token 用量的计数器。创建：npx wrangler kv namespace create PET_LIMITS
+[[kv_namespaces]]
+binding = "PET_LIMITS"
+id = "REPLACE_WITH_PET_LIMITS_KV_NAMESPACE_ID"
+
+[vars]
+SITE_ORIGINS = "https://functionhx.github.io,http://localhost:4000,http://127.0.0.1:4000"
+# 站内资料从这里取（/llms-full.txt）。
+SITE_URL = "https://functionhx.github.io"
+DEEPSEEK_MODEL = "deepseek-flash"
+# 全站每天最多消耗的 token（输入 + 输出）；用完后宠物自动退回本地台词模式。
+DAILY_TOKEN_BUDGET = "100000000"
+# 同一个 IP 每小时 / 每天最多几条消息；单次回答最多多少 token。
+PER_IP_HOURLY_LIMIT = "30"
+PER_IP_DAILY_LIMIT = "150"
+MAX_OUTPUT_TOKENS = "400"
+
+# 只用 `npx wrangler secret put DEEPSEEK_API_KEY` 设置密钥，不要写进这个文件，也不要提交或贴到任何聊天里。

@@ -130,6 +130,31 @@ curl/wget/HTTPie/xh → `/cli` on `/` (also over plain HTTP) and the leaf elsewh
 verifies the whole tree (links resolve, JSON parses, no ANSI in agent files, no demo content, the
 TUI compiles and prints).
 
+## Site pet ƒ-01
+
+A licensed character (「蓝色大肥鱼」) that lives on every page. Body, perception, memory and
+actions run locally in `assets/js/pet.js` (dependency-free; `pet.css`); only questions the visitor
+types go to the brain, `pet-brain/` — a Cloudflare Worker holding the DeepSeek key, with per-IP
+limits, a daily token budget, retrieval over `/llms-full.txt` (answers cite sources) and no
+content logging. Lines and story live in `_data/pet.yml` (served as `/assets/pet/lines.json`);
+the brain's persona and safety rules in `pet-brain/persona.mjs`.
+
+- `_includes/pet.liquid` emits only a config JSON and `pet-loader.js`, which loads the pet after
+  `load` + idle, and **waits for `prerenderingchange`** (Speculation Rules prerender `/` and
+  `/blog/`, which would otherwise count a visit nobody made). `?pet=on|off|reset` overrides the
+  site switch for one browser.
+- `_config.yml` `pet.enabled` stays `false` until the licensed sprites are registered in
+  `_data/pet.yml` (`validate_content.py` enforces it); until then the built-in whale is a
+  placeholder. Sprite format and the licence record: `assets/pet/README.md`.
+  `pet.endpoint` is the deployed Worker URL; empty means local lines + site search only.
+- Restraint is part of the design: at most 2 unprompted lines per visit (1 for visitors who prefer
+  quiet), 30 s apart, never while skimming; closing a bubble silences it for the visit.
+- Memory is `localStorage` only (`functionhx:pet:memory`), never the visitor's own words;
+  "你记得我什么" shows it, "忘记我" deletes it. Letter questions are answered locally and never sent.
+- `validate_content.py` forbids credentials / GitHub / IndexedDB / clipboard use in `pet.js`
+  and checks the persona's safety rules. Tests: `npm run test:pet` (Playwright, fake brain)
+  and `npm run test:pet-brain` (mocked DeepSeek + KV); both are manual, not in CI.
+
 ## Theme override ledger
 
 The theme runtime comes from the pinned `al_folio_core` gem. Local files in

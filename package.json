@@ -23,7 +23,9 @@
     "test:training-card": "node test/training_card.mjs",
     "test:visual": "playwright test --config test/visual/playwright.config.js",
     "test:visual:update": "playwright test --config test/visual/playwright.config.js --update-snapshots",
-    "test:search-access": "bundle exec ruby test/search_access.rb && node test/search_owner.mjs"
+    "test:search-access": "bundle exec ruby test/search_access.rb && node test/search_owner.mjs",
+    "test:pet": "node test/pet.mjs",
+    "test:pet-brain": "node test/pet_brain.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
