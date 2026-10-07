@@ -373,6 +373,44 @@
             </fieldset>
           </section>
 
+          {% comment %}
+            发布时区（站长决定 2026-10-07，默认北京时间）：文章日期按它显示、新建文章按它记时间。
+            它改变生成的页面，所以和栏目一样走「保存并发布」；生效见 _plugins/publish_timezone.rb。
+          {% endcomment %}
+          {% assign publish_timezone = site.data.site_ui.publish_timezone | default: 'Asia/Shanghai' %}
+          <section class="site-settings__section" aria-labelledby="site-settings-timezone-heading">
+            <div class="site-settings__section-heading">
+              <h3 id="site-settings-timezone-heading">发布时区</h3>
+              <span>需要「保存并发布」</span>
+            </div>
+            <div class="site-settings__preference">
+              <div>
+                <strong>文章日期按哪个时区</strong>
+                <small id="site-settings-timezone-note">新建文章按它记时间；改动后，所有文章显示的日期都会按新时区重新计算</small>
+              </div>
+              <label class="site-settings__select">
+                <span class="sr-only">发布时区</span>
+                <select
+                  id="site-settings-timezone"
+                  aria-describedby="site-settings-timezone-note"
+                  data-initial-timezone="{{ publish_timezone | escape }}"
+                >
+                  {% for zone in site.data.publish_timezones %}
+                    <option
+                      value="{{ zone.id | escape }}"
+                      {% if zone.id == publish_timezone %}
+                        selected
+                      {% endif %}
+                    >
+                      {{ zone.label }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+              </label>
+            </div>
+          </section>
+
           {% comment %} 彩蛋：图鉴里公开哪些线索，以及那封加密的信（assets/js/eggs.js）。 {% endcomment %}
           {% assign egg_settings = site.data.eggs %}
           <section

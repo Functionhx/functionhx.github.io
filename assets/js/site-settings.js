@@ -98,6 +98,7 @@
     result: document.getElementById("site-settings-result"),
     slug: document.getElementById("site-settings-slug"),
     status: document.getElementById("site-settings-status"),
+    timezone: document.getElementById("site-settings-timezone"),
     titleZh: document.getElementById("site-settings-title-zh"),
     token: document.getElementById("site-settings-token"),
   };
@@ -301,6 +302,7 @@
     navigationDensityInputs.forEach((input) => {
       input.disabled = nextBusy;
     });
+    elements.timezone.disabled = nextBusy;
     updateSaveState();
   }
 
@@ -441,7 +443,7 @@
   }
 
   function updateSaveState() {
-    const count = changedSections().length + Number(hasNewSection());
+    const count = changedSections().length + Number(hasNewSection()) + Number(timezoneChanged());
     elements.saveState.textContent = count
       ? isEnglish
         ? `${count} unpublished change${count === 1 ? "" : "s"}`
@@ -468,6 +470,7 @@
     const draft = {
       version: 1,
       sections: changedSections().map((input) => ({ key: input.dataset.translationKey, value: input.checked })),
+      timezone: timezoneChanged() ? elements.timezone.value : "",
       newSection: {
         ...values,
         titleZh: elements.titleZh.value,
@@ -498,9 +501,10 @@
         if (typeof values[key] === "string") elements[key].value = values[key];
       }
       if (typeof values.visible === "boolean") elements.newVisible.checked = values.visible;
+      if (typeof draft.timezone === "string" && hasOption(elements.timezone, draft.timezone)) elements.timezone.value = draft.timezone;
       slugIsAutomatic = draft.slugIsAutomatic !== false;
       if (hasPendingSettings()) {
-        if (changedSections().length || hasNewSection()) elements.ownerDetails.open = true;
+        if (changedSections().length || hasNewSection() || timezoneChanged()) elements.ownerDetails.open = true;
         if (hasNewSection()) elements.newDetails.open = true;
         setStatus(isEnglish ? "Unpublished draft restored for this tab." : "已找回当前标签页的未发布草稿。");
       }
@@ -530,6 +534,7 @@
     sectionToggles.forEach((input) => {
       input.checked = input.dataset.initialVisible === "true";
     });
+    elements.timezone.value = elements.timezone.dataset.initialTimezone;
     clearNewSection();
     settingsChanged();
   }
@@ -567,8 +572,13 @@
     return selectedNavigationDensity() !== root.dataset.initialNavigationDensity;
   }
 
+  // 发布时区改变生成的页面，和栏目一样走「保存并发布」。
+  function timezoneChanged() {
+    return elements.timezone.value !== elements.timezone.dataset.initialTimezone;
+  }
+
   function hasPendingSettings() {
-    return changedSections().length > 0 || hasNewSection();
+    return changedSections().length > 0 || hasNewSection() || timezoneChanged();
   }
 
   function previewNavigationDensity() {
@@ -1138,6 +1148,7 @@
     season_effect: /^(?:off|auto|snow|sakura|rain|leaves)$/,
     site_font: /^[a-z][a-z0-9-]{1,40}$/,
     training_card_visible: /^(?:true|false)$/,
+    publish_timezone: /^(?:UTC|[A-Z][A-Za-z_]+\/[A-Za-z_]+)$/,
   });
 
   function setSiteUiValue(source, key, value) {
@@ -1217,6 +1228,16 @@
 
     // 顺手把实时设置的后备值也带上（有差异才会有条目）。
     const uiEntries = await bakedEntries(headSha);
+    if (timezoneChanged()) {
+      const zone = elements.timezone.value;
+      if (!hasOption(elements.timezone, zone)) throw new Error("Unsupported publish_timezone");
+      const uiEntry = uiEntries.find((entry) => entry.path === uiSettingsPath);
+      if (uiEntry) uiEntry.content = setSiteUiValue(uiEntry.content, "publish_timezone", zone);
+      else {
+        const source = await fetchFileAt(uiSettingsPath, headSha);
+        uiEntries.push({ content: setSiteUiValue(source, "publish_timezone", zone), mode: "100644", path: uiSettingsPath, type: "blob" });
+      }
+    }
 
     if (!hasNewSection(newSection)) return [...existingEntries, ...uiEntries];
     const newPath = `_pages/${newSection.slug}-zh.md`;
@@ -1471,6 +1492,7 @@
       sectionChanges.forEach((input) => {
         input.dataset.initialVisible = String(input.checked);
       });
+      elements.timezone.dataset.initialTimezone = elements.timezone.value;
       syncPersonalization();
       clearNewSection();
       setStatus(strings.commitSuccess, "success");
@@ -1544,6 +1566,7 @@
     });
   });
   elements.ownerDetails.addEventListener("toggle", updateSaveState);
+  elements.timezone.addEventListener("change", settingsChanged);
   eggInputs.forEach((input) => input.addEventListener("change", settingsChanged));
   letterSeal?.addEventListener("click", sealLetterDraft);
   Object.values(letterFields).forEach((field) =>

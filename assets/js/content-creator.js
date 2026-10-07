@@ -7,6 +7,9 @@
   const repository = root.dataset.repository;
   const owner = root.dataset.owner;
   const branch = root.dataset.branch;
+  // 发布时区（站长设置，默认北京时间）：默认的「现在」和写进 front matter 的偏移都按它算，
+  // 与构建时显示日期用的时区一致，而不是跟着这台电脑所在的时区走。
+  const publishTimeZone = supportedTimeZone(root.dataset.publishTimezone) || "Asia/Shanghai";
   const maxCoverBytes = 5 * 1024 * 1024;
   const maximumImageCount = 8;
   const maximumImageBytes = 1.5 * 1024 * 1024;
@@ -116,12 +119,57 @@
     return String(value).padStart(2, "0");
   }
 
+  function supportedTimeZone(zone) {
+    try {
+      return zone && new Intl.DateTimeFormat("en-US", { timeZone: zone }).resolvedOptions().timeZone ? zone : "";
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  // 某一时刻在发布时区里的年月日时分。
+  function zonedParts(date = new Date()) {
+    const parts = {};
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: publishTimeZone,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+      .formatToParts(date)
+      .forEach((part) => {
+        parts[part.type] = part.value;
+      });
+    return parts;
+  }
+
+  // 发布时区在某个墙上时间（YYYY-MM-DDTHH:mm）的 UTC 偏移，写成 Jekyll 认的 +0800 形式。
+  function zoneOffset(value) {
+    const offsetAt = (ms) => {
+      const name =
+        new Intl.DateTimeFormat("en-US", { timeZone: publishTimeZone, timeZoneName: "longOffset" })
+          .formatToParts(new Date(ms))
+          .find((part) => part.type === "timeZoneName")?.value || "GMT";
+      const match = name.match(/GMT([+-])(\d{2}):?(\d{2})?/);
+      return match ? (match[1] === "-" ? -1 : 1) * (Number(match[2]) * 60 + Number(match[3] || 0)) : 0;
+    };
+    const wall = Date.parse(`${value}:00Z`);
+    const minutes = offsetAt(wall - offsetAt(wall) * 60000);
+    const sign = minutes < 0 ? "-" : "+";
+    return `${sign}${pad(Math.floor(Math.abs(minutes) / 60))}${pad(Math.abs(minutes) % 60)}`;
+  }
+
   function localDateTime(date = new Date()) {
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    const parts = zonedParts(date);
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
   }
 
   function defaultSlug(type, date = new Date()) {
-    return `${type}-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}`;
+    const parts = zonedParts(date);
+    return `${type}-${parts.year}${parts.month}${parts.day}-${parts.hour}${parts.minute}`;
   }
 
   function slugify(value) {
@@ -802,7 +850,7 @@
 
   function dateParts(value) {
     const date = value.slice(0, 10);
-    return { date, year: date.slice(0, 4), jekyll: `${value.replace("T", " ")}:00 +0800` };
+    return { date, year: date.slice(0, 4), jekyll: `${value.replace("T", " ")}:00 ${zoneOffset(value)}` };
   }
 
   function sourceBlock(frontMatter, body) {

@@ -1,0 +1,17 @@
+# 站长设置里「发布时区」的可选项（站长决定 2026-10-07，默认北京时间）。
+# id 是 IANA 时区名：构建时文章日期按它显示（_plugins/publish_timezone.rb），新建文章按它写时间和偏移。
+# 用时区名而不是固定偏移，有夏令时的地区才能自动换算。
+- id: Asia/Shanghai
+  label: UTC+8 · 北京时间
+- id: Asia/Tokyo
+  label: UTC+9 · 东京
+- id: Europe/London
+  label: UTC+0/+1 · 伦敦
+- id: Europe/Berlin
+  label: UTC+1/+2 · 柏林
+- id: America/New_York
+  label: UTC−5/−4 · 纽约
+- id: America/Los_Angeles
+  label: UTC−8/−7 · 洛杉矶
+- id: UTC
+  label: UTC · 协调世界时

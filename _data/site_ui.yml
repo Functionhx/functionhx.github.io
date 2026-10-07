@@ -9,3 +9,6 @@ wind_strength: 150
 away_title_delay: 500
 # 首页的模型训练进度卡片是否显示。
 training_card_visible: true
+# 发布时区：文章日期按它显示，新建文章按它记时间。可选值见 _data/publish_timezones.yml。
+# 改它会重新生成页面，所以走「保存并发布」。
+publish_timezone: Asia/Shanghai
