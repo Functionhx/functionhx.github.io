@@ -236,9 +236,18 @@ html:not(.js) .writing-layout:has(.writing-filters[hidden]) {
   .writing-layout {
     grid-template-columns: 200px minmax(0, 1fr);
   }
+  /* 停在顶部时导航栏与正文对齐（见 function.css）。 */
+  html:not([data-function-scrolled="true"]) .function-blog-page #navbar:not(:has(.navbar-collapse-main.show)) {
+    width: calc(100% - 40px);
+    padding-inline: 0;
+    border-radius: 0;
+  }
 }
 @media (max-width: 760px) {
   .function-blog-page > .container[role="main"] {
+    width: calc(100% - 32px);
+  }
+  html:not([data-function-scrolled="true"]) .function-blog-page #navbar:not(:has(.navbar-collapse-main.show)) {
     width: calc(100% - 32px);
   }
   .writing-hero {
@@ -267,11 +276,159 @@ html:not(.js) .writing-layout:has(.writing-filters[hidden]) {
     font-size: 22px;
   }
 }
+/* 手机上的「筛选」按钮与底部面板（blog-cards.js）；宽屏上都不出现。 */
+.writing-filter-trigger,
+.writing-filter-sheet {
+  display: none;
+}
+@media (max-width: 760px) {
+  /* 主题链接排成可以横向滑动的一行，右边缘淡出，暗示还有。 */
+  .writing-hero {
+    gap: 16px;
+  }
+  .writing-topics {
+    flex-wrap: nowrap;
+    gap: 22px;
+    margin: 0 -16px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+    overflow-x: auto;
+    padding: 4px 40px 6px 16px;
+    scroll-padding-inline: 16px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    width: calc(100% + 32px);
+  }
+  .writing-topics::-webkit-scrollbar {
+    display: none;
+  }
+  .writing-topics a {
+    flex: none;
+    min-height: 44px;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+
+  html.js .writing-layout > .writing-filters {
+    display: none;
+  }
+  html.js .writing-filter-trigger {
+    align-items: center;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--global-divider-color);
+    color: var(--global-text-color);
+    display: flex;
+    font-size: 15px;
+    gap: 12px;
+    min-height: 52px;
+    padding: 0;
+    text-align: left;
+    width: 100%;
+  }
+  .writing-filter-trigger__state {
+    color: var(--global-text-color-light);
+    flex: 1;
+    font-size: 13px;
+    overflow: hidden;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .writing-filter-trigger::after {
+    border-bottom: 1.5px solid currentColor;
+    border-right: 1.5px solid currentColor;
+    content: "";
+    flex: none;
+    height: 7px;
+    margin-right: 4px;
+    transform: translateY(-2px) rotate(45deg);
+    width: 7px;
+  }
+
+  .writing-filter-sheet {
+    background: var(--global-bg-color);
+    border: 1px solid var(--global-divider-color);
+    border-bottom: 0;
+    border-radius: 18px 18px 0 0;
+    color: var(--global-text-color);
+    inset: auto 0 0;
+    margin: 0;
+    max-height: 82dvh;
+    max-width: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 20px max(20px, env(safe-area-inset-bottom, 0px));
+    position: fixed;
+    width: 100%;
+  }
+  .writing-filter-sheet[open] {
+    animation: writing-sheet-up 0.42s cubic-bezier(0.19, 1, 0.22, 1);
+    display: block;
+  }
+  .writing-filter-sheet::backdrop {
+    background: rgb(20 20 19 / 22%);
+  }
+  .writing-filter-sheet__head {
+    align-items: center;
+    background: var(--global-bg-color);
+    display: flex;
+    justify-content: space-between;
+    padding: 18px 0 6px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .writing-filter-sheet__head h2 {
+    font-size: 17px;
+    margin: 0;
+  }
+  .writing-filter-sheet__head button {
+    background: none;
+    border: 0;
+    color: var(--global-text-color);
+    font-size: 15px;
+    font-weight: 500;
+    margin-right: -10px;
+    min-height: 44px;
+    padding: 0 10px;
+  }
+  .writing-filter-sheet .writing-filters {
+    position: static;
+  }
+  .writing-filter-sheet .writing-filter:last-child {
+    border-bottom: 0;
+  }
+  /* 面板里三组都展开着，标题只是标题。 */
+  .writing-filter-sheet .writing-filter summary {
+    color: var(--global-text-color-light);
+    font-size: 13px;
+    padding: 16px 0 10px;
+    pointer-events: none;
+  }
+  .writing-filter-sheet .writing-filter summary::after {
+    content: none;
+  }
+  .writing-filter-sheet .writing-filter-options button {
+    font-size: 14px;
+    min-height: 40px;
+    padding: 8px 16px;
+  }
+}
+@keyframes writing-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .writing-topics a span,
   .writing-art,
   .writing-card-link,
   .writing-filter summary::after {
     transition: none;
+  }
+  .writing-filter-sheet[open] {
+    animation: none;
   }
 }

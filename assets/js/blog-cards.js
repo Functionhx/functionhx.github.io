@@ -52,6 +52,46 @@
     });
   });
 
+  // 手机上把侧栏搬进底部面板，宽屏再搬回来；按钮上写着当前的排序和筛选。
+  const layout = filters.parentElement;
+  const trigger = document.querySelector(".writing-filter-trigger");
+  const sheet = document.getElementById("writing-filter-sheet");
+  const summary = trigger?.querySelector("[data-writing-summary]");
+  const narrow = window.matchMedia("(max-width: 760px)");
+  const describe = () => {
+    if (!summary) return;
+    summary.textContent = [state.sort === "new" ? "最新在前" : "最早在前", state.category, state.tag && `#${state.tag}`].filter(Boolean).join(" · ");
+  };
+  const place = () => {
+    if (!trigger || !sheet) return;
+    if (narrow.matches) {
+      if (filters.parentElement !== sheet) {
+        sheet.append(filters);
+        filters.querySelectorAll("details").forEach((details) => {
+          details.open = true;
+        });
+      }
+      trigger.hidden = false;
+    } else {
+      if (sheet.open) sheet.close();
+      if (filters.parentElement !== layout) {
+        trigger.after(sheet);
+        sheet.after(filters);
+        filters.querySelectorAll("details").forEach((details) => {
+          details.open = details.hasAttribute("data-open-on-wide");
+        });
+      }
+      trigger.hidden = true;
+    }
+  };
+  trigger?.addEventListener("click", () => sheet.showModal());
+  sheet?.querySelector("[data-writing-sheet-close]")?.addEventListener("click", () => sheet.close());
+  filters.addEventListener("click", describe);
+  document.querySelectorAll("[data-writing-topic]").forEach((link) => link.addEventListener("click", describe));
+  narrow.addEventListener?.("change", place);
+
   filters.hidden = false;
+  place();
   apply();
+  describe();
 })();

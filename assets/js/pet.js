@@ -461,7 +461,9 @@
   let physics = 0;
   let dragging = false;
 
-  const floorY = () => window.innerHeight - height - 10;
+  // 页面底部有常驻的条（文章页手机上的阅读条）时，它在 <html data-floor-inset> 里写自己的高度，宠物站在它上面。
+  const floorInset = () => Number(document.documentElement.dataset.floorInset) || 0;
+  const floorY = () => window.innerHeight - height - 10 - floorInset();
   const clampX = (value) => Math.min(Math.max(value, 8), window.innerWidth - width - 8);
   function place(nextX, nextY) {
     x = clampX(nextX);
@@ -1370,6 +1372,10 @@
     if (collapsed) collapse();
     window.addEventListener("resize", () => {
       if (!ui.body.hidden) place(x, floorY());
+    });
+    // 底部的条升起或收起：站着的宠物跟着落到新的地面上（被拖着或正在飘的不管）。
+    window.addEventListener("functionhx:floor", () => {
+      if (!ui.body.hidden && !dragging && !physics) place(x, floorY());
     });
     ui.tab.addEventListener("click", () => {
       session.expandedOnMobile = true;

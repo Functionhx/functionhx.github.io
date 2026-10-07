@@ -851,6 +851,11 @@ html[data-published-training-card-visible="false"] [data-training-card] {
   html[data-function-scrolled="true"] .function-home-page #navbar {
     width: calc(100% - 40px);
   }
+  /* 停在顶部时导航栏与正文对齐（见 function.css）。 */
+  html:not([data-function-scrolled="true"]) .function-home-page #navbar:not(:has(.navbar-collapse-main.show)) {
+    padding-inline: 0;
+    border-radius: 0;
+  }
   .function-intro {
     grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
     gap: 48px;
@@ -868,6 +873,9 @@ html[data-published-training-card-visible="false"] [data-training-card] {
     padding-top: 80px;
   }
   .function-home-page > .container[role="main"] {
+    width: calc(100% - 32px);
+  }
+  html:not([data-function-scrolled="true"]) .function-home-page #navbar:not(:has(.navbar-collapse-main.show)) {
     width: calc(100% - 32px);
   }
   .function-intro {

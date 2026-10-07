@@ -20,7 +20,15 @@ const contracts = {
     ".site-author-menu[hidden]",
     "@media (max-width: 575.98px)",
   ],
-  "post.css": ["max-width: 48rem", "@media (max-width: 575.98px)", "@media (prefers-reduced-motion: reduce)"],
+  // 文章页 2026-09-26 改成 claude.dev 版式；手机上目录与进度由底部阅读条承担（2026-10-07）。
+  "post.css": [
+    "max-width: 732px",
+    "@media (max-width: 820px)",
+    ".post-dock.is-collapsed",
+    ".post-sheet::backdrop",
+    "@media (prefers-reduced-motion: reduce)",
+  ],
+  "blog-feed.css": ["@media (max-width: 760px)", ".writing-filter-sheet::backdrop", "@media (prefers-reduced-motion: reduce)"],
   "site-preferences.css": ["@media (prefers-color-scheme: dark)", "@media (prefers-reduced-motion: reduce)"],
   "site-settings.css": ["max-width: min(50rem, calc(100vw - 2rem))", ".site-settings-dialog::backdrop", "@media (max-width: 575px)"],
   "spark-writer.css": [".site-spark-writer[hidden]", "@media (max-width: 767px)", "@media (max-width: 420px)"],

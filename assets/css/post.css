@@ -375,9 +375,11 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   margin: 0 0 14px;
   max-width: 660px;
 }
+/* 小标题保留 claude.dev 的小号大写与字距，但用无衬线：中文标题里夹着的英文（如 GPA）
+   落到等宽字体会被拉得很开（站长确认 2026-10-07）。 */
 :is(.post--article #markdown-content, .post-prose) :is(h2, h3, h4) {
   color: var(--post-ink);
-  font-family: var(--post-mono);
+  font-family: var(--post-sans);
   font-size: 15.75px;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -388,6 +390,22 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
 }
 :is(.post--article #markdown-content, .post-prose) > :is(h2, h3):first-child {
   margin-top: -2px;
+}
+/* 正文里的一级标题（Markdown 的 #）：页面已经有文章标题，这里只当副标题，不再比标题还大。 */
+:is(.post--article #markdown-content, .post-prose) h1 {
+  color: var(--post-ink);
+  font-family: var(--function-serif, var(--post-sans));
+  font-size: 22.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.45;
+  margin: 54px 0 22px;
+  max-width: 660px;
+  scroll-margin-top: var(--post-rail-top);
+  text-wrap: balance;
+}
+:is(.post--article #markdown-content, .post-prose) > h1:first-child {
+  margin-top: -4px;
 }
 :is(.post--article #markdown-content, .post-prose) h3 {
   margin-top: 36px;
@@ -704,7 +722,7 @@ html:is([data-site-font="dyslexic"], [data-site-font="wenkai"])
   font-family: var(--site-font-family);
 }
 
-/* 选了 Anthropic Sans 时，文章里的小标签和标题连同等宽字体一起换成 Anthropic Mono。 */
+/* 选了 Anthropic Sans 时，文章里的等宽小标签（目录、元信息、代码头）换成 Anthropic Mono。 */
 html[data-site-font="anthropic-sans"] :is(.post--article, .post-paper) {
   --post-mono: "Anthropic Mono", "SF Mono", ui-monospace, Menlo, Consolas, "PingFang SC", "Microsoft YaHei", monospace;
 }
@@ -719,6 +737,10 @@ html[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose)
 }
 html[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) h3 {
   font-size: 19.5px;
+}
+html[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) h1 {
+  font-family: var(--site-font-family);
+  font-weight: 700;
 }
 html[data-site-font="wenkai"] :is(.post--article #markdown-content, .post-prose) h4 {
   font-size: 17px;
@@ -831,6 +853,298 @@ html[data-theme="dark"][data-site-font="wenkai"] :is(.post--article #markdown-co
     overflow-x: auto;
   }
 }
+/* ---------- phones: navigation, reading dock, contents sheet ----------
+   站长确认的手机视图（2026-10-07）。侧栏在 820px 以下收起，目录和进度改由底部的阅读条承担：
+   一条终端状态栏（└ 当前小节 ▓▓░░ 47%），点开从底部升起目录；向下读时收成一条细线，
+   往回滑展开；读到文末换成「全部文章 · 复制链接 · 顶部」。主题自带的「回到顶部」圆钮让位。 */
+.post-dock,
+.post-sheet {
+  display: none;
+}
+@media (max-width: 991.98px) {
+  /* 导航栏与正文左右对齐（之前比正文多缩进约 28px）。 */
+  html:has(.post--article) .function-page #navbar,
+  html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
+    width: calc(100% - 72px);
+  }
+}
+@media (max-width: 820px) {
+  html:has(.post--article) .function-page #navbar,
+  html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
+    width: calc(100% - 40px);
+  }
+  /* 打开菜单时和其他页面一样是一张圆角卡片，菜单项不贴边。 */
+  html:has(.post--article) .function-page #navbar:has(.navbar-collapse-main.show) {
+    border-radius: 18px;
+    padding-inline: 18px;
+    width: calc(100% - 16px);
+  }
+  html:has(.post--article) #back-to-top {
+    display: none !important;
+  }
+  /* 有脚本时侧栏剩下的「分享」与文末导航、阅读条重复，收起；没有脚本时它还在。 */
+  html.js .post-rail {
+    display: none;
+  }
+
+  /* 季节氛围在正文上让路：滚动时散去，停下后只留很淡的一层。 */
+  html[data-post-zone="body"]:has(.post--article) .season-canvas {
+    animation: none;
+    opacity: 0.32;
+    transition: opacity 1.6s ease;
+  }
+  html[data-post-zone="body"][data-post-scrolling]:has(.post--article) .season-canvas {
+    opacity: 0;
+    transition-duration: 0.35s;
+  }
+
+  .post-dock:not([hidden]) {
+    -webkit-backdrop-filter: blur(14px) saturate(1.15);
+    backdrop-filter: blur(14px) saturate(1.15);
+    background: color-mix(in srgb, var(--global-bg-color) 94%, transparent);
+    border: 1px solid var(--post-line-soft);
+    bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 14px 32px -20px rgba(var(--post-ink-rgb), 0.5);
+    color: var(--post-ink-2);
+    display: block;
+    font-family: var(--post-mono);
+    font-size: 12.5px;
+    left: 12px;
+    letter-spacing: 0.01em;
+    opacity: 0;
+    pointer-events: none;
+    position: fixed;
+    right: 12px;
+    transform: translateY(calc(100% + 28px));
+    transition:
+      transform 0.5s var(--post-ease),
+      opacity 0.3s ease,
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      box-shadow 0.3s ease;
+    z-index: 1030;
+  }
+  .post-dock.is-on {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+  /* 进度细线：展开时贴在底边，收起后只剩它。 */
+  .post-dock::before,
+  .post-dock::after {
+    bottom: -1px;
+    content: "";
+    height: 2px;
+    left: -1px;
+    position: absolute;
+    right: -1px;
+  }
+  .post-dock::before {
+    background: var(--post-line-soft);
+  }
+  .post-dock::after {
+    background: var(--post-ink);
+    transform: scaleX(var(--post-dock-ratio, 0));
+    transform-origin: left center;
+  }
+  .post-dock.is-collapsed {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    pointer-events: none;
+  }
+  .post-dock > * {
+    transition:
+      opacity 0.25s ease,
+      transform 0.45s var(--post-ease);
+  }
+  .post-dock.is-collapsed > * {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  .post-dock__bar {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: inherit;
+    display: flex;
+    font: inherit;
+    gap: 9px;
+    min-height: 46px;
+    padding: 0 14px;
+    text-align: left;
+    width: 100%;
+  }
+  .post-dock__branch {
+    color: var(--post-ink-4);
+  }
+  .post-dock__section {
+    color: var(--post-ink);
+    flex: 1;
+    font-family: var(--post-sans);
+    font-size: 14px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .post-dock__meter {
+    color: var(--post-ink-4);
+    white-space: nowrap;
+  }
+  .post-dock__meter b {
+    color: var(--post-ink);
+    font-weight: 400;
+  }
+  .post-dock__pct {
+    color: var(--post-ink-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 3ch;
+    text-align: right;
+  }
+  .post-dock__done {
+    display: none;
+  }
+  .post-dock[data-state="done"] .post-dock__bar {
+    display: none;
+  }
+  .post-dock[data-state="done"] .post-dock__done {
+    align-items: stretch;
+    display: flex;
+  }
+  :is(.post-dock__done, .post-sheet__actions) :is(a, button) {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: var(--post-ink-2);
+    display: flex;
+    flex: 1;
+    font: inherit;
+    justify-content: center;
+    min-height: 46px;
+    padding: 0 10px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  :is(.post-dock__done, .post-sheet__actions) > * + * {
+    border-left: 1px solid var(--post-line-soft);
+  }
+  :is(.post-dock__done, .post-sheet__actions) :is(a, button):active {
+    color: var(--post-ink);
+  }
+  :is(.post-dock__done, .post-sheet__actions) [hidden] {
+    display: none;
+  }
+
+  /* 目录面板：从底部升起的一张纸。 */
+  .post-sheet {
+    background: var(--global-bg-color);
+    border: 0;
+    border-top: 1px solid var(--post-line);
+    color: var(--post-ink);
+    flex-direction: column;
+    font-family: var(--post-mono);
+    inset: auto 0 0;
+    margin: 0;
+    max-height: min(78dvh, 640px);
+    max-width: none;
+    padding: 0 20px max(8px, env(safe-area-inset-bottom, 0px));
+    position: fixed;
+    width: 100%;
+  }
+  .post-sheet[open] {
+    animation: post-sheet-up 0.42s var(--post-ease);
+    display: flex;
+  }
+  .post-sheet::backdrop {
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    background: rgba(var(--post-ink-rgb), 0.18);
+  }
+  .post-sheet__head {
+    align-items: center;
+    border-bottom: 1px solid var(--post-line-soft);
+    display: flex;
+    gap: 12px;
+    padding: 14px 0 12px;
+  }
+  .post-sheet__head p {
+    color: var(--post-ink-3);
+    font-size: 13.5px;
+    letter-spacing: 0.02em;
+    margin: 0;
+  }
+  .post-sheet__pct {
+    color: var(--post-ink-4);
+    flex: 1;
+    font-size: 12.5px;
+  }
+  .post-sheet__close {
+    background: none;
+    border: 0;
+    color: var(--post-ink-2);
+    font: inherit;
+    font-size: 13.5px;
+    margin-right: -10px;
+    min-height: 44px;
+    padding: 0 10px;
+  }
+  .post-sheet__tree {
+    margin: 0 -20px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 6px 20px;
+  }
+  .post-sheet__tree a {
+    color: var(--post-ink-2);
+    display: block;
+    font-family: var(--post-sans);
+    font-size: 15px;
+    line-height: 1.45;
+    overflow: hidden;
+    padding: 11px 0;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .post-sheet__tree a + a {
+    border-top: 1px solid var(--post-line-soft);
+  }
+  .post-sheet__tree .post-tree__branch {
+    color: var(--post-ink-4);
+    font-family: var(--post-mono);
+    margin-right: 10px;
+  }
+  .post-sheet__tree a.is-active {
+    color: var(--post-ink);
+  }
+  .post-sheet__tree a.is-active .post-tree__branch {
+    color: var(--post-ink);
+  }
+  .post-sheet__tree a.is-active::after {
+    color: var(--post-ink-3);
+    content: "  ← 正在读";
+    font-family: var(--post-mono);
+    font-size: 12px;
+  }
+  .post-sheet__actions {
+    border-top: 1px solid var(--post-line-soft);
+    display: flex;
+    font-size: 13px;
+    margin: 0 -20px;
+  }
+  :is(.post-dock, .post-sheet) :is(a, button):focus-visible {
+    outline-offset: -4px;
+  }
+}
+@keyframes post-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .post-reading-progress {
     animation: none;
@@ -840,7 +1154,12 @@ html[data-theme="dark"][data-site-font="wenkai"] :is(.post--article #markdown-co
     animation: none;
   }
   .post-rail__title,
-  .post-tree a {
+  .post-tree a,
+  .post-dock:not([hidden]),
+  .post-dock > * {
     transition: none;
+  }
+  .post-sheet[open] {
+    animation: none;
   }
 }

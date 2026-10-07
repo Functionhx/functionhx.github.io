@@ -179,5 +179,44 @@ layout: default
       </footer>
     </div>
   </div>
+
+  {% comment %}
+    手机上的阅读条（≤820px，侧栏收起时）：一条终端状态栏，写着当前小节和进度，点开是
+    从底部升起的目录；读到文末换成「全部文章 · 复制链接 · 回到顶部」。向下读时收成
+    一条细线，往回滑再展开。由 post.js 显示，没有脚本时不出现。
+  {% endcomment %}
+  <div class="post-dock" id="post-dock" data-state="reading" hidden>
+    <button
+      type="button"
+      class="post-dock__bar"
+      id="post-dock-open"
+      aria-haspopup="dialog"
+      aria-controls="post-dock-sheet"
+      aria-describedby="post-dock-pct"
+    >
+      <span class="post-dock__branch" aria-hidden="true">└</span>
+      <span class="post-dock__section" id="post-dock-section">{{ page.title }}</span>
+      <span class="post-dock__meter" aria-hidden="true"><b></b><span></span></span>
+      <span class="post-dock__pct" id="post-dock-pct">00%</span>
+    </button>
+    <div class="post-dock__done">
+      <a href="{{ back_path | relative_url }}">← {{ back_label }}</a>
+      <button type="button" data-post-copy hidden>复制链接</button>
+      <button type="button" data-post-top>↑ 顶部</button>
+    </div>
+  </div>
+  <dialog class="post-sheet" id="post-dock-sheet" aria-labelledby="post-sheet-title">
+    <div class="post-sheet__head">
+      <p id="post-sheet-title">目录</p>
+      <span class="post-sheet__pct" aria-hidden="true"></span>
+      <button type="button" class="post-sheet__close" data-post-sheet-close>关闭</button>
+    </div>
+    <nav class="post-sheet__tree" id="post-sheet-tree" aria-label="文章目录"></nav>
+    <div class="post-sheet__actions">
+      <button type="button" data-post-top>↑ 回到顶部</button>
+      <button type="button" data-post-copy hidden>复制链接</button>
+      <a href="{{ back_path | relative_url }}">{{ back_label }}</a>
+    </div>
+  </dialog>
 </div>
 <script src="{{ '/assets/js/post.js' | relative_url | bust_file_cache }}" defer></script>

@@ -579,6 +579,15 @@ html[data-function-scrolled="true"] .function-page #navbar {
   .function-control-tip {
     display: none;
   }
+  /* 停在页面顶部、菜单没打开时，导航栏和正文左右对齐（与桌面一致）；滚动后或打开菜单才变成胶囊。
+     首页、博客页和文章页的正文宽度不同，各自在 function-home.css / blog-feed.css / post.css 里对齐。 */
+  html:not([data-function-scrolled="true"]):not(:has(.post--article))
+    .function-page:not(.function-blog-page, .function-home-page)
+    #navbar:not(:has(.navbar-collapse-main.show)) {
+    width: calc(100% - 56px);
+    padding-inline: 0;
+    border-radius: 0;
+  }
 }
 @media (max-width: 560px) {
   body.function-page {
@@ -587,6 +596,11 @@ html[data-function-scrolled="true"] .function-page #navbar {
   .function-page > .container[role="main"] {
     width: calc(100% - 40px);
     margin-bottom: 30px !important;
+  }
+  html:not([data-function-scrolled="true"]):not(:has(.post--article))
+    .function-page:not(.function-blog-page, .function-home-page)
+    #navbar:not(:has(.navbar-collapse-main.show)) {
+    width: calc(100% - 40px);
   }
   .function-page .post-header:not(.post-hero) {
     padding-top: 25px;

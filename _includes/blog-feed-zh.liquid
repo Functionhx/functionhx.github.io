@@ -45,6 +45,26 @@
   </header>
 
   <div class="writing-layout">
+    {%- comment -%}
+      手机上（≤760px）三组筛选收成一行「筛选」按钮，点开从底部升起（blog-cards.js 把侧栏搬进面板）；
+      这样第一屏就能看到文章。按钮在有脚本时从第一帧就占好位置，没有脚本时不出现。
+    {%- endcomment -%}
+    <button
+      type="button"
+      class="writing-filter-trigger"
+      aria-haspopup="dialog"
+      aria-controls="writing-filter-sheet"
+      hidden
+    >
+      <span>筛选</span>
+      <span class="writing-filter-trigger__state" data-writing-summary>最新在前</span>
+    </button>
+    <dialog class="writing-filter-sheet" id="writing-filter-sheet" aria-labelledby="writing-filter-sheet-title">
+      <div class="writing-filter-sheet__head">
+        <h2 id="writing-filter-sheet-title">筛选</h2>
+        <button type="button" data-writing-sheet-close>完成</button>
+      </div>
+    </dialog>
     <aside class="writing-filters" aria-label="筛选文章" hidden>
       <details class="writing-filter" data-open-on-wide>
         <summary>排序</summary>
