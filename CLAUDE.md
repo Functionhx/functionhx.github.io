@@ -188,6 +188,19 @@ content logging.
   `_data/publish_timezones.yml`), applied by `_plugins/publish_timezone.rb`; never set `timezone` in
   `_config.yml`.
 
+## Zhihu syndication
+
+`scripts/zhihu.py` (stdlib only) copies a published post to a Zhihu column. First publication uses Zhihu's
+official Publish OpenAPI (`zhihu/ZhihuPublisher` protocol, HMAC-signed, 50/day, **no drafts**): it writes a
+local preview and sends only after the owner types 「发布」. The official API cannot edit, so later changes
+go through the web-session draft endpoint (`PATCH /api/articles/<id>/draft`, cookie) and the owner clicks
+「发布更新」 on Zhihu; the script must never call a web publish endpoint (`validate_content.py`). The body is
+converted from the built `_site` page into Zhihu's HTML whitelist; images require the official
+`zhihu-mediacloud-uploader` SDK. Credentials come from env vars, the macOS Keychain (`functionhx-zhihu`) or
+`~/.zhihu/openapi-credentials.json`, and are never written or printed. `_data/syndication.json` records
+`permalink → zhihu.url/id/fingerprint`; posts with a record show 「同步于知乎」 and the Agent leaf links it.
+`npm run test:zhihu` runs everything against local mock servers.
+
 ## Theme override ledger
 
 The theme runtime comes from the pinned `al_folio_core` gem. Local files in

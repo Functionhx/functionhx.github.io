@@ -33,3 +33,6 @@ __pycache__/
 
 # 本地草稿工具，与站点构建无关
 _prototypes/
+
+# scripts/zhihu.py 的本地预览、请求与响应（不含密钥）
+.zhihu-out/

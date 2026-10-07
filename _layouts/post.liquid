@@ -176,12 +176,21 @@ layout: default
         {% endif %}
       {% endif %}
 
+      {% comment %} 同步到知乎的文章（scripts/zhihu.py 写 _data/syndication.json）：文末一枚小印章。 {% endcomment %}
+      {% assign zhihu = site.data.syndication[page.url].zhihu %}
       <footer class="post-footer-nav">
         <p>继续浏览</p>
         <a href="{{ back_path | relative_url }}">
           <span aria-hidden="true">←</span>
           {{ back_label }}
         </a>
+        {% if zhihu.url %}
+          <a class="post-syndication" href="{{ zhihu.url | escape }}" rel="external noopener" target="_blank">
+            <span class="post-syndication__seal" aria-hidden="true">知</span>
+            同步于知乎，也可以在那里讨论
+            <span aria-hidden="true">↗</span>
+          </a>
+        {% endif %}
       </footer>
     </div>
   </div>

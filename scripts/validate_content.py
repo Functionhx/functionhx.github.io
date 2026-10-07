@@ -301,6 +301,34 @@ def main() -> int:
                     "must be 黄, 粉, 绿 or 蓝"
                 )
 
+    # 知乎同步（站长决定 2026-10-07）：scripts/zhihu.py 首发走官方 Publish OpenAPI（确认后才发），
+    # 改动只存草稿、绝不调用网页接口的发布；同步记录 _data/syndication.json 只能指向公开文章与知乎专栏。
+    zhihu_cli = (ROOT / "scripts" / "zhihu.py").read_text(encoding="utf-8") if (ROOT / "scripts" / "zhihu.py").exists() else ""
+    for contract in ('/openapi/publish"', '"confirmed": True', '"X-Extra-Info": ""', '!= "发布"', "/draft", '"草稿"'):
+        if contract not in zhihu_cli:
+            errors.append(f"scripts/zhihu.py: contract {contract!r} missing")
+    if re.search(r"/api/articles/[^\"'\n]*/publish", zhihu_cli):
+        errors.append("scripts/zhihu.py: the web session must only save drafts, never call the article publish endpoint")
+    published_permalinks = {
+        str(data.get("permalink"))
+        for collection, _path, data in records
+        if collection == "_posts" and data.get("published") is not False
+    }
+    try:
+        syndication = json.loads((ROOT / "_data" / "syndication.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        errors.append(f"_data/syndication.json: {error}")
+        syndication = {}
+    for permalink, channels in (syndication.items() if isinstance(syndication, dict) else []):
+        if permalink not in published_permalinks:
+            errors.append(f"_data/syndication.json: {permalink!r} is not the permalink of a published post")
+        zhihu = channels.get("zhihu") if isinstance(channels, dict) else None
+        if not isinstance(zhihu, dict) or not re.fullmatch(r"https://zhuanlan\.zhihu\.com/p/\d+", str(zhihu.get("url", ""))):
+            errors.append(f"_data/syndication.json: {permalink}: zhihu.url must be a zhuanlan.zhihu.com/p/<id> link")
+            continue
+        if not re.fullmatch(r"[0-9a-f]{64}", str(zhihu.get("fingerprint", ""))):
+            errors.append(f"_data/syndication.json: {permalink}: zhihu.fingerprint must be a sha256 hex digest")
+
     # 网站宠物：浏览器端不碰站长凭据与 GitHub，大脑的安全规则不能被删掉；每只宠物的台词、人设、形象与授权记录对得上。
     pet_js = (ROOT / "assets" / "js" / "pet.js").read_text(encoding="utf-8") if (ROOT / "assets" / "js" / "pet.js").exists() else ""
     for forbidden in ("functionhxGitHubAuth", "github-auth-vault", "indexedDB", "api.github.com", "Authorization", "navigator.clipboard", "eval(", "new Function"):

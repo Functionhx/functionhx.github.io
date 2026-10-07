@@ -77,6 +77,7 @@ module Functionhx
           "date" => doc.date.strftime("%Y-%m-%d"),
           "url" => base + doc.url,
           "md" => base + leaf(doc.url),
+          "zhihu" => site.data.dig("syndication", doc.url, "zhihu", "url").to_s,
           "categories" => Array(doc.data["categories"]).map(&:to_s),
           "tags" => Array(doc.data["tags"]).map(&:to_s),
           "description" => doc.data["description"].to_s.strip,
@@ -253,7 +254,8 @@ module Functionhx
       # 叶子：每篇文章、项目、动态
       (m["writings"] + m["projects"] + m["news"]).each do |item|
         meta = [item["date"], item["kind_label"], *Array(item["categories"])].compact.reject(&:empty?).join(" · ")
-        leaf_text = ["# #{item['title']}", "", "> 原文：#{item['url']} · 上级：#{base}/llms.txt", ""]
+        zhihu = item["zhihu"].to_s.empty? ? "" : " · 知乎同步：#{item['zhihu']}"
+        leaf_text = ["# #{item['title']}", "", "> 原文：#{item['url']}#{zhihu} · 上级：#{base}/llms.txt", ""]
         leaf_text << meta << "" unless meta.empty?
         leaf_text << item["body"].to_s
         files[item["md"].delete_prefix(base)] = leaf_text.join("\n").rstrip + "\n"

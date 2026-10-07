@@ -698,6 +698,35 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
 .post-footer-nav a:hover {
   color: var(--post-ink);
 }
+/* 同步于知乎：一枚朱红小印，盖在「继续浏览」的末尾。 */
+.post-footer-nav .post-syndication {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  width: fit-content;
+}
+.post-syndication__seal {
+  border: 1.5px solid #b8432f;
+  border-radius: 3px;
+  color: #b8432f;
+  display: inline-grid;
+  font-family: var(--function-serif, serif);
+  font-size: 13px;
+  height: 22px;
+  line-height: 1;
+  place-items: center;
+  transform: rotate(-6deg);
+  transition: transform 0.3s var(--post-ease);
+  width: 22px;
+}
+html[data-theme="dark"] .post-syndication__seal {
+  border-color: #d9705c;
+  color: #d9705c;
+}
+.post-footer-nav .post-syndication:hover .post-syndication__seal {
+  transform: rotate(0deg) scale(1.06);
+}
 .post--article a:focus-visible,
 .post--article button:focus-visible {
   outline: 1px solid var(--post-ink);
