@@ -439,6 +439,83 @@ html[data-theme="dark"] [data-sticky-color="blue"] {
   }
 }
 
+/* ---------- 入口：左侧目录栏与手机目录面板 ---------- */
+.post-rail__notes {
+  margin-top: 26px;
+}
+.post-rail__notes[hidden],
+.post-sheet__notes[hidden] {
+  display: none;
+}
+.post-rail__pad {
+  background: #fbefb2;
+  box-shadow: 0 2px 4px -2px rgba(40, 30, 0, 0.4);
+  clip-path: polygon(0 0, 100% 0, 100% 64%, 64% 100%, 0 100%);
+  display: inline-block;
+  height: 11px;
+  margin-right: 8px;
+  transform: rotate(-6deg) translateY(1px);
+  width: 11px;
+}
+html[data-theme="dark"] .post-rail__pad {
+  background: #e6d68a;
+}
+:is(.post-rail__notes, .post-sheet__notes) :is(button, a) {
+  background: none;
+  border: 0;
+  color: var(--post-ink-2);
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.45;
+  padding: 2px 0;
+  text-align: left;
+  text-decoration: none;
+}
+.post-rail__notes :is(button, a)::before {
+  color: var(--post-ink-4);
+  content: "└ ";
+}
+:is(.post-rail__notes, .post-sheet__notes) :is(button, a):hover {
+  color: var(--post-ink);
+}
+:is(.post-rail__notes, .post-sheet__notes) [data-hinting] {
+  color: var(--post-ink);
+}
+:is(.post-rail__notes, .post-sheet__notes) [hidden] {
+  display: none;
+}
+.post-sheet__notes {
+  align-items: center;
+  border-top: 1px solid var(--post-line-soft);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0 -20px;
+  padding: 6px 20px;
+}
+.post-sheet__notes .post-rail__pad {
+  margin-right: -6px;
+}
+.post-sheet__notes :is(button, a) {
+  font-family: var(--post-sans);
+  font-size: 14px;
+  min-height: 44px;
+}
+/* 点了入口却没选文字：正文段落轻轻亮一下，告诉读者去哪里选。 */
+@keyframes sticky-hint {
+  50% {
+    background-color: var(--sticky-hint, rgba(245, 212, 70, 0.16));
+  }
+}
+html[data-theme="dark"] .post--article {
+  --sticky-hint: rgba(230, 214, 138, 0.08);
+}
+.post--article #markdown-content.is-sticky-hinting > p {
+  animation: sticky-hint 1.3s ease 2;
+}
+
 /* ---------- 文末：我的便利贴 ---------- */
 .sticky-tray {
   font-family: var(--post-mono);
@@ -547,6 +624,7 @@ html[data-theme="dark"] [data-sticky-color="blue"] {
   }
   .post--article .sticky-note.is-sticking,
   .post--article .sticky-note.is-peeling,
+  .post--article #markdown-content.is-sticky-hinting > p,
   .sticky-pin {
     animation: none;
   }

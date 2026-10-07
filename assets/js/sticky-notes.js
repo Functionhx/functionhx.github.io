@@ -379,8 +379,39 @@
 
   const isOwner = () => root.dataset.ownerVerified === "true" && root.dataset.ownerMode === "true";
 
+  // 侧栏与手机目录面板里的入口：一直看得到；点一下时如果已经选中文字就直接贴，否则告诉读者怎么做。
+  const entries = [...document.querySelectorAll("[data-sticky-entry]")];
+  entries.forEach((entry) => {
+    entry.hidden = false;
+    const start = entry.querySelector("[data-sticky-start]");
+    const idle = start.textContent;
+    start.addEventListener("pointerdown", (event) => event.preventDefault());
+    start.addEventListener("click", () => {
+      const anchor = anchorFromSelection();
+      if (anchor?.range) {
+        pending = anchor;
+        pin.click();
+        return;
+      }
+      document.getElementById("post-dock-sheet")?.open && document.getElementById("post-dock-sheet").close();
+      start.textContent = coarse.matches ? "长按正文选中文字，再点「贴便利贴」" : "先在正文里拖选一段文字";
+      start.dataset.hinting = "true";
+      content.classList.add("is-sticky-hinting");
+      window.setTimeout(() => {
+        start.textContent = idle;
+        delete start.dataset.hinting;
+        content.classList.remove("is-sticky-hinting");
+      }, 2600);
+    });
+  });
+
   function updateTray() {
     const count = mine.length;
+    entries.forEach((entry) => {
+      const link = entry.querySelector("[data-sticky-mine]");
+      link.hidden = !count;
+      link.textContent = `我的便利贴 · ${count} 张`;
+    });
     tray.dataset.empty = String(!count);
     trayTitle.textContent = count ? `我的便利贴 · ${count} 张` : "便利贴";
     trayNote.textContent = count

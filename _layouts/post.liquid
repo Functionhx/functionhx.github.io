@@ -133,6 +133,12 @@ layout: default
         </div>
         <p class="post-rail__hint">按 ↑ / ↓ 滚动</p>
       {% endif %}
+      {% comment %} 便利贴的入口（sticky-notes.js 显示并更新张数）：读的时候一直看得到。 {% endcomment %}
+      <div class="post-rail__notes" data-sticky-entry hidden>
+        <p class="post-rail__label"><span class="post-rail__pad" aria-hidden="true"></span>便利贴</p>
+        <button type="button" data-sticky-start>选中正文，贴一张</button>
+        <a href="#sticky-tray-title" data-sticky-mine hidden>我的便利贴</a>
+      </div>
       <div class="post-rail__share">
         <p class="post-rail__label">分享</p>
         <button type="button" id="post-copy-link" hidden>复制链接</button>
@@ -212,6 +218,11 @@ layout: default
       <button type="button" class="post-sheet__close" data-post-sheet-close>关闭</button>
     </div>
     <nav class="post-sheet__tree" id="post-sheet-tree" aria-label="文章目录"></nav>
+    <div class="post-sheet__notes" data-sticky-entry hidden>
+      <span class="post-rail__pad" aria-hidden="true"></span>
+      <button type="button" data-sticky-start>便利贴：选中正文，贴一张</button>
+      <a href="#sticky-tray-title" data-sticky-mine hidden>我的便利贴</a>
+    </div>
     <div class="post-sheet__actions">
       <button type="button" data-post-top>↑ 回到顶部</button>
       <button type="button" data-post-copy hidden>复制链接</button>
