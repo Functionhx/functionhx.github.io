@@ -276,6 +276,31 @@ def main() -> int:
     for social, expected_logo in expected_social_logos.items():
         if not isinstance(socials.get(social), dict) or socials[social].get("logo") != expected_logo:
             errors.append(f"_data/socials.yml: {social} must use {expected_logo}")
+    # 文章便利贴（站长决定 2026-10-07）：读者的便利贴只在本机，脚本不发任何网络请求、不碰站长凭据；
+    # 「公开」只能交给原位编辑器（站长检查后 Commit）。文章里的颜色只能是黄、粉、绿、蓝。
+    sticky_js_path = ROOT / "assets" / "js" / "sticky-notes.js"
+    sticky_js = sticky_js_path.read_text(encoding="utf-8") if sticky_js_path.exists() else ""
+    if not sticky_js:
+        errors.append("assets/js/sticky-notes.js: missing")
+    for forbidden in ("fetch(", "XMLHttpRequest", "sendBeacon", "WebSocket", "EventSource", "api.github.com", "functionhxGitHubAuth", "github-auth-vault", "indexedDB", "Authorization", "eval(", "new Function"):
+        if forbidden in sticky_js:
+            errors.append(f"assets/js/sticky-notes.js: sticky notes must not use {forbidden!r}")
+    for contract in ('"functionhx:sticky-notes"', '"functionhx:sticky-publish"', '[data-author-action="source-edit"]'):
+        if contract not in sticky_js:
+            errors.append(f"assets/js/sticky-notes.js: contract {contract!r} missing")
+    inline_editor_source = (ROOT / "assets" / "js" / "inline-editor.js").read_text(encoding="utf-8")
+    if '"functionhx:sticky-publish"' not in inline_editor_source or "applyPendingStickyNote" not in inline_editor_source:
+        errors.append("assets/js/inline-editor.js: the public sticky-note hand-off is missing")
+    if not (ROOT / "assets" / "fonts" / "lxgw-wenkai" / "sticky-subset.woff2").exists():
+        errors.append("assets/fonts/lxgw-wenkai/sticky-subset.woff2: run scripts/subset_sticky_font.py")
+    for post_path in sorted((ROOT / "_posts").glob("*.md")):
+        for match in re.finditer(r"^>\s*\[!便利贴([^\]\n]*)\]", post_path.read_text(encoding="utf-8"), re.MULTILINE):
+            if match.group(1).strip() not in {"", "黄", "粉", "绿", "蓝"}:
+                errors.append(
+                    f"{post_path.relative_to(ROOT)}: sticky-note colour {match.group(1).strip()!r} "
+                    "must be 黄, 粉, 绿 or 蓝"
+                )
+
     # 网站宠物：浏览器端不碰站长凭据与 GitHub，大脑的安全规则不能被删掉；每只宠物的台词、人设、形象与授权记录对得上。
     pet_js = (ROOT / "assets" / "js" / "pet.js").read_text(encoding="utf-8") if (ROOT / "assets" / "js" / "pet.js").exists() else ""
     for forbidden in ("functionhxGitHubAuth", "github-auth-vault", "indexedDB", "api.github.com", "Authorization", "navigator.clipboard", "eval(", "new Function"):

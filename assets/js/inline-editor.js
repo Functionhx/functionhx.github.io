@@ -475,6 +475,49 @@
     elements.result.hidden = true;
   }
 
+  // 站长在文章里把一张便利贴选成「公开」（assets/js/sticky-notes.js 放在 sessionStorage 里）：
+  // 插到原文对应段落后面，写成 > [!便利贴] 引用块，交给站长检查后再 Commit。
+  // 找不到那段原文就暂放文末，并提示挪到合适的位置。
+  const stickyPublishKey = "functionhx:sticky-publish";
+  const stickyMarks = { yellow: "", pink: " 粉", mint: " 绿", blue: " 蓝" };
+  function applyPendingStickyNote() {
+    let request = null;
+    try {
+      request = JSON.parse(window.sessionStorage.getItem(stickyPublishKey) || "null");
+    } catch (_error) {
+      request = null;
+    }
+    if (!request || request.version !== 1 || request.path !== activeSourcePath || typeof request.text !== "string" || !request.text.trim())
+      return false;
+    window.sessionStorage.removeItem(stickyPublishKey);
+    const mark = stickyMarks[request.color] ?? "";
+    const snippet = request.text
+      .trim()
+      .split(/\r?\n/)
+      .map((line, i) => (i === 0 ? `> [!便利贴${mark}] ${line}` : `> ${line}`.trimEnd()))
+      .join("\n");
+    const body = elements.body.value;
+    const quote = String(request.quote || "");
+    let at = -1;
+    for (const probe of [quote, quote.slice(0, 24), quote.slice(0, 12)]) {
+      if (probe && (at = body.indexOf(probe)) !== -1) break;
+    }
+    const found = at !== -1;
+    const paragraphEnd = found ? body.indexOf("\n\n", at) : -1;
+    const insertAt = found ? (paragraphEnd === -1 ? body.length : paragraphEnd) : body.trimEnd().length;
+    const before = body.slice(0, insertAt).replace(/\n*$/, "");
+    const after = body.slice(insertAt).replace(/^\n*/, "");
+    elements.body.value = `${before}\n\n${snippet}\n${after ? `\n${after}` : ""}`;
+    handleEditorChange();
+    setStatus(
+      found ? "公开便利贴已插到原文对应段落后面，检查无误后再 Commit。" : "没找到那段原文，公开便利贴暂放在文末，请挪到合适的位置后再 Commit。",
+      found ? "success" : "error"
+    );
+    selectPanel("body");
+    elements.body.setSelectionRange(before.length + 2, before.length + 2 + snippet.length);
+    return true;
+  }
+
   function decodeBase64Utf8(encoded) {
     const binary = window.atob(encoded.replace(/\s/g, ""));
     const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
@@ -564,7 +607,7 @@
       editorLoaded = true;
       elements.form.hidden = false;
       window.requestAnimationFrame(() => {
-        if (session === editorSession && requestedPath === activeSourcePath && !root.hidden) elements.title.focus();
+        if (session === editorSession && requestedPath === activeSourcePath && !root.hidden && !applyPendingStickyNote()) elements.title.focus();
       });
     } catch (error) {
       if (requestVersion !== loadVersion || session !== editorSession) return;
@@ -617,7 +660,7 @@
     document.body.classList.add("site-inline-editor-active");
     root.scrollIntoView({ block: "start" });
     if (!editorLoaded) loadSource();
-    else window.requestAnimationFrame(() => elements.title.focus());
+    else window.requestAnimationFrame(() => applyPendingStickyNote() || elements.title.focus());
   }
 
   function closeEditor() {

@@ -169,6 +169,25 @@ content logging.
   persona's safety rules. Tests: `npm run test:pet` (Playwright, fake brain, a fake registered sprite set) and
   `npm run test:pet-brain` (mocked providers + KV); both are manual, not in CI.
 
+## Article sticky notes and phone reading
+
+- **Author notes** are written right after the paragraph they annotate: `> [!便利贴] …` (colour word
+  optional: 黄 / 粉 / 绿 / 蓝; `validate_content.py` rejects others). `_plugins/sticky_notes.rb` turns them
+  into `<aside class="sticky-note">` for posts; the Agent leaf degrades them to `> 便利贴（作者）：`.
+  After adding notes with new characters, build and run `scripts/subset_sticky_font.py` (LXGW WenKai
+  subset, face "Function Sticky"); `check_built_site.py` prints how many are pending.
+- **Reader notes** (`assets/js/sticky-notes.js`) live only in `localStorage` (`functionhx:sticky-notes`),
+  anchored by quote + 32 characters of context; the script must not make network requests or touch
+  credentials (`validate_content.py`). An owner's note marked 公开 is handed to the inline editor via
+  `sessionStorage` (`functionhx:sticky-publish`) and inserted into the Markdown for review — never
+  committed directly. Layout: right margin (wide), between paragraphs (medium / no JS), folded (phones).
+- **Phones** (≤820px): the article rail is replaced by the bottom reading dock and contents sheet in
+  `post.liquid` / `post.js`; the dock writes `<html data-floor-inset>` so the pet stands on it.
+  `npm run test:mobile-layout` and `npm run test:sticky-notes` cover both (manual, not in CI).
+- **Publish timezone** is `publish_timezone` in `_data/site_ui.yml` (default `Asia/Shanghai`, choices in
+  `_data/publish_timezones.yml`), applied by `_plugins/publish_timezone.rb`; never set `timezone` in
+  `_config.yml`.
+
 ## Theme override ledger
 
 The theme runtime comes from the pinned `al_folio_core` gem. Local files in

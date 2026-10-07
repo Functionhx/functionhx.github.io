@@ -15,5 +15,8 @@ assets/third-party/
 # scripts/subset_serif_font.py 生成，unicode-range 是一整行
 assets/fonts/noto-serif-sc/
 
+# scripts/subset_sticky_font.py 生成，同上
+assets/fonts/lxgw-wenkai/
+
 # 带 Jekyll front matter 的 JSON 模板（输出 _data/pet.yml），Prettier 解析不了
 assets/pet/lines.json

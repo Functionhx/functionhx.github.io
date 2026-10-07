@@ -1,0 +1,553 @@
+/*
+ * 文章便利贴（站长决定 2026-10-07；结构见 _plugins/sticky_notes.rb 与 assets/js/sticky-notes.js）。
+ * 一种纸、四种颜色，手写字（霞鹜文楷，作者便利贴用到的字自托管为 Function Sticky）。
+ * 没有脚本时便利贴夹在段落之间；脚本按宽度把它们贴到右侧留白（margin）或折成段尾折角（fold）。
+ */
+
+.post--article,
+.sticky-pin {
+  --sticky-font: "Function Sticky", "LXGW WenKai", "Kaiti SC", "STKaiti", "KaiTi", "BiauKai", serif;
+  /* 读者自己写的字不在自托管子集里：整段用 CDN 的完整文楷，免得同一张纸上一半手写一半黑体。 */
+  --sticky-font-free: "LXGW WenKai", "Kaiti SC", "STKaiti", "KaiTi", "BiauKai", serif;
+  --sticky-ink: #3a372c;
+  --sticky-ink-soft: rgba(58, 55, 44, 0.6);
+  --sticky-line: rgba(58, 55, 44, 0.2);
+  --sticky-tape: rgba(218, 209, 186, 0.62);
+}
+[data-sticky-color="yellow"],
+.sticky-pin {
+  --sticky-paper: #fbefb2;
+}
+[data-sticky-color="pink"] {
+  --sticky-paper: #f9d9dd;
+}
+[data-sticky-color="mint"] {
+  --sticky-paper: #d4eedf;
+}
+[data-sticky-color="blue"] {
+  --sticky-paper: #d9e6f6;
+}
+html[data-theme="dark"] :is(.post--article, .sticky-pin) {
+  --sticky-ink: #efe9d6;
+  --sticky-ink-soft: rgba(239, 233, 214, 0.58);
+  --sticky-line: rgba(239, 233, 214, 0.18);
+  --sticky-tape: rgba(255, 255, 255, 0.16);
+}
+html[data-theme="dark"] [data-sticky-color="yellow"],
+html[data-theme="dark"] .sticky-pin {
+  --sticky-paper: #4a4327;
+}
+html[data-theme="dark"] [data-sticky-color="pink"] {
+  --sticky-paper: #4b3035;
+}
+html[data-theme="dark"] [data-sticky-color="mint"] {
+  --sticky-paper: #27433a;
+}
+html[data-theme="dark"] [data-sticky-color="blue"] {
+  --sticky-paper: #2b3a4e;
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) :is(.post--article, .sticky-pin) {
+    --sticky-ink: #efe9d6;
+    --sticky-ink-soft: rgba(239, 233, 214, 0.58);
+    --sticky-line: rgba(239, 233, 214, 0.18);
+    --sticky-tape: rgba(255, 255, 255, 0.16);
+  }
+  html:not([data-theme]) [data-sticky-color="yellow"],
+  html:not([data-theme]) .sticky-pin {
+    --sticky-paper: #4a4327;
+  }
+  html:not([data-theme]) [data-sticky-color="pink"] {
+    --sticky-paper: #4b3035;
+  }
+  html:not([data-theme]) [data-sticky-color="mint"] {
+    --sticky-paper: #27433a;
+  }
+  html:not([data-theme]) [data-sticky-color="blue"] {
+    --sticky-paper: #2b3a4e;
+  }
+}
+
+/* ---------- 纸 ---------- */
+.post--article .sticky-note {
+  background: var(--sticky-paper);
+  box-shadow:
+    0 1px 1px rgba(40, 30, 0, 0.06),
+    0 12px 24px -16px rgba(40, 30, 0, 0.5);
+  color: var(--sticky-ink);
+  font-family: var(--sticky-font);
+  font-size: 15.5px;
+  line-height: 1.7;
+  margin: 22px 6% 30px auto;
+  max-width: min(360px, 88%);
+  min-width: min(220px, 100%);
+  padding: 18px 18px 16px;
+  position: relative;
+  transform: rotate(var(--sticky-tilt, -1deg));
+  transition:
+    transform 0.35s cubic-bezier(0.19, 1, 0.22, 1),
+    box-shadow 0.35s ease;
+  width: fit-content;
+}
+/* 一截胶带 */
+.post--article .sticky-note::before {
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 6px), var(--sticky-tape);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+  clip-path: polygon(0 12%, 5% 0, 95% 0, 100% 14%, 96% 50%, 100% 86%, 95% 100%, 5% 100%, 0 88%, 4% 50%);
+  content: "";
+  height: 18px;
+  left: 50%;
+  position: absolute;
+  top: -9px;
+  transform: translateX(-50%) rotate(calc(var(--sticky-tilt, -1deg) * -2.5));
+  width: 64px;
+}
+/* 右下角微微翘起 */
+.post--article .sticky-note::after {
+  background: linear-gradient(to top left, rgba(0, 0, 0, 0.07), transparent 62%);
+  bottom: 0;
+  content: "";
+  height: 26px;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  width: 26px;
+}
+.post--article .sticky-note:hover,
+.post--article .sticky-note:focus-within,
+.post--article .sticky-note.is-editing {
+  box-shadow:
+    0 1px 1px rgba(40, 30, 0, 0.06),
+    0 16px 30px -16px rgba(40, 30, 0, 0.55);
+  transform: rotate(0deg) translateY(-2px);
+}
+.post--article #markdown-content .sticky-note p {
+  color: inherit;
+  font-size: inherit;
+  margin: 0;
+  max-width: none;
+}
+.post--article #markdown-content .sticky-note p + p {
+  margin-top: 8px;
+}
+.post--article #markdown-content .sticky-note a {
+  color: inherit;
+  text-decoration-color: var(--sticky-ink-soft);
+}
+.post--article .sticky-note__by {
+  color: var(--sticky-ink-soft);
+  display: block;
+  font-family: var(--post-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+.post--article #markdown-content .sticky-note__text {
+  white-space: pre-wrap;
+}
+.post--article :is(.sticky-note--mine .sticky-note__text, .sticky-editor__text) {
+  font-family: var(--sticky-font-free);
+}
+.post--article .sticky-note__edit {
+  background: none;
+  border: 0;
+  color: var(--sticky-ink-soft);
+  cursor: pointer;
+  font-family: var(--post-mono);
+  font-size: 12px;
+  min-height: 32px;
+  min-width: 32px;
+  opacity: 0;
+  position: absolute;
+  right: 6px;
+  top: 4px;
+  transition: opacity 0.2s ease;
+}
+.post--article .sticky-note:is(:hover, :focus-within) .sticky-note__edit {
+  opacity: 1;
+}
+@media (pointer: coarse) {
+  .post--article .sticky-note__edit {
+    min-height: 44px;
+    min-width: 44px;
+    opacity: 0.75;
+  }
+}
+
+/* 贴上去：轻轻一按，不闪不跳。 */
+@keyframes sticky-press {
+  0% {
+    box-shadow:
+      0 1px 1px rgba(40, 30, 0, 0.04),
+      0 24px 34px -18px rgba(40, 30, 0, 0.5);
+    transform: translateY(-8px) rotate(calc(var(--sticky-tilt, -1deg) * 3)) scale(1.035);
+  }
+  65% {
+    transform: rotate(calc(var(--sticky-tilt, -1deg) * -0.5)) scale(0.995);
+  }
+}
+.post--article .sticky-note.is-sticking {
+  animation: sticky-press 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.15) var(--sticky-delay, 0s) both;
+}
+
+/* 选中文字的底色：和便利贴同色，像荧光笔。 */
+::highlight(sticky-yellow) {
+  background-color: rgba(245, 212, 70, 0.4);
+}
+::highlight(sticky-pink) {
+  background-color: rgba(240, 140, 160, 0.32);
+}
+::highlight(sticky-mint) {
+  background-color: rgba(96, 190, 148, 0.32);
+}
+::highlight(sticky-blue) {
+  background-color: rgba(110, 160, 222, 0.32);
+}
+::highlight(sticky-focus) {
+  text-decoration: underline 2px;
+  text-decoration-color: rgba(120, 100, 30, 0.6);
+}
+
+/* ---------- 宽屏：贴在正文右侧留白（位置由脚本按批注的那一行算出） ---------- */
+.post--article[data-sticky-mode="margin"] #markdown-content {
+  position: relative;
+}
+.post--article[data-sticky-mode="margin"] #markdown-content > .sticky-note {
+  font-size: 14.5px;
+  left: calc(min(100%, 660px) + 48px);
+  margin: 0;
+  max-width: none;
+  min-width: 0;
+  position: absolute;
+  top: 0;
+  width: var(--sticky-width, 220px);
+}
+
+/* ---------- 手机：折成段尾的折角，点开揭起 ---------- */
+.sticky-chip {
+  display: none;
+}
+.post--article[data-sticky-mode="fold"] .sticky-chip {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--post-ink-3);
+  display: flex;
+  font-family: var(--post-mono);
+  font-size: 12.5px;
+  gap: 9px;
+  letter-spacing: 0.02em;
+  margin: -6px 2px 16px auto;
+  min-height: 44px;
+  padding: 0 2px 0 10px;
+  width: fit-content;
+}
+.sticky-chip__paper {
+  background: var(--sticky-paper);
+  box-shadow: 0 3px 6px -3px rgba(40, 30, 0, 0.45);
+  clip-path: polygon(0 0, 100% 0, 100% 64%, 64% 100%, 0 100%);
+  height: 18px;
+  position: relative;
+  transform: rotate(-5deg);
+  transition: transform 0.35s cubic-bezier(0.19, 1, 0.22, 1);
+  width: 18px;
+}
+.sticky-chip__paper::after {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--sticky-paper) 62%, #6b5a1e) 50%, transparent 50%);
+  bottom: 0;
+  content: "";
+  height: 36%;
+  position: absolute;
+  right: 0;
+  width: 36%;
+}
+.sticky-chip[aria-expanded="true"] .sticky-chip__paper {
+  transform: rotate(8deg) translateY(-2px);
+}
+.post--article[data-sticky-mode="fold"] #markdown-content > .sticky-note {
+  margin: 0 4% 26px auto;
+}
+.post--article[data-sticky-mode="fold"] #markdown-content > .sticky-note:not(.is-open) {
+  display: none;
+}
+@keyframes sticky-peel {
+  from {
+    opacity: 0;
+    transform: translate(12px, -14px) rotate(10deg) scale(0.6);
+  }
+}
+.post--article .sticky-note.is-peeling {
+  animation: sticky-peel 0.45s cubic-bezier(0.19, 1, 0.22, 1);
+  transform-origin: top right;
+}
+
+/* ---------- 选中文字后的「贴便利贴」 ---------- */
+.sticky-pin {
+  align-items: center;
+  animation: sticky-pin-in 0.18s ease;
+  background: var(--post-ink, #141413);
+  border: 0;
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.55);
+  color: var(--global-bg-color, #faf9f5);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 13px;
+  gap: 9px;
+  height: 36px;
+  left: 0;
+  padding: 0 14px 0 12px;
+  position: absolute;
+  top: 0;
+  z-index: 1040;
+}
+.sticky-pin[hidden] {
+  display: none;
+}
+.sticky-pin__paper {
+  background: var(--sticky-paper);
+  clip-path: polygon(0 0, 100% 0, 100% 64%, 64% 100%, 0 100%);
+  height: 13px;
+  transform: rotate(-6deg);
+  width: 13px;
+}
+@media (pointer: coarse) {
+  .sticky-pin {
+    font-size: 14px;
+    height: 44px;
+  }
+}
+@keyframes sticky-pin-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* ---------- 编辑 ---------- */
+.post--article .sticky-note.is-editing {
+  min-width: min(300px, 100%);
+}
+.post--article[data-sticky-mode="inline"] .sticky-note.is-editing,
+.post--article[data-sticky-mode="fold"] .sticky-note.is-editing {
+  width: min(420px, 92%);
+}
+.post--article .sticky-editor__text {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: block;
+  font: inherit;
+  line-height: 1.7;
+  min-height: 92px;
+  outline: 0;
+  padding: 0;
+  resize: vertical;
+  width: 100%;
+}
+.post--article .sticky-editor__text::placeholder {
+  color: var(--sticky-ink-soft);
+}
+.post--article .sticky-editor__bar {
+  align-items: center;
+  border-top: 1px dashed var(--sticky-line);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--post-sans);
+  font-size: 13px;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+.post--article .sticky-editor__colors {
+  display: flex;
+  gap: 2px;
+  margin-left: -4px;
+}
+.post--article .sticky-editor__color {
+  background: radial-gradient(circle, var(--sticky-paper) 0 9px, var(--sticky-line) 9px 10px, transparent 10.5px);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  height: 30px;
+  padding: 0;
+  width: 30px;
+}
+.post--article .sticky-editor__color[aria-checked="true"] {
+  background: radial-gradient(
+    circle,
+    var(--sticky-paper) 0 7px,
+    var(--sticky-ink) 7.5px 9px,
+    var(--sticky-paper) 9.5px 10px,
+    var(--sticky-line) 10px 11px,
+    transparent 11.5px
+  );
+}
+.post--article .sticky-editor__scope {
+  border: 1px solid var(--sticky-line);
+  display: flex;
+}
+.post--article .sticky-editor__scope button {
+  background: none;
+  border: 0;
+  color: var(--sticky-ink-soft);
+  cursor: pointer;
+  font: inherit;
+  min-height: 30px;
+  padding: 0 10px;
+}
+.post--article .sticky-editor__scope button[aria-checked="true"] {
+  background: var(--sticky-ink);
+  color: var(--sticky-paper);
+}
+.post--article .sticky-editor__actions {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.post--article .sticky-editor__tear {
+  background: none;
+  border: 0;
+  color: var(--sticky-ink-soft);
+  cursor: pointer;
+  font: inherit;
+  min-height: 34px;
+  padding: 0 6px;
+}
+.post--article .sticky-editor__done {
+  background: var(--sticky-ink);
+  border: 0;
+  color: var(--sticky-paper);
+  cursor: pointer;
+  font: inherit;
+  min-height: 34px;
+  padding: 0 14px;
+}
+.post--article :is(.sticky-note, .sticky-chip, .sticky-tray) button:focus-visible {
+  outline: 1px solid var(--sticky-ink);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .post--article :is(.sticky-editor__tear, .sticky-editor__done, .sticky-editor__scope button) {
+    min-height: 44px;
+  }
+  .post--article .sticky-editor__color {
+    height: 44px;
+    width: 40px;
+  }
+}
+
+/* ---------- 文末：我的便利贴 ---------- */
+.sticky-tray {
+  font-family: var(--post-mono);
+  margin-top: 56px;
+  max-width: 660px;
+}
+.sticky-tray:not([data-empty="true"]) {
+  border-top: 1px solid var(--post-line-soft);
+  padding-top: 22px;
+}
+.sticky-tray__title {
+  color: var(--post-ink-3);
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  margin: 0 0 6px;
+}
+.sticky-tray[data-empty="true"] .sticky-tray__title {
+  display: none;
+}
+.sticky-tray__note {
+  color: var(--post-ink-3);
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 0;
+}
+.sticky-tray[data-empty="true"] .sticky-tray__note::before {
+  background: #fbefb2;
+  clip-path: polygon(0 0, 100% 0, 100% 64%, 64% 100%, 0 100%);
+  content: "";
+  display: inline-block;
+  height: 11px;
+  margin-right: 9px;
+  transform: rotate(-6deg) translateY(1px);
+  width: 11px;
+}
+.sticky-tray__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 22px;
+  margin-top: 12px;
+}
+.sticky-tray__actions[hidden],
+.sticky-tray__dropped[hidden] {
+  display: none;
+}
+.sticky-tray__actions button {
+  background: none;
+  border: 0;
+  color: var(--post-ink-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13.5px;
+  min-height: 32px;
+  padding: 0;
+}
+.sticky-tray__actions button::before {
+  color: var(--post-ink-4);
+  content: "└ ";
+}
+.sticky-tray__actions button:hover {
+  color: var(--post-ink);
+}
+.sticky-tray__actions button[data-confirm] {
+  color: #b5443a;
+}
+.sticky-tray__dropped {
+  margin-top: 26px;
+}
+.sticky-tray__dropped > p {
+  color: var(--post-ink-3);
+  font-size: 13px;
+  margin: 0 0 18px;
+}
+.sticky-tray__dropped-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px 26px;
+}
+.sticky-tray__dropped-list .sticky-note {
+  margin: 0;
+}
+@media (pointer: coarse) {
+  .sticky-tray__actions button {
+    min-height: 44px;
+  }
+}
+
+@media print {
+  .sticky-pin,
+  .sticky-chip,
+  .sticky-tray,
+  .sticky-note__edit {
+    display: none !important;
+  }
+  .post--article #markdown-content > .sticky-note {
+    box-shadow: none;
+    display: block !important;
+    position: static !important;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .post--article .sticky-note,
+  .sticky-chip__paper {
+    transition: none;
+  }
+  .post--article .sticky-note.is-sticking,
+  .post--article .sticky-note.is-peeling,
+  .sticky-pin {
+    animation: none;
+  }
+}

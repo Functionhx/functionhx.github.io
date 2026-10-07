@@ -130,6 +130,8 @@ module Functionhx
       source = source.gsub(/<img\b[^>]*>/i) do |tag|
         "![#{tag[/\balt=["']([^"']*)["']/i, 1]}](#{tag[/\bsrc=["']([^"']+)["']/i, 1]})"
       end
+      # 作者便利贴（sticky_notes.rb）在机器版里是一段署名的引用。
+      source = source.gsub(/^>\s*\[!便利贴(?:\s+[黄粉绿蓝])?\]\s*/, "> 便利贴（作者）：")
       source = source.gsub(%r{\]\((/[^)\s]*)\)}) { "](#{base}#{Regexp.last_match(1)})" }
       source.gsub(/\n{3,}/, "\n\n").strip
     end

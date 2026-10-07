@@ -55,6 +55,8 @@
     {% endif %}
     {% if page.layout == 'post' %}
       <link rel="stylesheet" href="{{ '/assets/css/post.css' | relative_url | bust_file_cache }}">
+      <link rel="stylesheet" href="{{ '/assets/css/sticky-notes.css' | relative_url | bust_file_cache }}">
+      <link rel="stylesheet" href="{{ '/assets/fonts/lxgw-wenkai/sticky-subset.css' | relative_url | bust_file_cache }}">
     {% endif %}
     {% if page.video %}
       <link rel="stylesheet" href="{{ '/assets/css/media-embeds.css' | relative_url | bust_file_cache }}">

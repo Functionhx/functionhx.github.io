@@ -190,6 +190,31 @@ def serif_subset_backlog(site: Path) -> int:
     return len(serif_codepoints(site) - covered)
 
 
+def sticky_subset_backlog(site: Path) -> int:
+    """Author sticky-note characters the self-hosted handwriting subset lacks (they load from jsDelivr)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from subset_sticky_font import interface_codepoints, sticky_codepoints
+
+    css = site / "assets" / "fonts" / "lxgw-wenkai" / "sticky-subset.css"
+    if not css.is_file():
+        return -1
+    covered: set[int] = set()
+    match = re.search(r"unicode-range:\s*([^;]+);", css.read_text(encoding="utf-8"))
+    for part in (match.group(1).split(",") if match else []):
+        start, _, end = part.strip().removeprefix("U+").partition("-")
+        covered.update(range(int(start, 16), int(end or start, 16) + 1))
+    return len((sticky_codepoints(site) | interface_codepoints()) - covered)
+
+
+def check_sticky_notes(site: Path) -> list[str]:
+    """Author sticky notes (_plugins/sticky_notes.rb) must all be converted; no raw marker may ship."""
+    problems = []
+    for path in sorted((site / "blog").rglob("*.html")):
+        if "[!便利贴" in path.read_text(encoding="utf-8"):
+            problems.append(f"{path.relative_to(site)}: an unconverted [!便利贴] marker (check its colour word)")
+    return problems
+
+
 BUNDLE_LINK = re.compile(r'<link rel="stylesheet" href="(/assets/css/bundles/[0-9a-f]+\.css)\?v=[0-9a-f]+" data-bundled="([^"]+)">')
 
 
@@ -1118,6 +1143,7 @@ def main() -> int:
     errors.extend(check_fontawesome_subset(site))
     errors.extend(check_css_bundles(site))
     errors.extend(check_headless_site(site))
+    errors.extend(check_sticky_notes(site))
 
     if errors:
         print("Built-site validation failed:", file=sys.stderr)
@@ -1135,6 +1161,15 @@ def main() -> int:
         print(
             f"Note: {backlog} heading character(s) are not in the self-hosted serif subset yet; "
             "run `python3 scripts/subset_serif_font.py` after a build to self-host them."
+        )
+    sticky_backlog = sticky_subset_backlog(site)
+    if sticky_backlog < 0:
+        print("Built-site validation failed:\n- assets/fonts/lxgw-wenkai sticky subset missing from the build", file=sys.stderr)
+        return 1
+    if sticky_backlog:
+        print(
+            f"Note: {sticky_backlog} sticky-note character(s) are not in the self-hosted handwriting subset yet; "
+            "run `python3 scripts/subset_sticky_font.py` after a build to self-host them."
         )
     print(f"Built-site validation passed: {len(EXPECTED_ROUTES)} routes and all internal links.")
     return 0

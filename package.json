@@ -17,6 +17,7 @@
     "test:github-auth-vault": "node test/github_auth_vault.mjs",
     "test:dialog-interactions": "node test/dialog_interactions.mjs",
     "test:spark-writer": "node test/spark_writer.mjs",
+    "test:sticky-notes": "bundle exec ruby test/sticky_notes_plugin.rb && node test/sticky_notes.mjs",
     "test:spark-vault": "node test/spark_vault_worker.mjs",
     "test:spark-vault-server": "node test/spark_vault_server.mjs",
     "test:spark-vault-unlock": "node test/spark_vault_unlock.mjs",

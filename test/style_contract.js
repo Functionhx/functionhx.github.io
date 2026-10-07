@@ -28,6 +28,13 @@ const contracts = {
     ".post-sheet::backdrop",
     "@media (prefers-reduced-motion: reduce)",
   ],
+  // 文章便利贴（2026-10-07）：三种排版、手机折角、减少动画。
+  "sticky-notes.css": [
+    '[data-sticky-mode="margin"]',
+    '[data-sticky-mode="fold"]',
+    "::highlight(sticky-yellow)",
+    "@media (prefers-reduced-motion: reduce)",
+  ],
   "blog-feed.css": ["@media (max-width: 760px)", ".writing-filter-sheet::backdrop", "@media (prefers-reduced-motion: reduce)"],
   "site-preferences.css": ["@media (prefers-color-scheme: dark)", "@media (prefers-reduced-motion: reduce)"],
   "site-settings.css": ["max-width: min(50rem, calc(100vw - 2rem))", ".site-settings-dialog::backdrop", "@media (max-width: 575px)"],
