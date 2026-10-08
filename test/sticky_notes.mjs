@@ -163,6 +163,22 @@ const paragraphWith = (page, text) =>
   assert.equal(await page.locator(".sticky-note--mine").count(), 1, "Escape on an empty new note throws it away");
   assert.equal((await store(page)).length, 1);
 
+  // 撕掉一张正被指着的便利贴：原文的高亮和下划线都要一起消失（站长 2026-10-08 报的 bug）
+  await select(page, paragraph + 2, 0, 6);
+  await page.click(".sticky-pin");
+  await page.waitForSelector(".sticky-note.is-editing textarea:focus");
+  await page.keyboard.type("马上撕掉");
+  await page.keyboard.press("Control+Enter");
+  await page.waitForFunction(() => document.querySelectorAll(".sticky-note--mine:not(.is-editing)").length === 2);
+  const doomed = page.locator(".sticky-note--mine").filter({ hasText: "马上撕掉" });
+  await doomed.hover();
+  assert.equal(await page.evaluate(() => CSS.highlights.has("sticky-focus")), true, "pointing at a note underlines its quote");
+  await doomed.locator(".sticky-note__edit").click();
+  await page.click(".sticky-editor__tear");
+  assert.equal(await page.evaluate(() => CSS.highlights.has("sticky-focus")), false, "tearing a note off removes the underline");
+  assert.equal(await page.evaluate(() => CSS.highlights.get("sticky-mint")?.size ?? 0), 1, "only the remaining note keeps its highlight");
+  assert.equal((await store(page)).length, 1);
+
   // 导出
   const [download] = await Promise.all([page.waitForEvent("download"), page.click(".sticky-tray__actions button:first-child")]);
   assert.match(download.suggestedFilename(), /^便利贴-gpa\.md$/);

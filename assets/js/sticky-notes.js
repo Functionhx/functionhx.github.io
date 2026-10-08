@@ -281,6 +281,7 @@
 
   // ---------- 高亮（CSS Custom Highlight API，不改动正文 DOM） ----------
   function paintHighlights() {
+    if (focused && !mine.includes(focused)) focusHighlight(null);
     if (!highlights) return;
     for (const color of COLORS) {
       const ranges = mine.filter((entry) => entry.color === color && entry.range).map((entry) => entry.range);
@@ -289,9 +290,13 @@
     }
   }
 
+  // 指着一张便利贴时，它批注的原文多一道下划线。记住是哪一张：便利贴被撕掉、改写或重排时，
+  // 鼠标移开的事件不会再来，必须在这里把下划线一并收走。
+  let focused = null;
   function focusHighlight(entry) {
+    focused = entry?.range ? entry : null;
     if (!highlights) return;
-    if (entry?.range) highlights.set("sticky-focus", new window.Highlight(entry.range));
+    if (focused) highlights.set("sticky-focus", new window.Highlight(focused.range));
     else highlights.delete("sticky-focus");
   }
 
@@ -636,6 +641,7 @@
 
   function remove(entry, persist = true) {
     if (editing === entry) editing = null;
+    if (focused === entry) focusHighlight(null);
     const chip = entry.element?.previousElementSibling;
     if (chip?.classList.contains("sticky-chip")) chip.remove();
     entry.element?.remove();
