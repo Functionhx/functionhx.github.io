@@ -203,7 +203,7 @@
 
     audio.addEventListener("loadedmetadata", () => {
       seek.max = String(Math.floor(audio.duration));
-      duration.textContent = clock(audio.duration);
+      duration.textContent = clock(Math.round(audio.duration)); // 与分集表一致（四舍五入）
     });
     audio.addEventListener("timeupdate", () => {
       if (!seeking) {
