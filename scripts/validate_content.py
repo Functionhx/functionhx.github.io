@@ -44,6 +44,7 @@ REQUIRED_ROUTES = {
     "tools": {"/tools/"},
     "documents": {"/documents/"},
     "notes": {"/notes/"},
+    "notes-podcast": {"/notes/podcast/"},
     "logs": {"/logs/"},
     "spark": {"/spark/"},
     "news": {"/news/"},

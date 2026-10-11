@@ -1,7 +1,7 @@
 (function initializeListen() {
   "use strict";
 
-  // 「见山」栏目页上的播客（_includes/listen-series.liquid）。音频只在腾讯云镜像上：在镜像上接管为页内播放器，
+  // 「见山」里的播客页 /notes/podcast/（_includes/listen-series.liquid）。音频只在腾讯云镜像上：在镜像上接管为页内播放器，
   // 在其他主机（GitHub Pages）上把每一集改成镜像上同一集的链接，并显示去哪里收听。
   // 只用 localStorage 记住听到哪一集、第几秒、倍速与音量；不发其他请求。
   const RATES = [1, 1.25, 1.5, 2];

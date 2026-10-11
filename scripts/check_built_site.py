@@ -32,6 +32,7 @@ EXPECTED_ROUTES = (
     "/tools/kaggle-agent/",
     "/tools/usage-agent/",
     "/notes/",
+    "/notes/podcast/",
     "/logs/",
     "/spark/",
     "/news/",
@@ -555,6 +556,8 @@ def main() -> int:
             expected_active_key = "documents"
         elif route_without_language.startswith("/spark/"):
             expected_active_key = "spark"
+        elif route_without_language.startswith("/notes/"):
+            expected_active_key = "notes"
         expected_active_keys = (
             [expected_active_key] if expected_active_key in expected_nav_keys else []
         )

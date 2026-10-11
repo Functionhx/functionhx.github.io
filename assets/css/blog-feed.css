@@ -228,6 +228,18 @@ html:not(.js) .writing-layout:has(.writing-filters[hidden]) {
   color: var(--global-text-color-light);
   text-align: center;
 }
+.writing-card-kicker {
+  color: var(--global-text-color-light);
+  font-size: 14px;
+}
+.writing-card--podcast .writing-card-art img {
+  width: 54%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  box-shadow: 0 10px 26px rgb(40 30 20 / 0.18);
+  object-fit: contain;
+}
 .writing-grid--lane .writing-empty {
   grid-column: 1 / -1;
 }

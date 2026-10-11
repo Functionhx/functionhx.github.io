@@ -8,9 +8,10 @@ translation_key: notes
 nav: true
 nav_order: 11
 kind: note
+# 排在文字札记前面的播客卡片（_data/listen/<slug>.yml），每个指向 /notes/podcast/。
+lane_podcasts:
+  - wealth-revolution
 empty_text: 文字札记还在路上。
 ---
-
-{% include listen-series.liquid series='wealth-revolution' %}
 
 {% include post-lane.liquid %}

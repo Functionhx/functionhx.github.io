@@ -130,6 +130,10 @@
 {% else %}
   {%- comment -%} 栏目页（论文札记、见山、日志）与博客页同一种卡片，样式在 blog-feed.css。 {%- endcomment -%}
   <div class="writing-grid writing-grid--lane">
+    {% for slug in page.lane_podcasts %}
+      {% include listen-lane-card.liquid series=slug %}
+      {% assign visible_post_count = visible_post_count | plus: 1 %}
+    {% endfor %}
     {% for post in localized_posts %}
       {% if post.kind == page.kind %}
         {% include writing-card.liquid post=post index=visible_post_count %}
