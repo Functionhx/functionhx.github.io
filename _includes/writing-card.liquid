@@ -1,5 +1,5 @@
 {%- comment -%}
-  一张文章卡片（插画 + 日期 + 标题 + 分类）。博客页和各栏目页（论文札记、思考、日志）共用；
+  一张文章卡片（插画 + 日期 + 标题 + 分类）。博客页和各栏目页（论文札记、见山、日志）共用；
   样式在 blog-feed.css。用法：{% include writing-card.liquid post=post index=forloop.index0 %}
 {%- endcomment -%}
 {% assign post = include.post %}
@@ -20,7 +20,7 @@
   {% when 'paper-note' -%}
     {%- assign kind_label = '论文札记' %}
   {% when 'note' -%}
-    {%- assign kind_label = '笔记' %}
+    {%- assign kind_label = '见山' %}
   {% when 'log' -%}
     {%- assign kind_label = '日志' %}
   {% else -%}

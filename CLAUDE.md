@@ -188,9 +188,9 @@ content logging.
   `_data/publish_timezones.yml`), applied by `_plugins/publish_timezone.rb`; never set `timezone` in
   `_config.yml`.
 
-## Listening section (/listen/)
+## Podcast mirror in 见山 (/notes/)
 
-Audio series mirrored for listening in mainland China (the page calls itself 「…官方镜像站」 and never shows the mirror domain and links the official source). **Audio never enters git or `_site`**: `scripts/listen_import.py
+The 见山 section (`_pages/notes-zh.md`, kind `note`) opens with the podcast card and lists notes below it. Audio series mirrored for listening in mainland China (the page calls itself 「…官方镜像站」 and never shows the mirror domain and links the official source). **Audio never enters git or `_site`**: `scripts/listen_import.py
 <slug> <folder> --title … --author … --official …` transcodes to 64 kbit/s mono AAC in `build/listen/<slug>/`
 (ignored and excluded) and writes `_data/listen/<slug>.yml`; the files are then rsynced by hand to the Tencent
 server's `/var/www/media/listen/<slug>/` (outside the release directory that every deploy replaces), served by the

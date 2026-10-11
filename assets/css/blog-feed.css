@@ -228,6 +228,9 @@ html:not(.js) .writing-layout:has(.writing-filters[hidden]) {
   color: var(--global-text-color-light);
   text-align: center;
 }
+.writing-grid--lane .writing-empty {
+  grid-column: 1 / -1;
+}
 .writing-empty[hidden] {
   display: none;
 }

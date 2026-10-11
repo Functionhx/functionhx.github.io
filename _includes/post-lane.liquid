@@ -128,7 +128,7 @@
     {% endif %}
   </ul>
 {% else %}
-  {%- comment -%} 栏目页（论文札记、思考、日志）与博客页同一种卡片，样式在 blog-feed.css。 {%- endcomment -%}
+  {%- comment -%} 栏目页（论文札记、见山、日志）与博客页同一种卡片，样式在 blog-feed.css。 {%- endcomment -%}
   <div class="writing-grid writing-grid--lane">
     {% for post in localized_posts %}
       {% if post.kind == page.kind %}
@@ -136,8 +136,11 @@
         {% assign visible_post_count = visible_post_count | plus: 1 %}
       {% endif %}
     {% endfor %}
+    {%- comment -%}
+      空状态放在网格里面：放在外面时，Markdown 页面会把空行后缩进的 <p> 当成代码块原样输出。
+    {%- endcomment -%}
+    {% if visible_post_count == 0 %}
+      <p class="writing-empty">{{ page.empty_text }}</p>
+    {% endif %}
   </div>
-  {% if visible_post_count == 0 %}
-    <p class="writing-empty">{{ page.empty_text }}</p>
-  {% endif %}
 {% endif %}

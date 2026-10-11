@@ -1,4 +1,4 @@
-/* 收听栏目（_includes/listen-series.liquid、listen.js）。版式参照官方播客页：
+/* 「见山」栏目页上的播客（_includes/listen-series.liquid、listen.js）。版式参照官方播客页：
    一张圆角卡片，左栏节目介绍，右栏播放器 + 搜索 + 分集表；手机上播放器是一整块蓝色卡片。 */
 .listen-series {
   --ls-blue: #00339e;
