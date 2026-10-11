@@ -1,0 +1,93 @@
+{%- comment -%}
+  收听栏目的一套节目：标题、来源与授权、播放器、分集列表。数据在 _data/listen/<slug>.yml
+  （scripts/listen_import.py 生成）；音频只在腾讯云镜像上（/media/listen/<slug>/<NNN>.m4a，见 deploy/nginx）。
+  没有脚本时，每一集都是指向镜像音频文件的普通链接；listen.js 在镜像上改成页内播放，
+  在 GitHub Pages 等其他主机上提示去镜像或官方渠道收听。
+  用法：{% include listen-series.liquid series='wealth-revolution' %}
+{%- endcomment -%}
+{% assign series = site.data.listen[include.series] %}
+{% assign mirror = site.data.listen_hosts.mirror %}
+{% assign media_base = mirror | append: '/media/listen/' | append: series.slug | append: '/' %}
+{% assign total_seconds = 0 %}
+{% for episode in series.episodes %}
+  {% assign total_seconds = total_seconds | plus: episode.seconds %}
+{% endfor %}
+{% assign total_hours = total_seconds | divided_by: 3600 %}
+{% assign total_minutes = total_seconds | modulo: 3600 | divided_by: 60 %}
+
+<section
+  class="listen-series"
+  id="listen-{{ series.slug }}"
+  data-listen-series="{{ series.slug }}"
+  data-listen-mirror="{{ mirror }}"
+  data-listen-page="{{ mirror }}{{ page.url }}"
+  aria-labelledby="listen-{{ series.slug }}-title"
+>
+  <header class="listen-series__head">
+    <p class="listen-series__kicker">音频专栏 · {{ series.author }}</p>
+    <h2 id="listen-{{ series.slug }}-title">{{ series.title }}</h2>
+    <p class="listen-series__meta">共 {{ series.episodes.size }} 集 · 约 {{ total_hours }} 小时 {{ total_minutes }} 分钟</p>
+    <p class="listen-series__rights">
+      音频经授权转载，版权归{{ series.author }}所有。
+      {%- if series.official != blank %}
+        官方收听：<a href="{{ series.official }}" target="_blank" rel="noopener noreferrer">
+          {{- series.official | remove: 'https://' | remove: 'www.' -}}
+        </a>
+      {%- endif %}
+    </p>
+  </header>
+
+  <div class="listen-away" data-listen-away hidden>
+    <p>音频只在本站腾讯云镜像上在线播放。点任意一集会跳到镜像上的这一集。</p>
+    <p class="listen-away__links">
+      <a class="listen-away__primary" href="{{ mirror }}{{ page.url }}">去 {{ mirror | remove: 'https://' }} 收听</a>
+      {%- if series.official != blank %}
+        <a href="{{ series.official }}" target="_blank" rel="noopener noreferrer">去官方播客收听</a>
+      {%- endif %}
+    </p>
+  </div>
+
+  <div class="listen-player" data-listen-player hidden>
+    <p class="listen-player__now">
+      <span class="listen-player__label" data-listen-now-label>未在播放</span>
+      <span class="listen-player__title" data-listen-now-title>从下面选一集开始</span>
+    </p>
+    <audio controls preload="none" data-listen-audio></audio>
+    <div class="listen-player__controls">
+      <button type="button" data-listen-prev>上一集</button>
+      <button type="button" data-listen-next>下一集</button>
+      <span class="listen-player__speed" role="group" aria-label="播放速度">
+        {%- assign rates = '1,1.25,1.5,2' | split: ',' -%}
+        {%- for rate in rates %}
+          <button type="button" data-listen-rate="{{ rate }}" aria-pressed="{% if rate == '1' %}true{% else %}false{% endif %}">{{- rate }}×</button>
+        {%- endfor %}
+      </span>
+      <button type="button" class="listen-player__resume" data-listen-resume hidden></button>
+    </div>
+  </div>
+
+  <label class="listen-filter" data-listen-filter-wrap hidden>
+    <span class="sr-only">按标题筛选</span>
+    <input type="search" placeholder="按标题筛选，例如「杠杆」" autocomplete="off" data-listen-filter>
+  </label>
+
+  <ol class="listen-episodes">
+    {% for episode in series.episodes %}
+      {% assign minutes = episode.seconds | divided_by: 60 %}
+      {% assign seconds = episode.seconds | modulo: 60 | prepend: '0' | slice: -2, 2 %}
+      <li id="ep-{{ episode.n }}" data-listen-episode="{{ episode.n }}">
+        <a
+          class="listen-episode"
+          href="{{ media_base }}{{ episode.n }}.m4a"
+          data-listen-src="/media/listen/{{ series.slug }}/{{ episode.n }}.m4a"
+        >
+          <span class="listen-episode__n">{{ episode.n }}</span>
+          <span class="listen-episode__title">{{ episode.title }}</span>
+          <span class="listen-episode__time">{{ minutes }}:{{ seconds }}</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ol>
+  <p class="listen-empty" data-listen-empty hidden>没有标题包含这个词的分集。</p>
+</section>
+<script src="{{ '/assets/js/listen.js' | relative_url | bust_file_cache }}" defer></script>

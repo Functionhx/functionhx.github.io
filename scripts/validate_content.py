@@ -48,6 +48,7 @@ REQUIRED_ROUTES = {
     "spark": {"/spark/"},
     "news": {"/news/"},
     "search": {"/search/"},
+    "listen": {"/listen/"},
     "not-found": {"/404.html"},
 }
 

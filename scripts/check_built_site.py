@@ -35,7 +35,8 @@ EXPECTED_ROUTES = (
     "/logs/",
     "/spark/",
     "/news/",
-    "/search/",)
+    "/search/",
+    "/listen/",)
 SKIP_SCHEMES = {"mailto", "tel", "javascript", "data"}
 # No owner-approved resume is published. Removing a menu or search result alone
 # must never allow the retired starter CV to be shipped again at its old URL.
@@ -555,6 +556,8 @@ def main() -> int:
             expected_active_key = "documents"
         elif route_without_language.startswith("/spark/"):
             expected_active_key = "spark"
+        elif route_without_language.startswith("/listen/"):
+            expected_active_key = "listen"
         expected_active_keys = (
             [expected_active_key] if expected_active_key in expected_nav_keys else []
         )

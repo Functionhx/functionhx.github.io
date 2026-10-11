@@ -36,3 +36,5 @@ _prototypes/
 
 # scripts/zhihu.py 的本地预览、请求与响应（不含密钥）
 .zhihu-out/
+# 收听栏目的转码音频（scripts/listen_import.py），只上传到腾讯云
+build/

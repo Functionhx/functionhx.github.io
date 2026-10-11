@@ -247,6 +247,8 @@ exclude:
   - assets/pet/*.md
   - terminal/
   - deploy/
+  # 收听栏目的音频（scripts/listen_import.py 的输出）只上传到腾讯云，不进网站和仓库。
+  - build/
   - requirements.txt
   - test/
   - gems/

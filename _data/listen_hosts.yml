@@ -1,0 +1,3 @@
+# 收听栏目（/listen/）的音频只放在腾讯云镜像上（deploy/nginx：/media/listen/）。
+# 在这个源上页内播放；在其他主机（GitHub Pages）上，分集链接跳到镜像上的同一集。
+mirror: https://fanyuchen.com.cn
