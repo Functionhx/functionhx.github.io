@@ -236,7 +236,7 @@ def check_css_bundles(site: Path) -> list[str]:
 
 
 # Separate GitHub Pages repositories served under the same origin; not part of this build.
-SIBLING_PROJECTS = {"academic", "contrail", "kaggle-agent", "usage-agent", "Linkage", "rustscan-tool"}
+SIBLING_PROJECTS = {"academic", "contrail", "kaggle-agent", "usage-agent", "Linkage", "rustscan-tool", "kv-compression-pays"}
 HEADLESS_DEMO_MARKERS = ("Einstein", "project 4", "project 9", "名称很长的 project 3", "/projects/4_project/", "wave mechanics")
 
 
