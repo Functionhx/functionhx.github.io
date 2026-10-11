@@ -11,6 +11,10 @@ the Tencent server, which serves it at /media/listen/<slug>/ (deploy/nginx):
 
     rsync -rtv build/listen/<slug>/ ubuntu@82.157.7.183:/var/www/media/listen/<slug>/
 
+For a "download all" zip, build it on the server next to the folder (stored, not deflated; entries
+named "<NNN><title>.m4a") as /var/www/media/listen/<slug>-<first>-<last>.zip, then add
+`archive: "<that name>"` and `archive_mb: <size>` to the yml; reruns keep these two fields.
+
 Needs ffmpeg/ffprobe. Existing outputs are reused, so rerunning only adds new episodes.
 """
 
@@ -91,12 +95,16 @@ def main() -> int:
         f"title: {yaml_string(args.title)}",
         f"author: {yaml_string(args.author)}",
         f"official: {yaml_string(args.official)}",
-        "episodes:",
     ]
+    target = ROOT / "_data" / "listen" / f"{args.slug}.yml"
+    # The full-series zip is built on the server (see the module docstring); keep its fields.
+    if target.exists():
+        lines += [line for line in target.read_text(encoding="utf-8").splitlines()
+                  if line.startswith(("archive:", "archive_mb:"))]
+    lines.append("episodes:")
     for number, title, _ in episodes:
         lines += [f'  - n: "{number}"', f"    title: {yaml_string(title)}",
                   f"    seconds: {duration(out / f'{number}.m4a')}"]
-    target = ROOT / "_data" / "listen" / f"{args.slug}.yml"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"{len(episodes)} episodes → {out.relative_to(ROOT) if out.is_relative_to(ROOT) else out} and "

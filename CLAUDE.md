@@ -190,11 +190,12 @@ content logging.
 
 ## Listening section (/listen/)
 
-Audio series the owner is licensed to republish. **Audio never enters git or `_site`**: `scripts/listen_import.py
+Audio series mirrored for listening in mainland China (the page calls itself 「…国内镜像站」 and links the official source). **Audio never enters git or `_site`**: `scripts/listen_import.py
 <slug> <folder> --title … --author … --official …` transcodes to 64 kbit/s mono AAC in `build/listen/<slug>/`
 (ignored and excluded) and writes `_data/listen/<slug>.yml`; the files are then rsynced by hand to the Tencent
 server's `/var/www/media/listen/<slug>/` (outside the release directory that every deploy replaces), served by the
-`location ^~ /media/listen/` block in `deploy/nginx` (only `.m4a`, Range supported). `_includes/listen-series.liquid`
+`location ^~ /media/listen/` block in `deploy/nginx` (only `.m4a`, as an attachment with `?download=1`, plus the
+full-series `.zip` named by `archive` in the yml; Range supported). `_includes/listen-series.liquid`
 renders the episode list as plain links to the mirror's files; `assets/js/listen.js` plays them in-page only when
 the page's origin is `_data/listen_hosts.yml` `mirror`, and elsewhere (GitHub Pages) rewrites each episode to the
 mirror page's `#ep-NNN` and shows where to listen. Progress lives in `localStorage` (`functionhx:listen:<slug>`).

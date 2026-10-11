@@ -156,16 +156,22 @@
   padding: 0;
   list-style: none;
 }
+.listen-episodes li {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--global-divider-color);
+}
 .listen-episodes li[hidden] {
   display: none;
 }
 .listen-episode {
   display: grid;
+  flex: 1;
   grid-template-columns: 3.2em minmax(0, 1fr) auto;
   gap: 12px;
   align-items: baseline;
+  min-width: 0;
   padding: 12px 10px;
-  border-bottom: 1px solid var(--global-divider-color);
   border-radius: 8px;
   color: var(--global-text-color) !important;
   text-decoration: none !important;
@@ -191,6 +197,53 @@
 .listen-episode__title {
   line-height: 1.5;
 }
+.listen-episode__download {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  margin-left: 4px;
+  border-radius: 8px;
+  color: var(--global-text-color-light) !important;
+  font-size: 16px;
+  text-decoration: none !important;
+}
+.listen-episode__download:hover,
+.listen-episode__download:focus-visible {
+  background: var(--function-wash);
+  color: var(--global-text-color) !important;
+}
+
+/* 下载与导入 QQ 音乐：默认收起 */
+.listen-guide {
+  margin: 20px 0 0;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 14px;
+}
+.listen-guide > summary {
+  padding: 12px 18px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.listen-guide[open] > summary {
+  border-bottom: 1px solid var(--global-divider-color);
+}
+.listen-guide > :not(summary) {
+  margin: 14px 18px 0;
+  font-size: 14.5px;
+  line-height: 1.75;
+}
+.listen-guide > ol {
+  padding-left: 1.4em;
+}
+.listen-guide li + li {
+  margin-top: 6px;
+}
+.listen-guide__note {
+  margin-bottom: 16px !important;
+  color: var(--global-text-color-light);
+  font-size: 13px !important;
+}
 .listen-empty {
   margin: 0;
   padding: 32px 0;
@@ -203,7 +256,7 @@
 
 @media (max-width: 760px) {
   .listen-player {
-    top: 64px;
+    top: 80px;
     padding: 14px 14px 12px;
   }
   .listen-player__speed {
@@ -213,6 +266,13 @@
     grid-template-columns: 2.6em minmax(0, 1fr) auto;
     gap: 8px;
     padding: 12px 6px;
+  }
+  .listen-episode__download {
+    width: 36px;
+    margin-left: 0;
+  }
+  .listen-guide > :not(summary) {
+    margin-inline: 14px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -1,5 +1,5 @@
 {%- comment -%}
-  收听栏目的一套节目：标题、来源与授权、播放器、分集列表。数据在 _data/listen/<slug>.yml
+  收听栏目的一套节目：标题与来源、下载与导入说明、播放器、分集列表。数据在 _data/listen/<slug>.yml
   （scripts/listen_import.py 生成）；音频只在腾讯云镜像上（/media/listen/<slug>/<NNN>.m4a，见 deploy/nginx）。
   没有脚本时，每一集都是指向镜像音频文件的普通链接；listen.js 在镜像上改成页内播放，
   在 GitHub Pages 等其他主机上提示去镜像或官方渠道收听。
@@ -28,7 +28,7 @@
     <h2 id="listen-{{ series.slug }}-title">{{ series.title }}</h2>
     <p class="listen-series__meta">共 {{ series.episodes.size }} 集 · 约 {{ total_hours }} 小时 {{ total_minutes }} 分钟</p>
     <p class="listen-series__rights">
-      音频经授权转载，版权归{{ series.author }}所有。
+      {{ series.author }}《{{ series.title }}》国内镜像站。
       {%- if series.official != blank %}
         官方收听：<a href="{{ series.official }}" target="_blank" rel="noopener noreferrer">
           {{- series.official | remove: 'https://' | remove: 'www.' -}}
@@ -36,6 +36,35 @@
       {%- endif %}
     </p>
   </header>
+
+  <details class="listen-guide">
+    <summary>下载与导入 QQ 音乐</summary>
+    <p>
+      每一集右边的 <span aria-hidden="true">↓</span> 下载单集；
+      {%- if series.archive -%}
+        也可以<a href="{{ mirror }}/media/listen/{{ series.archive }}">下载全部 {{ series.episodes.size }} 集（zip，约 {{ series.archive_mb }} MB）</a
+        >，解压后文件名就是「编号 + 标题」。
+      {%- endif -%}
+      每个文件都写好了标题（以三位编号开头）和歌手「{{ series.author }}」。
+    </p>
+    <ol>
+      <li>
+        把音频放进手机里一个单独的文件夹，例如 <code>Music/{{ series.title }}</code>；不要混进这个节目的旧文件。
+      </li>
+      <li>
+        扫描前先<strong>关掉 Wi‑Fi 和移动数据</strong>。QQ
+        音乐会按声音指纹做云匹配，可能把某一集识别成别人上传的版本，改掉歌手、打乱顺序；扫描完再联网。
+      </li>
+      <li>打开 QQ 音乐：我的 → 本地歌曲（本地音乐）→ 右上角菜单 → 扫描歌曲，选择自定义扫描，只勾选这个文件夹。</li>
+      <li>
+        排序选「按歌曲名」，就是 000 → {{ series.episodes.last.n }} 的顺序；按歌手「{{ series.author }}」筛选后全选，添加到新建歌单「
+        {{- series.title -}}
+        」。
+      </li>
+      <li>想在其他设备上听：在歌单里多选 → 上传到云盘（有的版本叫「我的 → 微云音乐网盘 → 上传本地歌曲」），同一账号登录即可。</li>
+    </ol>
+    <p class="listen-guide__note">以上是安卓手机上的步骤，不同版本的 QQ 音乐入口名称略有差异。</p>
+  </details>
 
   <div class="listen-away" data-listen-away hidden>
     <p>音频只在本站腾讯云镜像上在线播放。点任意一集会跳到镜像上的这一集。</p>
@@ -85,6 +114,14 @@
           <span class="listen-episode__title">{{ episode.title }}</span>
           <span class="listen-episode__time">{{ minutes }}:{{ seconds }}</span>
         </a>
+        <a
+          class="listen-episode__download"
+          href="{{ media_base }}{{ episode.n }}.m4a?download=1"
+          download="{{ episode.n }}{{ episode.title | escape }}.m4a"
+          title="下载第 {{ episode.n }} 集"
+          aria-label="下载第 {{ episode.n }} 集：{{ episode.title | escape }}"
+          ><span aria-hidden="true">↓</span></a
+        >
       </li>
     {% endfor %}
   </ol>
