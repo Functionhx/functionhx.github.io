@@ -5,6 +5,14 @@ author: "孙宇晨"
 official: "https://www.hejustinsun.com/zh/podcast"
 archive: "wealth-revolution-000-156.zip"
 archive_mb: 893
+# 以下由站长维护：封面裁自官方播客页的节目封面；简介按官方播客页英文原文翻译。
+cover: /assets/img/listen/wealth-revolution.webp
+tagline: "人生策略、核心价值与前瞻视角"
+summary: "孙宇晨 2016 年在喜马拉雅创办并主讲的商业与财经音频节目，探讨人生策略、财富自由与前瞻视角。"
+about:
+  - "节目围绕「财富自由革命」这一主题，探讨人生策略、核心价值与前瞻视角，为听众提供应对经济与技术快速变化的战略框架。"
+  - "孙宇晨强调，真正的财富自由不止于金钱上的独立，其核心在于思想独立、思考自由，以及对人生选择的完全自主。"
+  - "节目推出后播放量很快突破 500 万，被广泛视为新一代创业者和投资者了解现代财富理念的启蒙课。"
 episodes:
   - n: "000"
     title: "我们就是这个时代的既得利益者"

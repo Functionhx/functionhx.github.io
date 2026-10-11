@@ -1,28 +1,35 @@
 (function initializeListen() {
   "use strict";
 
-  // 收听栏目（_includes/listen-series.liquid）。音频只在腾讯云镜像上：在镜像上页内播放，
+  // 收听栏目（_includes/listen-series.liquid）。音频只在腾讯云镜像上：在镜像上接管为页内播放器，
   // 在其他主机（GitHub Pages）上把每一集改成镜像上同一集的链接，并显示去哪里收听。
-  // 只用 localStorage 记住听到哪一集、第几秒；不发其他请求。
-  const sections = document.querySelectorAll("[data-listen-series]");
-  sections.forEach((section) => {
-    const slug = section.dataset.listenSeries;
-    const mirror = section.dataset.listenMirror;
-    const episodes = [...section.querySelectorAll("[data-listen-episode]")];
-    const filterWrap = section.querySelector("[data-listen-filter-wrap]");
-    const filter = section.querySelector("[data-listen-filter]");
-    const empty = section.querySelector("[data-listen-empty]");
+  // 只用 localStorage 记住听到哪一集、第几秒、倍速与音量；不发其他请求。
+  const RATES = [1, 1.25, 1.5, 2];
+  const pad = (value) => String(value).padStart(2, "0");
+  const clock = (seconds) => {
+    const total = Math.max(0, Math.floor(seconds || 0));
+    const hours = Math.floor(total / 3600);
+    const rest = `${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
+    return hours ? `${hours}:${rest}` : rest;
+  };
 
-    filterWrap.hidden = false;
-    filter.addEventListener("input", () => {
-      const query = filter.value.trim().toLowerCase();
+  document.querySelectorAll("[data-listen-series]").forEach((section) => {
+    const { listenSeries: slug, listenMirror: mirror } = section.dataset;
+    const $ = (selector) => section.querySelector(selector);
+    const rows = [...section.querySelectorAll("[data-listen-episode]")];
+    // 列表按官方页面倒序显示（最新一集在上），上一集 / 下一集 / 连播按编号顺序走。
+    const ordered = [...rows].sort((a, b) => a.dataset.listenEpisode.localeCompare(b.dataset.listenEpisode));
+
+    $("[data-listen-filter-wrap]").hidden = false;
+    $("[data-listen-filter]").addEventListener("input", (event) => {
+      const query = event.target.value.trim().toLowerCase();
       let shown = 0;
-      episodes.forEach((item) => {
-        const visible = !query || item.textContent.toLowerCase().includes(query);
-        item.hidden = !visible;
+      rows.forEach((row) => {
+        const visible = !query || row.textContent.toLowerCase().includes(query);
+        row.hidden = !visible;
         if (visible) shown += 1;
       });
-      empty.hidden = shown > 0;
+      $("[data-listen-empty]").hidden = shown > 0;
     });
 
     let onMirror = false;
@@ -31,24 +38,28 @@
     } catch {
       onMirror = false;
     }
-
     if (!onMirror) {
-      section.querySelector("[data-listen-away]").hidden = false;
-      episodes.forEach((item) => {
-        item.querySelector("a").href = `${section.dataset.listenPage}#ep-${item.dataset.listenEpisode}`;
+      $("[data-listen-away]").hidden = false;
+      rows.forEach((row) => {
+        row.querySelector(".listen-episode").href = `${section.dataset.listenPage}#ep-${row.dataset.listenEpisode}`;
       });
       return;
     }
 
-    const player = section.querySelector("[data-listen-player]");
-    const audio = section.querySelector("[data-listen-audio]");
-    const nowLabel = section.querySelector("[data-listen-now-label]");
-    const nowTitle = section.querySelector("[data-listen-now-title]");
-    const resume = section.querySelector("[data-listen-resume]");
+    const player = $("[data-listen-player]");
+    const audio = $("[data-listen-audio]");
+    const seek = $("[data-listen-seek]");
+    const elapsed = $("[data-listen-elapsed]");
+    const duration = $("[data-listen-duration]");
+    const toggle = $("[data-listen-toggle]");
+    const rateButton = $("[data-listen-rate]");
+    const volume = $("[data-listen-volume]");
     const storageKey = `functionhx:listen:${slug}`;
     let current = -1;
     let rate = 1;
+    let seeking = false;
     let lastSaved = 0;
+    let pendingAt = 0; // 预选上次那一集时，元数据加载前要跳到的位置
 
     function load() {
       try {
@@ -67,7 +78,12 @@
       try {
         window.localStorage.setItem(
           storageKey,
-          JSON.stringify({ n: episodes[current].dataset.listenEpisode, t: Math.floor(audio.currentTime || 0), rate })
+          JSON.stringify({
+            n: ordered[current].dataset.listenEpisode,
+            t: Math.floor(pendingAt || audio.currentTime || 0),
+            rate,
+            volume: audio.volume,
+          })
         );
       } catch {
         // 隐私模式等情况下存不了，播放不受影响。
@@ -75,29 +91,59 @@
     }
 
     function titleOf(index) {
-      return episodes[index].querySelector(".listen-episode__title").textContent.trim();
+      return ordered[index].querySelector(".listen-episode__title").textContent.trim();
+    }
+
+    function setRate(value) {
+      rate = RATES.includes(value) ? value : 1;
+      // 换音频源时浏览器会把 playbackRate 重置为 defaultPlaybackRate，两个都设。
+      audio.defaultPlaybackRate = rate;
+      audio.playbackRate = rate;
+      rateButton.textContent = `${rate}×`;
+      rateButton.setAttribute("aria-label", `播放速度 ${rate} 倍，点击切换`);
+    }
+
+    function updateMediaSession(index) {
+      if (!("mediaSession" in navigator) || typeof window.MediaMetadata !== "function") return;
+      const cover = section.dataset.listenCover;
+      navigator.mediaSession.metadata = new window.MediaMetadata({
+        title: `${ordered[index].dataset.listenEpisode} ${titleOf(index)}`,
+        artist: section.dataset.listenAuthor,
+        album: section.dataset.listenTitle,
+        artwork: cover ? [{ src: new URL(cover, window.location.href).href, sizes: "400x400", type: "image/webp" }] : [],
+      });
     }
 
     function select(index, { play = true, at = 0 } = {}) {
-      if (index < 0 || index >= episodes.length) return;
-      episodes.forEach((item, i) => {
-        const link = item.querySelector("a");
-        if (i === index) link.setAttribute("aria-current", "true");
-        else link.removeAttribute("aria-current");
-      });
+      if (index < 0 || index >= ordered.length) return;
+      rows.forEach((row) => row.querySelector(".listen-episode").removeAttribute("aria-current"));
       current = index;
-      const link = episodes[index].querySelector("a");
-      audio.src = link.dataset.listenSrc;
+      const row = ordered[index];
+      row.querySelector(".listen-episode").setAttribute("aria-current", "true");
+      audio.src = row.querySelector(".listen-episode").dataset.listenSrc;
       audio.playbackRate = rate;
-      nowLabel.textContent = `第 ${episodes[index].dataset.listenEpisode} 集`;
-      nowTitle.textContent = titleOf(index);
-      resume.hidden = true;
+      $("[data-listen-now-label]").textContent =
+        at > 0 ? `上次听到 ${clock(at)} · 第 ${row.dataset.listenEpisode} 集` : `正在播放 · 第 ${row.dataset.listenEpisode} 集`;
+      $("[data-listen-now-title]").textContent = titleOf(index);
+      seek.value = "0";
+      seek.max = "0";
+      elapsed.textContent = clock(at);
+      duration.textContent = row.querySelector(".listen-episode__time").textContent.trim();
+      pendingAt = at;
       if (at > 0) {
-        audio.addEventListener("loadedmetadata", () => (audio.currentTime = at), { once: true });
+        audio.addEventListener(
+          "loadedmetadata",
+          () => {
+            audio.currentTime = at;
+            pendingAt = 0;
+          },
+          { once: true }
+        );
       }
+      updateMediaSession(index);
       if (play) {
         audio.play().catch(() => {
-          // 浏览器拦截了自动播放：控件已就位，访客点一下播放即可。
+          // 浏览器拦截了自动播放：点一下播放键即可。
         });
       } else {
         audio.preload = "metadata";
@@ -106,55 +152,124 @@
       save(true);
     }
 
-    function setRate(value) {
-      rate = value;
-      audio.playbackRate = value;
-      section.querySelectorAll("[data-listen-rate]").forEach((button) => {
-        button.setAttribute("aria-pressed", String(Number(button.dataset.listenRate) === value));
-      });
+    function step(delta) {
+      if (current < 0) return;
+      select(Math.min(ordered.length - 1, Math.max(0, current + delta)));
+    }
+
+    function skip(seconds) {
+      if (current < 0 || !Number.isFinite(audio.duration)) return;
+      audio.currentTime = Math.min(audio.duration, Math.max(0, audio.currentTime + seconds));
+    }
+
+    function togglePlay() {
+      if (current < 0) select(0);
+      else if (audio.paused) audio.play().catch(() => {});
+      else audio.pause();
     }
 
     player.hidden = false;
-    episodes.forEach((item, index) => {
-      item.querySelector("a").addEventListener("click", (event) => {
+    rows.forEach((row) => {
+      row.querySelector(".listen-episode").addEventListener("click", (event) => {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
         event.preventDefault();
-        select(index);
-        if (window.history.replaceState) window.history.replaceState(null, "", `#ep-${item.dataset.listenEpisode}`);
+        const index = ordered.indexOf(row);
+        if (index === current) togglePlay();
+        else select(index);
+        if (window.history.replaceState) window.history.replaceState(null, "", `#ep-${row.dataset.listenEpisode}`);
       });
     });
-    section.querySelector("[data-listen-prev]").addEventListener("click", () => select(Math.max(0, current - 1)));
-    section.querySelector("[data-listen-next]").addEventListener("click", () => select(Math.min(episodes.length - 1, current + 1)));
-    section.querySelectorAll("[data-listen-rate]").forEach((button) => {
-      button.addEventListener("click", () => {
-        setRate(Number(button.dataset.listenRate));
-        save(true);
-      });
+    toggle.addEventListener("click", togglePlay);
+    $("[data-listen-prev]").addEventListener("click", () => step(-1));
+    $("[data-listen-next]").addEventListener("click", () => step(1));
+    $("[data-listen-back]").addEventListener("click", () => skip(-15));
+    $("[data-listen-forward]").addEventListener("click", () => skip(15));
+    rateButton.addEventListener("click", () => {
+      setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length]);
+      save(true);
     });
-    audio.addEventListener("timeupdate", () => save(false));
-    audio.addEventListener("pause", () => save(true));
+    volume.addEventListener("input", () => {
+      audio.volume = Number(volume.value);
+      save(true);
+    });
+    seek.addEventListener("input", () => {
+      seeking = true;
+      elapsed.textContent = clock(Number(seek.value));
+    });
+    seek.addEventListener("change", () => {
+      seeking = false;
+      if (Number.isFinite(audio.duration)) audio.currentTime = Number(seek.value);
+    });
+
+    audio.addEventListener("loadedmetadata", () => {
+      seek.max = String(Math.floor(audio.duration));
+      duration.textContent = clock(audio.duration);
+    });
+    audio.addEventListener("timeupdate", () => {
+      if (!seeking) {
+        seek.value = String(Math.floor(audio.currentTime));
+        elapsed.textContent = clock(audio.currentTime);
+      }
+      seek.style.setProperty("--listen-progress", `${(audio.currentTime / (audio.duration || 1)) * 100}%`);
+      save(false);
+    });
+    audio.addEventListener("play", () => {
+      player.classList.add("is-playing");
+      toggle.setAttribute("aria-label", "暂停");
+      if (current >= 0) $("[data-listen-now-label]").textContent = `正在播放 · 第 ${ordered[current].dataset.listenEpisode} 集`;
+    });
+    audio.addEventListener("pause", () => {
+      player.classList.remove("is-playing");
+      toggle.setAttribute("aria-label", "播放");
+      save(true);
+    });
     audio.addEventListener("ended", () => {
-      if (current + 1 < episodes.length) select(current + 1);
+      if (current + 1 < ordered.length) select(current + 1);
     });
     window.addEventListener("pagehide", () => save(true));
 
-    // 从 GitHub Pages 跳过来的 #ep-NNN：选中那一集（浏览器不允许未经点击就出声，所以不自动播放）。
-    const fromHash = window.location.hash.match(/^#ep-(\d+)$/);
+    if ("mediaSession" in navigator) {
+      const actions = {
+        play: () => audio.play().catch(() => {}),
+        pause: () => audio.pause(),
+        previoustrack: () => step(-1),
+        nexttrack: () => step(1),
+        seekbackward: () => skip(-15),
+        seekforward: () => skip(15),
+      };
+      Object.entries(actions).forEach(([action, handler]) => {
+        try {
+          navigator.mediaSession.setActionHandler(action, handler);
+        } catch {
+          // 旧浏览器不支持某个动作，忽略。
+        }
+      });
+    }
+
+    // 预先选好一集（不出声，浏览器也不允许未经点击就播放）：
+    // 链接里的 #ep-NNN（从 GitHub Pages 跳过来）> 上次听到的那一集 > 第一集。
     const saved = load();
-    if (saved && [1, 1.25, 1.5, 2].includes(saved.rate)) setRate(saved.rate);
-    const hashIndex = fromHash ? episodes.findIndex((item) => item.dataset.listenEpisode === fromHash[1]) : -1;
-    if (hashIndex >= 0) {
-      const at = saved && saved.n === fromHash[1] ? saved.t : 0;
-      select(hashIndex, { play: false, at });
-      episodes[hashIndex].scrollIntoView({ block: "center" });
-    } else if (saved) {
-      const savedIndex = episodes.findIndex((item) => item.dataset.listenEpisode === saved.n);
-      if (savedIndex >= 0) {
-        const minutes = Math.floor(saved.t / 60);
-        resume.textContent = `继续收听第 ${saved.n} 集${minutes > 0 ? `（${minutes} 分钟处）` : ""}`;
-        resume.hidden = false;
-        resume.addEventListener("click", () => select(savedIndex, { at: saved.t }), { once: true });
+    if (saved) {
+      setRate(saved.rate);
+      if (typeof saved.volume === "number") {
+        audio.volume = Math.min(1, Math.max(0, saved.volume));
+        volume.value = String(audio.volume);
       }
+    }
+    const byNumber = (n) => ordered.findIndex((row) => row.dataset.listenEpisode === n);
+    const fromHash = window.location.hash.match(/^#ep-(\d+)$/);
+    const hashIndex = fromHash ? byNumber(fromHash[1]) : -1;
+    const savedIndex = saved ? byNumber(saved.n) : -1;
+    if (hashIndex >= 0) {
+      select(hashIndex, { play: false, at: savedIndex === hashIndex ? saved.t : 0 });
+      // 分集行没有 id，浏览器不会按锚点把整页滚走；这里让播放器进入视野，列表自己滚到这一集。
+      const list = $(".listen-episodes");
+      list.scrollTop = Math.max(0, ordered[hashIndex].offsetTop - 8);
+      window.scrollTo({ top: Math.max(0, player.getBoundingClientRect().top + window.scrollY - 96) });
+    } else if (savedIndex >= 0) {
+      select(savedIndex, { play: false, at: saved.t });
+    } else {
+      select(0, { play: false });
     }
   });
 })();

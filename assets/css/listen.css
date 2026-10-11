@@ -1,278 +1,669 @@
-/* 收听栏目（_includes/listen-series.liquid、listen.js）：节目头、播放器、分集列表。 */
+/* 收听栏目（_includes/listen-series.liquid、listen.js）。版式参照官方播客页：
+   一张圆角卡片，左栏节目介绍，右栏播放器 + 搜索 + 分集表；手机上播放器是一整块蓝色卡片。 */
 .listen-series {
-  margin: 8px 0 48px;
+  --ls-blue: #00339e;
+  --ls-blue-soft: rgb(0 51 158 / 0.1);
+  --ls-ink: #13253f;
+  --ls-text: #27272a;
+  --ls-muted: #6f7f98;
+  --ls-label: #94a3b8;
+  --ls-card: #ffffff;
+  --ls-panel: #f4f7fd;
+  --ls-row: #eaf0fa;
+  --ls-line: #dde5f1;
+  --ls-track: #d3dcea;
+  --ls-mono: "DM Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  margin: 8px 0 56px;
+  color: var(--ls-text);
 }
-.listen-series__head {
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--global-divider-color);
+html[data-theme="dark"] .listen-series {
+  --ls-blue: #7aa2ff;
+  --ls-blue-soft: rgb(122 162 255 / 0.14);
+  --ls-ink: #e8edf7;
+  --ls-text: #d9dce3;
+  --ls-muted: #8f9bb3;
+  --ls-label: #7d8aa3;
+  --ls-card: #1c1c1b;
+  --ls-panel: #171c26;
+  --ls-row: #1f2736;
+  --ls-line: #2a3242;
+  --ls-track: #364055;
 }
-.listen-series__kicker {
-  margin: 0 0 6px;
-  color: var(--global-text-color-light);
-  font-size: 14px;
-  letter-spacing: 0.04em;
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) .listen-series {
+    --ls-blue: #7aa2ff;
+    --ls-blue-soft: rgb(122 162 255 / 0.14);
+    --ls-ink: #e8edf7;
+    --ls-text: #d9dce3;
+    --ls-muted: #8f9bb3;
+    --ls-label: #7d8aa3;
+    --ls-card: #1c1c1b;
+    --ls-panel: #171c26;
+    --ls-row: #1f2736;
+    --ls-line: #2a3242;
+    --ls-track: #364055;
+  }
 }
-.listen-series__head h2 {
-  margin: 0 0 10px;
+.listen-series p {
+  margin: 0;
+}
+.listen-series a {
+  color: var(--ls-blue);
+}
+
+.listen-card {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--ls-line);
+  border-radius: 28px;
+  background: var(--ls-card);
+}
+
+/* 左栏：节目介绍 */
+.listen-card__about {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--ls-line);
+}
+.listen-card__about > h2 {
+  margin: 0;
+  padding: 40px 36px 0;
+  color: var(--ls-ink);
   font-family: var(--function-serif);
-  font-size: clamp(28px, 3.2vw, 36px);
+  font-size: 30px;
   font-weight: 500;
   line-height: 1.25;
 }
-.listen-series__meta,
-.listen-series__rights {
-  margin: 0;
-  color: var(--global-text-color-light);
-  font-size: 14px;
+.listen-card__summary {
+  padding: 18px 36px 0;
+  font-size: 16px;
+  line-height: 1.75;
+}
+.listen-card__meta {
+  padding: 14px 36px 32px;
+  color: var(--ls-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.listen-card__block {
+  display: grid;
+  gap: 12px;
+  padding: 28px 36px;
+  border-top: 1px solid var(--ls-line);
+  font-size: 15px;
+  line-height: 1.8;
+}
+.listen-card__label {
+  color: var(--ls-label);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+}
+.listen-card__source,
+.listen-card__mirror {
+  color: var(--ls-muted);
+  font-size: 13px;
+}
+.listen-card__mirror {
+  margin-top: auto !important;
+  padding: 20px 36px 28px;
+  border-top: 1px solid var(--ls-line);
   line-height: 1.7;
+}
+.listen-guide > summary {
+  color: var(--ls-blue);
+  cursor: pointer;
+  font-size: 14.5px;
+}
+.listen-guide ol {
+  margin: 10px 0 0;
+  padding-left: 1.3em;
+  font-size: 14px;
+  line-height: 1.75;
+}
+.listen-guide li + li {
+  margin-top: 6px;
+}
+.listen-guide__note {
+  margin-top: 8px !important;
+  color: var(--ls-muted);
+  font-size: 12.5px;
+}
+
+/* 右栏 */
+.listen-card__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--ls-panel);
 }
 
 /* 不在镜像上（GitHub Pages）：去哪里收听 */
 .listen-away {
-  margin: 24px 0 0;
-  padding: 18px 20px;
-  border: 1px solid var(--global-divider-color);
-  border-radius: 14px;
-  background: var(--function-wash);
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 28px 32px;
+  border-bottom: 1px solid var(--ls-line);
 }
 .listen-away[hidden] {
   display: none;
 }
-.listen-away p {
-  margin: 0;
+.listen-away img {
+  flex: none;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgb(19 37 63 / 0.16);
+}
+.listen-away__label {
+  margin-bottom: 6px !important;
+  color: var(--ls-blue);
+  font-family: var(--ls-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
 }
 .listen-away__links {
   display: flex;
   flex-wrap: wrap;
   gap: 10px 18px;
-  margin-top: 12px !important;
-}
-.listen-away__links a {
-  font-weight: 500;
+  align-items: center;
+  margin-top: 14px !important;
 }
 .listen-away__primary {
-  padding: 6px 14px;
+  padding: 8px 18px;
   border-radius: 999px;
-  background: var(--function-ink);
-  color: var(--global-bg-color) !important;
+  background: var(--ls-blue);
+  color: #fff !important;
+  font-weight: 500;
   text-decoration: none !important;
 }
 
-/* 播放器：滚动时贴在导航栏下面，换集不用回到顶部 */
+/* 播放器 */
 .listen-player {
-  position: sticky;
-  top: 92px;
-  z-index: 5;
-  margin: 24px 0 0;
-  padding: 16px 20px;
-  border: 1px solid var(--global-divider-color);
-  border-radius: 14px;
-  background: var(--global-card-bg-color);
-  box-shadow: 0 8px 24px rgb(40 30 20 / 0.06);
+  padding: 28px 32px 22px;
+  border-bottom: 1px solid var(--ls-line);
 }
 .listen-player[hidden] {
   display: none;
 }
 .listen-player__now {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin: 0 0 10px;
+  gap: 20px;
+  align-items: center;
+}
+.listen-player__cover {
+  flex: none;
+  width: 128px;
+  height: 128px;
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgb(19 37 63 / 0.18);
+  object-fit: cover;
+}
+.listen-player__info {
+  display: grid;
+  gap: 6px;
   min-width: 0;
 }
 .listen-player__label {
-  flex: none;
-  color: var(--global-text-color-light);
-  font-size: 13px;
+  color: var(--ls-blue);
+  font-family: var(--ls-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
 }
 .listen-player__title {
+  color: var(--ls-ink);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.listen-player__sub {
   overflow: hidden;
-  font-weight: 500;
+  color: var(--ls-muted);
+  font-family: var(--ls-mono);
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.listen-player audio {
-  display: block;
+.listen-player__progress {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 0;
+  margin-top: 22px;
+  color: var(--ls-muted);
+  font-family: var(--ls-mono);
+  font-size: 11px;
+}
+.listen-player__progress input {
+  grid-column: 1 / -1;
+}
+.listen-player__progress span:last-child {
+  text-align: right;
+}
+.listen-series input[type="range"] {
   width: 100%;
-  height: 40px;
-}
-.listen-player__controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-}
-.listen-player__controls button {
-  padding: 4px 12px;
-  border: 1px solid var(--global-divider-color);
-  border-radius: 999px;
+  height: 16px;
+  margin: 0;
   background: transparent;
-  color: var(--global-text-color);
-  font-size: 13px;
-  line-height: 1.6;
   cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
 }
-.listen-player__controls button:hover {
-  border-color: var(--global-text-color-light);
+.listen-series input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--ls-blue), var(--ls-blue)) 0 / var(--listen-progress, 0%) 100% no-repeat,
+    var(--ls-track);
 }
-.listen-player__controls button[aria-pressed="true"] {
-  border-color: var(--function-ink);
-  background: var(--function-ink);
-  color: var(--global-bg-color);
+.listen-series input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--ls-track);
 }
-.listen-player__speed {
-  display: inline-flex;
-  gap: 4px;
-  margin-left: auto;
+.listen-series input[type="range"]::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--ls-blue);
 }
-.listen-player__resume {
-  border-color: var(--function-art-terracotta) !important;
-  color: var(--function-art-terracotta) !important;
+.listen-series input[type="range"]::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ls-blue);
+  -webkit-appearance: none;
+  appearance: none;
 }
-.listen-player__resume[hidden] {
-  display: none;
+.listen-series input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ls-blue);
+}
+.listen-player__volume input[type="range"] {
+  --listen-progress: 100%;
 }
 
-.listen-filter {
-  display: block;
-  margin: 20px 0 0;
+.listen-player__controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 14px;
 }
-.listen-filter[hidden] {
+.listen-player__controls button {
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--ls-muted);
+  cursor: pointer;
+}
+.listen-player__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+.listen-player__icon:hover,
+.listen-player__rate:hover {
+  background: var(--ls-blue-soft);
+  color: var(--ls-blue);
+}
+.listen-player svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.listen-player svg text {
+  fill: currentColor;
+  stroke: none;
+  font-family: var(--ls-mono);
+  font-size: 7px;
+  text-anchor: middle;
+}
+.listen-player__play {
+  width: 60px;
+  height: 60px;
+  margin: 0 6px;
+  border-radius: 50%;
+  background: var(--ls-blue) !important;
+  box-shadow: 0 10px 24px rgb(0 51 158 / 0.32);
+  color: #fff !important;
+}
+.listen-player__play svg {
+  width: 26px;
+  height: 26px;
+}
+.listen-player__glyph-play {
+  fill: currentColor !important;
+  stroke: none !important;
+  transform: translateX(1px);
+}
+.listen-player__glyph-pause {
+  display: none;
+  stroke-width: 3.2 !important;
+}
+.listen-player.is-playing .listen-player__glyph-play {
   display: none;
 }
-.listen-filter input {
+.listen-player.is-playing .listen-player__glyph-pause {
+  display: block;
+}
+.listen-player__right {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-left: auto;
+}
+.listen-player__rate {
+  min-width: 48px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ls-line) !important;
+  border-radius: 999px;
+  font-family: var(--ls-mono);
+  font-size: 13px;
+}
+.listen-player__volume {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 150px;
+  margin: 0;
+  color: var(--ls-muted);
+}
+.listen-player__volume svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+/* 搜索 */
+.listen-search {
+  position: relative;
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--ls-line);
+}
+.listen-search[hidden] {
+  display: none;
+}
+.listen-search svg {
+  position: absolute;
+  top: 50%;
+  left: 48px;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--ls-muted);
+  stroke-width: 2;
+  transform: translateY(-50%);
+}
+.listen-search input {
   width: 100%;
-  padding: 9px 14px;
-  border: 1px solid var(--global-divider-color);
-  border-radius: 10px;
-  background: var(--global-card-bg-color);
-  color: var(--global-text-color);
+  padding: 12px 16px 12px 40px;
+  border: 1px solid var(--ls-line);
+  border-radius: 12px;
+  background: var(--ls-card);
+  color: var(--ls-ink);
   font-size: 15px;
 }
 
+/* 分集表 */
+.listen-table {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.listen-table__head,
+.listen-episode {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 72px;
+  gap: 16px;
+  align-items: center;
+}
+.listen-table__head {
+  grid-template-columns: 64px minmax(0, 1fr) 72px 40px;
+  padding: 16px 12px 16px 24px;
+  border-bottom: 1px solid var(--ls-line);
+  color: var(--ls-label);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+}
+.listen-table__head span:nth-child(3) {
+  text-align: right;
+}
 .listen-episodes {
-  margin: 12px 0 0;
+  position: relative;
+  max-height: 620px;
+  margin: 0;
   padding: 0;
+  overflow-y: auto;
   list-style: none;
+  overscroll-behavior: contain;
 }
 .listen-episodes li {
   display: flex;
   align-items: stretch;
-  border-bottom: 1px solid var(--global-divider-color);
+  padding-right: 12px;
+  border-bottom: 1px solid var(--ls-line);
 }
 .listen-episodes li[hidden] {
   display: none;
 }
 .listen-episode {
-  display: grid;
   flex: 1;
-  grid-template-columns: 3.2em minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: baseline;
   min-width: 0;
-  padding: 12px 10px;
-  border-radius: 8px;
-  color: var(--global-text-color) !important;
+  padding: 22px 0 22px 24px;
+  color: var(--ls-ink) !important;
   text-decoration: none !important;
   transition: background 160ms ease;
 }
-.listen-episode:hover {
-  background: var(--function-wash);
+.listen-episodes li:hover,
+.listen-episodes li:has(.listen-episode[aria-current="true"]) {
+  background: var(--ls-row);
 }
 .listen-episode[aria-current="true"] {
-  background: var(--function-wash);
-  box-shadow: inset 3px 0 0 var(--function-art-terracotta);
+  box-shadow: inset 3px 0 0 var(--ls-blue);
 }
 .listen-episode__n,
 .listen-episode__time {
-  color: var(--global-text-color-light);
-  font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
-  font-size: 13px;
+  color: var(--ls-muted);
+  font-family: var(--ls-mono);
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
 }
+.listen-episode__time {
+  text-align: right;
+}
 .listen-episode[aria-current="true"] .listen-episode__n {
-  color: var(--function-art-terracotta);
+  color: var(--ls-blue);
 }
 .listen-episode__title {
-  line-height: 1.5;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.55;
 }
 .listen-episode__download {
   display: grid;
   flex: none;
   place-items: center;
+  align-self: center;
   width: 40px;
-  margin-left: 4px;
-  border-radius: 8px;
-  color: var(--global-text-color-light) !important;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--ls-muted) !important;
   font-size: 16px;
   text-decoration: none !important;
 }
 .listen-episode__download:hover,
 .listen-episode__download:focus-visible {
-  background: var(--function-wash);
-  color: var(--global-text-color) !important;
-}
-
-/* 下载与导入 QQ 音乐：默认收起 */
-.listen-guide {
-  margin: 20px 0 0;
-  border: 1px solid var(--global-divider-color);
-  border-radius: 14px;
-}
-.listen-guide > summary {
-  padding: 12px 18px;
-  cursor: pointer;
-  font-weight: 500;
-}
-.listen-guide[open] > summary {
-  border-bottom: 1px solid var(--global-divider-color);
-}
-.listen-guide > :not(summary) {
-  margin: 14px 18px 0;
-  font-size: 14.5px;
-  line-height: 1.75;
-}
-.listen-guide > ol {
-  padding-left: 1.4em;
-}
-.listen-guide li + li {
-  margin-top: 6px;
-}
-.listen-guide__note {
-  margin-bottom: 16px !important;
-  color: var(--global-text-color-light);
-  font-size: 13px !important;
+  background: var(--ls-blue-soft);
+  color: var(--ls-blue) !important;
 }
 .listen-empty {
-  margin: 0;
-  padding: 32px 0;
-  color: var(--global-text-color-light);
+  padding: 40px 0 !important;
+  color: var(--ls-muted);
   text-align: center;
 }
 .listen-empty[hidden] {
   display: none;
 }
 
-@media (max-width: 760px) {
-  .listen-player {
-    top: 80px;
-    padding: 14px 14px 12px;
+/* 中等宽度：两栏太挤时上下排 */
+@media (max-width: 991.98px) {
+  .listen-card {
+    grid-template-columns: minmax(0, 1fr);
   }
-  .listen-player__speed {
-    margin-left: 0;
+  .listen-card__about {
+    border-right: 0;
+    border-bottom: 1px solid var(--ls-line);
+  }
+  .listen-card__mirror {
+    margin-top: 0 !important;
+  }
+}
+
+/* 手机：参照官方移动端——播放器是一整块蓝色卡片，分集是圆角小卡片 */
+@media (max-width: 760px) {
+  .listen-card {
+    border-radius: 20px;
+  }
+  .listen-card__about > h2 {
+    padding: 28px 22px 0;
+    font-size: 26px;
+  }
+  .listen-card__summary,
+  .listen-card__meta,
+  .listen-card__block,
+  .listen-card__mirror {
+    padding-inline: 22px;
+  }
+  .listen-away {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 22px;
+  }
+  .listen-player {
+    margin: 16px;
+    padding: 20px 18px 16px;
+    border: 0;
+    border-radius: 20px;
+    background: var(--ls-blue);
+    color: #fff;
+  }
+  html[data-theme="dark"] .listen-player {
+    background: #0b2a7a;
+  }
+  .listen-player__cover {
+    width: 88px;
+    height: 88px;
+    border-radius: 12px;
+  }
+  .listen-player__label,
+  .listen-player__title {
+    color: #fff;
+  }
+  .listen-player__title {
+    font-size: 17px;
+  }
+  .listen-player__sub,
+  .listen-player__progress,
+  .listen-player__controls button,
+  .listen-player__volume {
+    color: rgb(255 255 255 / 0.82);
+  }
+  .listen-player input[type="range"]::-webkit-slider-runnable-track {
+    background:
+      linear-gradient(#fff, #fff) 0 / var(--listen-progress, 0%) 100% no-repeat,
+      rgb(255 255 255 / 0.3);
+  }
+  .listen-player input[type="range"]::-moz-range-track {
+    background: rgb(255 255 255 / 0.3);
+  }
+  .listen-player input[type="range"]::-moz-range-progress {
+    background: #fff;
+  }
+  .listen-player input[type="range"]::-webkit-slider-thumb {
+    background: #fff;
+  }
+  .listen-player input[type="range"]::-moz-range-thumb {
+    background: #fff;
+  }
+  .listen-player__controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .listen-player__icon:hover,
+  .listen-player__rate:hover {
+    background: rgb(255 255 255 / 0.14);
+    color: #fff;
+  }
+  .listen-player__play {
+    background: #fff !important;
+    box-shadow: none;
+    color: var(--ls-blue) !important;
+  }
+  html[data-theme="dark"] .listen-player__play {
+    color: #0b2a7a !important;
+  }
+  .listen-player__right {
+    justify-content: center;
+    width: 100%;
+    margin: 8px 0 0;
+  }
+  .listen-player__rate {
+    border-color: rgb(255 255 255 / 0.35) !important;
+  }
+  .listen-search {
+    padding: 0 16px 12px;
+    border: 0;
+  }
+  .listen-search svg {
+    left: 32px;
+    margin-top: -6px;
+  }
+  .listen-table__head {
+    display: none;
+  }
+  .listen-episodes {
+    max-height: 70vh;
+    padding: 0 16px 16px;
+  }
+  .listen-episodes li {
+    margin-top: 10px;
+    padding-right: 6px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--ls-row);
   }
   .listen-episode {
-    grid-template-columns: 2.6em minmax(0, 1fr) auto;
-    gap: 8px;
-    padding: 12px 6px;
+    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-areas:
+      "n title"
+      "n time";
+    gap: 2px 10px;
+    padding: 14px 0 14px 14px;
+    border-radius: 14px;
   }
-  .listen-episode__download {
-    width: 36px;
-    margin-left: 0;
+  .listen-episode__n {
+    grid-area: n;
+    font-size: 15px;
   }
-  .listen-guide > :not(summary) {
-    margin-inline: 14px;
+  .listen-episode__title {
+    grid-area: title;
+    font-size: 15px;
+  }
+  .listen-episode__time {
+    grid-area: time;
+    font-size: 11px;
+    text-align: left;
   }
 }
 @media (prefers-reduced-motion: reduce) {

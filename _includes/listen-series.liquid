@@ -1,8 +1,9 @@
 {%- comment -%}
-  收听栏目的一套节目：标题与来源、下载与导入说明、播放器、分集列表。数据在 _data/listen/<slug>.yml
-  （scripts/listen_import.py 生成）；音频只在腾讯云镜像上（/media/listen/<slug>/<NNN>.m4a，见 deploy/nginx）。
-  没有脚本时，每一集都是指向镜像音频文件的普通链接；listen.js 在镜像上改成页内播放，
-  在 GitHub Pages 等其他主机上提示去镜像或官方渠道收听。
+  收听栏目的一套节目，版式参照官方播客页：一张卡片，左栏是节目介绍、下载与导入说明，
+  右栏是播放器、搜索与分集表（最新一集在上）。数据在 _data/listen/<slug>.yml
+  （scripts/listen_import.py 生成分集，介绍等字段手写）；音频只在腾讯云镜像上（/media/listen/<slug>/，见 deploy/nginx）。
+  没有脚本时，每一集都是指向镜像音频文件的普通链接；listen.js 在镜像上接管为页内播放，
+  在 GitHub Pages 等其他主机上把分集改成镜像上同一集的链接，并说明去哪里收听。
   用法：{% include listen-series.liquid series='wealth-revolution' %}
 {%- endcomment -%}
 {% assign series = site.data.listen[include.series] %}
@@ -14,6 +15,7 @@
 {% endfor %}
 {% assign total_hours = total_seconds | divided_by: 3600 %}
 {% assign total_minutes = total_seconds | modulo: 3600 | divided_by: 60 %}
+{% assign official_label = series.official | remove: 'https://' | remove: 'www.' %}
 
 <section
   class="listen-series"
@@ -21,110 +23,187 @@
   data-listen-series="{{ series.slug }}"
   data-listen-mirror="{{ mirror }}"
   data-listen-page="{{ mirror }}{{ page.url }}"
+  data-listen-title="{{ series.title | escape }}"
+  data-listen-author="{{ series.author | escape }}"
+  {% if series.cover %}
+    data-listen-cover="{{ series.cover | relative_url }}"
+  {% endif %}
   aria-labelledby="listen-{{ series.slug }}-title"
 >
-  <header class="listen-series__head">
-    <p class="listen-series__kicker">音频专栏 · {{ series.author }}</p>
-    <h2 id="listen-{{ series.slug }}-title">{{ series.title }}</h2>
-    <p class="listen-series__meta">共 {{ series.episodes.size }} 集 · 约 {{ total_hours }} 小时 {{ total_minutes }} 分钟</p>
-    <p class="listen-series__rights">
-      {{ series.author }}《{{ series.title }}》国内镜像站。
-      {%- if series.official != blank %}
-        官方收听：<a href="{{ series.official }}" target="_blank" rel="noopener noreferrer">
-          {{- series.official | remove: 'https://' | remove: 'www.' -}}
-        </a>
-      {%- endif %}
-    </p>
-  </header>
+  <div class="listen-card">
+    <aside class="listen-card__about">
+      <h2 id="listen-{{ series.slug }}-title">{{ series.title }}</h2>
+      {% if series.summary %}
+        <p class="listen-card__summary">{{ series.summary }}</p>
+      {% endif %}
+      <p class="listen-card__meta">{{ series.author }} · 共 {{ series.episodes.size }} 集 · 约 {{ total_hours }} 小时 {{ total_minutes }} 分钟</p>
 
-  <details class="listen-guide">
-    <summary>下载与导入 QQ 音乐</summary>
-    <p>
-      每一集右边的 <span aria-hidden="true">↓</span> 下载单集；
-      {%- if series.archive -%}
-        也可以<a href="{{ mirror }}/media/listen/{{ series.archive }}">下载全部 {{ series.episodes.size }} 集（zip，约 {{ series.archive_mb }} MB）</a
-        >，解压后文件名就是「编号 + 标题」。
-      {%- endif -%}
-      每个文件都写好了标题（以三位编号开头）和歌手「{{ series.author }}」。
-    </p>
-    <ol>
-      <li>
-        把音频放进手机里一个单独的文件夹，例如 <code>Music/{{ series.title }}</code>；不要混进这个节目的旧文件。
-      </li>
-      <li>
-        扫描前先<strong>关掉 Wi‑Fi 和移动数据</strong>。QQ
-        音乐会按声音指纹做云匹配，可能把某一集识别成别人上传的版本，改掉歌手、打乱顺序；扫描完再联网。
-      </li>
-      <li>打开 QQ 音乐：我的 → 本地歌曲（本地音乐）→ 右上角菜单 → 扫描歌曲，选择自定义扫描，只勾选这个文件夹。</li>
-      <li>
-        排序选「按歌曲名」，就是 000 → {{ series.episodes.last.n }} 的顺序；按歌手「{{ series.author }}」筛选后全选，添加到新建歌单「
-        {{- series.title -}}
-        」。
-      </li>
-      <li>想在其他设备上听：在歌单里多选 → 上传到云盘（有的版本叫「我的 → 微云音乐网盘 → 上传本地歌曲」），同一账号登录即可。</li>
-    </ol>
-    <p class="listen-guide__note">以上是安卓手机上的步骤，不同版本的 QQ 音乐入口名称略有差异。</p>
-  </details>
+      {% if series.about %}
+        <div class="listen-card__block">
+          <p class="listen-card__label">关于这档节目</p>
+          {% for paragraph in series.about %}
+            <p>{{ paragraph }}</p>
+          {% endfor %}
+          {% if series.official != blank %}
+            <p class="listen-card__source">
+              介绍译自官方播客页
+              <a href="{{ series.official }}" target="_blank" rel="noopener noreferrer">{{ official_label }}</a>
+            </p>
+          {% endif %}
+        </div>
+      {% endif %}
 
-  <div class="listen-away" data-listen-away hidden>
-    <p>音频只在本站腾讯云镜像上在线播放。点任意一集会跳到镜像上的这一集。</p>
-    <p class="listen-away__links">
-      <a class="listen-away__primary" href="{{ mirror }}{{ page.url }}">去 {{ mirror | remove: 'https://' }} 收听</a>
-      {%- if series.official != blank %}
-        <a href="{{ series.official }}" target="_blank" rel="noopener noreferrer">去官方播客收听</a>
-      {%- endif %}
-    </p>
-  </div>
+      <div class="listen-card__block">
+        <p class="listen-card__label">下载与导入 QQ 音乐</p>
+        <p>
+          每一集右边的 <span aria-hidden="true">↓</span> 下载单集；
+          {%- if series.archive -%}
+            也可以<a href="{{ mirror }}/media/listen/{{ series.archive }}"
+              >下载全部 {{ series.episodes.size }} 集（zip，约 {{ series.archive_mb }} MB）</a
+            >，解压后文件名就是「编号 + 标题」。
+          {%- endif -%}
+          每个文件都写好了标题（以三位编号开头）和歌手「{{ series.author }}」。
+        </p>
+        <details class="listen-guide">
+          <summary>导入 QQ 音乐的步骤</summary>
+          <ol>
+            <li>
+              把音频放进手机里一个单独的文件夹，例如 <code>Music/{{ series.title }}</code>；不要混进这个节目的旧文件。
+            </li>
+            <li>
+              扫描前先<strong>关掉 Wi‑Fi 和移动数据</strong>。QQ
+              音乐会按声音指纹做云匹配，可能把某一集识别成别人上传的版本，改掉歌手、打乱顺序；扫描完再联网。
+            </li>
+            <li>打开 QQ 音乐：我的 → 本地歌曲（本地音乐）→ 右上角菜单 → 扫描歌曲，选择自定义扫描，只勾选这个文件夹。</li>
+            <li>
+              排序选「按歌曲名」，就是 000 → {{ series.episodes.last.n }} 的顺序；按歌手「{{ series.author }}」筛选后全选，添加到新建歌单「
+              {{- series.title -}}
+              」。
+            </li>
+            <li>想在其他设备上听：在歌单里多选 → 上传到云盘（有的版本叫「我的 → 微云音乐网盘 → 上传本地歌曲」），同一账号登录即可。</li>
+          </ol>
+          <p class="listen-guide__note">以上是安卓手机上的步骤，不同版本的 QQ 音乐入口名称略有差异。</p>
+        </details>
+      </div>
 
-  <div class="listen-player" data-listen-player hidden>
-    <p class="listen-player__now">
-      <span class="listen-player__label" data-listen-now-label>未在播放</span>
-      <span class="listen-player__title" data-listen-now-title>从下面选一集开始</span>
-    </p>
-    <audio controls preload="none" data-listen-audio></audio>
-    <div class="listen-player__controls">
-      <button type="button" data-listen-prev>上一集</button>
-      <button type="button" data-listen-next>下一集</button>
-      <span class="listen-player__speed" role="group" aria-label="播放速度">
-        {%- assign rates = '1,1.25,1.5,2' | split: ',' -%}
-        {%- for rate in rates %}
-          <button type="button" data-listen-rate="{{ rate }}" aria-pressed="{% if rate == '1' %}true{% else %}false{% endif %}">{{- rate }}×</button>
-        {%- endfor %}
-      </span>
-      <button type="button" class="listen-player__resume" data-listen-resume hidden></button>
+      <p class="listen-card__mirror">
+        {{ series.author }}《{{ series.title }}》国内镜像站
+        {%- if series.official != blank %}
+          · 官方收听：<a href="{{ series.official }}" target="_blank" rel="noopener noreferrer">{{ official_label }}</a>
+        {%- endif %}
+      </p>
+    </aside>
+
+    <div class="listen-card__main">
+      <div class="listen-away" data-listen-away hidden>
+        {% if series.cover %}<img src="{{ series.cover | relative_url }}" alt="" width="88" height="88">{% endif %}
+        <div>
+          <p class="listen-away__label">在国内镜像收听</p>
+          <p>音频只在 {{ mirror | remove: 'https://' }} 上在线播放。点任意一集，会在镜像上打开这一集。</p>
+          <p class="listen-away__links">
+            <a class="listen-away__primary" href="{{ mirror }}{{ page.url }}">去 {{ mirror | remove: 'https://' }} 收听</a>
+            {%- if series.official != blank %}
+              <a href="{{ series.official }}" target="_blank" rel="noopener noreferrer">去官方播客</a>
+            {%- endif %}
+          </p>
+        </div>
+      </div>
+
+      <div class="listen-player" data-listen-player hidden>
+        <div class="listen-player__now">
+          {% if series.cover %}
+            <img class="listen-player__cover" src="{{ series.cover | relative_url }}" alt="" width="128" height="128">
+          {% endif %}
+          <div class="listen-player__info">
+            <p class="listen-player__label" data-listen-now-label>正在播放</p>
+            <p class="listen-player__title" data-listen-now-title>从下面选一集开始</p>
+            <p class="listen-player__sub">{{ series.title }} · {{ series.author }}</p>
+          </div>
+        </div>
+        <div class="listen-player__progress">
+          <input type="range" min="0" max="0" step="1" value="0" aria-label="播放进度" data-listen-seek>
+          <span data-listen-elapsed>00:00</span>
+          <span data-listen-duration>00:00</span>
+        </div>
+        <div class="listen-player__controls">
+          <button type="button" class="listen-player__icon" data-listen-prev aria-label="上一集" title="上一集">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 5v14M19 5 9 12l10 7z" />
+            </svg>
+          </button>
+          <button type="button" class="listen-player__icon" data-listen-back aria-label="后退 15 秒" title="后退 15 秒">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4" /><text x="12" y="15.5">15</text>
+            </svg>
+          </button>
+          <button type="button" class="listen-player__play" data-listen-toggle aria-label="播放">
+            <svg class="listen-player__glyph-play" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            <svg class="listen-player__glyph-pause" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 5v14M16 5v14" />
+            </svg>
+          </button>
+          <button type="button" class="listen-player__icon" data-listen-forward aria-label="前进 15 秒" title="前进 15 秒">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v4h-4" /><text x="12" y="15.5">15</text>
+            </svg>
+          </button>
+          <button type="button" class="listen-player__icon" data-listen-next aria-label="下一集" title="下一集">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 5v14M5 5l10 7-10 7z" />
+            </svg>
+          </button>
+          <span class="listen-player__right">
+            <button type="button" class="listen-player__rate" data-listen-rate aria-label="播放速度 1 倍">1×</button>
+            <label class="listen-player__volume">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 9v6h4l5 4V5L8 9zM16 9a4 4 0 0 1 0 6" />
+              </svg>
+              <input type="range" min="0" max="1" step="0.05" value="1" aria-label="音量" data-listen-volume>
+            </label>
+          </span>
+        </div>
+        <audio preload="none" data-listen-audio></audio>
+      </div>
+
+      <div class="listen-search" data-listen-filter-wrap hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" />
+        </svg>
+        <input type="search" placeholder="搜索标题，例如「杠杆」" aria-label="按标题搜索分集" autocomplete="off" data-listen-filter>
+      </div>
+
+      <div class="listen-table">
+        <p class="listen-table__head" aria-hidden="true"><span>#</span><span>标题</span><span>时长</span><span></span></p>
+        <ol class="listen-episodes" reversed>
+          {% for episode in series.episodes reversed %}
+            {% assign minutes = episode.seconds | divided_by: 60 | prepend: '0' | slice: -2, 2 %}
+            {% assign seconds = episode.seconds | modulo: 60 | prepend: '0' | slice: -2, 2 %}
+            <li data-listen-episode="{{ episode.n }}">
+              <a
+                class="listen-episode"
+                href="{{ media_base }}{{ episode.n }}.m4a"
+                data-listen-src="/media/listen/{{ series.slug }}/{{ episode.n }}.m4a"
+              >
+                <span class="listen-episode__n">{{ episode.n }}</span>
+                <span class="listen-episode__title">{{ episode.title }}</span>
+                <span class="listen-episode__time">{{ minutes }}:{{ seconds }}</span>
+              </a>
+              <a
+                class="listen-episode__download"
+                href="{{ media_base }}{{ episode.n }}.m4a?download=1"
+                download="{{ episode.n }}{{ episode.title | escape }}.m4a"
+                title="下载第 {{ episode.n }} 集"
+                aria-label="下载第 {{ episode.n }} 集：{{ episode.title | escape }}"
+                ><span aria-hidden="true">↓</span></a
+              >
+            </li>
+          {% endfor %}
+        </ol>
+        <p class="listen-empty" data-listen-empty hidden>没有标题包含这个词的分集。</p>
+      </div>
     </div>
   </div>
-
-  <label class="listen-filter" data-listen-filter-wrap hidden>
-    <span class="sr-only">按标题筛选</span>
-    <input type="search" placeholder="按标题筛选，例如「杠杆」" autocomplete="off" data-listen-filter>
-  </label>
-
-  <ol class="listen-episodes">
-    {% for episode in series.episodes %}
-      {% assign minutes = episode.seconds | divided_by: 60 %}
-      {% assign seconds = episode.seconds | modulo: 60 | prepend: '0' | slice: -2, 2 %}
-      <li id="ep-{{ episode.n }}" data-listen-episode="{{ episode.n }}">
-        <a
-          class="listen-episode"
-          href="{{ media_base }}{{ episode.n }}.m4a"
-          data-listen-src="/media/listen/{{ series.slug }}/{{ episode.n }}.m4a"
-        >
-          <span class="listen-episode__n">{{ episode.n }}</span>
-          <span class="listen-episode__title">{{ episode.title }}</span>
-          <span class="listen-episode__time">{{ minutes }}:{{ seconds }}</span>
-        </a>
-        <a
-          class="listen-episode__download"
-          href="{{ media_base }}{{ episode.n }}.m4a?download=1"
-          download="{{ episode.n }}{{ episode.title | escape }}.m4a"
-          title="下载第 {{ episode.n }} 集"
-          aria-label="下载第 {{ episode.n }} 集：{{ episode.title | escape }}"
-          ><span aria-hidden="true">↓</span></a
-        >
-      </li>
-    {% endfor %}
-  </ol>
-  <p class="listen-empty" data-listen-empty hidden>没有标题包含这个词的分集。</p>
 </section>
 <script src="{{ '/assets/js/listen.js' | relative_url | bust_file_cache }}" defer></script>
