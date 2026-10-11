@@ -1,0 +1,88 @@
+{%- comment -%}
+  一张文章卡片（插画 + 日期 + 标题 + 分类）。博客页和各栏目页（论文札记、思考、日志）共用；
+  样式在 blog-feed.css。用法：{% include writing-card.liquid post=post index=forloop.index0 %}
+{%- endcomment -%}
+{% assign post = include.post %}
+{% assign art_colors = 'terracotta,sky,olive,lavender,sand' | split: ',' %}
+{% assign art_fallbacks = 'arm,graph,chart,book' | split: ',' %}
+{% assign article_url = post.url | relative_url %}
+{% assign external_article = false %}
+{% if post.redirect contains '://' %}
+  {% assign article_url = post.redirect %}
+  {% assign external_article = true %}
+{% elsif post.redirect != blank %}
+  {% assign article_url = post.redirect | relative_url %}
+{% endif %}
+{% assign post_text = post.content | strip_html | strip_newlines %}
+{% assign read_time = post_text | size | divided_by: 500 | plus: 1 %}
+{% assign post_category = post.categories.first %}
+{% case post.kind %}
+  {% when 'paper-note' -%}
+    {%- assign kind_label = '论文札记' %}
+  {% when 'note' -%}
+    {%- assign kind_label = '笔记' %}
+  {% when 'log' -%}
+    {%- assign kind_label = '日志' %}
+  {% else -%}
+    {%- assign kind_label = '文章' %}
+{% endcase %}
+{% assign color_index = include.index | modulo: art_colors.size %}
+{% assign art_color = post.art_color | default: art_colors[color_index] %}
+{% assign fallback_index = include.index | modulo: art_fallbacks.size %}
+{% if post.art %}
+  {% assign art_name = post.art %}
+{% elsif post_category == '技术' %}
+  {% assign art_name = 'lidar' %}
+{% elsif post_category == '观点' %}
+  {% assign art_name = 'chat' %}
+{% elsif post.kind == 'paper-note' %}
+  {% assign art_name = 'book' %}
+{% else %}
+  {% assign art_name = art_fallbacks[fallback_index] %}
+{% endif %}
+<article
+  class="writing-card"
+  data-category="{{ post.categories | join: '|' | escape }}"
+  data-tags="|{{ post.tags | join: '|' | escape }}|"
+  data-date="{{ post.date | date: '%Y-%m-%d' }}"
+>
+  <a
+    class="writing-card-link"
+    href="{{ article_url }}"
+    title="{{ post.description | escape }}"
+    {% if external_article %}
+      target="_blank" rel="noopener noreferrer"
+    {% endif %}
+  >
+    <div class="writing-card-art" style="--writing-art: var(--function-art-{{ art_color | escape }})">
+      {% if post.cover %}
+        <img src="{{ post.cover | relative_url }}" alt="" loading="lazy" decoding="async">
+      {% else %}
+        {% include blog-art.liquid name=art_name %}
+      {% endif %}
+    </div>
+    <div class="writing-card-body">
+      <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y 年 %-m 月 %-d 日' }}</time>
+      <h3>
+        {{- post.title | escape -}}
+        {% if external_article -%}
+          <span class="sr-only">（在新窗口打开外部文章）</span>
+        {%- endif %}
+      </h3>
+      <p class="writing-card-meta">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          {%- if post_category == '技术' -%}
+            <path d="m8 7-5 5 5 5M16 7l5 5-5 5"/>
+          {%- elsif post_category == '观点' -%}
+            <path d="M4 5h16v11H9l-5 4z"/>
+          {%- else -%}
+            <path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.2"/>
+          {%- endif -%}
+        </svg>
+        <span>{{ post_category | default: kind_label | escape }}</span>
+        <span aria-hidden="true">·</span>
+        <span>约 {{ read_time }} 分钟</span>
+      </p>
+    </div>
+  </a>
+</article>

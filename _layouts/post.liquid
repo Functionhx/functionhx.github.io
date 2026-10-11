@@ -22,6 +22,10 @@ layout: default
   {% assign back_label = '全部日志' %}
   {% assign article_label = '日志' %}
   {% assign back_path = '/logs/' %}
+{% elsif page.kind == 'paper-note' %}
+  {% assign back_label = '全部论文札记' %}
+  {% assign article_label = '论文札记' %}
+  {% assign back_path = '/paper-notes/' %}
 {% endif %}
 {% assign chip_label = page.categories | first | default: article_label %}
 {% assign last_date = page.last_modified_at | default: page.last_updated %}

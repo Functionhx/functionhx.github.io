@@ -463,6 +463,82 @@ html[data-function-scrolled="true"]:has(.post--article) .function-page #navbar {
   padding: 0.0625em 0.25em;
 }
 
+/* 审稿分数：Markdown 列表加 {: .review-scores}，每项写成「R1 **−1** weak reject」，排成一行小卡片。 */
+:is(.post--article #markdown-content, .post-prose) ul.review-scores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+  margin: 28px 0 18px;
+  padding: 0;
+}
+:is(.post--article #markdown-content, .post-prose) .review-scores li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 14px 16px 12px;
+  border: 1px solid var(--post-line-soft);
+  border-radius: 14px;
+  background: var(--function-wash);
+  color: var(--post-ink-3);
+  font-size: 13px;
+  line-height: 1.4;
+}
+:is(.post--article #markdown-content, .post-prose) .review-scores strong {
+  color: var(--post-ink);
+  font-family: var(--function-serif, var(--post-sans));
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+:is(.post--article #markdown-content, .post-prose) .review-scores li:first-child strong {
+  color: var(--function-art-terracotta);
+}
+
+/* 审稿意见原文：每份一张卡片 <section class="review-card review-card--accept|weak|reject">，
+   卡片里的 ## 标题照常进目录，这里只把它画成卡片的抬头。 */
+:is(.post--article #markdown-content, .post-prose) .review-card {
+  margin: 36px 0 0;
+  padding: 0 24px 6px;
+  border: 1px solid var(--post-line-soft);
+  border-left: 3px solid var(--review-tone, var(--post-line));
+  border-radius: 12px;
+}
+.review-card--accept {
+  --review-tone: var(--function-art-olive);
+}
+.review-card--weak {
+  --review-tone: var(--function-art-sky);
+}
+.review-card--reject {
+  --review-tone: var(--function-art-terracotta);
+}
+:is(.post--article #markdown-content, .post-prose) .review-card > h2 {
+  margin: 0 -24px 20px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--post-line-soft);
+  color: var(--post-ink);
+  font-size: 15.75px;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+:is(.post--article #markdown-content, .post-prose) .review-card > :last-child {
+  margin-bottom: 18px;
+}
+@media (max-width: 560px) {
+  :is(.post--article #markdown-content, .post-prose) ul.review-scores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  :is(.post--article #markdown-content, .post-prose) .review-card {
+    padding-inline: 16px;
+  }
+  :is(.post--article #markdown-content, .post-prose) .review-card > h2 {
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+}
+
 /* code: claude.dev's bordered card, header added by post.js */
 :is(.post--article #markdown-content, .post-prose) div.highlighter-rouge {
   position: relative;

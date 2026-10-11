@@ -84,7 +84,7 @@
       {% if page.home %}
         <link rel="stylesheet" href="{{ '/assets/css/function-home.css' | relative_url | bust_file_cache }}">
       {% endif %}
-      {% if page.translation_key == 'blog' %}
+      {% if page.translation_key == 'blog' or page.layout == 'page' and page.kind %}
         <link rel="stylesheet" href="{{ '/assets/css/blog-feed.css' | relative_url | bust_file_cache }}">
       {% endif %}
       <noscript>
