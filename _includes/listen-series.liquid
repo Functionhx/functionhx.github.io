@@ -87,7 +87,7 @@
       </div>
 
       <p class="listen-card__mirror">
-        {{ series.author }}《{{ series.title }}》国内镜像站
+        {{ series.author }}《{{ series.title }}》官方镜像站
         {%- if series.official != blank %}
           · 官方收听：<a href="{{ series.official }}" target="_blank" rel="noopener noreferrer">{{ official_label }}</a>
         {%- endif %}
@@ -98,10 +98,10 @@
       <div class="listen-away" data-listen-away hidden>
         {% if series.cover %}<img src="{{ series.cover | relative_url }}" alt="" width="88" height="88">{% endif %}
         <div>
-          <p class="listen-away__label">在国内镜像收听</p>
-          <p>音频只在 {{ mirror | remove: 'https://' }} 上在线播放。点任意一集，会在镜像上打开这一集。</p>
+          <p class="listen-away__label">在官方镜像站收听</p>
+          <p>音频在官方镜像站在线播放。点任意一集，会在官方镜像站打开这一集。</p>
           <p class="listen-away__links">
-            <a class="listen-away__primary" href="{{ mirror }}{{ page.url }}">去 {{ mirror | remove: 'https://' }} 收听</a>
+            <a class="listen-away__primary" href="{{ mirror }}{{ page.url }}">去官方镜像站收听</a>
             {%- if series.official != blank %}
               <a href="{{ series.official }}" target="_blank" rel="noopener noreferrer">去官方播客</a>
             {%- endif %}

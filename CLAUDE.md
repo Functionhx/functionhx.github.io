@@ -190,7 +190,7 @@ content logging.
 
 ## Listening section (/listen/)
 
-Audio series mirrored for listening in mainland China (the page calls itself 「…国内镜像站」 and links the official source). **Audio never enters git or `_site`**: `scripts/listen_import.py
+Audio series mirrored for listening in mainland China (the page calls itself 「…官方镜像站」 and never shows the mirror domain and links the official source). **Audio never enters git or `_site`**: `scripts/listen_import.py
 <slug> <folder> --title … --author … --official …` transcodes to 64 kbit/s mono AAC in `build/listen/<slug>/`
 (ignored and excluded) and writes `_data/listen/<slug>.yml`; the files are then rsynced by hand to the Tencent
 server's `/var/www/media/listen/<slug>/` (outside the release directory that every deploy replaces), served by the
