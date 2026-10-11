@@ -240,6 +240,20 @@ html:not(.js) .writing-layout:has(.writing-filters[hidden]) {
   box-shadow: 0 10px 26px rgb(40 30 20 / 0.18);
   object-fit: contain;
 }
+.writing-card--podcast .writing-card-art--magazine img {
+  /* 图片区 3:2、封面 1212:1605：宽 44% ≈ 高 88%（网格里百分比高度不生效，按宽度算）。 */
+  width: 44%;
+  height: auto;
+  aspect-ratio: 1212 / 1605;
+  border-radius: 4px;
+  box-shadow: 0 12px 28px rgb(20 20 19 / 0.32);
+}
+.writing-card-credit {
+  margin-top: -18px;
+  margin-bottom: 18px;
+  color: var(--global-text-color-light);
+  font-size: 12px;
+}
 .writing-grid--lane .writing-empty {
   grid-column: 1 / -1;
 }

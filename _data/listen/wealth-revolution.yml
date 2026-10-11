@@ -7,6 +7,9 @@ archive: "wealth-revolution-000-156.zip"
 archive_mb: 893
 # 以下由站长维护：封面裁自官方播客页的节目封面；简介按官方播客页英文原文翻译。
 cover: /assets/img/listen/wealth-revolution.webp
+# 见山里的播客卡片用《福布斯》2025 年 4/5 月刊封面（owner 指定），卡片上注明出处。
+card_cover: /assets/img/listen/wealth-revolution-forbes.webp
+card_cover_credit: "封面：《福布斯》2025 年 4/5 月刊 · 摄影 Gareth Brown"
 tagline: "人生策略、核心价值与前瞻视角"
 summary: "孙宇晨 2016 年在喜马拉雅创办并主讲的商业与财经音频节目，探讨人生策略、财富自由与前瞻视角。"
 about:
