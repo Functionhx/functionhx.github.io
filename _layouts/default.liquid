@@ -84,7 +84,7 @@
       {% if page.home %}
         <link rel="stylesheet" href="{{ '/assets/css/function-home.css' | relative_url | bust_file_cache }}">
       {% endif %}
-      {% if page.translation_key == 'blog' or page.layout == 'page' and page.kind %}
+      {% if page.feed_kinds or page.layout == 'page' and page.kind %}
         <link rel="stylesheet" href="{{ '/assets/css/blog-feed.css' | relative_url | bust_file_cache }}">
       {% endif %}
       {% if page.translation_key == 'notes-podcast' %}
@@ -187,7 +187,7 @@
 
   <!-- Body -->
   <body
-    class="{% if site.navbar_fixed %}fixed-top-nav{% endif %}{% if page_lang != 'en' %} function-page{% if page.translation_key == 'blog' %} function-blog-page{% endif %}{% if page.home %} function-home-page{% endif %}{% endif %}"
+    class="{% if site.navbar_fixed %}fixed-top-nav{% endif %}{% if page_lang != 'en' %} function-page{% if page.feed_kinds %} function-blog-page{% endif %}{% if page.home %} function-home-page{% endif %}{% endif %}"
     data-page-language="{{ page_lang }}"
     id="top"
   >

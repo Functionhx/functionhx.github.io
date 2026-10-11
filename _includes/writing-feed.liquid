@@ -1,8 +1,27 @@
-{% assign postlist = paginator.posts | where: 'lang', 'zh' %}
+{%- comment -%}
+  博客、论文札记、见山共用的栏目页（书房式）：紧凑页头 + 左侧筛选（排序 / 分类 / 标签）+ 卡片网格。
+  页面 front matter：
+    feed_kinds     要列出的文章 kind，例如 [writing]、[paper-note]、[note]
+    feed_podcasts  可选，排进网格的播客（_data/listen/<slug>.yml），卡片指向 /notes/podcast/
+    empty_text     可选，栏目里还没有内容时的一句话
+  标题与介绍取 blog_name / blog_description，没有时取 title / description。
+  筛选与排序只在当前页的卡片里进行（blog-cards.js），不发请求。
+{%- endcomment -%}
 {% assign all_posts = site.posts | where: 'lang', 'zh' %}
+{% assign postlist = '' | split: '' %}
+{% for post in all_posts %}
+  {% if page.feed_kinds contains post.kind %}
+    {% assign postlist = postlist | push: post %}
+  {% endif %}
+{% endfor %}
+{% assign podcast_slugs = page.feed_podcasts | default: empty %}
+{% assign item_count = postlist.size | plus: podcast_slugs.size %}
 {% assign writing_categories = '' %}
 {% assign writing_tags = '' %}
-{% for post in all_posts %}
+{% if podcast_slugs.size > 0 %}
+  {% assign writing_categories = '播客|' %}
+{% endif %}
+{% for post in postlist %}
   {% for category in post.categories %}
     {% unless writing_categories contains category %}
       {% assign writing_categories = writing_categories | append: category | append: '|' %}
@@ -20,26 +39,9 @@
 <div class="writing-page">
   <header class="writing-hero">
     <div class="writing-hero-copy">
-      <h1>{{ page.blog_name }}</h1>
-      <p>{{ page.blog_description }}</p>
+      <h1>{{ page.blog_name | default: page.title }}</h1>
+      <p>{{ page.blog_description | default: page.description }}</p>
     </div>
-    <nav class="writing-topics" aria-label="按主题浏览">
-      {% for category in writing_categories %}
-        <a href="#writing-grid" data-writing-topic="{{ category | escape }}">
-          {{- category | escape -}}
-          <span aria-hidden="true">→</span></a
-        >
-      {% endfor %}
-      {% assign writing_pages = site.pages | where: 'lang', 'zh' | where: 'nav', true | sort: 'nav_order' %}
-      {% for writing_page in writing_pages %}
-        {% if writing_page.translation_key != 'blog' and writing_page.permalink != '/' %}
-          <a href="{{ writing_page.url | relative_url }}">
-            {{- writing_page.title | escape -}}
-            <span aria-hidden="true">→</span></a
-          >
-        {% endif %}
-      {% endfor %}
-    </nav>
   </header>
 
   <div class="writing-layout">
@@ -71,17 +73,19 @@
           <button type="button" data-writing-sort="old" aria-pressed="false">最早在前</button>
         </div>
       </details>
-      <details class="writing-filter" data-open-on-wide>
-        <summary>分类</summary>
-        <div class="writing-filter-options">
-          <button type="button" data-writing-category="" aria-pressed="true">全部</button>
-          {% for category in writing_categories %}
-            <button type="button" data-writing-category="{{ category | escape }}" aria-pressed="false">
-              {{- category | escape -}}
-            </button>
-          {% endfor %}
-        </div>
-      </details>
+      {% if writing_categories.size > 0 %}
+        <details class="writing-filter" data-open-on-wide>
+          <summary>分类</summary>
+          <div class="writing-filter-options">
+            <button type="button" data-writing-category="" aria-pressed="true">全部</button>
+            {% for category in writing_categories %}
+              <button type="button" data-writing-category="{{ category | escape }}" aria-pressed="false">
+                {{- category | escape -}}
+              </button>
+            {% endfor %}
+          </div>
+        </details>
+      {% endif %}
       {% if writing_tags.size > 0 %}
         <details class="writing-filter">
           <summary>标签</summary>
@@ -107,21 +111,37 @@
     </script>
 
     <section class="writing-feed" id="writing-grid" aria-labelledby="writing-feed-title">
-      <h2 id="writing-feed-title" class="sr-only">全部文章</h2>
+      <h2 id="writing-feed-title" class="sr-only">{{ page.blog_name | default: page.title }}的全部内容</h2>
       <div class="writing-grid">
+        {%- comment -%} 播客按 added 日期插进文章之间，初始顺序与「最新在前」一致。 {%- endcomment -%}
+        {% assign podcasts_done = '' %}
         {% for post in postlist %}
+          {% assign post_day = post.date | date: '%Y-%m-%d' %}
+          {% for slug in podcast_slugs %}
+            {% assign podcast_day = site.data.listen[slug].added | date: '%Y-%m-%d' %}
+            {% unless podcasts_done contains slug %}
+              {% if podcast_day >= post_day %}
+                {% include listen-lane-card.liquid series=slug %}
+                {% assign podcasts_done = podcasts_done | append: slug | append: '|' %}
+              {% endif %}
+            {% endunless %}
+          {% endfor %}
           {% include writing-card.liquid post=post index=forloop.index0 %}
+        {% endfor %}
+        {% for slug in podcast_slugs %}
+          {% unless podcasts_done contains slug %}
+            {% include listen-lane-card.liquid series=slug %}
+          {% endunless %}
         {% endfor %}
       </div>
       <p
         class="writing-empty"
-        {% if postlist.size > 0 %}
+        {% if item_count > 0 %}
           hidden
         {% endif %}
       >
-        {%- if postlist.size > 0 -%}这个筛选下还没有文章。{%- else -%}暂时还没有公开文章。{%- endif -%}
+        {%- if item_count > 0 -%}这个筛选下还没有内容。{%- else -%}{{ page.empty_text | default: '暂时还没有公开内容。' }}{%- endif -%}
       </p>
-      {% include pagination.liquid %}
     </section>
   </div>
 </div>

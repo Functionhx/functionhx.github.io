@@ -12,17 +12,9 @@ blog_description: 技术拆解、工程实践，以及不绕弯子的观点。
 blog_topics: 机器人 · 工程 · 观点
 display_tags: []
 display_categories: []
-pagination:
-  enabled: true
-  collection: posts
-  locale: zh
-  permalink: /page/:num/
-  per_page: 10
-  sort_field: date
-  sort_reverse: true
-  trail:
-    before: 1
-    after: 3
+# 博客、论文札记、见山共用 writing-feed.liquid；博客只列 kind: writing 的文章。
+feed_kinds:
+  - writing
 ---
 
 {% include blog-index.liquid %}

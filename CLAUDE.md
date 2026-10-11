@@ -190,7 +190,7 @@ content logging.
 
 ## Podcast mirror in 见山 (/notes/)
 
-The podcast is one card in the 见山 section's lane (`lane_podcasts` in `_pages/notes-zh.md`, card: `_includes/listen-lane-card.liquid`); the card opens `/notes/podcast/` (`_pages/notes-podcast-zh.md`), which holds the player. Audio series mirrored for listening in mainland China (the page calls itself 「…官方镜像站」 and never shows the mirror domain and links the official source). **Audio never enters git or `_site`**: `scripts/listen_import.py
+博客 / 论文札记 / 见山 share one section template, `_includes/writing-feed.liquid` (wide container, compact header, sort / category / tag filters in `blog-cards.js`, card grid); each page picks its posts with `feed_kinds` (`writing`, `paper-note`, `note`), so a post appears in exactly one of them. The podcast is one card in 见山 (`feed_podcasts` in `_pages/notes-zh.md`, card: `_includes/listen-lane-card.liquid`, ordered by `added`); the card opens `/notes/podcast/` (`_pages/notes-podcast-zh.md`), which holds the player. Audio series mirrored for listening in mainland China (the page calls itself 「…官方镜像站」 and never shows the mirror domain and links the official source). **Audio never enters git or `_site`**: `scripts/listen_import.py
 <slug> <folder> --title … --author … --official …` transcodes to 64 kbit/s mono AAC in `build/listen/<slug>/`
 (ignored and excluded) and writes `_data/listen/<slug>.yml`; the files are then rsynced by hand to the Tencent
 server's `/var/www/media/listen/<slug>/` (outside the release directory that every deploy replaces), served by the

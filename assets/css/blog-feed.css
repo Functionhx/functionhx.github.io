@@ -135,7 +135,8 @@ html:not(.js) .writing-layout:has(.writing-filters[hidden]) {
 }
 .writing-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  /* auto-fill：栏目里只有一两张卡片时保持卡片宽度，不被拉满一整行。 */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 36px;
 }
 /* 栏目页（论文札记、思考、日志）：没有筛选栏，卡片少时保持卡片宽度，不被拉满一整行。 */

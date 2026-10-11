@@ -1,5 +1,5 @@
 {% if page.lang != 'en' %}
-  {% include blog-feed-zh.liquid %}
+  {% include writing-feed.liquid %}
 {% else %}
   {% assign current_lang = page.lang | default: 'zh' %}
   {% if current_lang == 'en' %}

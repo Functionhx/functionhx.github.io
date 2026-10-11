@@ -6,6 +6,7 @@ official: "https://www.hejustinsun.com/zh/podcast"
 archive: "wealth-revolution-000-156.zip"
 archive_mb: 893
 # 以下由站长维护：封面裁自官方播客页的节目封面；简介按官方播客页英文原文翻译。
+added: 2026-10-11
 cover: /assets/img/listen/wealth-revolution.webp
 # 见山里的播客卡片用《福布斯》2025 年 4/5 月刊封面（owner 指定），卡片上注明出处。
 card_cover: /assets/img/listen/wealth-revolution-forbes.webp
